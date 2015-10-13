@@ -18,7 +18,7 @@
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "mesosphere/spark:1.5.0-hadoop2.4",
+      "image": $docker_image,
       "network": "HOST"
     }
   },
