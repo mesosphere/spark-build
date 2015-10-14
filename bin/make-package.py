@@ -6,9 +6,9 @@ import shutil
 import sys
 
 def main():
-    version = sys.argv[0]
-    docker_image = sys.argv[1]
-    python_package = sys.argv[2]
+    version = sys.argv[1]
+    docker_image = sys.argv[2]
+    python_package = sys.argv[3]
 
     try:
         os.mkdir('build')
