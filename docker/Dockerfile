@@ -41,4 +41,11 @@ ADD mesos-site.xml /etc/hadoop/mesos-site.xml
 
 RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
 
+# The following symlinks are hacks to make spark-class work under the
+# restricted PATH (/usr/bin) set by the DCOS
+# --executor-environment-variables option
+RUN ln -s /bin/bash /usr/bin/bash
+RUN ln -s /bin/ls /usr/bin/ls
+RUN ln -s /bin/grep /usr/bin/grep
+
 WORKDIR /opt/spark/dist
