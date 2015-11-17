@@ -57,10 +57,10 @@
                     "description": "URL to the Zookeeper that Spark cluster framework connects to persist state to. (l.e: zk://0.0.0.0:2181)",
                     "default": "master.mesos:2181"
                 },
-                "dist": {
+                "uri": {
                     "type": "string",
                     "description": "Spark distribution URI",
-                    "default": "$spark_dist"
+                    "default": "$spark_uri"
                 }
             },
             "required": [

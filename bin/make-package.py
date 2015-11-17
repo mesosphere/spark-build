@@ -6,20 +6,20 @@ import shutil
 import sys
 
 def main():
-    with open("conf/pkg_config.json") as f:
-        pkg_config = json.load(f)
+    with open("conf/manifest.json") as f:
+        manifest = json.load(f)
 
         # package.json version
-        version = pkg_config['version']
+        version = manifest['version']
 
         # marathon.json container.docker.image
-        docker_image = pkg_config['docker_image']
+        docker_image = manifest['docker_image']
 
         # command.json pip[.]
-        python_package = pkg_config['python_package']
+        python_package = manifest['python_package']
 
         # config.json properties.spark.properties.uri.default
-        spark_dist = pkg_config['spark_dist']
+        spark_uri = manifest['spark_uri']
 
     try:
         os.mkdir('build')
@@ -43,7 +43,7 @@ def main():
         json.dump(package, package_outfile, indent=2)
         package_outfile.write('\n')
 
-    with open() as marathon_infile, \
+    with open('package/marathon.json') as marathon_infile, \
          open('build/package/marathon.json', 'w') as marathon_outfile:
         marathon = marathon_infile.read()
         marathon = marathon.replace('$docker_image', '"{}"'.format(docker_image))
@@ -53,7 +53,7 @@ def main():
     with open('package/config.json') as config_infile, \
          open('build/package/config.json', 'w') as config_outfile:
         config = config_infile.read()
-        config = config.replace('$spark_dist', spark_dist)
+        config = config.replace('$spark_uri', spark_uri)
         config_outfile.write(config)
         config_outfile.write('\n')
 
