@@ -1,4 +1,4 @@
-#! bash
+#!/usr/bin/env bash
 
 # Usage:
 # ./bin/make-docker.sh <spark-dist-dir> <image>
