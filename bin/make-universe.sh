@@ -11,11 +11,15 @@ rm -rf build/spark-universe*
 
 # download universe
 wget -O build/spark-universe.zip https://github.com/mesosphere/universe/archive/version-1.x.zip
-unzip -d build/spark-universe build/spark-universe.zip
+unzip -d build build/spark-universe.zip
+mv build/universe-version-1.x build/spark-universe
 rm build/spark-universe.zip
 
 # make new universe
-SPARK_DIR=build/spark-universe/universe-version-1.x/repo/packages/S/spark
+SPARK_DIR=build/spark-universe/repo/packages/S/spark
 rm -rf ${SPARK_DIR}/*
-mkdir ${SPARK_DIR}/0
 cp -r build/package ${SPARK_DIR}/0
+
+pushd build/spark-universe
+./scripts/build.sh
+popd
