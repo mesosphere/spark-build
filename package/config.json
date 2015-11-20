@@ -69,7 +69,7 @@
                 "instances",
                 "mem",
                 "zookeeper",
-                "dist"
+                "uri"
             ]
         }
     },
