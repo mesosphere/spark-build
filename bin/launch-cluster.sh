@@ -24,7 +24,6 @@ CLUSTER_ID=$(http --ignore-stdin \
                   private_agents=1 | jq ".id")
 
 # echo "cluster created: ID=${CLUSTER_ID}"
-CLUSTER_ID=2689
 
 # echo "Waiting for cluster to come up..."
 # wait for cluster to come up
