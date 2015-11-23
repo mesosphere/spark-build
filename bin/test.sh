@@ -31,12 +31,12 @@ set -o pipefail
 
 build_spark() {
     pushd ${SPARK_DIR}
-    #./make-distribution.sh -Phadoop-2.4
-    #cp -r dist $DIST_VERSION
-    #tar czf ${DIST_VERSION}.tgz ${DIST_VERSION}
-    #aws s3 --region=${AWS_REGION} cp \
-    #       --acl public-read \
-    #       ${DIST_VERSION}.tgz s3://${S3_BUCKET}/${S3_PREFIX}${DIST_VERSION}.tgz
+    ./make-distribution.sh -Phadoop-2.4
+    cp -r dist $DIST_VERSION
+    tar czf ${DIST_VERSION}.tgz ${DIST_VERSION}
+    aws s3 --region=${AWS_REGION} cp \
+           --acl public-read \
+           ${DIST_VERSION}.tgz s3://${S3_BUCKET}/${S3_PREFIX}${DIST_VERSION}.tgz
     popd
 }
 
@@ -58,8 +58,8 @@ build_universe() {
 }
 
 start_cluster() {
-    #TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
-    TEST_MASTER_URI=http://pool-fac4-ElasticL-1BP7B6KSMPEAH-2068792804.us-west-2.elb.amazonaws.com
+    TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
+    #TEST_MASTER_URI=http://pool-fac4-ElasticL-1BP7B6KSMPEAH-2068792804.us-west-2.elb.amazonaws.com
 }
 
 configure_cli() {
