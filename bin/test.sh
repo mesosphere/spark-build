@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Builds spark, docker image, and package from conf/manifest.json
 # Spins up a DCOS cluster and runs tests against it
 #
