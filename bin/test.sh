@@ -9,10 +9,9 @@
 #  DCOS_TESTS_DIR - dcos-tests/
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #
-#  DIST_VERSION - <DIST_VERSION>.tgz to upload to s3
-#  SPARK_VERSION - package.json version
+#  VERSION - spark-<VERSION>.tgz to upload to s3, and package.json version
 #  SPARK_URI - marathon.json spark uri
-#  DOCKER_IMAGE - marathon.json docker image
+#  DOCKER_IMAGE - marathon.json docker image (w/o the tag)
 #  CLUSTER_NAME - name to use for CCM cluster
 #
 #  aws vars used for spark upload:
@@ -31,27 +30,29 @@
 set -x -e
 set -o pipefail
 
+FULL_DOCKER_IMAGE=${DOCKER_IMAGE}:${VERSION}
+
 build_spark() {
     pushd ${SPARK_DIR}
     ./make-distribution.sh -Phadoop-2.4
-    cp -r dist $DIST_VERSION
-    tar czf ${DIST_VERSION}.tgz ${DIST_VERSION}
+    cp -r dist spark-$VERSION
+    tar czf spark-${VERSION}.tgz spark-${VERSION}
     aws s3 --region=${AWS_REGION} cp \
            --acl public-read \
-           ${DIST_VERSION}.tgz s3://${S3_BUCKET}/${S3_PREFIX}${DIST_VERSION}.tgz
+           spark-${VERSION}.tgz s3://${S3_BUCKET}/${S3_PREFIX}spark-${VERSION}.tgz
     popd
 }
 
 build_docker() {
-    ./bin/make-docker.sh ${SPARK_DIR}${DIST_VERSION}/ ${DOCKER_IMAGE}
-    docker push ${DOCKER_IMAGE}
+    ./bin/make-docker.sh ${SPARK_DIR}spark-${VERSION}/ ${FULL_DOCKER_IMAGE}
+    docker push ${FULL_DOCKER_IMAGE}
 }
 
 build_universe() {
     # create universe
-    jq --arg version ${SPARK_VERSION} \
+    jq --arg version ${VERSION} \
        --arg uri ${SPARK_URI} \
-       --arg image ${DOCKER_IMAGE} \
+       --arg image ${FULL_DOCKER_IMAGE} \
        '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
        conf/manifest.json > conf/manifest.json.tmp
     mv conf/manifest.json.tmp conf/manifest.json
@@ -91,7 +92,7 @@ run_tests() {
 }
 
 
-build_spark;
+#build_spark;
 build_docker;
 build_universe;
 start_cluster;
