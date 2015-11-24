@@ -12,7 +12,9 @@
 #  VERSION - spark-<VERSION>.tgz to upload to s3, and package.json version
 #  SPARK_URI - marathon.json spark uri
 #  DOCKER_IMAGE - marathon.json docker image (w/o the tag)
-#  CLUSTER_NAME - name to use for CCM cluster
+#  CLUSTER_NAME - name to use for CCM cluster#
+#  DCOS_URL (optional) - If given, the tests will run against this
+#                        cluster, and not spin up a new one.
 #
 #  aws vars used for spark upload:
 #  AWS_REGION
@@ -61,11 +63,13 @@ build_universe() {
 }
 
 start_cluster() {
-    TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
+    if [ -z "${DCOS_URL}" ]; then
+        DCOS_URL=http://$(./bin/launch-cluster.sh)
+    fi
 }
 
 configure_cli() {
-    dcos config set core.dcos_url ${TEST_MASTER_URI}
+    dcos config set core.dcos_url ${DCOS_URL}
     dcos config set package.sources "[\"file://$(pwd)/build/spark-universe\"]"
     dcos package update
 }
@@ -86,7 +90,7 @@ run_tests() {
     pushd ${TEST_RUNNER_DIR}
     cp src/main/resources/dcos-application.conf src/main/resources/application.conf
     AWS_ACCESS_KEY=${TEST_AWS_ACCESS_KEY_ID} AWS_SECRET_KEY=${TEST_AWS_SECRET_ACCESS_KEY} AWS_BUCKET=${TEST_S3_BUCKET} AWS_PREFIX=${TEST_S3_PREFIX} \
-                  sbt "dcos ${TEST_MASTER_URI}"
+                  sbt "dcos ${DCOS_URL}"
     popd
 }
 
