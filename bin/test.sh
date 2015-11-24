@@ -61,8 +61,7 @@ build_universe() {
 }
 
 start_cluster() {
-    #TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
-    TEST_MASTER_URI=http://spark-bui-elasticl-mplpvcnv4opi-17080008.us-west-2.elb.amazonaws.com
+    TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
 }
 
 configure_cli() {
@@ -91,8 +90,7 @@ run_tests() {
     popd
 }
 
-
-#build_spark;
+build_spark;
 build_docker;
 build_universe;
 start_cluster;
