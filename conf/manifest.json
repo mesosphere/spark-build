@@ -1,6 +1,6 @@
 {
     "version": "1.5.0-multi-roles-v2",
-    "spark_uri": "https://downloads.mesosphere.io/dcos/spark/spark-1.5.0-multi-roles-v2-bin-2.4.0.tgz",
-    "python_package": "http://downloads.mesosphere.io/dcos/spark/dcos_spark-0.4.0_spark_1.5.0_multi_roles_v2_bin_2.4.0-py2.py3-none-any.whl",
+    "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-1.5.0-multi-roles-v2-bin-2.4.0.tgz",
+    "python_package": "https://downloads.mesosphere.com/spark/assets/dcos_spark-0.5.0-py2.py3-none-any.whl",
     "docker_image": "mesosphere/spark:1.5.0-multi-roles-v2-bin-2.4.0"
 }

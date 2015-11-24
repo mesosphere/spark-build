@@ -50,12 +50,12 @@ build_docker() {
 
 build_universe() {
     # create universe
-    jq --arg version ${VERSION} \
-       --arg uri ${SPARK_URI} \
-       --arg image ${FULL_DOCKER_IMAGE} \
-       '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
-       conf/manifest.json > conf/manifest.json.tmp
-    mv conf/manifest.json.tmp conf/manifest.json
+    # jq --arg version ${VERSION} \
+    #    --arg uri ${SPARK_URI} \
+    #    --arg image ${FULL_DOCKER_IMAGE} \
+    #    '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
+    #    conf/manifest.json > conf/manifest.json.tmp
+    #mv conf/manifest.json.tmp conf/manifest.json
     ./bin/make-package.py
     ./bin/make-universe.sh
 }
@@ -90,8 +90,8 @@ run_tests() {
     popd
 }
 
-build_spark;
-build_docker;
+# build_spark;
+# build_docker;
 build_universe;
 start_cluster;
 configure_cli;
