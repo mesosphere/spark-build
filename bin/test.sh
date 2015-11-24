@@ -61,8 +61,8 @@ build_universe() {
 }
 
 start_cluster() {
-    TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
-    #TEST_MASTER_URI=http://pool-fac4-ElasticL-1BP7B6KSMPEAH-2068792804.us-west-2.elb.amazonaws.com
+    #TEST_MASTER_URI=http://$(./bin/launch-cluster.sh)
+    TEST_MASTER_URI=http://spark-bui-elasticl-mplpvcnv4opi-17080008.us-west-2.elb.amazonaws.com
 }
 
 configure_cli() {
