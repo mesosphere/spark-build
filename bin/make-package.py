@@ -6,7 +6,7 @@ import shutil
 import sys
 
 def main():
-    with open("conf/manifest.json") as f:
+    with open("manifest.json") as f:
         manifest = json.load(f)
 
         # package.json version

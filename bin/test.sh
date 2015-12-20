@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Builds spark, docker image, and package from conf/manifest.json
+# Builds spark, docker image, and package from manifest.json
 # Spins up a DCOS cluster and runs tests against it
 #
 # ENV vars:
@@ -57,8 +57,8 @@ build_universe() {
     #    --arg uri ${SPARK_URI} \
     #    --arg image ${FULL_DOCKER_IMAGE} \
     #    '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
-    #    conf/manifest.json > conf/manifest.json.tmp
-    #mv conf/manifest.json.tmp conf/manifest.json
+    #    manifest.json > manifest.json.tmp
+    #mv manifest.json.tmp manifest.json
     ./bin/make-package.py
     ./bin/make-universe.sh
 }

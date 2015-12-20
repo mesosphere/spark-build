@@ -4,12 +4,12 @@ Spark DCOS Package
 This repo lets you configure, build, and test a new Spark DCOS package.
 It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
-described below.  
+described below.
 
 Configuring
 ---
 
-edit `conf/manifest.json`.
+edit `manifest.json`.
 
 Create a package
 ---
