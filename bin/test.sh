@@ -5,7 +5,7 @@
 #
 # ENV vars:
 #
-#  SPARK_DIR - spark/
+#  SPARK_DIST - spark-1.6.0-bin-hadoop2.4.tgz
 #  DCOS_TESTS_DIR - dcos-tests/
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #
@@ -16,14 +16,14 @@
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
 #
-#  aws vars used for spark upload:
+#  AWS vars used for spark upload:
 #  AWS_REGION
 #  AWS_ACCESS_KEY_ID
 #  AWS_SECRET_ACCESS_KEY
 #  S3_BUCKET
 #  S3_PREFIX
 #
-#  aws vars used for tests:
+#  AWS vars used for tests:
 #  TEST_AWS_ACCESS_KEY_ID
 #  TEST_AWS_SECRET_ACCESS_KEY
 #  TEST_S3_BUCKET
@@ -46,7 +46,8 @@ build_spark() {
 }
 
 build_docker() {
-    ./bin/make-docker.sh ${SPARK_DIR}spark-${VERSION}/ ${FULL_DOCKER_IMAGE}
+    tar xvf ${SPARK_DIST} -C build
+    ./bin/make-docker.sh build/spark-${VERSION}/ ${FULL_DOCKER_IMAGE}
     docker push ${FULL_DOCKER_IMAGE}
 }
 
@@ -98,7 +99,7 @@ run_tests() {
 }
 
 # build_spark;
-# build_docker;
+build_docker;
 build_universe;
 start_cluster;
 configure_cli;
