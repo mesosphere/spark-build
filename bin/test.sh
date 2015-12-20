@@ -46,6 +46,7 @@ build_spark() {
 }
 
 build_docker() {
+    mkdir -p build
     tar xvf ${SPARK_DIST} -C build
     ./bin/make-docker.sh build/spark-${VERSION}/ ${FULL_DOCKER_IMAGE}
     docker push ${FULL_DOCKER_IMAGE}
@@ -53,12 +54,12 @@ build_docker() {
 
 build_universe() {
     # create universe
-    # jq --arg version ${VERSION} \
-    #    --arg uri ${SPARK_URI} \
-    #    --arg image ${FULL_DOCKER_IMAGE} \
-    #    '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
-    #    manifest.json > manifest.json.tmp
-    #mv manifest.json.tmp manifest.json
+    jq --arg version ${VERSION} \
+       --arg uri ${SPARK_URI} \
+       --arg image ${FULL_DOCKER_IMAGE} \
+       '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
+       manifest.json > manifest.json.tmp
+    mv manifest.json.tmp manifest.json
     ./bin/make-package.py
     ./bin/make-universe.sh
 }
