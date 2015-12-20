@@ -48,7 +48,7 @@ build_spark() {
 build_docker() {
     mkdir -p build
     tar xvf ${SPARK_DIST} -C build
-    ./bin/make-docker.sh build/spark-${VERSION}/ ${FULL_DOCKER_IMAGE}
+    ./bin/make-docker.sh build/spark*bin*/ ${FULL_DOCKER_IMAGE}
     docker push ${FULL_DOCKER_IMAGE}
 }
 
