@@ -9,7 +9,7 @@
 #  DCOS_TESTS_DIR - dcos-tests/
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #
-#  VERSION - spark-<VERSION>.tgz to upload to s3, and package.json version
+#  VERSION - docker image and package.json version
 #  SPARK_URI - marathon.json spark uri
 #  DOCKER_IMAGE - marathon.json docker image (w/o the tag)
 #  CLUSTER_NAME - name to use for CCM cluster#

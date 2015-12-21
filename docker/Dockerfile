@@ -18,8 +18,8 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM mesosphere/mesos:0.23.0-1.0.ubuntu1404
-MAINTAINER Timothy Chen <tnachen@apache.org>
+FROM mesosphere/mesos:0.25.0-0.2.70.ubuntu1404
+MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
@@ -27,9 +27,12 @@ ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 
 # Upgrade package index and install basic commands.
 RUN apt-get update && \
-    apt-get install -y openjdk-7-jdk curl
+    apt-get install -y software-properties-common
+RUN add-apt-repository ppa:openjdk-r/ppa
+RUN apt-get update && \
+    apt-get install -y openjdk-8-jdk curl
 
-ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 ENV MESOS_NATIVE_JAVA_LIBRARY /usr/local/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
 
@@ -39,7 +42,7 @@ ADD hdfs-site.xml /etc/hadoop/hdfs-site.xml
 ADD core-site.xml /etc/hadoop/core-site.xml
 ADD mesos-site.xml /etc/hadoop/mesos-site.xml
 
-RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
+#RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
 
 # The following symlinks are hacks to make spark-class work under the
 # restricted PATH (/usr/bin) set by the DCOS
