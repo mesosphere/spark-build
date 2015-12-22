@@ -16,13 +16,6 @@
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
 #
-#  AWS vars used for spark upload:
-#  AWS_REGION
-#  AWS_ACCESS_KEY_ID
-#  AWS_SECRET_ACCESS_KEY
-#  S3_BUCKET
-#  S3_PREFIX
-#
 #  AWS vars used for tests:
 #  TEST_AWS_ACCESS_KEY_ID
 #  TEST_AWS_SECRET_ACCESS_KEY
@@ -33,17 +26,6 @@ set -x -e
 set -o pipefail
 
 FULL_DOCKER_IMAGE=${DOCKER_IMAGE}:${VERSION}
-
-build_spark() {
-    pushd ${SPARK_DIR}
-    ./make-distribution.sh -Phadoop-2.4
-    cp -r dist spark-$VERSION
-    tar czf spark-${VERSION}.tgz spark-${VERSION}
-    aws s3 --region=${AWS_REGION} cp \
-           --acl public-read \
-           spark-${VERSION}.tgz s3://${S3_BUCKET}/${S3_PREFIX}spark-${VERSION}.tgz
-    popd
-}
 
 build_docker() {
     mkdir -p build/spark
@@ -100,7 +82,6 @@ run_tests() {
     popd
 }
 
-# build_spark;
 build_docker;
 build_universe;
 start_cluster;
