@@ -61,6 +61,7 @@ build_universe() {
        manifest.json > manifest.json.tmp
     mv manifest.json.tmp manifest.json
     ./bin/make-package.py
+    (cd build && tar czf package.tgz package)
     ./bin/make-universe.sh
 }
 
