@@ -3,7 +3,7 @@
     "cpus": {{spark.cpus}},
     "mem": {{spark.mem}},
     "instances": {{spark.instances}},
-    "cmd": "./bin/spark-class org.apache.spark.deploy.mesos.MesosClusterDispatcher --port $PORT0 --webui-port $PORT1 --master {{mesos.master}} --zk {{spark.zookeeper}} --host {{spark.host}} --name {{spark.framework-name}}",
+    "cmd": "mv ./conf/log4j-dispatcher.properties ./conf/log4j.properties && ./bin/spark-class org.apache.spark.deploy.mesos.MesosClusterDispatcher --port $PORT0 --webui-port $PORT1 --master {{mesos.master}} --zk {{spark.zookeeper}} --host {{spark.host}} --name {{spark.framework-name}}",
     "env": {
         "APPLICATION_WEB_PROXY_BASE": "/service/spark",
         "SPARK_USER": "{{spark.mesos-user}}"
