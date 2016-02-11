@@ -36,6 +36,8 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 ENV MESOS_NATIVE_JAVA_LIBRARY /usr/local/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
 
+RUN mkdir /etc/hadoop
+
 ADD . /opt/spark/dist
 
 ADD hdfs-site.xml /etc/hadoop/hdfs-site.xml
