@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+set -x
+
+exec 2>&1
+
+export APPLICATION_WEB_PROXY_BASE="/service/spark/ui"
+
+# TODO(sur) remove, debug only
+env | sort
+
+cd /opt/spark/dist
+exec /opt/spark/dist/bin/spark-class \
+    org.apache.spark.deploy.mesos.MesosClusterDispatcher \
+    --port "${DISPATCHER_PORT}" \
+    --webui-port "${DISPATCHER_UI_PORT}" \
+    --master "${MESOS_MASTER}" \
+    --zk "${ZK}" \
+    --host "${HOST}" \
+    --name "${FRAMEWORK_NAME}" \
+    --webui-url "${WEBUI_URL}"
+
