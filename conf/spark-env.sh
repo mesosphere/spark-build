@@ -3,6 +3,12 @@
 # This file is sourced when running various Spark programs.
 # Copy it as spark-env.sh and edit that to configure Spark for your site.
 
+# A custom HDFS config can be fetched via spark.mesos.uris.  This
+# moves those config files into the standard directory.
+mkdir -p "${HADOOP_CONF_DIR}"
+[ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
+[ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
+
 MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
 
 # Options read when launching programs locally with

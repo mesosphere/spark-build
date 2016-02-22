@@ -5,7 +5,7 @@
 
 rm -rf build/docker
 mkdir -p build/docker
-cp -r $1* build/docker
+cp -r "$1/." build/docker
 cp docker/* build/docker
 
 pushd build/docker
