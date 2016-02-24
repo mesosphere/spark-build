@@ -15,7 +15,7 @@
     "container": {
         "type": "DOCKER",
         "docker": {
-            "image": $docker_image,
+            "image": "{{resource.assets.container.docker.$docker_image_id}}",
             "network": "HOST"
         }
     },
