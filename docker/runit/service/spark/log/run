@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-set -x
-
-mkdir -p "${MESOS_SANDBOX}"/spark
-exec svlogd "${MESOS_SANDBOX}"/spark
-

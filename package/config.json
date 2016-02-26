@@ -19,22 +19,6 @@
             "description": "Spark Framework Configuration Properties",
             "type": "object",
             "properties": {
-                "enable-history-server": {
-                    "description": "Set to true to enable the Spark history server.",
-                    "type": "boolean",
-                    "default": false
-                },
-                "history-log-dir": {
-                    "description": "Base directory in which Spark events are logged if enable-history-server is set to true. Users may want to set this to a unified location like an HDFS directory so history files can be read by the history server. Note that this directory must exist prior to installing the Spark package.",
-                    "type": "string",
-                    "default": "hdfs://hdfs/history"
-                },
-                "dns-suffix": {
-                    "default": ".marathon.mesos",
-                    "description": "This value is appended to the framework-name value to form the canonical DNS name for the Spark components.",
-                    "type": "string",
-                    "pattern": "^(?:\\.[a-z][a-z0-9]*?(?:-[a-z0-9]+)*)+$"
-                },
                 "framework-name": {
                     "description": "The name of the framework. Until this is configurable, please do not change this from it's default value.",
                     "type": "string",
