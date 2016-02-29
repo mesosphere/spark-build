@@ -1,0 +1,2 @@
+spark.mesos.dispatcher.webui.url=<WEBUI_URL>
+

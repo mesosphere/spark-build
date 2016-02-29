@@ -10,6 +10,9 @@ export APPLICATION_WEB_PROXY_BASE="/service/spark/ui"
 env | sort
 
 cd /opt/spark/dist
+
+sed "s,<WEBUI_URL>,${WEBUI_URL}," conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
+
 exec /opt/spark/dist/bin/spark-class \
     org.apache.spark.deploy.mesos.MesosClusterDispatcher \
     --port "${DISPATCHER_PORT}" \
@@ -18,5 +21,5 @@ exec /opt/spark/dist/bin/spark-class \
     --zk "${ZK}" \
     --host "${HOST}" \
     --name "${FRAMEWORK_NAME}" \
-    --webui-url "${WEBUI_URL}"
+    --properties-file "conf/mesos-cluster-dispatcher.properties"
 
