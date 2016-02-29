@@ -5,10 +5,6 @@ set -x
 exec 2>&1
 
 export APPLICATION_WEB_PROXY_BASE="/service/spark/history"
-
-# TODO(sur) remove, debug only
-env | sort
-
 export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=${HISTORY_SERVER_PORT} -Dspark.history.fs.logDirectory=${HISTORY_LOG_DIR}"
 
 cd /opt/spark/dist

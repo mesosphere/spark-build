@@ -6,9 +6,6 @@ exec 2>&1
 
 export APPLICATION_WEB_PROXY_BASE="/service/spark/ui"
 
-# TODO(sur) remove, debug only
-env | sort
-
 cd /opt/spark/dist
 
 sed "s,<WEBUI_URL>,${WEBUI_URL}," conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
