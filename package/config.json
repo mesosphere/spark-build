@@ -89,6 +89,15 @@
                     "type": "string",
                     "default": "root"
                 },
+                "mesos-role": {
+                    "description": "Mesos role the Dispatcher will be registered with.",
+                    "type": "string",
+                    "default": "*"
+                },
+                "dispatcher-java-opts": {
+                    "description": "Java options set when starting the Spark dispatcher.",
+                    "type": "string"
+                },
                 "zookeeper": {
                     "type": "string",
                     "description": "URL to the Zookeeper that Spark cluster framework connects to persist state to. (l.e: zk://0.0.0.0:2181)",
