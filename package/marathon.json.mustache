@@ -16,7 +16,17 @@
         "HISTORY_LOG_DIR": "{{spark.history-server.log-dir}}",
         "HISTORY_CLEANER_ENABLED": "{{spark.history-server.cleaner-enabled}}",
         "HISTORY_CLEANER_INTERVAL": "{{spark.history-server.cleaner-interval}}",
-        "HISTORY_CLEANER_MAXAGE": "{{spark.history-server.cleaner-maxage}}"
+        "HISTORY_CLEANER_MAXAGE": "{{spark.history-server.cleaner-maxage}}",
+{{#spark.ssl.enabled}}
+        "SPARK_SSL_ENABLED": "{{spark.ssl.enabled}}",
+        "SPARK_SSL_KEYSTOREBASE64": "{{spark.ssl.keyStoreBase64}}",
+        "SPARK_SSL_TRUSTSTOREBASE64": "{{spark.ssl.trustStoreBase64}}",
+        "SPARK_SSL_KEYSTOREPASSWORD": "{{spark.ssl.keyStorePassword}}",
+        "SPARK_SSL_KEYPASSWORD": "{{spark.ssl.keyPassword}}",
+        "SPARK_SSL_TRUSTSTOREPASSWORD": "{{spark.ssl.keyStorePassword}}",
+        "SPARK_SSL_PROTOCOL": "{{spark.ssl.protocol}}",
+        "SPARK_SSL_ENABLEDALGORITHMS": "{{spark.ssl.enabledAlgorithms}}"
+{{/spark.ssl.enabled}}
     },
     "ports": [
         0,
@@ -34,9 +44,15 @@
     },
     "healthChecks": [
         {
-            "path": "/",
-            "portIndex": 1,
+{{#spark.ssl.enabled}}
+            "protocol": "COMMAND",
+            "command": { "value": "curl -f -k https://$HOST:$PORT3/dispatcher/" },
+{{/spark.ssl.enabled}}
+{{^spark.ssl.enabled}}
+            "path": "/dispatcher/",
+            "portIndex": 3,
             "protocol": "HTTP",
+{{/spark.ssl.enabled}}
             "gracePeriodSeconds": 5,
             "intervalSeconds": 60,
             "timeoutSeconds": 10,
@@ -46,6 +62,11 @@
     "labels": {
         {{#hdfs.config-url}}"SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",{{/hdfs.config-url}}
         "SPARK_URI": "{{spark.uri}}",
+{{#spark.ssl.enabled}}
+        "DCOS_SERVICE": "https:{{spark.framework-name}}:4"
+{{/spark.ssl.enabled}}
+{{^spark.ssl.enabled}}
         "DCOS_SERVICE": "http:{{spark.framework-name}}:4"
+{{/spark.ssl.enabled}}
     }
 }
