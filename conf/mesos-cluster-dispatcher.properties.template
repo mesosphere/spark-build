@@ -1,2 +1,3 @@
 spark.mesos.dispatcher.webui.url=<WEBUI_URL>
+spark.mesos.historyServer.url=<HISTORY_SERVER_URL>
 

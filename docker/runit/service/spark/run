@@ -8,7 +8,8 @@ export APPLICATION_WEB_PROXY_BASE="/service/spark/ui"
 
 cd /opt/spark/dist
 
-sed "s,<WEBUI_URL>,${WEBUI_URL}," conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
+sed "s,<WEBUI_URL>,${WEBUI_URL},;s,<HISTORY_SERVER_URL>,/service/spark/history," \
+    conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
 
 exec /opt/spark/dist/bin/spark-class \
     org.apache.spark.deploy.mesos.MesosClusterDispatcher \
