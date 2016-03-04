@@ -29,6 +29,7 @@
         "docker": {
             "image": "{{resource.assets.container.docker.spark_docker}}",
             "network": "HOST"
+            "forcePullImage": true
         }
     },
     "healthChecks": [
