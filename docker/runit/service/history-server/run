@@ -5,7 +5,7 @@ set -x
 exec 2>&1
 
 export APPLICATION_WEB_PROXY_BASE="/service/spark/history"
-export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=${HISTORY_SERVER_PORT} -Dspark.history.fs.logDirectory=${HISTORY_LOG_DIR}"
+export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=${HISTORY_SERVER_PORT} -Dspark.history.fs.logDirectory=${HISTORY_LOG_DIR} -Dspark.history.fs.cleaner.enabled=${HISTORY_CLEANER_ENABLED} -Dspark.history.fs.cleaner.interval=${HISTORY_CLEANER_INTERVAL} -Dspark.history.fs.cleaner.maxAge=${HISTORY_CLEANER_MAXAGE}"
 
 cd /opt/spark/dist
 exec /opt/spark/dist/bin/spark-class org.apache.spark.deploy.history.HistoryServer
