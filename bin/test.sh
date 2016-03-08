@@ -36,13 +36,10 @@ build_docker() {
 
 build_universe() {
     # create universe
-    CMD="docker images ${FULL_DOCKER_IMAGE} | grep ${FULL_DOCKER_IMAGE} | awk '{print $3}'"
-    DOCKER_IMAGE_ID=$("${CMD}")
     jq --arg version ${VERSION} \
        --arg uri ${SPARK_URI} \
        --arg image ${FULL_DOCKER_IMAGE} \
-       --arg image_id ${DOCKER_IMAGE_ID} \
-       '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image, "docker_image_id": $image_id}' \
+       '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
        manifest.json > manifest.json.tmp
     mv manifest.json.tmp manifest.json
     ./bin/make-package.py
