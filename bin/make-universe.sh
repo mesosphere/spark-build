@@ -24,4 +24,5 @@ pushd build/spark-universe
 ./scripts/build.sh
 popd
 
-zip -r build/spark-universe.zip build/spark-universe
+# TODO: remove the docker wrapper once `zip` is available on TC
+docker run -v $(pwd)/build/:/build/ ubuntu:latest sh -c "apt-get install -y zip && cd /build/ && zip -r spark-universe.zip spark-universe"
