@@ -9,7 +9,6 @@ def main():
     with open("manifest.json") as f:
         manifest = json.load(f)
 
-
     try:
         os.mkdir('build/package')
     except OSError:
@@ -25,7 +24,7 @@ def main():
         with open(template_filename) as template_file, \
              open('build/{}'.format(template_filename), 'w') as output_file:
             template = template_file.read()
-            for key, value in manifest.iteritems():
+            for key, value in manifest.items():
                 template = template.replace('${}'.format(key), value)
 
             output_file.write(template)
