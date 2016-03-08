@@ -153,6 +153,17 @@
                         }
                     },
                     "type": "object"
+                },
+                "kerberos": {
+                    "description": "Spark Kerberos configuration.",
+                    "properties": {
+                        "krb5conf": {
+                            "default": "",
+                            "description": "Base64 encoded krb5.conf file that is copied to the driver and the executor (not evailable in OpenSource version).",
+                            "type": "string"
+                        }
+                    },
+                     "type": "object"
                 }
             },
             "required": [
