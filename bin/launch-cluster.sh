@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
+# ENV VARS
+#   DCOS_CHANNEL (optional)
 
 set -e
 set -o pipefail
+
+if [ -z "${DCOS_CHANNEL}" ]; then
+    DCOS_CHANNEL=stable
+fi
+
 
 CCM_URL=https://ccm.mesosphere.com/api/cluster/
 AUTH_HEADER=Authorization:"Token ji4weySp4ix5bueRb0Uj2loM9Jan3juD7Wan3yin9leeT9gEm5" \
@@ -16,7 +23,7 @@ CLUSTER_ID=$(http --ignore-stdin \
                   name=${CLUSTER_NAME} \
                   region=us-west-2 \
                   time=60 \
-                  channel=stable \
+                  channel=${DCOS_CHANNEL} \
                   cluster_desc="DCOS CLI testing cluster" \
                   template=single-master.cloudformation.json \
                   adminlocation=0.0.0.0/0 \
