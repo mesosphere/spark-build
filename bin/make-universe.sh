@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# creates /tmp/spark-universe.zip
+# creates build/spark-universe, build/spark-universe.zip
 
 set -x -e
 
@@ -23,3 +23,5 @@ cp -r build/package ${SPARK_DIR}/0
 pushd build/spark-universe
 ./scripts/build.sh
 popd
+
+zip -r build/spark-universe.zip build/spark-universe
