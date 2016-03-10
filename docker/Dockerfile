@@ -38,7 +38,7 @@ ENV HADOOP_CONF_DIR /etc/hadoop
 
 RUN mkdir /etc/hadoop
 
-ADD . /opt/spark/dist
+ADD dist /opt/spark/dist
 
 ADD hdfs-site.xml /etc/hadoop/hdfs-site.xml
 ADD core-site.xml /etc/hadoop/core-site.xml
