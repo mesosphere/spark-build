@@ -19,6 +19,43 @@
             "description": "Spark Framework Configuration Properties",
             "type": "object",
             "properties": {
+                "history-server": {
+                    "description": "Spark-History Server configuration properties",
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Set to true to enable the Spark history server.",
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "log-dir": {
+                            "description": "Base directory in which Spark events are logged if spark.history-server.enabled is set to true. Users may want to set this to a unified location like an HDFS directory so history files can be read by the history server. Note that this directory must exist prior to installing the Spark package.",
+                            "type": "string",
+                            "default": "hdfs://hdfs/history"
+                        },
+                        "cleaner-enabled": {
+                            "description": "Specifies whether the History Server should periodically clean up event logs from storage.",
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "cleaner-interval": {
+                            "default": "1d",
+                            "description": "How often the job history cleaner checks for files to delete. Files are only deleted if they are older than spark.history-server.cleaner-maxage.",
+                            "type": "string"
+                        },
+                        "cleaner-maxage": {
+                            "default": "7d",
+                            "description": "Job history files older than this will be deleted when the history cleaner runs.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "dns-suffix": {
+                    "default": ".marathon.mesos",
+                    "description": "This value is appended to the framework-name value to form the canonical DNS name for the Spark components.",
+                    "type": "string",
+                    "pattern": "^(?:\\.[a-z][a-z0-9]*?(?:-[a-z0-9]+)*)+$"
+                },
                 "framework-name": {
                     "description": "The name of the framework. Until this is configurable, please do not change this from it's default value.",
                     "type": "string",
@@ -51,6 +88,15 @@
                     "description": "Mesos user to run the executor under",
                     "type": "string",
                     "default": "root"
+                },
+                "mesos-role": {
+                    "description": "Mesos role the Dispatcher will be registered with.",
+                    "type": "string",
+                    "default": "*"
+                },
+                "dispatcher-java-opts": {
+                    "description": "Java options set when starting the Spark dispatcher.",
+                    "type": "string"
                 },
                 "zookeeper": {
                     "type": "string",

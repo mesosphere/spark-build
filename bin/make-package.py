@@ -29,6 +29,8 @@ def main():
 
             output_file.write(template)
 
+    print("Package built successfully.")
+
 
 if __name__ == '__main__':
     main()

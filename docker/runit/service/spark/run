@@ -1,0 +1,35 @@
+#!/bin/sh
+set -e
+set -x
+
+exec 2>&1
+
+export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
+
+cd /opt/spark/dist
+
+if [ "$FRAMEWORK_NAME" != "spark" ]; then
+    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher_$FRAMEWORK_NAME"
+fi
+
+if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
+    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=$SPARK_DISPATCHER_MESOS_ROLE"
+fi
+
+HISTORY_SERVER_CONF=""
+if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
+    HISTORY_SERVER_CONF="spark.mesos.historyServer.url=${HISTORY_SERVER_WEB_PROXY_BASE}"
+fi
+
+sed "s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
+    conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
+
+exec /opt/spark/dist/bin/spark-class \
+    org.apache.spark.deploy.mesos.MesosClusterDispatcher \
+    --port "${DISPATCHER_PORT}" \
+    --webui-port "${DISPATCHER_UI_PORT}" \
+    --master "${MESOS_MASTER}" \
+    --zk "${ZK}" \
+    --host "${HOST}" \
+    --name "${FRAMEWORK_NAME}" \
+    --properties-file "conf/mesos-cluster-dispatcher.properties"

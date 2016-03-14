@@ -1,0 +1,36 @@
+server {
+    listen <PORT>;
+    port_in_redirect off;
+
+    server_name "";
+
+    root /usr/html;
+    index index.html;
+
+    location /v1 {
+        proxy_pass <DISPATCHER_URL>;
+
+        # Don't try to be intelligent, only proxy
+        proxy_buffering off;
+        proxy_redirect off;
+        proxy_next_upstream off;
+
+        # Set long timeout
+        proxy_connect_timeout 159s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+   }
+
+   location /dispatcher/ {
+        proxy_redirect $scheme://$host $scheme://$host/dispatcher;
+        proxy_pass <DISPATCHER_UI_URL>/;
+        proxy_set_header Host $host;
+   }
+
+   location /history/ {
+        proxy_redirect $scheme://$host $scheme://$host/history;
+        proxy_pass <HISTORY_SERVER_URL>/;
+        proxy_set_header Host $host;
+   }
+}
+

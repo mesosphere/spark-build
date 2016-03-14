@@ -27,7 +27,7 @@ ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 
 # Upgrade package index and install basic commands.
 RUN apt-get update && \
-    apt-get install -y software-properties-common
+    apt-get install -y software-properties-common runit nginx
 RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update && \
     apt-get install -y openjdk-8-jdk curl
@@ -39,10 +39,11 @@ ENV HADOOP_CONF_DIR /etc/hadoop
 RUN mkdir /etc/hadoop
 
 ADD dist /opt/spark/dist
-
-ADD hdfs-site.xml /etc/hadoop/hdfs-site.xml
-ADD core-site.xml /etc/hadoop/core-site.xml
-ADD mesos-site.xml /etc/hadoop/mesos-site.xml
+ADD hadoop/* /etc/hadoop/
+ADD runit/service /var/lib/runit/service
+ADD runit/init.sh /sbin/init.sh
+ADD nginx /etc/nginx
+ADD html /usr/html
 
 #RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
 
@@ -53,4 +54,8 @@ RUN ln -s /bin/bash /usr/bin/bash
 RUN ln -s /bin/ls /usr/bin/ls
 RUN ln -s /bin/grep /usr/bin/grep
 
+RUN ln -s /var/lib/runit/service/spark /etc/service/spark
+RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
+
 WORKDIR /opt/spark/dist
+
