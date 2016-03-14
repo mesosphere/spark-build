@@ -21,8 +21,8 @@ server {
         proxy_read_timeout 600s;
    }
 
-   location /ui/ {
-        proxy_redirect $scheme://$host $scheme://$host/ui;
+   location /dispatcher/ {
+        proxy_redirect $scheme://$host $scheme://$host/dispatcher;
         proxy_pass <DISPATCHER_UI_URL>/;
         proxy_set_header Host $host;
    }
