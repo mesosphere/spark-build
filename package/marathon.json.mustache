@@ -43,6 +43,6 @@
     "labels": {
         {{#hdfs.config-url}}"SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",{{/hdfs.config-url}}
         "SPARK_URI": "{{spark.uri}}",
-        "DCOS_SERVICE": "http:spark:4"
+        "DCOS_SERVICE": "http:{{spark.framework-name}}:4"
     }
 }
