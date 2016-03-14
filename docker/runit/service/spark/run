@@ -8,7 +8,12 @@ export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 
 cd /opt/spark/dist
 
-sed "s,<WEBUI_URL>,${WEBUI_URL},;s,<HISTORY_SERVER_URL>,${HISTORY_SERVER_WEB_PROXY_BASE}," \
+HISTORY_SERVER_CONF=""
+if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
+    HISTORY_SERVER_CONF="spark.mesos.historyServer.url=${HISTORY_SERVER_WEB_PROXY_BASE}"
+fi
+
+sed "s,<WEBUI_URL>,${WEBUI_URL},;s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
     conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
 
 exec /opt/spark/dist/bin/spark-class \
