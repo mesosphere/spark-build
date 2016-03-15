@@ -1,6 +1,6 @@
 {
     "version": "1.6.0",
-    "spark_uri": "https://downloads.mesosphere.io.s3.amazonaws.com/spark/assets/spark-1.6.0.tgz",
+    "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.0.tgz",
     "python_package": "https://downloads.mesosphere.com/spark/assets/dcos_spark-0.5.7-py2.py3-none-any.whl",
     "docker_image": "mesosphere/spark:1.6.0"
 }
