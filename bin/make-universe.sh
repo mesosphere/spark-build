@@ -25,7 +25,7 @@ pushd build/spark-universe
 popd
 
 if [ -x "$(command -v zip)" ]; then
-    zip -r build/spark-universe.zip build/spark-universe
+    (cd build && zip -r spark-universe.zip spark-universe)
 else
     # TODO: remove the docker wrapper once `zip` is available on TC
     docker run -v $(pwd)/build/:/build/ ubuntu:latest sh -c "apt-get install -y zip && cd /build/ && zip -r spark-universe.zip spark-universe"
