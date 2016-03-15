@@ -41,7 +41,7 @@
         "type": "DOCKER",
         "docker": {
             "image": "{{resource.assets.container.docker.spark_docker}}",
-            "network": "HOST",
+            "Network": "HOST",
             "forcePullImage": true
         }
     },
@@ -65,11 +65,13 @@
     "labels": {
         {{#hdfs.config-url}}"SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",{{/hdfs.config-url}}
         "SPARK_URI": "{{spark.uri}}",
+        "DCOS_SERVICE_NAME": "{{spark.framework-name}}",
+        "DCOS_SERVICE_PORT_INDEX": "4",
 {{#spark.ssl.enabled}}
-        "DCOS_SERVICE": "https:{{spark.framework-name}}:4"
+        "DCOS_SERVICE_SCHEME": "https"
 {{/spark.ssl.enabled}}
 {{^spark.ssl.enabled}}
-        "DCOS_SERVICE": "http:{{spark.framework-name}}:4"
+        "DCOS_SERVICE_SCHEME": "http"
 {{/spark.ssl.enabled}}
     }
 }
