@@ -10,10 +10,7 @@ rm -rf build/spark-universe*
 ./bin/make-package.py
 
 # download universe
-wget -O build/spark-universe.zip https://github.com/mesosphere/universe/archive/version-2.x.zip
-unzip -d build build/spark-universe.zip
-mv build/universe-version-2.x build/spark-universe
-rm build/spark-universe.zip
+git clone -b version-2.x git@github.com:mesosphere/universe.git build/spark-universe
 
 # make new universe
 SPARK_DIR=build/spark-universe/repo/packages/S/spark
