@@ -10,7 +10,7 @@ rm -rf build/spark-universe*
 ./bin/make-package.py
 
 # download universe
-git clone -b version-2.x git@github.com:mesosphere/universe.git build/spark-universe
+git clone -b version-2.x https://github.com/mesosphere/universe.git build/spark-universe
 
 # make new universe
 SPARK_DIR=build/spark-universe/repo/packages/S/spark
@@ -19,11 +19,7 @@ cp -r build/package ${SPARK_DIR}/0
 
 pushd build/spark-universe
 ./scripts/build.sh
+git checkout -b ${GITHUB_USER:-${USER}}
+git add *
+git commit -m "test build"
 popd
-
-if [ -x "$(command -v zip)" ]; then
-    zip -r build/spark-universe.zip build/spark-universe
-else
-    # TODO: remove the docker wrapper once `zip` is available on TC
-    docker run -v $(pwd)/build/:/build/ ubuntu:latest sh -c "apt-get install -y zip && cd /build/ && zip -r spark-universe.zip spark-universe"
-fi
