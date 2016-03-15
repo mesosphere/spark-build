@@ -107,6 +107,63 @@
                     "type": "string",
                     "description": "Spark distribution URI",
                     "default": "$spark_uri"
+                },
+                "ssl": {
+                    "description": "Spark SSL certificates and private key configuration.",
+                    "properties": {
+                        "enabled": {
+                            "default": false,
+                            "description": "Set to true to enable SSL.",
+                            "type": "boolean"
+                        },
+                        "keyStoreBase64": {
+                            "default": "",
+                            "description": "Base64 encoded blob containing a Java keystore.",
+                            "type": "string"
+                        },
+                        "trustStoreBase64": {
+                            "default": "",
+                            "description": "Base64 encoded blob containing a Java truststore.",
+                            "type": "string"
+                        },
+                        "keyPassword": {
+                            "default": "",
+                            "description": "An optional password for the private key in the keystore.",
+                            "type": "string"
+                        },
+                        "keyStorePassword": {
+                            "default": "",
+                            "description": "An optional password for the keystore (and the key if keyPassword is not given).",
+                            "type": "string"
+                        },
+                        "trustStorePassword": {
+                            "default": "",
+                            "description": "An optional password for the truststore.",
+                            "type": "string"
+                        },
+                        "protocol": {
+                            "default": "TLSv1.2",
+                            "description": "The TLS version to offer.",
+                            "type": "string"
+                        },
+                        "enabledAlgorithms": {
+                            "default": "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA,SSL_DH_anon_WITH_3DES_EDE_CBC_SHA,SSL_DH_anon_WITH_DES_CBC_SHA,SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA,SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA,SSL_DHE_DSS_WITH_DES_CBC_SHA,SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_DES_CBC_SHA,SSL_RSA_EXPORT_WITH_DES40_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_DES_CBC_SHA,SSL_RSA_WITH_NULL_MD5,SSL_RSA_WITH_NULL_SHA,TLS_DH_anon_WITH_AES_128_CBC_SHA,TLS_DH_anon_WITH_AES_128_CBC_SHA256,TLS_DH_anon_WITH_AES_128_GCM_SHA256,TLS_DH_anon_WITH_AES_256_CBC_SHA,TLS_DH_anon_WITH_AES_256_CBC_SHA256,TLS_DH_anon_WITH_AES_256_GCM_SHA384,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA256,TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,TLS_DHE_DSS_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA256,TLS_DHE_DSS_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_anon_WITH_AES_128_CBC_SHA,TLS_ECDH_anon_WITH_AES_256_CBC_SHA,TLS_ECDH_anon_WITH_NULL_SHA,TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_ECDSA_WITH_NULL_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_RSA_WITH_NULL_SHA,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_NULL_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_NULL_SHA,TLS_EMPTY_RENEGOTIATION_INFO_SCSV,TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5,TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA,TLS_KRB5_WITH_3DES_EDE_CBC_MD5,TLS_KRB5_WITH_3DES_EDE_CBC_SHA,TLS_KRB5_WITH_DES_CBC_MD5,TLS_KRB5_WITH_DES_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_NULL_SHA256",
+                            "description": "A comma-separared list of allowed ciphers.",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "kerberos": {
+                    "description": "Spark Kerberos configuration.",
+                    "properties": {
+                        "krb5conf": {
+                            "default": "",
+                            "description": "Base64 encoded krb5.conf file that is copied to the driver and the executor (not evailable in OpenSource version).",
+                            "type": "string"
+                        }
+                    },
+                     "type": "object"
                 }
             },
             "required": [
