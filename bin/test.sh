@@ -78,7 +78,7 @@ run_tests() {
         -Daws.secret_key=${TEST_AWS_SECRET_ACCESS_KEY} \
         -Daws.s3.bucket=${TEST_S3_BUCKET} \
         -Daws.s3.prefix=${TEST_S3_PREFIX} \
-        "dcos ${DCOS_URL}"
+        "dcos"
     popd
 }
 
