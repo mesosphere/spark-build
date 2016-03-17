@@ -5,13 +5,8 @@
 #
 # ENV vars:
 #
-#  SPARK_DIST - spark-1.6.0-bin-hadoop2.4.tgz
-#  DCOS_TESTS_DIR - dcos-tests/
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #
-#  VERSION - docker image and package.json version
-#  SPARK_URI - marathon.json spark uri
-#  DOCKER_IMAGE - marathon.json docker image (w/o the tag)
 #  CLUSTER_NAME - name to use for CCM cluster#
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
@@ -25,23 +20,23 @@
 set -x -e
 set -o pipefail
 
-FULL_DOCKER_IMAGE=${DOCKER_IMAGE}:${VERSION}
+# FULL_DOCKER_IMAGE=${DOCKER_IMAGE}:${VERSION}
 
-build_docker() {
-    mkdir -p build/spark
-    tar xvf ${SPARK_DIST} -C build/spark
-    ./bin/make-docker.sh build/spark/spark*/ ${FULL_DOCKER_IMAGE}
-    docker push ${FULL_DOCKER_IMAGE}
-}
+# build_docker() {
+#     mkdir -p build/spark
+#     tar xvf ${SPARK_DIST} -C build/spark
+#     ./bin/make-docker.sh build/spark/spark*/ ${FULL_DOCKER_IMAGE}
+#     docker push ${FULL_DOCKER_IMAGE}
+# }
 
 build_universe() {
     # create universe
-    jq --arg version ${VERSION} \
-       --arg uri ${SPARK_URI} \
-       --arg image ${FULL_DOCKER_IMAGE} \
-       '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
-       manifest.json > manifest.json.tmp
-    mv manifest.json.tmp manifest.json
+    # jq --arg version ${VERSION} \
+    #    --arg uri ${SPARK_URI} \
+    #    --arg image ${FULL_DOCKER_IMAGE} \
+    #    '{python_package, "version": $version, "spark_uri": $uri, "docker_image": $image}' \
+    #    manifest.json > manifest.json.tmp
+    # mv manifest.json.tmp manifest.json
     ./bin/make-package.py
     (cd build && tar czf package.tgz package)
     ./bin/make-universe.sh
@@ -88,7 +83,7 @@ run_tests() {
     popd
 }
 
-build_docker;
+# build_docker;
 build_universe;
 start_cluster;
 configure_cli;
