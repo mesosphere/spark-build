@@ -54,8 +54,7 @@ configure_cli() {
          aws s3 cp ./build/spark-universe.zip "s3://${TEST_S3_BUCKET}/${TEST_S3_PREFIX}" --acl public-read
 
     dcos config set core.dcos_url "${DCOS_URL}"
-    dcos package repo remove Universe
-    dcos package repo add spark-test "http://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_PREFIX}spark-universe.zip"
+    dcos package repo add --index=0 spark-test "http://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_PREFIX}spark-universe.zip"
     # dcos config set package.sources "[\"file://$(pwd)/build/spark-universe\"]"
     # dcos package update
 }
