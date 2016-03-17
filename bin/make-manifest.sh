@@ -12,9 +12,9 @@ set -x -e
 
 
 build_docker() {
+    mkdir -p build/spark
     pushd build
-    #wget "${SPARK_URI}"
-    mkdir -p spark
+    wget "${SPARK_URI}"
     tar xvf spark*.tgz -C spark
     popd
     ./bin/make-docker.sh build/spark/spark* ${DOCKER_IMAGE}
