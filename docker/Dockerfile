@@ -43,8 +43,6 @@ ADD hadoop/* /etc/hadoop/
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
 ADD nginx /etc/nginx
-ADD html /usr/share/nginx/html
-RUN chmod 644 /usr/share/nginx/html/*
 
 #RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
 

@@ -49,10 +49,10 @@
         {
 {{#spark.ssl.enabled}}
             "protocol": "COMMAND",
-            "command": { "value": "curl -f -k https://$HOST:$PORT3/dispatcher/" },
+            "command": { "value": "curl -f -k https://$HOST:$PORT3/" },
 {{/spark.ssl.enabled}}
 {{^spark.ssl.enabled}}
-            "path": "/dispatcher/",
+            "path": "/",
             "portIndex": 3,
             "protocol": "HTTP",
 {{/spark.ssl.enabled}}

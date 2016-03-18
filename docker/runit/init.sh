@@ -17,7 +17,7 @@ fi
 
 export WEBUI_URL="${SCHEME}://${FRAMEWORK_NAME}${DNS_SUFFIX}:${SPARK_PROXY_PORT}"
 export HISTORY_SERVER_WEB_PROXY_BASE="/service/${FRAMEWORK_NAME}/history"
-export DISPATCHER_UI_WEB_PROXY_BASE="/service/${FRAMEWORK_NAME}/dispatcher"
+export DISPATCHER_UI_WEB_PROXY_BASE="/service/${FRAMEWORK_NAME}"
 
 # configure history server
 if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
