@@ -34,9 +34,7 @@ start_cluster() {
 }
 
 configure_cli() {
-    AWS_ACCESS_KEY_ID="${TEST_AWS_ACCESS_KEY_ID}" \
-         AWS_SECRET_ACCESS_KEY="${TEST_AWS_SECRET_ACCESS_KEY}" \
-         aws s3 cp ./build/spark-universe.zip "s3://${TEST_S3_BUCKET}/${TEST_S3_PREFIX}" --acl public-read
+    aws s3 cp ./build/spark-universe.zip "s3://${TEST_S3_BUCKET}/${TEST_S3_PREFIX}" --acl public-read
 
     dcos config set core.dcos_url "${DCOS_URL}"
     dcos package repo add --index=0 spark-test "http://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_PREFIX}spark-universe.zip"
