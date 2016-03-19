@@ -12,10 +12,10 @@
 #                        cluster, and not spin up a new one.
 #
 #  AWS vars used for tests:
-#  TEST_AWS_ACCESS_KEY_ID
-#  TEST_AWS_SECRET_ACCESS_KEY
-#  TEST_S3_BUCKET
-#  TEST_S3_PREFIX
+#  AWS_ACCESS_KEY_ID
+#  AWS_SECRET_ACCESS_KEY
+#  S3_BUCKET
+#  S3_PREFIX
 
 set -x -e
 set -o pipefail
@@ -57,10 +57,10 @@ install_spark() {
 run_tests() {
     pushd ${TEST_RUNNER_DIR}
     sbt -Dconfig.file=src/main/resources/dcos-application.conf \
-        -Daws.access_key=${TEST_AWS_ACCESS_KEY_ID} \
-        -Daws.secret_key=${TEST_AWS_SECRET_ACCESS_KEY} \
-        -Daws.s3.bucket=${TEST_S3_BUCKET} \
-        -Daws.s3.prefix=${TEST_S3_PREFIX} \
+        -Daws.access_key=${AWS_ACCESS_KEY_ID} \
+        -Daws.secret_key=${AWS_SECRET_ACCESS_KEY} \
+        -Daws.s3.bucket=${S3_BUCKET} \
+        -Daws.s3.prefix=${S3_PREFIX} \
         "dcos"
     popd
 }
