@@ -40,8 +40,6 @@ configure_cli() {
 
     dcos config set core.dcos_url "${DCOS_URL}"
     dcos package repo add --index=0 spark-test "http://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_PREFIX}spark-universe.zip"
-    # dcos config set package.sources "[\"file://$(pwd)/build/spark-universe\"]"
-    # dcos package update
 }
 
 install_spark() {
@@ -63,7 +61,7 @@ run_tests() {
         -Daws.secret_key=${TEST_AWS_SECRET_ACCESS_KEY} \
         -Daws.s3.bucket=${TEST_S3_BUCKET} \
         -Daws.s3.prefix=${TEST_S3_PREFIX} \
-        "dcos ${DCOS_URL}"
+        "dcos"
     popd
 }
 
