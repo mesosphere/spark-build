@@ -14,7 +14,7 @@ set -x -e
 build_docker() {
     mkdir -p build/spark
 
-    SPARK_URI=$(cat .manifest.json | jq .spark_uri)
+    SPARK_URI=$(cat manifest.json | jq .spark_uri)
     SPARK_URI="${SPARK_URI%\"}"
     SPARK_URI="${SPARK_URI#\"}"
 
