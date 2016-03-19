@@ -6,14 +6,23 @@ import shutil
 import sys
 
 def main():
-    with open("manifest.json") as f:
-        manifest = json.load(f)
-
     try:
         os.mkdir('build/package')
     except OSError:
         pass
 
+    with open("manifest.json") as f:
+        manifest = json.load(f)
+
+    if os.getenv("DOCKER_IMAGE") is None:
+        raise ValueError("DOCKER_IMAGE is a required env var.")
+    else:
+        manifest['docker_image'] = os.getenv("DOCKER_IMAGE")
+
+    if os.getenv("PACKAGE_VERSION") is not None:
+        manifest["version"] = os.getenv("PACKAGE_VERSION")
+
+    # write template vars
     template_filenames = ['package/package.json',
                           'package/command.json',
                           'package/marathon.json.mustache',
