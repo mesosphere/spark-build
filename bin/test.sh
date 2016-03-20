@@ -37,7 +37,7 @@ configure_cli() {
     aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_PREFIX}" --acl public-read
 
     dcos config set core.dcos_url "${DCOS_URL}"
-    dcos package repo add --index=0 spark-test "http://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_PREFIX}spark-universe.zip"
+    dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-universe.zip"
 }
 
 install_spark() {
