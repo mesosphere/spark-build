@@ -6,7 +6,7 @@
 #
 # ENV vars:
 #   DOCKER_IMAGE - <image>:<version> to build
-#   PACKAGE_VERSION (optional) - e.g. 1.6.1
+#   VERSION (optional) - e.g. 1.6.1
 
 set -x -e
 

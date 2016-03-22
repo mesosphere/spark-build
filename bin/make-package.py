@@ -19,8 +19,8 @@ def main():
     else:
         manifest['docker_image'] = os.getenv("DOCKER_IMAGE")
 
-    if os.getenv("PACKAGE_VERSION") is not None:
-        manifest["version"] = os.getenv("PACKAGE_VERSION")
+    if os.getenv("VERSION") is not None:
+        manifest["version"] = os.getenv("VERSION")
 
     # write template vars
     template_filenames = ['package/package.json',
