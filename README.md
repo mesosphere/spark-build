@@ -15,10 +15,13 @@ Create a package
 ---
 
 ```
-./bin/make-package.py
+export DOCKER_IMAGE=...
+./bin/make-package.sh
 ```
 
-This produces a new package in `build/package`
+This command builds a docker image, pushes it, and writes a new
+package to `build/package`.  It uses the components listed in
+`manifest.json`.
 
 Create a universe
 ---
@@ -40,7 +43,8 @@ Create a docker image
 * `<spark-dist>`: path to spark distribution
 * `<image>`: name of docker image
 
-This creates a new docker image from the given spark distribution.
+This creates a new docker image from the given spark distribution.  It
+is called by `./bin/make-package.sh`.
 
 
 Test
