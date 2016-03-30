@@ -16,7 +16,6 @@ Spark User's Guide
         * [Ticket](#ticket)
       * [HDFS Configuration](#hdfs-configuration)
       * [Installation](#installation)
-      * [Troubleshooting](#troubleshooting)
     * [History Server](#history-server)
     * [SSL](#ssl)
   * [Multiple Install](#multiple-install)
