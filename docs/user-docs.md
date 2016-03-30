@@ -157,7 +157,6 @@ For DCOS HDFS, these config files are served at
 `<hdfs.framework-name>` is a config var set in the HDFS package, and
 `<port>` is the port of its marathon app.
 
-
 #### HDFS Kerberos
 
 You can access external (i.e. non-DCOS) Kerberos-secured HDFS clusters
@@ -172,7 +171,6 @@ Keytabs are valid infinitely, while tickets can expire. Especially for
 long-running streaming jobs, keytabs are recommended.
 
 ###### Keytab
-
 
 On Unix machines with Heimdal Kerberos, the following command creates
 a compatible keytab:
@@ -322,9 +320,8 @@ but it requires on HDFS, so you must explicitly enable it.
 
 SSL support in DCOS Spark encrypts the following channels:
 
-    From the DCOS admin router to the Dispatcher.
-    From the Dispatcher to the drivers.
-    From the drivers to their executors.
+- From the [DCOS adminrouter][DCOS Components] to the Dispatcher.
+- From the Spark drivers to their executors.
 
 There are a number of configuration variables relevant to SSL setup.
 For a complete listing, run:
@@ -569,4 +566,6 @@ http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-
 [DCOS HDFS]: https://docs.mesosphere.com/manage-service/hdfs/
 [DCOS Kafka]: https://docs.mesosphere.com/manage-service/kafka/
 [DCOS Zeppelin]: https://zeppelin.incubator.apache.org
-[Java Keytool]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
+[DCOS Components]: https://docs.mesosphere.com/administration/dcosarchitecture/components/
+[Java Keytool]:
+http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
