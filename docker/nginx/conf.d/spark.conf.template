@@ -9,9 +9,6 @@ server {
 #https#    ssl_certificate     spark.crt;
 #https#    ssl_certificate_key spark.key;
 
-    root /usr/share/nginx/html;
-    index index.html;
-
     location /v1 {
         proxy_pass <DISPATCHER_URL>;
 
@@ -26,8 +23,7 @@ server {
         proxy_read_timeout 600s;
    }
 
-   location /dispatcher/ {
-        proxy_redirect http://$host $scheme://$host/dispatcher;
+   location / {
         proxy_pass <DISPATCHER_UI_URL>/;
         proxy_set_header Host $host;
    }
