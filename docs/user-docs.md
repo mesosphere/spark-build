@@ -169,7 +169,7 @@ a compatible keytab:
 $ ktutil -k user.keytab add -p user@REALM -e aes256-cts-hmac-sha1-96 -V 1
 ```
 
-To create: <!-- how could we be more precise? If we created the keytab in the previous step, what are we creating now? -->
+To create:
 
 ```bash
 $ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
@@ -233,11 +233,11 @@ core-site.xml of Hadoop in this way:
 ##### Installation
 
 To enable Kerberos in Spark, provide the following
-configuration variable during installation: <!-- what does the rest of the JSON look like? -->
+configuration variable during installation:
 
 `spark.kerberos.krb5conf`
 
-This is the base64 encoding of a `krb5.conf` file: <!-- does this need to happen before the step above? -->
+This is the base64 encoding of a `krb5.conf` file:
 
 ```bash
 $ cat krb5.conf | base64
@@ -477,7 +477,7 @@ The Spark Dispatcher persists state in Zookeeper, so to fully
 uninstall the Spark DCOS package, you must go to
 `http://<dcos-url>/exhibitor`, click on `Explorer`, and delete the znode
 corresponding to your instance of Spark.  By default this is
-`spark_mesos_Dispatcher`. <!-- Mohit's framework cleaner doesn't work for Spark? -->
+`spark_mesos_Dispatcher`.
 
 ## Runtime Configuration Change
 
@@ -492,7 +492,7 @@ You can customize DCOS Spark in-place when it is up and running.
    tab, then click the `Edit` button.
 
 4. In the dialog that appears, expand the `Environment Variables`
-   section and update any field(s) to their desired value(s). <!-- are there any values that *should not* change? -->
+   section and update any field(s) to their desired value(s).
 
 5. Click `Change and deploy configuration` to apply any changes and
    cleanly reload Spark.
@@ -516,7 +516,7 @@ configured as you expect.
 
 - The dispatcher further provides a link to the job's entry in the
 history server, which will render the Spark Job UI. This UI renders
-the schedule for the job. <!-- not sure what "render" means here -- "displays?" --> Go here to debug issues with scheduling and performance.
+the schedule for the job. Go here to debug issues with scheduling and performance.
 
 - Jobs themselves log output to their sandbox, which you can access
 through the Mesos web interface. The Spark logs will be sent to `stderr`, while
