@@ -97,7 +97,7 @@ DCOS Spark includes:
 ## Install
 
 To start a basic Spark cluster, run the following command on the DCOS
-CLI. This command installs the dispatcher, and, optionally, the history server. See "Custom Installation," below, to install the history server. <!-- add anchor link -->
+CLI. This command installs the dispatcher, and, optionally, the history server. See [Custom Installation](#custom) to install the history server.
 
     ```bash
     $ dcos package install spark
@@ -106,7 +106,7 @@ CLI. This command installs the dispatcher, and, optionally, the history server. 
 Monitor the deployment at `http://<dcos-url>/marathon`. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
-### Custom Installation
+### Custom Installation <a name="custom"></a>
 
 You can customize the default configuration properties by creating a JSON options file and passing it to `dcos package install --options`. For example, to install the history server, create a file called `options.json`:
 
