@@ -29,6 +29,7 @@ Spark User's Guide
   * [Dispatcher](#dispatcher)
   * [Jobs](#jobs)
   * [CLI](#cli)
+  * [HDFS Kerberos](#cli)
 * [Limitations](#limitations)
 
 ## Overview
@@ -400,7 +401,7 @@ $ dcos config set spark.app_id <framework-name>
 
 ### Setting Spark properties
 
-Spark job settings are controlled by configuring[Spark properties][Spark Properties].  You can set Spark properties during submission, or you can create a configuration file.
+Spark job settings are controlled by configuring [Spark properties][Spark Properties].  You can set Spark properties during submission, or you can create a configuration file.
 
 #### Submission
 
@@ -423,7 +424,7 @@ MySampleClass http://external.website/mysparkapp.jar 30`
 
 #### Configuration file
 
-To set Spark properties with a configuration file, create a `spark-defaults.conf` file and set the environment variable `SPARK_CONF_DIR` to the containing directory.  For more info, [see here][Spark Overriding Configuration Directory]
+To set Spark properties with a configuration file, create a `spark-defaults.conf` file and set the environment variable `SPARK_CONF_DIR` to the containing directory. For more info, [see here][Spark Overriding Configuration Directory].
 
 
 ## Uninstall
@@ -432,7 +433,7 @@ To set Spark properties with a configuration file, create a `spark-defaults.conf
 $ dcos package uninstall --app-id=<app-id> spark
 ```
 
-The Spark Dispatcher persists state in Zookeeper, so to fully uninstall the Spark DCOS package, you must go to `http://<dcos-url>/exhibitor`, click on `Explorer`, and delete the znode corresponding to your instance of Spark. By default this is `spark_mesos_Dispatcher`.
+The Spark dispatcher persists state in Zookeeper, so to fully uninstall the Spark DCOS package, you must go to `http://<dcos-url>/exhibitor`, click on `Explorer`, and delete the znode corresponding to your instance of Spark. By default this is `spark_mesos_Dispatcher`.
 
 ## Runtime Configuration Change
 
@@ -444,7 +445,7 @@ You can customize DCOS Spark in-place when it is up and running.
 
 3. Within the Spark instance details view, click the `Configuration` tab, then click the `Edit` button.
 
-4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). <!-- are there any values that *should not* change? -->
+4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s).
 
 5. Click `Change and deploy configuration` to apply any changes and cleanly reload Spark.
 
@@ -458,7 +459,7 @@ The Mesos cluster dispatcher is responsible for queuing, tracking, and supervisi
 
 - DCOS Spark jobs are submitted through the dispatcher, which displays Spark properties and job state. Start here to verify that the job is configured as you expect.
 
-- The dispatcher further provides a link to the job's entry in the history server, which will render the Spark Job UI. This UI renders the schedule for the job. <!-- not sure what "render" means here -- "displays?" --> Go here to debug issues with scheduling and performance.
+- The dispatcher further provides a link to the job's entry in the history server, which displays the Spark Job UI. This UI shows the for the job. Go here to debug issues with scheduling and performance.
 
 - Jobs themselves log output to their sandbox, which you can access through the Mesos UI. The Spark logs will be sent to `stderr`, while any output you write in your job will be sent to `stdout`.
 
