@@ -1,5 +1,5 @@
 {
-    "python_package": "https://downloads.mesosphere.com/spark/assets/dcos_spark-0.5.9-py2.py3-none-any.whl"
+    "python_package": "https://downloads.mesosphere.com/spark/assets/dcos_spark-0.5.9-py2.py3-none-any.whl",
     "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.1-1.tgz",
     "version": "1.6.1"
 }
