@@ -6,10 +6,8 @@ import shutil
 import sys
 
 def main():
-    try:
-        os.mkdir('build/package')
-    except OSError:
-        pass
+    if not os.path.isdir('build/package'):
+        os.makedirs('build/package')
 
     with open("manifest.json") as f:
         manifest = json.load(f)

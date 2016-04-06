@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
-# creates build/spark-universe, build/spark-universe.zip
+# creates
+# - build/spark-universe
+# - build/spark-universe.zip
 
 set -x -e
 
 rm -rf build/spark-universe*
 
 # make spark package
-./bin/make-package.py
+# TODO(mgummelt): remove this after some time
+# ./bin/make-package.py
 
 # download universe
 wget -O build/spark-universe.zip https://github.com/mesosphere/universe/archive/version-2.x.zip
