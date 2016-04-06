@@ -1,115 +1,103 @@
 {
     "type": "object",
     "properties": {
-        "mesos": {
-            "description": "Mesos specific configuration properties",
+        "service": {
+            "description": "DCOS Spark configuration properties",
             "type": "object",
             "properties": {
-                "master": {
-                    "default": "mesos://zk://master.mesos:2181/mesos",
-                    "description": "The URL of the Mesos master. The format is a comma-delimited list of hosts like zk://host1:port,host2:port/mesos. If using ZooKeeper, pay particular attention to the leading zk:// and trailing /mesos! If not using ZooKeeper, standard host:port patterns, like localhost:5050 or 10.0.0.5:5050,10.0.0.6:5050, are also acceptable.",
+                "name": {
+                    "default": "spark",
+                    "description": "The Spark Dispatcher will register with Mesos with this as a framework name.  This service will be available at http://<dcos_url>/service/<name>/",
                     "type": "string"
-                }
-            },
-            "required": [
-                "master"
-            ]
-        },
-        "spark": {
-            "description": "Spark Framework Configuration Properties",
-            "type": "object",
-            "properties": {
-                "history-server": {
-                    "description": "Spark-History Server configuration properties",
-                    "type": "object",
-                    "properties": {
-                        "enabled": {
-                            "description": "Set to true to enable the Spark history server.",
-                            "type": "boolean",
-                            "default": false
-                        },
-                        "log-dir": {
-                            "description": "Base directory in which Spark events are logged if spark.history-server.enabled is set to true. Users may want to set this to a unified location like an HDFS directory so history files can be read by the history server. Note that this directory must exist prior to installing the Spark package.",
-                            "type": "string",
-                            "default": "hdfs://hdfs/history"
-                        },
-                        "cleaner-enabled": {
-                            "description": "Specifies whether the History Server should periodically clean up event logs from storage.",
-                            "type": "boolean",
-                            "default": false
-                        },
-                        "cleaner-interval": {
-                            "default": "1d",
-                            "description": "How often the job history cleaner checks for files to delete. Files are only deleted if they are older than spark.history-server.cleaner-maxage.",
-                            "type": "string"
-                        },
-                        "cleaner-maxage": {
-                            "default": "7d",
-                            "description": "Job history files older than this will be deleted when the history cleaner runs.",
-                            "type": "string"
-                        }
-                    }
-                },
-                "dns-suffix": {
-                    "default": ".marathon.mesos",
-                    "description": "This value is appended to the framework-name value to form the canonical DNS name for the Spark components.",
-                    "type": "string",
-                    "pattern": "^(?:\\.[a-z][a-z0-9]*?(?:-[a-z0-9]+)*)+$"
-                },
-                "framework-name": {
-                    "description": "The name of the framework. Until this is configurable, please do not change this from it's default value.",
-                    "type": "string",
-                    "default": "spark"
-                },
-                "host": {
-                    "type": "string",
-                    "description": "The host that the Spark cluster dispatcher will register under.",
-                    "default": "$HOST"
                 },
                 "cpus": {
                     "default": 1,
-                    "description": "CPU shares to allocate to each Marathon instance.",
+                    "description": "CPU shares",
                     "minimum": 0.0,
                     "type": "number"
                 },
-                "instances": {
-                    "default": 1,
-                    "description": "Number of Marathon instances to run.",
-                    "minimum": 0,
-                    "type": "integer"
-                },
                 "mem": {
                     "default": 1024.0,
-                    "description": "Memory (MB) to allocate to each Marathon task.",
+                    "description": "Memory (MB)",
                     "minimum": 1024.0,
                     "type": "number"
                 },
-                "mesos-user": {
-                    "description": "Mesos user to run the executor under",
-                    "type": "string",
-                    "default": "root"
-                },
-                "mesos-role": {
-                    "description": "Mesos role the Dispatcher will be registered with.",
+                "role": {
+                    "description": "The Spark Dispatcher will register with Mesos with this role.",
                     "type": "string",
                     "default": "*"
                 },
-                "dispatcher-java-opts": {
-                    "description": "Java options set when starting the Spark dispatcher.",
+                "principal": {
+                    "description": "The Spark Dispatcher will register with Mesos with this principal.",
+                    "type": "string",
+                    "default": ""
+                },
+                "secret": {
+                    "description": "The Spark Dispatcher will register with mesos with this secret.",
+                    "type": "string",
+                    "default": ""
+                },
+                "user": {
+                    "description": "Executors will run as this user.",
+                    "type": "string",
+                    "default": "root"
+                },
+                "spark-dist-uri": {
+                    "type": "string",
+                    "description": "Spark distribution URI.  The DCOS Spark CLI will fetch this Spark distribution.  This variable has no effect on the Spark distribution running the dispatcher or the drivers.  The Docker image running this Marathon app contains that distribution.",
+                    "default": "$spark_uri"
+                }
+            }
+        },
+        "history-server": {
+            "description": "History Server configuration properties",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Set to true to enable the Spark history server.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "log-dir": {
+                    "description": "Base directory in which Spark events are logged if spark.history-server.enabled is set to true. Users may want to set this to a unified location like an HDFS directory so history files can be read by the history server. Note that this directory must exist prior to installing the Spark package.",
+                    "type": "string",
+                    "default": "hdfs://hdfs/history"
+                },
+                "cleaner-enabled": {
+                    "description": "Specifies whether the History Server should periodically clean up event logs from storage.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "cleaner-interval": {
+                    "default": "1d",
+                    "description": "How often the job history cleaner checks for files to delete. Files are only deleted if they are older than spark.history-server.cleaner-maxage.",
                     "type": "string"
                 },
-                "zookeeper": {
-                    "type": "string",
-                    "description": "URL to the Zookeeper that Spark cluster framework connects to persist state to. (l.e: zk://0.0.0.0:2181)",
-                    "default": "master.mesos:2181"
-                },
-                "uri": {
-                    "type": "string",
-                    "description": "Spark distribution URI",
-                    "default": "$spark_uri"
+                "cleaner-maxage": {
+                    "default": "7d",
+                    "description": "Job history files older than this will be deleted when the history cleaner runs.",
+                    "type": "string"
+                }
+            }
+        },
+        "security": {
+            "description": "Spark security properties",
+            "type": "object",
+            "properties": {
+                "kerberos": {
+                    "description": "Spark Kerberos configuration.",
+                    "type": "object",
+                    "properties": {
+                        "krb5conf": {
+                            "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC.",
+                            "type": "string",
+                            "default": ""
+                        }
+                    }
                 },
                 "ssl": {
                     "description": "Spark SSL certificates and private key configuration.",
+                    "type": "object",
                     "properties": {
                         "enabled": {
                             "default": false,
@@ -151,29 +139,9 @@
                             "description": "A comma-separared list of allowed ciphers.",
                             "type": "string"
                         }
-                    },
-                    "type": "object"
-                },
-                "kerberos": {
-                    "description": "Spark Kerberos configuration.",
-                    "properties": {
-                        "krb5conf": {
-                            "default": "",
-                            "description": "Base64 encoded krb5.conf file that is copied to the driver and the executor (not evailable in OpenSource version).",
-                            "type": "string"
-                        }
-                    },
-                     "type": "object"
+                    }
                 }
-            },
-            "required": [
-                "cpus",
-                "framework-name",
-                "instances",
-                "mem",
-                "zookeeper",
-                "uri"
-            ]
+            }
         },
         "hdfs": {
             "description": "Spark-HDFS configuration properties",
@@ -185,9 +153,5 @@
                 }
             }
         }
-    },
-    "required": [
-  	    "mesos",
-        "spark"
-    ]
+    }
 }

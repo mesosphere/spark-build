@@ -1,62 +1,47 @@
-Spark DCOS Package
-===
+# Spark DCOS Package
 
 This repo lets you configure, build, and test a new Spark DCOS package.
 It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
 described below.
 
-Configuring
----
+## Configuring
 
 edit `manifest.json`.
 
-Create a package
----
+## Push a docker image
+
+This will make a docker image from the distribution specified in `manifest.json`
 
 ```
-export DOCKER_IMAGE=...
-./bin/make-package.sh
+DOCKER_IMAGE=<name> make docker
 ```
 
-This command builds a docker image, pushes it, and writes a new
-package to `build/package`.  It uses the components listed in
-`manifest.json`.
+## Create a package
 
-Create a universe
----
+Write a package to `build/package`.  Use the `DOCKER_IMAGE` name you
+created above.
 
 ```
-./bin/make-universe.sh
+DOCKER_IMAGE=<name> make package
 ```
 
-This produces a new universe in `build/universe`.  You can then point your
-local `dcos` to this location via `dcos config set package.sources`.
+## Create a universe
 
-Create a docker image
----
+Write a universe to `build/universe`.  You can then upload this to
+e.g. S3, and point your DCOS cluster at it via `dcos package repo
+add`.
 
 ```
-./bin/make-docker.sh <spark-dist> <image>
+make universe
 ```
 
-* `<spark-dist>`: path to spark distribution
-* `<image>`: name of docker image
 
-This creates a new docker image from the given spark distribution.  It
-is called by `./bin/make-package.sh`.
-
-
-Test
----
+## Test
 
 ```
 ./bin/test.sh
 ```
 
-This performs every build step, including tests.  It builds spark, the docker image,
-the package, and the universe.  It spins up a CCM cluster and tests spark against that
-cluster.
-
-It requires several env variables.  Read the comment at the top of the file for a
-complete description.
+This requires several env variables, and is primarily used in CI.
+Read the comment at the top of the file for a complete description.

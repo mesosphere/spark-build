@@ -15,17 +15,18 @@ if [ "${SPARK_SSL_ENABLED}" == true ]; then
 	OTHER_SCHEME=http
 fi
 
-export WEBUI_URL="${SCHEME}://${FRAMEWORK_NAME}${DNS_SUFFIX}:${SPARK_PROXY_PORT}"
-export HISTORY_SERVER_WEB_PROXY_BASE="/service/${FRAMEWORK_NAME}/history"
-export DISPATCHER_UI_WEB_PROXY_BASE="/service/${FRAMEWORK_NAME}"
+# TODO(mgummelt): I'm pretty sure this isn't used.  Remove after some time.
+# export WEBUI_URL="${SCHEME}://${FRAMEWORK_NAME}${DNS_SUFFIX}:${SPARK_PROXY_PORT}"
+
+export HISTORY_SERVER_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}/history"
+export DISPATCHER_UI_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}"
 
 # configure history server
 if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
     ln -s /var/lib/runit/service/history-server /etc/service/history-server
 fi
 
-# remove whole lines with the wrong scheme, remove #<SCHEME># string only for
-# the scheme we want to configure.
+# Update nginx spark.conf to use http or https
 grep -v "#${OTHER_SCHEME}#" /etc/nginx/conf.d/spark.conf.template |
 	sed "s,#${SCHEME}#,," >/etc/nginx/conf.d/spark.conf
 
@@ -39,7 +40,7 @@ sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
 # bytes cipher strings of Java.
 # sed -i "s,<ENABLED_ALGORITHMS>,${SPARK_SSL_ENABLEDALGORITHMS//,/:}," /etc/nginx/conf.d/spark.conf
 
-# extract cert and key from keystore
+# extract cert and key from keystore, write to /etc/nginx/spark.{crt,key}
 if [ "${SPARK_SSL_ENABLED}" == true ]; then
 	KEYDIR=`mktemp -d`
 	trap "rm -rf $KEYDIR" EXIT
