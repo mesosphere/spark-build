@@ -91,6 +91,8 @@ Run the following command to see all configuration options:
 $ dcos package describe spark --config
 ```
 
+<a name="hdfs"></a>
+
 ### HDFS
 
 By default, DCOS Spark jobs are configured to read from DCOS HDFS. To submit Spark jobs that read from a different HDFS cluster, customize `hdfs.config-url` to be a URL that serves `hdfs-site.xml` and `core-site.xml`. [Learn more][8].
@@ -139,7 +141,8 @@ $ dcos spark run --principal user@REALM --tgt &lt;ticket-file-path&gt; …
 
 #### HDFS Configuration
 
-Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect to it. See instructions \[here\](#Custom HDFS).
+Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to
+connect to it. See instructions [here](#hdfs).
 
 It is assumed that the HDFS namenodes are configured in the core-site.xml of Hadoop in this way:
 
