@@ -71,10 +71,8 @@ You can customize the default configuration properties by creating a JSON option
 
 ```
 {
-  "spark": {
-    "history-server": {
-      "enabled": true
-    }
+  "history-server": {
+    "enabled": true
   }
 }
 ```
@@ -187,7 +185,7 @@ This file tells Spark how to connect to your KDC.
 
 ```
 {
-  "spark": {
+  "security": {
     "kerberos": {
       "krb5conf":
       "W2xp..."
@@ -224,10 +222,8 @@ $ hdfs dfs -mkdir /history
 
 ```
 {
-  "spark": {
-    "history-server": {
+  "history-server": {
       "enabled": true
-    }
   }
 }
 ```
@@ -312,7 +308,7 @@ With this and the password `secret` for the keystore and the private key, your J
 
 ```
 {
-  "spark": {
+  "security": {
     "ssl": {
       "enabled": true,
       "keyStoreBase64": "/u3+7QAAAAIAAAACAAAAAgA...”,
@@ -339,12 +335,12 @@ $ dcos config set core.dcos_url https://&lt;dcos-url&gt;
 
 Installing multiple instances of the DCOS Spark package provides basic multi-team support. Each dispatcher displays only the jobs submitted to it by a given team, and each team can be assigned different resources.
 
-To install mutiple instances of the DCOS Spark package, set each `framework-name` to a unique name (e.g.: "spark-dev") in your JSON configuration file during installation:
+To install mutiple instances of the DCOS Spark package, set each `service.name` to a unique name (e.g.: "spark-dev") in your JSON configuration file during installation:
 
 ```
 {
-  "spark": {
-     "framework-name": "spark-dev"
+  "service": {
+     "name": "spark-dev"
   }
 }
 ```
@@ -352,7 +348,7 @@ To install mutiple instances of the DCOS Spark package, set each `framework-name
 To use a specific Spark instance from the DCOS Spark CLI:
 
 ```
-$ dcos config set spark.app_id &lt;framework-name&gt;
+$ dcos config set spark.app_id <service.name>
 ```
 
 # Upgrade
