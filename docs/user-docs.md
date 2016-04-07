@@ -31,9 +31,9 @@ DCOS Spark includes:
 
 ## Related Services
 
-[HDFS][4]
-[Kafka][5]
-[Zeppelin][6]
+*   [HDFS][4]
+*   [Kafka][5]
+*   [Zeppelin][6]
 
 # Quick Start
 
