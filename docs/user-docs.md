@@ -89,6 +89,36 @@ Run the following command to see all configuration options:
 $ dcos package describe spark --config
 ```
 
+### Vagrant
+
+For development purposes, you may wish to install Spark on a local
+DCOS cluster.  For this, you can use [dcos-vagrant][16].
+
+1. Install DCOS Vagrant:
+
+Install a minimal DCOS Vagrant according to the instructions [here][16].
+
+2. Install Spark:
+
+```
+$ dcos package install spark
+```
+
+3. Run a simple Job:
+
+```
+$ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
+```
+
+NOTE: A limited resource environment such as DCOS Vagrant restricts
+some of the features available in DCOS Spark.  For example, unless you
+have enough resources to start up a 5-agent cluster, you will not be
+able to install DCOS HDFS, and you thus won't be able to enable the
+history server.
+
+Also, a limited resource environment can restrict how you size your
+executors, for example with `spark.executor.memory`.
+
 <a name="hdfs"></a>
 
 ### HDFS
@@ -481,3 +511,4 @@ $ dcos spark run --submit-args="-Dsun.security.krb5.debug=true..."
  [13]: http://spark.apache.org/docs/latest/submitting-applications.html
  [14]: http://spark.apache.org/docs/latest/configuration.html#spark-properties
  [15]: http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-directory
+ [16]: https://github.com/mesosphere/dcos-vagrant
