@@ -4,14 +4,14 @@ in the Apache Spark documentation [here][1] and [here][2].
 # Modes
 
 Spark on Mesos supports two "modes" of operation: coarse-grained mode
-and fine-grained mode.  Coarse-grained mode provides lower latency,
+and fine-grained mode. Coarse-grained mode provides lower latency,
 whereas fine-grained mode provides higher utilization.  More info
 [here][2].
 
 ## Coarse-grained mode
 
 "Coarse-grained" mode is so-called because each Spark **executor** is
-represented by a single Mesos task.  As a result, executors have a
+represented by a single Mesos task. As a result, executors have a
 constant size throughout their lifetime.
 
 * **Executor memory**: `spark.executor.memory`
@@ -23,7 +23,7 @@ constant size throughout their lifetime.
 
 Notes:
 
-- We highly recommend you set `spark.cores.max`.  If you do not,
+- We highly recommend you set `spark.cores.max`. If you do not,
   your Spark job may consume all available resources in your cluster,
   resulting in unhappy peers.
 
@@ -31,8 +31,8 @@ Notes:
 
 In "fine-grained" mode, each Spark **task** is represented by a single
 Mesos task.  When a Spark task finishes, the resources represented by
-a its Mesos task are relinquished.  This enables finer-grained
-resource allocation, at the cost of task startup latency.
+its Mesos task are relinquished.This enables finer-grained
+resource allocation at the cost of task startup latency.
 
 * **Executor memory**: `spark.executor.memory`
 * **Executor CPUs**: Increases and decreases as tasks start and terminate.
@@ -42,7 +42,7 @@ resource allocation, at the cost of task startup latency.
 # Properties
 
 The following is a description of the most common Spark on Mesos
-scheduling properties.  For a full list, see the
+scheduling properties. For a full list, see the
 [Spark configuration page][1] and the
 [Spark on Mesos configuration page][2].
 
@@ -64,7 +64,7 @@ scheduling properties.  For a full list, see the
 <tr>
 <td>spark.executor.cores</td>
 <td>All available cores in the offer</td>
-<td>Coarse-grained mode only. DCOS Spark >= 1.6.1.  Executor CPU allocation.</td>
+<td>Coarse-grained mode only. DCOS Spark >= 1.6.1. Executor CPU allocation.</td>
 </tr>
 <tr>
 <td>spark.cores.max</td>
