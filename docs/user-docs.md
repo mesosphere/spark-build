@@ -89,10 +89,10 @@ Run the following command to see all configuration options:
 $ dcos package describe spark --config
 ```
 
-### Vagrant
+### Minimal Installation
 
 For development purposes, you may wish to install Spark on a local
-DCOS cluster.  For this, you can use [dcos-vagrant][16].
+DCOS cluster. For this, you can use [dcos-vagrant][16].
 
 1. Install DCOS Vagrant:
 
