@@ -10,6 +10,7 @@
 #  CLUSTER_NAME - name to use for CCM cluster#
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
+#  DCOS_OAUTH_TOKEN
 #
 #  AWS vars used for tests:
 #  AWS_ACCESS_KEY_ID
@@ -31,6 +32,8 @@ start_cluster() {
     if [ -z "${DCOS_URL}" ]; then
         DCOS_URL=http://$(./bin/launch-cluster.sh)
     fi
+    TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('http://"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+    dcos config set core.dcos_acs_token ${TOKEN}
 }
 
 configure_cli() {
