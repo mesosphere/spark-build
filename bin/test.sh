@@ -32,7 +32,7 @@ start_cluster() {
     if [ -z "${DCOS_URL}" ]; then
         DCOS_URL=http://$(./bin/launch-cluster.sh)
     fi
-    TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('http://"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+    TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
     dcos config set core.dcos_acs_token ${TOKEN}
 }
 
