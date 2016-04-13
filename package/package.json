@@ -19,6 +19,6 @@
         "batch",
         "analytics"
     ],
-    "website": "https://docs.mesosphere.com/usage/managing-services/spark/"
+    "website": "https://docs.mesosphere.com/usage/managing-services/spark/",
     "version": "$version"
 }
