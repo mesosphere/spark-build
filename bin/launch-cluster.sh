@@ -4,6 +4,7 @@
 #   DCOS_CHANNEL (optional)
 
 set -e
+set -x
 set -o pipefail
 
 if [ -z "${DCOS_CHANNEL}" ]; then
