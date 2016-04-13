@@ -39,15 +39,15 @@ DCOS Spark includes:
 
 1.  Install DCOS Spark via the DCOS CLI:
 
-```
-$ dcos package install spark
-```
+    ```
+    $ dcos package install spark
+    ```
 
 2.  Run a Spark job:
 
-```
-$ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark -examples_2.10-1.4.0-SNAPSHOT.jar 30"
-```
+    ```
+    $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark -examples_2.10-1.4.0-SNAPSHOT.jar 30"
+    ```
 
 3.  View your job:
 
@@ -96,19 +96,19 @@ DCOS cluster. For this, you can use [dcos-vagrant][16].
 
 1. Install DCOS Vagrant:
 
-Install a minimal DCOS Vagrant according to the instructions [here][16].
+   Install a minimal DCOS Vagrant according to the instructions [here][16].
 
 2. Install Spark:
 
-```
-$ dcos package install spark
-```
+   ```
+   $ dcos package install spark
+   ```
 
 3. Run a simple Job:
 
-```
-$ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
-```
+   ```
+   $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
+   ```
 
 NOTE: A limited resource environment such as DCOS Vagrant restricts
 some of the features available in DCOS Spark.  For example, unless you
@@ -205,30 +205,29 @@ It is assumed that the HDFS namenodes are configured in the core-site.xml of Had
 
 1.  Base64 encode your `krb5.conf` file:
 
-```
-$ cat krb5.conf | base64 W2xpYmRlZmF1bHRzXQogICAgICA….
-```
+    ```
+    $ cat krb5.conf | base64 W2xpYmRlZmF1bHRzXQogICAgICA….
+    ```
 
 This file tells Spark how to connect to your KDC.
 
 1.  Add the following to your JSON configuration file to enable Kerberos in Spark:
 
-```
-{
-  "security": {
-    "kerberos": {
-      "krb5conf":
-      "W2xp..."
+    ```
+    {
+      "security": {
+        "kerberos": {
+          "krb5conf": "W2xp..."
+        }
+      }
     }
-  }
-}
-```
+    ```
 
 2.  Install Spark with your custom configuration, here called `options.json`:
 
-```
-$ dcos package install --options=options.json spark
-```
+    ```
+    $ dcos package install --options=options.json spark
+    ```
 
 ### History Server
 
@@ -236,39 +235,39 @@ DCOS Spark includes the [Spark history server][3]. Because the history server re
 
 1.  Install HDFS first:
 
-```
-$ dcos package install hdfs
-```
+    ```
+    $ dcos package install hdfs
+    ```
 
     **Note:** HDFS requires 5 private nodes.
 
 2.  Create a history HDFS directory (default is `/history`). [SSH into your cluster][10] and run:
 
-```
-$ hdfs dfs -mkdir /history
-```
+    ```
+    $ hdfs dfs -mkdir /history
+    ```
 
 3.  Enable the history server when you install Spark. Create a JSON configuration file. Here we call it `options.json`:
 
-```
-{
-  "history-server": {
-      "enabled": true
-  }
-}
-```
+    ```
+    {
+      "history-server": {
+        "enabled": true
+      }
+    }
+    ```
 
 4.  Install Spark:
 
-```
-$ dcos package install spark --options=options.json
-```
+    ```
+    $ dcos package install spark --options=options.json
+    ```
 
 5.  Run jobs with the event log enabled:
 
-```
-$ dcos spark run --submit-args=`-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass http://external.website/mysparkapp.jar`
-```
+    ```
+    $ dcos spark run --submit-args=`-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass http://external.website/mysparkapp.jar`
+    ```
 
 6.  Visit your job in the dispatcher at `http://<dcos_url>/service/spark/Dispatcher/`. It will include a link to the history server entry for that job.
 
@@ -290,7 +289,6 @@ $ dcos package describe spark --config
 
 There are only two required variables:
 
-```
 <table class="table">
   <tr>
     <th>
@@ -322,7 +320,6 @@ There are only two required variables:
     </td>
   </tr>
 </table>
-```
 
 The Java keystore (and, optionally, truststore) are created using the [Java keytool][12]. The keystore must contain one private key and its signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly trusted by Java.
 
@@ -387,9 +384,9 @@ $ dcos config set spark.app_id <service.name>
 2.  Verify that you no longer see it in the DCOS web interface.
 3.  Reinstall Spark.
 
-```
-$ dcos package install spark
-```
+    ```
+    $ dcos package install spark
+    ```
 
 # Run a Spark Job
 
@@ -397,9 +394,9 @@ $ dcos package install spark
 
 2.  Run the job
 
-```
-$ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
-```
+    ```
+    $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
+    ```
 
     `dcos spark run` is a thin wrapper around the standard Spark `spark-submit` script. You can submit arbitrary pass-through options to this script via the `--submit-args` options.
 
@@ -407,9 +404,9 @@ $ dcos spark run --submit-args=`--class MySampleClass http://external.website/my
 
     If your job runs successfully, you will get a message with the job’s submission ID:
 
-```
-Run job succeeded. Submission id: driver-20160126183319-0001
-```
+   ```
+   Run job succeeded. Submission id: driver-20160126183319-0001
+   ```
 
 3.  View the Spark scheduler progress by navigating to the Spark dispatcher at `http://<dcos-url>/service/spark/`
 
