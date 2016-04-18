@@ -10,7 +10,7 @@
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
 {{#security.kerberos.krb5conf}}
-        "SPARK_MESOS_KRB5_CONF_BASE64": "{{service.kerberos.krb5conf}}",
+        "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
 {{/security.kerberos.krb5conf}}
 {{#security.ssl.enabled}}
         "SPARK_SSL_ENABLED": "{{security.ssl.enabled}}",
