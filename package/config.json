@@ -81,7 +81,7 @@
             }
         },
         "security": {
-            "description": "Spark security properties",
+            "description": "Spark security configuration properties",
             "type": "object",
             "properties": {
                 "kerberos": {
