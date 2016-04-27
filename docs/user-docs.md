@@ -35,6 +35,7 @@ DCOS Spark includes:
 *   [Kafka][5]
 *   [Zeppelin][6]
 
+<a name="quick-start"></a>
 # Quick Start
 
 1.  Install DCOS Spark via the DCOS CLI:
@@ -53,6 +54,7 @@ DCOS Spark includes:
 
     Visit the Spark cluster dispatcher at `http://<dcos-url>/service/spark/` to view the status of your job. Also visit the Mesos UI at `http://<dcos-url>/mesos/` to see job logs.
 
+<a name="install"></a>
 # Install
 
 To start a basic Spark cluster, run the following command on the DCOS CLI. This command installs the dispatcher, and, optionally, the history server. See [Custom Installation][7] to install the history server.
@@ -378,6 +380,7 @@ To use a specific Spark instance from the DCOS Spark CLI:
 $ dcos config set spark.app_id <service.name>
 ```
 
+<a name="upgrade"></a>
 # Upgrade
 
 1.  In the Marathon web interface, destroy the Spark instance to be updated.
@@ -387,7 +390,7 @@ $ dcos config set spark.app_id <service.name>
     ```
     $ dcos package install spark
     ```
-
+<a name="run-a-spark-job"></a>
 # Run a Spark Job
 
 1.  Before submitting your job, upload the artifact (e.g., jar file) to a location visible to the cluster (e.g., S3 or HDFS). [Learn more][13].
@@ -437,6 +440,7 @@ $ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass
 
 To set Spark properties with a configuration file, create a `spark-defaults.conf` file and set the environment variable `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
 
+<a name="uninstall"></a>
 # Uninstall
 
 ```
@@ -445,6 +449,7 @@ $ dcos package uninstall --app-id=&lt;app-id&gt; spark
 
 The Spark dispatcher persists state in Zookeeper, so to fully uninstall the Spark DCOS package, you must go to `http://<dcos-url>/exhibitor`, click on `Explorer`, and delete the znode corresponding to your instance of Spark. By default this is `spark_mesos_Dispatcher`.
 
+<a name="runtime-configuration-change"></a>
 # Runtime Configuration Change
 
 You can customize DCOS Spark in-place when it is up and running.
@@ -459,6 +464,7 @@ You can customize DCOS Spark in-place when it is up and running.
 
 5.  Click `Change and deploy configuration` to apply any changes and cleanly reload Spark.
 
+<a name="troubleshooting"></a>
 # Troubleshooting
 
 ## Dispatcher
@@ -485,6 +491,7 @@ To debug authentication in a Spark job, enable Java security debug output:
 $ dcos spark run --submit-args="-Dsun.security.krb5.debug=true..."
 ```
 
+<a name="limitations"></a>
 # Limitations
 
 *   DCOS Spark only supports submitting jars.  It does not support Python or R.
