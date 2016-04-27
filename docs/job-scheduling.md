@@ -101,7 +101,7 @@ page][1] and the [Spark on Mesos configuration page][2].
       </td>
       
       <td>
-        Coarse-grained mode only. DCOS Spark >= 1.6.1. Executor CPU
+        Coarse-grained mode only. DC/OS Spark >= 1.6.1. Executor CPU
 allocation.
       </td>
     </tr>

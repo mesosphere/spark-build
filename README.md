@@ -1,6 +1,6 @@
-# Spark DCOS Package
+# Spark DC/OS Package
 
-This repo lets you configure, build, and test a new Spark DCOS package.
+This repo lets you configure, build, and test a new Spark DC/OS package.
 It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
 described below.
@@ -29,7 +29,7 @@ DOCKER_IMAGE=<name> make package
 ## Create a universe
 
 Write a universe to `build/universe`.  You can then upload this to
-e.g. S3, and point your DCOS cluster at it via `dcos package repo
+e.g. S3, and point your DC/OS cluster at it via `dcos package repo
 add`.
 
 ```

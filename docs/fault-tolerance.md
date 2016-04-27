@@ -3,13 +3,13 @@
 Failures such as host, network, JVM, or application failures can
 affect the behavior of three types of Spark components:
 
-- DCOS Spark Service
+- DC/OS Spark Service
 - Batch Jobs
 - Streaming Jobs
 
-## DCOS Spark Service
+## DC/OS Spark Service
 
-The DCOS Spark service runs in Marathon and includes the Mesos Cluster
+The DC/OS Spark service runs in Marathon and includes the Mesos Cluster
 Dispatcher and the Spark History Server.  The Dispatcher manages jobs
 you submit via `dcos spark run`.  Job data is persisted to Zookeeper.
 The Spark History Server reads event logs from HDFS. If the service
