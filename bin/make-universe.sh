@@ -31,5 +31,5 @@ if [ -x "$(command -v zip)" ]; then
     (cd build && zip -r spark-universe.zip spark-universe)
 else
     # TODO: remove the docker wrapper once `zip` is available on TC
-    docker run -v $(pwd)/build/:/build/ ubuntu:latest sh -c "apt-get install -y zip && cd /build/ && zip -r spark-universe.zip spark-universe"
+    docker run -v $(pwd)/build/:/build/ ubuntu:latest sh -c "apt-get update && apt-get install -y zip && cd /build/ && zip -r spark-universe.zip spark-universe"
 fi
