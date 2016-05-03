@@ -37,10 +37,12 @@ start_cluster() {
 }
 
 configure_cli() {
-    aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_PREFIX}spark-universe-${TEAMCITY_BUILD_ID}" --acl public-read
-
     dcos config set core.dcos_url "${DCOS_URL}"
-    dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-universe.zip"
+
+    # add universe
+    local S3_FILENAME="${S3_PREFIX}spark-universe-${TEAMCITY_BUILD_ID}"
+    aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_FILENAME}" --acl public-read
+    dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
 }
 
 install_spark() {
