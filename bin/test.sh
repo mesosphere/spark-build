@@ -40,7 +40,7 @@ configure_cli() {
     dcos config set core.dcos_url "${DCOS_URL}"
 
     # add universe
-    local S3_FILENAME="${S3_PREFIX}spark-universe-${TEAMCITY_BUILD_ID}"
+    local S3_FILENAME="${S3_PREFIX}spark-universe-${TEAMCITY_BUILD_ID}.zip"
     aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_FILENAME}" --acl public-read
     dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
 }
