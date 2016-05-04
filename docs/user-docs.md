@@ -55,10 +55,7 @@ dispatcher and the history server
 2.  Run a Spark job:
 
     ```
-    $ dcos spark run --submit-args="--class
-org.apache.spark.examples.SparkPi
-http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark
--examples_2.10-1.4.0-SNAPSHOT.jar 30"
+    $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
     ```
 
 3.  View your job:
@@ -96,7 +93,7 @@ For example, to install the history server, create a file called
   "history-server": {
     "enabled": true
   }
-  }}
+}
 ```
 
 Then, install Spark with your custom configuration:
@@ -130,10 +127,7 @@ DC/OS cluster. For this, you can use [dcos-vagrant][16].
 3. Run a simple Job:
 
    ```
-   $ dcos spark run --submit-args="--class
-org.apache.spark.examples.SparkPi
-http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-
-examples_2.10-1.5.0.jar"
+   $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
    ```
 
 NOTE: A limited resource environment such as DC/OS Vagrant restricts
@@ -178,15 +172,13 @@ On Unix machines with Heimdal Kerberos, the following command creates
 a compatible keytab:
 
 ```
-$ ktutil -k user.keytab add -p user@REALM -e aes256-cts-hmac-sha1-96
--V 1
+$ ktutil -k user.keytab add -p user@REALM -e aes256-cts-hmac-sha1-96 -V 1
 ```
 
 Submit the job with the keytab:
 
 ```
-$ dcos spark run --submit-args="--principal user@REALM --keytab
-&lt;keytab-file-path&gt;..."
+$ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
 ```
 
 ##### TGT Authentication
@@ -201,8 +193,7 @@ $ kinit -c user.tgt -f -l 3h -V user@REALM
 Submit the job with the ticket:
 
 ```
-$ dcos spark run --principal user@REALM --tgt &lt;ticket-file-path&gt;
-…
+$ dcos spark run --principal user@REALM --tgt <ticket-file-path>
 ```
 
 **Note:** These credentials are security-critical. We highly
@@ -249,7 +240,7 @@ core-site.xml of Hadoop in this way:
 1.  Base64 encode your `krb5.conf` file:
 
     ```
-    $ cat krb5.conf | base64 W2xpYmRlZmF1bHRzXQogICAgICA….
+    $ cat krb5.conf | base64 W2xpYmRlZmF1bHRzXQogICAgICA...
     ```
 
 This file tells Spark how to connect to your KDC.
@@ -263,8 +254,8 @@ Kerberos in Spark:
         "kerberos": {
           "krb5conf": "W2xp..."
         }
-        }      }
-        }      }    }
+      }
+    }
     ```
 
 2.  Install Spark with your custom configuration, here called
@@ -302,7 +293,7 @@ configuration file. Here we call it `options.json`:
       "history-server": {
         "enabled": true
       }
-      }    }
+    }
     ```
 
 4.  Install Spark:
@@ -314,9 +305,7 @@ configuration file. Here we call it `options.json`:
 5.  Run jobs with the event log enabled:
 
     ```
-    $ dcos spark run --submit-args=`-Dspark.eventLog.enabled=true
--Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass
-http://external.website/mysparkapp.jar`
+    $ dcos spark run --submit-args="-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
     ```
 
 6.  Visit your job in the dispatcher at
@@ -400,8 +389,8 @@ key, your JSON options file will look like this:
       "keyStorePassword": "secret",
       "keyPassword": "secret"
     }
-    }  }
-    }  }}
+  }
+}
 ```
 
 Install Spark with your custom configuration:
@@ -415,7 +404,7 @@ DC/OS cluster only using an SSL connection, i.e. by using an
 `https://<dcos-url>`. Use the following command to set your DC/OS URL:
 
 ```
-$ dcos config set core.dcos_url https://&lt;dcos-url&gt;
+$ dcos config set core.dcos_url https://<dcos-url>
 ```
 
 ## Multiple Install
@@ -434,7 +423,7 @@ configuration file during installation:
   "service": {
      "name": "spark-dev"
   }
-  }}
+}
 ```
 
 To use a specific Spark instance from the DC/OS Spark CLI:
@@ -464,8 +453,7 @@ more][13].
 2.  Run the job
 
     ```
-    $ dcos spark run --submit-args=`--class MySampleClass
-http://external.website/mysparkapp.jar 30`
+    $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
     ```
 
     `dcos spark run` is a thin wrapper around the standard Spark
@@ -505,17 +493,14 @@ these through `dcos spark run --help`. Here is an example of using
 `--supervise`:
 
 ```
-$ dcos spark run --submit-args="--supervise --class MySampleClass
-http://external.website/mysparkapp.jar 30`
+$ dcos spark run --submit-args="--supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
 ```
-
 
 Or you can set arbitrary properties as java system properties by using
 `-D<prop>=<value>`:
 
 ```
-$ dcos spark run --submit-args="-Dspark.executor.memory=4g --class
-MySampleClass http://external.website/mysparkapp.jar 30`
+$ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
 ```
 
 ### Configuration file
@@ -528,7 +513,7 @@ To set Spark properties with a configuration file, create a
 # Uninstall
 
 ```
-$ dcos package uninstall --app-id=&lt;app-id&gt; spark
+$ dcos package uninstall --app-id=<app-id> spark
 ```
 
 The Spark dispatcher persists state in Zookeeper, so to fully
@@ -613,31 +598,18 @@ recommend Zeppelin, which supports visualizations and dynamic
 dependency management.
 
  [1]: http://spark.apache.org/documentation.html
- [2]:
-http://spark.apache.org/docs/latest/running-on-mesos.html#cluster-mode
- [3]:
-http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-
-fact
+ [2]: http://spark.apache.org/docs/latest/running-on-mesos.html#cluster-mode
+ [3]: http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-fact
  [4]: https://docs.mesosphere.com/manage-service/hdfs/
  [5]: https://docs.mesosphere.com/manage-service/kafka/
  [6]: https://zeppelin.incubator.apache.org/
  [7]: #custom
- [8]:
-http://spark.apache.org/docs/latest/configuration.html#inheriting-
-hadoop-cluster-configuration
+ [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
  [9]: #ssl
  [10]: https://docs.mesosphere.com/administration/sshcluster/
- [11]:
-https://docs.mesosphere.com/administration/dcosarchitecture/components
-/
- [12]:
-http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
- [13]:
-http://spark.apache.org/docs/latest/submitting-applications.html
- [14]:
-http://spark.apache.org/docs/latest/configuration.html#spark-
-properties
- [15]:
-http://spark.apache.org/docs/latest/configuration.html#overriding-
-configuration-directory
+ [11]: https://docs.mesosphere.com/administration/dcosarchitecture/components/
+ [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
+ [13]: http://spark.apache.org/docs/latest/submitting-applications.html
+ [14]: http://spark.apache.org/docs/latest/configuration.html#spark-properties
+ [15]: http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-directory
  [16]: https://github.com/mesosphere/dcos-vagrant
