@@ -18,7 +18,7 @@ DIST="${DIST_TGZ%.*}"
 
 # fetch spark
 mkdir -p build/dist
-[ -f "build/dist/${DIST_TGZ}" ] || curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"
+curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"
 tar xvf build/dist/spark*.tgz -C build/dist
 
 # create docker context
