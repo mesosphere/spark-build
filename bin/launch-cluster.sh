@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # ENV VARS
+#   CCM_AUTH_TOKEN
 #   DCOS_CHANNEL (optional)
 
 set -e
@@ -13,7 +14,7 @@ fi
 
 
 CCM_URL=https://ccm.mesosphere.com/api/cluster/
-AUTH_HEADER=Authorization:"Token ji4weySp4ix5bueRb0Uj2loM9Jan3juD7Wan3yin9leeT9gEm5" \
+AUTH_HEADER=Authorization:"Token ${CCM_AUTH_TOKEN}" \
 
 # create cluster
 CLUSTER_ID=$(http --ignore-stdin \
