@@ -19,5 +19,6 @@
         "analytics"
     ],
     "website": "https://docs.mesosphere.com/usage/managing-services/spark/",
+    "selected": true,
     "version": "$version"
 }
