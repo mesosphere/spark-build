@@ -65,5 +65,18 @@ if [ "${SPARK_SSL_ENABLED}" == true ]; then
 	rm -rf "$KEYDIR"
 fi
 
+# Move hadoop config files, as specified by hdfs.config-url, into place.
+if [ -f hdfs-site.xml && -f core-site.xml ]; then
+    mkdir -p "${HADOOP_CONF_DIR}"
+    cp hdfs-site.xml "${HADOOP_CONF_DIR}"
+    cp core-site.xml "${HADOOP_CONF_DIR}"
+fi
+
+# Move kerberos config file, as specified by security.kerberos.krb5conf, into place.
+if [ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]; then
+    echo "${SPARK_MESOS_KRB5_CONF_BASE64}" | base64 -d > /etc/krb5.conf
+fi
+
+
 # start service
 exec runsvdir -P /etc/service

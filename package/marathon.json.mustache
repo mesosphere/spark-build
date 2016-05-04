@@ -4,8 +4,9 @@
     "mem": {{service.mem}},
     "cmd": "/sbin/init.sh",
     "env": {
-        "SPARK_USER": "{{service.user}}",
         "DCOS_SERVICE_NAME": "{{service.name}}",
+        "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
+        "SPARK_USER": "{{service.user}}",
         "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
@@ -26,7 +27,9 @@
         "HISTORY_LOG_DIR": "{{history-server.log-dir}}",
         "HISTORY_CLEANER_ENABLED": "{{history-server.cleaner-enabled}}",
         "HISTORY_CLEANER_INTERVAL": "{{history-server.cleaner-interval}}",
-        "HISTORY_CLEANER_MAXAGE": "{{history-server.cleaner-maxage}}"
+        "HISTORY_CLEANER_MAXAGE": "{{history-server.cleaner-maxage}}",
+        "HISTORY_KRB_PRINCIPAL": "{{history-server.kerberos.principal}}",
+        "HISTORY_KRB_KEYTAB": "{{history-server.kerberos.keytab}}"
     },
     "ports": [
         0,
@@ -73,5 +76,11 @@
 {{^security.ssl.enabled}}
         "DCOS_SERVICE_SCHEME": "http"
 {{/security.ssl.enabled}}
-    }
+    },
+    "uris": [
+    {{#hdfs.config-url}}
+    "{{hdfs.config-url}}/hdfs-site.xml",
+    "{{hdfs.config-url}}/core-site.xml"
+    {{/hdfs.config-url}}
+    ]
 }

@@ -77,6 +77,22 @@
                     "default": "7d",
                     "description": "Job history files older than this will be deleted when the history cleaner runs.",
                     "type": "string"
+                },
+                "kerberos": {
+                    "type": "object",
+                    "description": "History Server Kerberos configuration properties.",
+                    "properties": {
+                        "principal": {
+                            "description": "Kerberos principal used by the history server.",
+                            "default": "",
+                            "type": "string"
+                        },
+                        "keytab": {
+                            "description": "Base64 encoded keytab for the history server.  This contains secrets.  Ensure you have SSL enabled before transmitting this data.",
+                            "default": "",
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
@@ -89,7 +105,7 @@
                     "type": "object",
                     "properties": {
                         "krb5conf": {
-                            "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC.",
+                            "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC.  Also used by the history server.",
                             "type": "string",
                             "default": ""
                         }
