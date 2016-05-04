@@ -158,22 +158,76 @@ package, and `<port>` is the port of its marathon app.
 You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters
 from Spark on Mesos.
 
-#### Credentials
+#### HDFS Configuration
 
-To authenticate to a Kerberos KDC on Spark, Mesos supports keytab
-files as well as ticket files (TGTs).
+Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to
+connect to it. See instructions [here](#hdfs).
+
+#### Installation
+
+1.  A krb5.conf file tells Spark how to connect to your KDC.  Base64
+    encode this file:
+
+    ```
+    $ cat krb5.conf | base64
+    ```
+
+
+2.  Add the following to your JSON configuration file to enable
+Kerberos in Spark:
+
+    ```
+    {
+      "security": {
+        "kerberos": {
+          "krb5conf": "<base64 encoding>"
+        }
+      }
+    }
+    ```
+
+3. If you've enabled the history server via `history-server.enabled`,
+then you must also configure the principal and keytab for the history
+server.  **WARNING**: The keytab contains secrets, so you should
+ensure you have SSL enabled while installing DC/OS Spark.
+
+    Base64 encode your keytab: 
+
+    ```
+    $ cat spark.keytab | base64
+    ```
+
+    And add the following to your configuration file:
+
+    ```
+    {
+      "history-server": {
+        "kerberos": {
+          "principal": "spark@REALM",
+          "keytab": "<base64 encoding>"
+        }
+      }
+    }
+    ```
+
+
+3.  Install Spark with your custom configuration, here called
+`options.json`:
+
+    ```
+    $ dcos package install --options=options.json spark
+    ```
+
+
+#### Job Submission
+
+To authenticate to a Kerberos KDC, DC/OS Spark supports keytab
+files as well as ticket-granting tickets (TGTs).
 
 Keytabs are valid infinitely, while tickets can expire. Especially for
 long-running streaming jobs, keytabs are recommended.
 
 ##### Keytab Authentication
- 
-On Unix machines with Heimdal Kerberos, the following command creates
-a compatible keytab:
-
-```
-$ ktutil -k user.keytab add -p user@REALM -e aes256-cts-hmac-sha1-96 -V 1
-```
 
 Submit the job with the keytab:
 
@@ -182,13 +236,6 @@ $ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-pat
 ```
 
 ##### TGT Authentication
-
-On Unix machines with Heimdal Kerberos, the following command creates
-a Ticket Granting Ticket (TGT), which is valid for 3 hours:
-
-```
-$ kinit -c user.tgt -f -l 3h -V user@REALM
-```
 
 Submit the job with the ticket:
 
@@ -200,70 +247,6 @@ $ dcos spark run --principal user@REALM --tgt <ticket-file-path>
 recommended [configuring SSL encryption][9] between the Spark
 components when accessing Kerberos-secured HDFS clusters.
 
-#### HDFS Configuration
-
-Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to
-connect to it. See instructions [here](#hdfs).
-
-It is assumed that the HDFS namenodes are configured in the
-core-site.xml of Hadoop in this way:
-
-```
-<property>
-    <name>dfs.ha.namenodes.hdfs</name>
-    <value>nn1,nn2</value>
-</property>
-
-<property>
-    <name>dfs.namenode.rpc-address.hdfs.nn1</name>
-    <value>server1:9000</value>
-</property>
-
-<property>
-    <name>dfs.namenode.http-address.hdfs.nn1</name>
-    <value>server1:50070</value>
-</property>
-
-<property>
-    <name>dfs.namenode.rpc-address.hdfs.nn2</name>
-    <value>server2:9000</value>
-</property>
-
-<property>
-    <name>dfs.namenode.http-address.hdfs.nn2</name>
-    <value>server2:50070</value>
-</property>
-```
-
-#### Installation
-
-1.  Base64 encode your `krb5.conf` file:
-
-    ```
-    $ cat krb5.conf | base64 W2xpYmRlZmF1bHRzXQogICAgICA...
-    ```
-
-This file tells Spark how to connect to your KDC.
-
-1.  Add the following to your JSON configuration file to enable
-Kerberos in Spark:
-
-    ```
-    {
-      "security": {
-        "kerberos": {
-          "krb5conf": "W2xp..."
-        }
-      }
-    }
-    ```
-
-2.  Install Spark with your custom configuration, here called
-`options.json`:
-
-    ```
-    $ dcos package install --options=options.json spark
-    ```
 
 ### History Server
 
