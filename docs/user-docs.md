@@ -47,18 +47,14 @@ dispatcher and the history server
 # Quick Start
 
 1.  Install DC/OS Spark via the DC/OS CLI:
+        
+        $ dcos package install spark
 
-    ```
-    $ dcos package install spark
-    ```
+1.  Run a Spark job:
 
-2.  Run a Spark job:
+        $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
 
-    ```
-    $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
-    ```
-
-3.  View your job:
+1.  View your job:
 
     Visit the Spark cluster dispatcher at
 `http://<dcos-url>/service/spark/` to view the status of your job.
@@ -72,9 +68,7 @@ CLI. This command installs the dispatcher, and, optionally, the
 history server. See [Custom Installation][7] to install the history
 server.
 
-```
-$ dcos package install spark
-```
+    $ dcos package install spark
 
 Monitor the deployment at `http://<dcos-url>/marathon`. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
@@ -88,25 +82,19 @@ JSON options file and passing it to `dcos package install --options`.
 For example, to install the history server, create a file called
 `options.json`:
 
-```
-{
-  "history-server": {
-    "enabled": true
-  }
-}
-```
+    {
+      "history-server": {
+        "enabled": true
+      }
+    }
 
 Then, install Spark with your custom configuration:
 
-```
-$ dcos package install --options=options.json spark
-```
+    $ dcos package install --options=options.json spark
 
 Run the following command to see all configuration options:
 
-```
-$ dcos package describe spark --config
-```
+    $ dcos package describe spark --config
 
 ### Minimal Installation
 
@@ -118,17 +106,13 @@ DC/OS cluster. For this, you can use [dcos-vagrant][16].
    Install a minimal DC/OS Vagrant according to the instructions
 [here][16].
 
-2. Install Spark:
+1. Install Spark:
 
-   ```
-   $ dcos package install spark
-   ```
+        $ dcos package install spark
 
-3. Run a simple Job:
+1. Run a simple Job:
 
-   ```
-   $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
-   ```
+        $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
 
 NOTE: A limited resource environment such as DC/OS Vagrant restricts
 some of the features available in DC/OS Spark.  For example, unless you
@@ -168,56 +152,43 @@ connect to it. See instructions [here](#hdfs).
 1.  A krb5.conf file tells Spark how to connect to your KDC.  Base64
     encode this file:
 
-    ```
-    $ cat krb5.conf | base64
-    ```
-
+        $ cat krb5.conf | base64
 
 1.  Add the following to your JSON configuration file to enable
 Kerberos in Spark:
 
-    ```
-    {
-      "security": {
-        "kerberos": {
-          "krb5conf": "<base64 encoding>"
+        {
+        "security": {
+            "kerberos": {
+            "krb5conf": "<base64 encoding>"
+            }
         }
-      }
-    }
-    ```
+        }
 
 1. If you've enabled the history server via `history-server.enabled`,
 you must also configure the principal and keytab for the history
-server. **WARNING**: The keytab contains secrets, so you should
+server.  **WARNING**: The keytab contains secrets, so you should
 ensure you have SSL enabled while installing DC/OS Spark.
 
     Base64 encode your keytab: 
 
-    ```
-    $ cat spark.keytab | base64
-    ```
+        $ cat spark.keytab | base64
 
     And add the following to your configuration file:
 
-    ```
-    {
-      "history-server": {
-        "kerberos": {
-          "principal": "spark@REALM",
-          "keytab": "<base64 encoding>"
+        {
+        "history-server": {
+            "kerberos": {
+            "principal": "spark@REALM",
+            "keytab": "<base64 encoding>"
+            }
+          }
         }
-      }
-    }
-    ```
-
 
 1.  Install Spark with your custom configuration, here called
 `options.json`:
 
-    ```
-    $ dcos package install --options=options.json spark
-    ```
-
+        $ dcos package install --options=options.json spark
 
 #### Job Submission
 
@@ -231,17 +202,13 @@ long-running streaming jobs, keytabs are recommended.
 
 Submit the job with the keytab:
 
-```
-$ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
-```
+    $ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
 
 ##### TGT Authentication
 
 Submit the job with the ticket:
 
-```
-$ dcos spark run --principal user@REALM --tgt <ticket-file-path>
-```
+    $ dcos spark run --principal user@REALM --tgt <ticket-file-path>
 
 **Note:** These credentials are security-critical. We highly
 recommended [configuring SSL encryption][9] between the Spark
@@ -255,43 +222,33 @@ server requires HDFS, you must explicitly enable it.
 
 1.  Install HDFS first:
 
-    ```
-    $ dcos package install hdfs
-    ```
+        $ dcos package install hdfs
 
     **Note:** HDFS requires 5 private nodes.
 
-2.  Create a history HDFS directory (default is `/history`). [SSH into
+1.  Create a history HDFS directory (default is `/history`). [SSH into
 your cluster][10] and run:
 
-    ```
-    $ hdfs dfs -mkdir /history
-    ```
+        $ hdfs dfs -mkdir /history
 
-3.  Enable the history server when you install Spark. Create a JSON
+1.  Enable the history server when you install Spark. Create a JSON
 configuration file. Here we call it `options.json`:
 
-    ```
-    {
-      "history-server": {
-        "enabled": true
-      }
-    }
-    ```
+        {
+        "history-server": {
+            "enabled": true
+            }
+        }
 
-4.  Install Spark:
+1.  Install Spark:
 
-    ```
-    $ dcos package install spark --options=options.json
-    ```
+        $ dcos package install spark --options=options.json
 
-5.  Run jobs with the event log enabled:
+1.  Run jobs with the event log enabled:
 
-    ```
-    $ dcos spark run --submit-args="-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
-    ```
+        $ dcos spark run --submit-args="-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
 
-6.  Visit your job in the dispatcher at
+1.  Visit your job in the dispatcher at
 `http://<dcos_url>/service/spark/Dispatcher/`. It will include a link
 to the history server entry for that job.
 
@@ -308,9 +265,7 @@ SSL support in DC/OS Spark encrypts the following channels:
 There are a number of configuration variables relevant to SSL setup.
 List them with the following command:
 
-```
-$ dcos package describe spark --config
-```
+    $ dcos package describe spark --config
 
 There are only two required variables:
 
@@ -353,9 +308,7 @@ self-signed root-ca certificate that is explicitly trusted by Java.
 
 Both stores must be base64 encoded, e.g. by:
 
-```
-$ cat keystore | base64 /u3+7QAAAAIAAAACAAAAAgA...
-```
+    $ cat keystore | base64 /u3+7QAAAAIAAAACAAAAAgA...
 
 **Note:** The base64 string of the keystore will probably be much
 longer than the snippet above, spanning 50 lines or so.
@@ -363,32 +316,26 @@ longer than the snippet above, spanning 50 lines or so.
 With this and the password `secret` for the keystore and the private
 key, your JSON options file will look like this:
 
-```
-{
-  "security": {
-    "ssl": {
-      "enabled": true,
-      "keyStoreBase64": "/u3+7QAAAAIAAAACAAAAAgA...”,
-      "keyStorePassword": "secret",
-      "keyPassword": "secret"
+    {
+    "security": {
+        "ssl": {
+        "enabled": true,
+        "keyStoreBase64": "/u3+7QAAAAIAAAACAAAAAgA...”,
+        "keyStorePassword": "secret",
+        "keyPassword": "secret"
+            }
+        }
     }
-  }
-}
-```
 
 Install Spark with your custom configuration:
 
-```
-$ docs package install --options=options.json spark
-```
+    $ docs package install --options=options.json spark
 
 In addition to the described configuration, make sure to connect the
 DC/OS cluster only using an SSL connection, i.e. by using an
 `https://<dcos-url>`. Use the following command to set your DC/OS URL:
 
-```
-$ dcos config set core.dcos_url https://<dcos-url>
-```
+    $ dcos config set core.dcos_url https://<dcos-url>
 
 ## Multiple Install
 
@@ -401,31 +348,26 @@ To install mutiple instances of the DC/OS Spark package, set each
 `service.name` to a unique name (e.g.: "spark-dev") in your JSON
 configuration file during installation:
 
-```
-{
-  "service": {
-     "name": "spark-dev"
-  }
-}
-```
+    {
+    "service": {
+        "name": "spark-dev"
+        }
+    }
 
 To use a specific Spark instance from the DC/OS Spark CLI:
 
-```
-$ dcos config set spark.app_id <service.name>
-```
+    $ dcos config set spark.app_id <service.name>
 
 <a name="upgrade"></a>
 # Upgrade
 
 1.  In the Marathon web interface, destroy the Spark instance to be
 updated.
-2.  Verify that you no longer see it in the DC/OS web interface.
-3.  Reinstall Spark.
+1.  Verify that you no longer see it in the DC/OS web interface.
+1.  Reinstall Spark.
 
-    ```
-    $ dcos package install spark
-    ```
+        $ dcos package install spark
+    
 <a name="run-a-spark-job"></a>
 # Run a Spark Job
 
@@ -433,11 +375,9 @@ updated.
 to a location visible to the cluster (e.g., S3 or HDFS). [Learn
 more][13].
 
-2.  Run the job
+1.  Run the job
 
-    ```
-    $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
-    ```
+        $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
     `dcos spark run` is a thin wrapper around the standard Spark
 `spark-submit` script. You can submit arbitrary pass-through options
@@ -449,14 +389,12 @@ distribution to your local machine. This may take a while.
     If your job runs successfully, you will get a message with the
 job’s submission ID:
 
-   ```
-   Run job succeeded. Submission id: driver-20160126183319-0001
-   ```
+        Run job succeeded. Submission id: driver-20160126183319-0001
 
-3.  View the Spark scheduler progress by navigating to the Spark
+1.  View the Spark scheduler progress by navigating to the Spark
 dispatcher at `http://<dcos-url>/service/spark/`
 
-4.  View the job's logs through the Mesos UI at
+1.  View the job's logs through the Mesos UI at
 `http://<dcos-url>/mesos/`
 
 ## Setting Spark properties
@@ -475,16 +413,12 @@ Certain common properties have their own special names. You can view
 these through `dcos spark run --help`. Here is an example of using
 `--supervise`:
 
-```
-$ dcos spark run --submit-args="--supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
-```
+    $ dcos spark run --submit-args="--supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 Or you can set arbitrary properties as java system properties by using
 `-D<prop>=<value>`:
 
-```
-$ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
-```
+    $ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 ### Configuration file
  
@@ -495,9 +429,7 @@ To set Spark properties with a configuration file, create a
 <a name="uninstall"></a>
 # Uninstall
 
-```
-$ dcos package uninstall --app-id=<app-id> spark
-```
+    $ dcos package uninstall --app-id=<app-id> spark
 
 The Spark dispatcher persists state in Zookeeper, so to fully
 uninstall the Spark DC/OS package, you must go to
@@ -512,16 +444,16 @@ You can customize DC/OS Spark in-place when it is up and running.
 
 1.  View your Marathon dashboard at `http://<dcos-url>/marathon`
 
-2.  In the list of `Applications`, click the name of the Spark
+1.  In the list of `Applications`, click the name of the Spark
 framework to be updated.
 
-3.  Within the Spark instance details view, click the `Configuration`
+1.  Within the Spark instance details view, click the `Configuration`
 tab, then click the `Edit` button.
 
-4.  In the dialog that appears, expand the `Environment Variables`
+1.  In the dialog that appears, expand the `Environment Variables`
 section and update any field(s) to their desired value(s).
 
-5.  Click `Change and deploy configuration` to apply any changes and
+1.  Click `Change and deploy configuration` to apply any changes and
 cleanly reload Spark.
 
 <a name="troubleshooting"></a>
@@ -562,9 +494,7 @@ the `--verbose` flag.
 To debug authentication in a Spark job, enable Java security debug
 output:
 
-```
-$ dcos spark run --submit-args="-Dsun.security.krb5.debug=true..."
-```
+    $ dcos spark run --submit-args="-Dsun.security.krb5.debug=true..."
 
 <a name="limitations"></a>
 # Limitations
