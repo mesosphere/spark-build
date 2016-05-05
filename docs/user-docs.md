@@ -173,7 +173,7 @@ connect to it. See instructions [here](#hdfs).
     ```
 
 
-2.  Add the following to your JSON configuration file to enable
+1.  Add the following to your JSON configuration file to enable
 Kerberos in Spark:
 
     ```
@@ -186,9 +186,9 @@ Kerberos in Spark:
     }
     ```
 
-3. If you've enabled the history server via `history-server.enabled`,
-then you must also configure the principal and keytab for the history
-server.  **WARNING**: The keytab contains secrets, so you should
+1. If you've enabled the history server via `history-server.enabled`,
+you must also configure the principal and keytab for the history
+server. **WARNING**: The keytab contains secrets, so you should
 ensure you have SSL enabled while installing DC/OS Spark.
 
     Base64 encode your keytab: 
@@ -211,7 +211,7 @@ ensure you have SSL enabled while installing DC/OS Spark.
     ```
 
 
-3.  Install Spark with your custom configuration, here called
+1.  Install Spark with your custom configuration, here called
 `options.json`:
 
     ```
