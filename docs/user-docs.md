@@ -158,11 +158,11 @@ connect to it. See instructions [here](#hdfs).
 Kerberos in Spark:
 
         {
-        "security": {
-            "kerberos": {
-            "krb5conf": "<base64 encoding>"
-            }
-        }
+           "security": {
+             "kerberos": {
+              "krb5conf": "<base64 encoding>"
+              }
+           }
         }
 
 1. If you've enabled the history server via `history-server.enabled`,
@@ -176,14 +176,14 @@ ensure you have SSL enabled while installing DC/OS Spark.
 
     And add the following to your configuration file:
 
-        {
-        "history-server": {
-            "kerberos": {
-            "principal": "spark@REALM",
-            "keytab": "<base64 encoding>"
+         {
+            "history-server": {
+                "kerberos": {
+                  "principal": "spark@REALM",
+                  "keytab": "<base64 encoding>"
+                }
             }
-          }
-        }
+         }
 
 1.  Install Spark with your custom configuration, here called
 `options.json`:
@@ -235,9 +235,9 @@ your cluster][10] and run:
 configuration file. Here we call it `options.json`:
 
         {
-        "history-server": {
-            "enabled": true
-            }
+           "history-server": {
+             "enabled": true
+           }
         }
 
 1.  Install Spark:
@@ -317,19 +317,19 @@ With this and the password `secret` for the keystore and the private
 key, your JSON options file will look like this:
 
     {
-    "security": {
+      "security": {
         "ssl": {
-        "enabled": true,
-        "keyStoreBase64": "/u3+7QAAAAIAAAACAAAAAgA...”,
-        "keyStorePassword": "secret",
-        "keyPassword": "secret"
-            }
+          "enabled": true,
+          "keyStoreBase64": "/u3+7QAAAAIAAAACAAAAAgA...”,
+          "keyStorePassword": "secret",
+          "keyPassword": "secret"
         }
+      }
     }
 
 Install Spark with your custom configuration:
 
-    $ docs package install --options=options.json spark
+    $ dcos package install --options=options.json spark
 
 In addition to the described configuration, make sure to connect the
 DC/OS cluster only using an SSL connection, i.e. by using an
@@ -349,9 +349,9 @@ To install mutiple instances of the DC/OS Spark package, set each
 configuration file during installation:
 
     {
-    "service": {
+      "service": {
         "name": "spark-dev"
-        }
+      }
     }
 
 To use a specific Spark instance from the DC/OS Spark CLI:
