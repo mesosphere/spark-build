@@ -1,7 +1,12 @@
 # Setup repo
 ```
+# Public fork of Apache Spark.  Used for public pull requests.
 git remote add origin git@github.com:mesosphere/spark.git
+
+# Private fork of Apache Spark.  Contains our private commits.
 git remote add private git@github.com:mesosphere/spark-private.git
+
+# Apache Spark
 git remote add upstream git@github.com:apache/spark
 ```
 
