@@ -14,23 +14,26 @@ fi
 
 
 CCM_URL=https://ccm.mesosphere.com/api/cluster/
-AUTH_HEADER=Authorization:"Token ${CCM_AUTH_TOKEN}" \
+AUTH_HEADER=Authorization:"Token ${CCM_AUTH_TOKEN}"
 
 # create cluster
-CLUSTER_ID=$(http --ignore-stdin \
-                  --verify no \
-                  "${CCM_URL}" \
-                  "${AUTH_HEADER}" \
-                  cloud_provider=0 \
-                  name=${CLUSTER_NAME} \
-                  region=us-west-2 \
-                  time=60 \
-                  channel=${DCOS_CHANNEL} \
-                  cluster_desc="DCOS CLI testing cluster" \
-                  template=single-master.cloudformation.json \
-                  adminlocation=0.0.0.0/0 \
-                  public_agents=1 \
-                  private_agents=1 | jq ".id")
+CCM_RESPONSE=$(http --ignore-stdin \
+                    --verify no \
+                    "${CCM_URL}" \
+                    "${AUTH_HEADER}" \
+                    cloud_provider=0 \
+                    name=${CLUSTER_NAME} \
+                    region=us-west-2 \
+                    time=60 \
+                    channel=${DCOS_CHANNEL} \
+                    cluster_desc="DCOS CLI testing cluster" \
+                    template=single-master.cloudformation.json \
+                    adminlocation=0.0.0.0/0 \
+                    public_agents=1 \
+                    private_agents=1)
+echo "${CCM_RESPONSE}"
+
+CLUSTER_ID=(echo "${CCM_RESPONSE}" | jq ".id")
 
 # echo "cluster created: ID=${CLUSTER_ID}"
 
