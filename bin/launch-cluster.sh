@@ -2,6 +2,7 @@
 
 # ENV VARS
 #   CCM_AUTH_TOKEN
+#   CLUSTER_NAME
 #   DCOS_CHANNEL (optional)
 
 set -e
@@ -19,6 +20,7 @@ AUTH_HEADER=Authorization:"Token ${CCM_AUTH_TOKEN}"
 # create cluster
 CCM_RESPONSE=$(http --ignore-stdin \
                     --verify no \
+                    -v \
                     "${CCM_URL}" \
                     "${AUTH_HEADER}" \
                     cloud_provider=0 \
@@ -33,7 +35,7 @@ CCM_RESPONSE=$(http --ignore-stdin \
                     private_agents=1)
 echo "${CCM_RESPONSE}"
 
-CLUSTER_ID=(echo "${CCM_RESPONSE}" | jq ".id")
+CLUSTER_ID=$(echo "${CCM_RESPONSE}" | jq ".id")
 
 # echo "cluster created: ID=${CLUSTER_ID}"
 
