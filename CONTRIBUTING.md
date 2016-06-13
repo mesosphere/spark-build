@@ -6,12 +6,15 @@ process is carried out.
 ```
 # Public fork of Apache Spark.  Used for public pull requests.
 git remote add origin git@github.com:mesosphere/spark.git
+git fetch origin
 
 # Private fork of Apache Spark.  Contains our private commits.
 git remote add private git@github.com:mesosphere/spark-private.git
+git fetch private
 
 # Apache Spark
 git remote add upstream git@github.com:apache/spark
+git fetch upstream
 ```
 
 # Upstream PR
@@ -103,9 +106,11 @@ In the case of a bugfix release, there is some commit(s) on
 `private-master` that you wish to backport to an existing branch.
 
 ```
-git checkout private-branch-<version>
+# Checkout latest version
+git checkout -b private-branch-<version> private/private-branch-<version>
+# Cherry pick the commit noted above
 git cherry-pick <commit>
-# <bugfix> is a serial number starting at "1"
+# <bugfix> is a serial number starting at "1" for example: private-1.6.1-2
 git tag -a private-<version>-<bugfix>
 ```
 
@@ -114,7 +119,10 @@ git tag -a private-<version>-<bugfix>
 ```
 git push private --tags
 # TC will build a distribution for <version>, and upload it to S3.
-# Take the S3 URL and proceed to the "Package Release"
+# 1. OSS/Spark/package private parameterize with TEST_BRANCH refs/head/scala-2.10
+# 2. Maybe add DCOS_URL environment variable when CCM is broken
+# 3. OSS/Spark/release dist (maybe manually select dependency of "private dist" build)  Should be very fast.
+# 4. Take the S3 URL from the build log and proceed to the "Package Release"
 ```
 
 ## Package Release
@@ -123,7 +131,7 @@ These instructions are for the `spark-build` repo (this repo).
 
 ```
 git checkout master
-# Update manifest.json with the latest `spark-uri`
+# Update manifest.json with the latest `spark-uri` with the S3 URL acquired above
 git commit -a -m "Updated spark-uri to version <dist-version>"
 # The <package-version> for the tag is the same as the previous
 # <package-version>.  We only bump the <package-version> when the actual
@@ -135,6 +143,9 @@ git push origin --tags
 # Wait for "release package" build to complete.  The DC/OS package is
 # published as an artifact of this build.  Take it and create a
 # universe PR.
+# TeamCity Manual Steps
+# 1. OSS/Spark/release package parameterize branch with refs/head/scale-2.10
+# 2. Get build artifacts from successful build and make a PR against the Universe
 ```
 
 # Branches
