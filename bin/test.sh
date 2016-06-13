@@ -10,7 +10,8 @@
 #
 #  # CCM Env Vars:
 #  CLUSTER_NAME - name to use for CCM cluster#
-#  DCOS_OAUTH_TOKEN - Used for CLI login
+#  DCOS_USERNAME - Used for CLI login
+#  DCOS_PASSWORD - Used for CLI login
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
 #  DCOS_CHANNEL (optional)
@@ -72,8 +73,8 @@ run_tests() {
     popd
 }
 
-#build_universe;
+build_universe;
 start_cluster;
-#configure_cli;
-#install_spark;
-#run_tests;
+configure_cli;
+install_spark;
+run_tests;
