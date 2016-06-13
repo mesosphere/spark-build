@@ -6,14 +6,16 @@
 # ENV vars:
 #
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
+#  DOCKER_IMAGE - Docker image used to make the DC/OS package
 #
+#  # CCM Env Vars:
 #  CLUSTER_NAME - name to use for CCM cluster#
-#  DCOS_OAUTH_TOKEN
+#  DCOS_OAUTH_TOKEN - Used for CLI login
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
 #  DCOS_CHANNEL (optional)
 #
-#  AWS vars used for tests:
+#  # AWS vars used for tests:
 #  AWS_ACCESS_KEY_ID
 #  AWS_SECRET_ACCESS_KEY
 #  S3_BUCKET
@@ -33,7 +35,8 @@ start_cluster() {
     if [ -z "${DCOS_URL}" ]; then
         DCOS_URL=http://$(./bin/launch-cluster.sh)
     fi
-    TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+    #TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+    TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
     dcos config set core.dcos_acs_token ${TOKEN}
 }
 
@@ -69,8 +72,8 @@ run_tests() {
     popd
 }
 
-build_universe;
+#build_universe;
 start_cluster;
-configure_cli;
-install_spark;
-run_tests;
+#configure_cli;
+#install_spark;
+#run_tests;

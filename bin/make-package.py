@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+''' Renders the DC/OS package template in ./package, using the dictionary from ./manifest.json
+    Writes the resulting DC/OS package to ./build/package
+
+ENV vars:
+  DOCKER_IMAGE - $docker_image template variable
+  VERSION (optional) - $version template variable.  default: 'version' in manifest.json
+'''
 
 import json
 import os
