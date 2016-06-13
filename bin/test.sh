@@ -8,9 +8,10 @@
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #
 #  CLUSTER_NAME - name to use for CCM cluster#
+#  DCOS_OAUTH_TOKEN
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
-#  DCOS_OAUTH_TOKEN
+#  DCOS_CHANNEL (optional)
 #
 #  AWS vars used for tests:
 #  AWS_ACCESS_KEY_ID

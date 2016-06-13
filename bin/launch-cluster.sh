@@ -20,7 +20,6 @@ AUTH_HEADER=Authorization:"Token ${CCM_AUTH_TOKEN}"
 # create cluster
 CCM_RESPONSE=$(http --ignore-stdin \
                     --verify no \
-                    -v \
                     "${CCM_URL}" \
                     "${AUTH_HEADER}" \
                     cloud_provider=0 \
@@ -33,7 +32,6 @@ CCM_RESPONSE=$(http --ignore-stdin \
                     adminlocation=0.0.0.0/0 \
                     public_agents=1 \
                     private_agents=1)
-echo "${CCM_RESPONSE}"
 
 CLUSTER_ID=$(echo "${CCM_RESPONSE}" | jq ".id")
 

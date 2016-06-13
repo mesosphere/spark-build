@@ -4,7 +4,7 @@ set -e -o pipefail
 
 # ENV vars:
 #   DOCKER_IMAGE - <image>:<version>
-#   SPARK_DIST_URI (optional) - e.g. http://<domain>/spark-1.2.3.tgz
+#   SPARK_DIST_URI (default: manifest.json "spark_uri" value) - e.g. http://<domain>/spark-1.2.3.tgz
 
 if [ -z "${SPARK_DIST_URI}" ]; then
     SPARK_URI=$(cat manifest.json | jq .spark_uri)
