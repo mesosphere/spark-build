@@ -73,6 +73,13 @@ server.
 Monitor the deployment at `http://<dcos-url>/marathon`. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
+You can also 
+[install Spark via the DC/OS web interface](/usage/services/install/).
+**Note:** If you install Spark via the web interface, run the 
+following command from the DC/OS CLI to install the Spark CLI:
+
+    $ dcos package install spark --cli
+
 <a name="custom"></a>
 
 ## Custom Installation
