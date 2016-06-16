@@ -1,6 +1,7 @@
-**WARNING:** that not all these instructions have been tested, especially the
-specific git commands.  They are meant to give an idea of how each
-process is carried out.
+**WARNING:** not all these instructions have been tested, especially
+the specific git commands, and they shouldn't be followed mindlessly.
+They are meant to give an idea of how each process is carried out.
+You should first understand what the hell you're doing.
 
 # Setup repo
 ```
@@ -85,14 +86,14 @@ git fetch private --tags
 git fetch upstream --tags
 
 # rebase private-master:
-git checkout private/private-master
-git rebase upstream/master
-# resolve merge conflicts
+git checkout private-master
+git rebase master
 
 # create release branch:
-git checkout -b v<version> private-branch-<version>
+git checkout -b private-branch-<version> v<version>
+
+# cherry-pick custom commits:
 git cherry-pick upstream/master..private/private-master
-# resolve merge conflicts
 
 # push:
 git push private private-branch-<version>
