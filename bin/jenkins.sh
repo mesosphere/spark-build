@@ -28,6 +28,7 @@ function make_distribution {
     popd
 }
 
+# rename spark/spark-<SHA1>.tgz to spark/spark-<TAG>.tgz
 function rename_dist {
     pushd spark
 
