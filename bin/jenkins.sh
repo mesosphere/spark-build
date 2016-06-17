@@ -3,15 +3,12 @@
 set -ex
 set -o pipefail
 
-export S3_BUCKET=spark-build
-export S3_PREFIX=
-export DOCKER_IMAGE=mesosphere/spark-dev:${GIT_COMMIT}
 # export DCOS_URL=http://mgummelt-elasticl-1u0grr02hczzt-463448784.us-west-2.elb.amazonaws.com/
 
 function make_distribution {
     # ./build/sbt assembly
     pushd spark
-    
+
     if [ -f make-distribution.sh ]; then
         ./make-distribution.sh -Phadoop-2.4 -DskipTests
     else
@@ -31,9 +28,23 @@ function make_distribution {
     popd
 }
 
+function rename_dist {
+    pushd spark
+
+    local VERSION=${GIT_BRANCH#refs/tags/private-}
+
+    # rename to spark-<tag>
+    tar xvf spark-*.tgz
+    rm spark-*.tgz
+    mv spark-* spark-${VERSION}
+    tar czf spark-${VERSION}.tgz spark-${VERSION}
+
+    popd
+}
+
 function upload_to_s3 {
     pushd spark
-    
+
     aws s3 cp \
         --acl public-read \
         spark-*.tgz \
@@ -44,8 +55,8 @@ function upload_to_s3 {
 
 function update_manifest {
     pushd spark-build
-    
-    # update manifest.json    
+
+    # update manifest.json
     SPARK_DIST=$(ls ../spark/spark*.tgz)
     SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
     cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
@@ -70,9 +81,9 @@ function docker_login {
 
 function spark_test {
     install_cli
-    
+
     pushd spark-build
-    docker_login    
+    docker_login
     make docker
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
                 TEST_RUNNER_DIR=$(pwd)/../mesos-spark-integration-tests/test-runner/ \
@@ -85,6 +96,6 @@ function spark_test {
 
 function upload_distribution {
     make_distribution
-    upload_to_s3    
+    upload_to_s3
     update_manifest
 }
