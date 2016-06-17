@@ -3,8 +3,6 @@
 set -ex
 set -o pipefail
 
-# export DCOS_URL=http://mgummelt-elasticl-1u0grr02hczzt-463448784.us-west-2.elb.amazonaws.com/
-
 function make_distribution {
     # ./build/sbt assembly
     pushd spark
