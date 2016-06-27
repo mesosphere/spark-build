@@ -4,64 +4,83 @@ set -x
 
 exec 2>&1
 
-export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
+function export_daemon_opts() {
+    export SPARK_DAEMON_JAVA_OPTS=""
+    if [ "${DCOS_SERVICE_NAME}" != "spark" ]; then
+        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher_${DCOS_SERVICE_NAME}"
+    fi
 
-cd /opt/spark/dist
+    if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
+        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=$SPARK_DISPATCHER_MESOS_ROLE"
+    fi
 
-export SPARK_DAEMON_JAVA_OPTS=""
-if [ "${DCOS_SERVICE_NAME}" != "spark" ]; then
-    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher_${DCOS_SERVICE_NAME}"
-fi
+    if [ "$SPARK_DISPATCHER_MESOS_PRINCIPAL" != "" ]; then
+        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.principal=$SPARK_DISPATCHER_MESOS_PRINCIPAL"
+    fi
 
-if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
-    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=$SPARK_DISPATCHER_MESOS_ROLE"
-fi
+    if [ "$SPARK_DISPATCHER_MESOS_SECRET" != "" ]; then
+        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.secret=$SPARK_DISPATCHER_MESOS_SECRET"
+    fi
+}
 
-if [ "$SPARK_DISPATCHER_MESOS_PRINCIPAL" != "" ]; then
-    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.principal=$SPARK_DISPATCHER_MESOS_PRINCIPAL"
-fi
-
-if [ "$SPARK_DISPATCHER_MESOS_SECRET" != "" ]; then
-    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.secret=$SPARK_DISPATCHER_MESOS_SECRET"
-fi
-
-
-
-HISTORY_SERVER_CONF=""
-if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
-    HISTORY_SERVER_CONF="spark.mesos.historyServer.url=${HISTORY_SERVER_WEB_PROXY_BASE}"
-fi
-
-sed "s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
-    conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
-
-sed "s,<LOG_LEVEL>,${SPARK_LOG_LEVEL}," \
-    conf/log4j.properties.template >conf/log4j.properties
+function set_log_level() {
+    sed "s,<LOG_LEVEL>,${SPARK_LOG_LEVEL}," \
+        /opt/spark/dist/conf/log4j.properties.template >/opt/spark/dist/conf/log4j.properties
+}
 
 function add_if_non_empty() {
 	if [ -n "$2" ]; then
-		echo "$1=$2" >> conf/mesos-cluster-dispatcher.properties
+		echo "$1=$2" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
 	fi
 }
 
-if [ "${SPARK_SSL_KEYSTOREBASE64}" != "" ]; then
-    echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > /tmp/dispatcher-keystore.jks
-    add_if_non_empty spark.ssl.keyStore /tmp/dispatcher-keystore.jks
-fi
+function configure_properties() {
+    HISTORY_SERVER_CONF=""
+    if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
+        HISTORY_SERVER_CONF="spark.mesos.historyServer.url=${HISTORY_SERVER_WEB_PROXY_BASE}"
+    fi
 
-if [ "${SPARK_SSL_TRUSTSTOREBASE64}" != "" ]; then
-    echo "${SPARK_SSL_TRUSTSTOREBASE64}" | base64 -d > /tmp/dispatcher-truststore.jks
-    add_if_non_empty spark.ssl.trustStore /tmp/dispatcher-truststore.jks
-fi
+    sed "s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
+        /opt/spark/dist/conf/mesos-cluster-dispatcher.properties.template >/opt/spark/dist/conf/mesos-cluster-dispatcher.properties
 
-add_if_non_empty spark.ssl.enabled "${SPARK_SSL_ENABLED}"
-add_if_non_empty spark.ssl.keyPassword "${SPARK_SSL_KEYPASSWORD}"
-add_if_non_empty spark.ssl.keyStorePassword "${SPARK_SSL_KEYSTOREPASSWORD}"
-add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
-add_if_non_empty spark.ssl.protocol "${SPARK_SSL_PROTOCOL}"
-add_if_non_empty spark.ssl.enabledAlgorithms "${SPARK_SSL_ENABLEDALGORITHMS}"
+    if [ "${SPARK_SSL_KEYSTOREBASE64}" != "" ]; then
+        echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > /tmp/dispatcher-keystore.jks
+        add_if_non_empty spark.ssl.keyStore /tmp/dispatcher-keystore.jks
+    fi
 
-export ZK="master.mesos:2181"
+    if [ "${SPARK_SSL_TRUSTSTOREBASE64}" != "" ]; then
+        echo "${SPARK_SSL_TRUSTSTOREBASE64}" | base64 -d > /tmp/dispatcher-truststore.jks
+        add_if_non_empty spark.ssl.trustStore /tmp/dispatcher-truststore.jks
+    fi
+
+    add_if_non_empty spark.ssl.enabled "${SPARK_SSL_ENABLED}"
+    add_if_non_empty spark.ssl.keyPassword "${SPARK_SSL_KEYPASSWORD}"
+    add_if_non_empty spark.ssl.keyStorePassword "${SPARK_SSL_KEYSTOREPASSWORD}"
+    add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
+    add_if_non_empty spark.ssl.protocol "${SPARK_SSL_PROTOCOL}"
+    add_if_non_empty spark.ssl.enabledAlgorithms "${SPARK_SSL_ENABLEDALGORITHMS}"
+
+    # write defaults
+    if [ "${DCOS_SERVICE_ACCOUNT_CREDENTIAL}" != "" ]; then
+        # write defaults using both property names, since 2.0 uses one and 2.1 uses the other
+        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+        echo "spark.mesos.cluster.taskProperty.spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+
+        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+        echo "spark.mesos.cluster.taskProperty.spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+
+        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.principal=${SPARK_DISPATCHER_MESOS_PRINCIPAL}" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+        echo "spark.mesos.cluster.taskProperty.spark.mesos.principal=${SPARK_DISPATCHER_MESOS_PRINCIPAL}" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+    fi
+}
+
+
+export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
+set_log_level
+export_daemon_opts
+configure_properties
+ZK="master.mesos:2181"
+
 exec /opt/spark/dist/bin/spark-class \
     org.apache.spark.deploy.mesos.MesosClusterDispatcher \
     --port "${DISPATCHER_PORT}" \
@@ -70,4 +89,4 @@ exec /opt/spark/dist/bin/spark-class \
     --zk "${ZK}" \
     --host "${HOST}" \
     --name "${DCOS_SERVICE_NAME}" \
-    --properties-file "conf/mesos-cluster-dispatcher.properties"
+    --properties-file "/opt/spark/dist/conf/mesos-cluster-dispatcher.properties"

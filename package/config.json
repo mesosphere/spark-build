@@ -116,6 +116,22 @@
                         }
                     }
                 },
+                "mesos": {
+                    "description": "Mesos scheduler configuration properties.",
+                    "type": "object",
+                    "properties": {
+                        "authentication": {
+                            "description": "Mesos scheduler dcos-oauth configuration.",
+                            "type": "object",
+                            "properties": {
+                                "secret_name": {
+                                    "description": "Name of the secret used to authenticate with the Mesos Master.",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
                 "ssl": {
                     "description": "Spark SSL certificates and private key configuration.",
                     "type": "object",
