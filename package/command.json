@@ -1,5 +1,5 @@
 {
   "pip": [
-      "$python_package"
+      "https://downloads.mesosphere.com/spark/assets/dcos_spark-$cli_version-py2.py3-none-any.whl"
   ]
 }
