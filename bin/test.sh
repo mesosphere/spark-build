@@ -30,16 +30,17 @@ set -o pipefail
 
 
 build_universe() {
-    ./bin/make-package.py
+    make package
     (cd build && tar czf package.tgz package)
-    ./bin/make-universe.sh
+
+    # temporarily unset DOCKER_IMAGE so it doesn't conflict with universe's build.bash
+    (unset DOCKER_IMAGE && make universe)
 }
 
 start_cluster() {
     if [ -z "${DCOS_URL}" ]; then
         DCOS_URL=http://$(./bin/launch-cluster.sh)
     fi
-    #TOKEN=$(python -c "import requests;js={'token':'"${DCOS_OAUTH_TOKEN}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
     TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
     dcos config set core.dcos_acs_token ${TOKEN}
 }
@@ -48,9 +49,14 @@ configure_cli() {
     dcos config set core.dcos_url "${DCOS_URL}"
 
     # add universe
-    local S3_FILENAME="${S3_PREFIX}spark-universe-${BUILD_ID}.zip"
-    aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_FILENAME}" --acl public-read
-    dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
+    # local S3_FILENAME="${S3_PREFIX}spark-universe-${BUILD_ID}.zip"
+    # aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_FILENAME}" --acl public-read
+    # dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
+    dcos marathon app add ./build/spark-universe/docker/server/target/marathon.json
+    dcos package repo add --index=0 spark-test http://universe.marathon.mesos:8085/repo-1.7
+
+    # wait for universe server to come up
+    sleep 45
 }
 
 install_spark() {
