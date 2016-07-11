@@ -6,7 +6,7 @@
 #   DOCKER_IMAGE - <image>:<version>
 #   SPARK_DIST_URI (default: manifest.json "spark_uri" value) - e.g. http://<domain>/spark-1.2.3.tgz
 
-set -e -o pipefail
+set -x -e -o pipefail
 
 function fetch_spark() {
     mkdir -p build/dist
@@ -26,7 +26,7 @@ function create_docker_context {
 
 function build_docker {
     # build docker
-    (cd build/docker && docker build --no-cache -t "${DOCKER_IMAGE}" .)
+    (cd build/docker && docker build -t "${DOCKER_IMAGE}" .)
 }
 
 function push_docker {
