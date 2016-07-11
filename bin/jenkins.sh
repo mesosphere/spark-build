@@ -72,6 +72,9 @@ function install_cli {
 
     # hack because the installer forces an old CLI version
     pip install -U dcoscli
+
+    # needed in `make test`
+    pip3 install jsonschema
 }
 
 function docker_login {

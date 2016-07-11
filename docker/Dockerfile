@@ -57,4 +57,3 @@ RUN ln -s /var/lib/runit/service/spark /etc/service/spark
 RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
 WORKDIR /opt/spark/dist
-
