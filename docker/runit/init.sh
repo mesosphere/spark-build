@@ -10,7 +10,7 @@ export SPARK_PROXY_PORT="${PORT3}"
 # determine scheme and derive WEB
 SCHEME=http
 OTHER_SCHEME=https
-if [ "${SPARK_SSL_ENABLED}" == true ]; then
+if [[ "${SPARK_SSL_ENABLED}" == true ]]; then
 	SCHEME=https
 	OTHER_SCHEME=http
 fi
@@ -22,7 +22,7 @@ export HISTORY_SERVER_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}/history"
 export DISPATCHER_UI_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}"
 
 # configure history server
-if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
+if [[ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]]; then
     ln -s /var/lib/runit/service/history-server /etc/service/history-server
 fi
 
@@ -41,13 +41,13 @@ sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
 # sed -i "s,<ENABLED_ALGORITHMS>,${SPARK_SSL_ENABLEDALGORITHMS//,/:}," /etc/nginx/conf.d/spark.conf
 
 # extract cert and key from keystore, write to /etc/nginx/spark.{crt,key}
-if [ "${SPARK_SSL_ENABLED}" == true ]; then
+if [[ "${SPARK_SSL_ENABLED}" == true ]]; then
 	KEYDIR=`mktemp -d`
 	trap "rm -rf $KEYDIR" EXIT
 
 	echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > "$KEYDIR/spark.jks"
 	ALIAS=$(keytool -list -keystore "$KEYDIR/spark.jks" -storepass "${SPARK_SSL_KEYSTOREPASSWORD}" | grep PrivateKeyEntry | cut -d, -f1 | head -n1)
-	if [ -z "${ALIAS}" ]; then
+	if [[ -z "${ALIAS}" ]]; then
 		echo "Cannot find private key in keystore"
 		exit 1
 	fi
@@ -66,14 +66,14 @@ if [ "${SPARK_SSL_ENABLED}" == true ]; then
 fi
 
 # Move hadoop config files, as specified by hdfs.config-url, into place.
-if [ -f hdfs-site.xml && -f core-site.xml ]; then
+if [[ -f hdfs-site.xml && -f core-site.xml ]]; then
     mkdir -p "${HADOOP_CONF_DIR}"
     cp hdfs-site.xml "${HADOOP_CONF_DIR}"
     cp core-site.xml "${HADOOP_CONF_DIR}"
 fi
 
 # Move kerberos config file, as specified by security.kerberos.krb5conf, into place.
-if [ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]; then
+if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
     echo "${SPARK_MESOS_KRB5_CONF_BASE64}" | base64 -d > /etc/krb5.conf
 fi
 
