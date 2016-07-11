@@ -1,14 +1,54 @@
 {
-  "assets": {
-    "container": {
-      "docker": {
-        "spark_docker": "$docker_image"
-      }
+    "assets": {
+        "container": {
+            "docker": {
+                "spark_docker": "$docker_image"
+            }
+        }
+    },
+    "images": {
+        "icon-medium": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-medium.png",
+        "icon-small": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-small.png",
+        "icon-large": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-large.png"
+    },
+    "cli":{
+        "binaries":{
+            "darwin":{
+                "x86-64":{
+                    "contentHash":[
+                        {
+                            "algo": "sha256",
+                            "value": "$mac_cli_sha256"
+                        }
+                    ],
+                    "kind": "executable",
+                    "url":"https://downloads.mesosphere.com/spark/assets/cli/$cli_version/darwin-x86-64/dcos-spark"
+                }
+            },
+            "linux":{
+                "x86-64":{
+                    "contentHash":[
+                        {
+                            "algo":"sha256",
+                            "value":"$linux_cli_sha256"
+                        }
+                    ],
+                    "kind":"executable",
+                    "url":"https://downloads.mesosphere.com/spark/assets/cli/$cli_version/linux-x86-64/dcos-spark"
+                }
+            },
+            "windows":{
+                "x86-64":{
+                    "contentHash":[
+                        {
+                            "algo":"sha256",
+                            "value":"$windows_cli_sha256"
+                        }
+                    ],
+                    "kind":"executable",
+                    "url":"https://downloads.mesosphere.com/spark/assets/cli/$cli_version/windows-x86-64/dcos-spark.exe"
+                }
+            }
+        }
     }
-  },
-  "images": {
-    "icon-medium": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-medium.png",
-    "icon-small": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-small.png",
-    "icon-large": "https://downloads.mesosphere.io/spark/assets/icon-service-spark-large.png"
-  }
 }
