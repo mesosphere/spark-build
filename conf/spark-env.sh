@@ -29,6 +29,7 @@ fi
 #
 # See "Mesos SSL" Section
 if [ -d /opt/mesosphere ]; then
+    MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/lib/libmesos.so
     MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
     MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
 fi

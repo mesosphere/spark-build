@@ -18,7 +18,8 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM mesosphere/mesos:1.0.0-rc2
+#FROM mesosphere/mesos:1.0.0-rc2
+FROM ubuntu:14.04
 MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>
 
 # Set environment variables.
@@ -44,8 +45,10 @@ RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update && \
     apt-get install -y openjdk-8-jdk curl
 
+RUN apt-get install -y libapr1-dev  libsvn-dev
+
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-ENV MESOS_NATIVE_JAVA_LIBRARY /usr/local/lib/libmesos.so
+ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
 
 RUN mkdir /etc/hadoop
@@ -76,3 +79,4 @@ RUN chmod -R ugo+wx /var/log/
 RUN chmod -R ugo+wx /opt/spark/dist
 
 WORKDIR /opt/spark/dist
+RUN ln -sf /opt/mesosphere/lib/libmesos.so /usr/local/lib/libmesos.so
