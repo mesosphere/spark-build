@@ -10,7 +10,7 @@ set -x
 set -o pipefail
 
 if [ -z "${DCOS_CHANNEL}" ]; then
-    DCOS_CHANNEL=stable
+    DCOS_CHANNEL=testing/master
 fi
 
 
