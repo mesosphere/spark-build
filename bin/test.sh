@@ -54,6 +54,7 @@ configure_cli() {
     # dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
     dcos marathon app add ./build/spark-universe/docker/server/target/marathon.json
     dcos package repo add --index=0 spark-test http://universe.marathon.mesos:8085/repo-1.7
+    dcos package repo add --index=0 spark-test0 http://universe.marathon.mesos:8085/repo
 
     # wait for universe server to come up
     sleep 45
