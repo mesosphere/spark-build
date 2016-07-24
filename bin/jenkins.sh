@@ -7,21 +7,25 @@ function make_distribution {
     # ./build/sbt assembly
     pushd spark
 
-    if [ -f make-distribution.sh ]; then
-        ./make-distribution.sh -Phadoop-2.4 -DskipTests
+    if [[ -n "${SPARK_DIST_URI}" ]]; then
+        wget "${SPARK_DIST_URI}"
     else
-        ./dev/make-distribution.sh -Phadoop-2.4 -DskipTests
+        if [ -f make-distribution.sh ]; then
+            ./make-distribution.sh -Phadoop-2.4 -DskipTests
+        else
+            ./dev/make-distribution.sh -Phadoop-2.4 -DskipTests
+        fi
+
+        # tmp
+        #wget http://spark-build.s3.amazonaws.com/spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
+        #tar xvf spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
+        #rm spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
+        #mv spark-0738bc281ea93f09c541e47d61b98fe7babc74e0 dist
+
+        local DIST="spark-${GIT_COMMIT}"
+        mv dist ${DIST}
+        tar czf ${DIST}.tgz ${DIST}
     fi
-
-    # tmp
-    #wget http://spark-build.s3.amazonaws.com/spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
-    #tar xvf spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
-    #rm spark-0738bc281ea93f09c541e47d61b98fe7babc74e0.tgz
-    #mv spark-0738bc281ea93f09c541e47d61b98fe7babc74e0 dist
-
-    local DIST="spark-${GIT_COMMIT}"
-    mv dist ${DIST}
-    tar czf ${DIST}.tgz ${DIST}
 
     popd
 }
