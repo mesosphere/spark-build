@@ -62,7 +62,7 @@ configure_cli() {
 install_spark() {
     dcos --log-level=INFO package install spark --yes
 
-    while [ $(dcos marathon app list --json | jq ".[] | .tasksHealthy") -ne "1" ]
+    while [[ $(dcos marathon app list --json | jq '.[] | select(.id=="/spark") | .tasksHealthy') -ne "1" ]]
     do
         sleep 5
     done
