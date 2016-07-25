@@ -19,8 +19,6 @@ SPARK_DIR=build/spark-universe/repo/packages/S/spark
 rm -rf "${SPARK_DIR}"/*
 cp -r build/package "${SPARK_DIR}/0"
 
-cat "${SPARK_DIR}/0"/config.json
-
 # build universe docker image
 pushd build/spark-universe
 ./scripts/build.sh
