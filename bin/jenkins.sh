@@ -82,7 +82,7 @@ function install_cli {
 }
 
 function docker_login {
-    docker login --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
+    docker login --email=docker@mesosphere.io --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
 }
 
 function spark_test {
