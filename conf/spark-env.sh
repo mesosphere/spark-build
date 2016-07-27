@@ -28,8 +28,8 @@ fi
 # Mesos Auth
 #
 # See "Mesos SSL" Section
-if [ -d /opt/mesosphere ]; then
-    MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+if [ -d /etc/mesosphere ]; then
+    MESOS_MODULES=file:///etc/mesosphere/dcos_authenticatee_module.json
     MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
 fi
 

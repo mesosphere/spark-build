@@ -18,7 +18,7 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM mesosphere/mesos:1.0.0-rc2
+FROM mesosphere/mesos:1.0.0-rc4
 MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>
 
 # Set environment variables.
@@ -55,6 +55,42 @@ ADD hadoop/* /etc/hadoop/
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
 ADD nginx /etc/nginx
+
+# Build security modules.
+RUN apt-get -qy install \
+  build-essential                         \
+  autoconf                                \
+  automake                                \
+  ca-certificates                         \
+  gdb                                     \
+  wget                                    \
+  libcurl4-nss-dev                        \
+  libsasl2-dev                            \
+  libssl-dev                              \
+  libsvn-dev                              \
+  libtool                                 \
+  make                                    \
+  python                                  \
+  python2.7                               \
+  libpython-dev                           \
+  python-dev                              \
+  python-setuptools                       \
+  unzip                                   \
+  --no-install-recommends
+
+ADD mesos-modules-private /opt/mesosphere/mesos-modules-private
+ADD dcos_authenticatee_module.json /etc/mesosphere/dcos_authenticatee_module.json
+
+ENV PATH /usr/lib/mesos/3rdparty/bin:$PATH
+
+WORKDIR /opt/mesosphere/mesos-modules-private
+RUN ./bootstrap && \
+    rm -rf build && \
+    mkdir build && \
+    cd build && \
+    export CPPFLAGS="$CPPFLAGS -I/usr/lib/mesos/3rdparty/include" && \
+    ../configure --with-mesos=/usr --prefix=/opt/mesosphere && \
+    make all install
 
 #RUN ln -sf /usr/lib/libmesos.so /usr/lib/libmesos-0.23.1.so
 
