@@ -1,0 +1,3 @@
+[submodule "mesos-modules-private"]
+	path = docker/mesos-modules-private
+	url = git@github.com:mesosphere/mesos-modules-private
