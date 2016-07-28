@@ -18,7 +18,7 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM mesosphere/mesos:1.0.0-rc4
+FROM mesosphere/mesos:1.0.0
 MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>
 
 # Set environment variables.
