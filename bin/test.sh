@@ -65,7 +65,7 @@ install_spark() {
     # launch spark jobs if we give the dispatcher an entire CPU
     echo '{"service": {"cpus": 0.1}}' > /tmp/spark.json
 
-    dcos --log-level=INFO package install spark --yes
+    dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
 
     while [[ $(dcos marathon app list --json | jq '.[] | select(.id=="/spark") | .tasksHealthy') -ne "1" ]]
     do
