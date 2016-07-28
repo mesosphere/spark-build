@@ -1,0 +1,12 @@
+{
+  "libraries": [
+    {
+      "file": "/opt/mesosphere/lib/mesos/libdcos_security.so",
+      "modules": [
+        {
+          "name": "com_mesosphere_dcos_ClassicRPCAuthenticatee"
+        }
+      ]
+    }
+  ]
+}

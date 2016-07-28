@@ -8,6 +8,10 @@
 
 set -e -o pipefail
 
+function fetch_mesos_modules_private() {
+    git submodule update --init --recursive
+}
+
 function fetch_spark() {
     mkdir -p build/dist
     [ -f "build/dist/${DIST_TGZ}" ] || curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"
@@ -15,6 +19,7 @@ function fetch_spark() {
 }
 
 function create_docker_context {
+    fetch_mesos_modules_private
     fetch_spark
 
     rm -rf build/docker
