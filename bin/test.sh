@@ -61,6 +61,10 @@ configure_cli() {
 }
 
 install_spark() {
+    # with universe server running, there are no longer enough CPUs to
+    # launch spark jobs if we give the dispatcher an entire CPU
+    echo '{"service": {"cpus": 0.1}}' > /tmp/spark.json
+
     dcos --log-level=INFO package install spark --yes
 
     while [[ $(dcos marathon app list --json | jq '.[] | select(.id=="/spark") | .tasksHealthy') -ne "1" ]]
