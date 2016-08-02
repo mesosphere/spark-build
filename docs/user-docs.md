@@ -8,6 +8,11 @@ Spark SQL for SQL and DataFrames, MLlib for machine learning, GraphX
 for graph processing, and Spark Streaming for stream processing. For
 more information, see the [Apache Spark documentation][1].
 
+DC/OS Spark consists of
+[Apache Spark with a few custom commits][17].
+along with
+[DC/OS specific packaging][18].
+
 DC/OS Spark includes:
 
 *   [Mesos Cluster Dispatcher][2]
@@ -47,7 +52,7 @@ dispatcher and the history server
 # Quick Start
 
 1.  Install DC/OS Spark via the DC/OS CLI:
-        
+
         $ dcos package install spark
 
 1.  Run a Spark job:
@@ -73,9 +78,9 @@ server.
 Monitor the deployment at `http://<dcos-url>/marathon`. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
-You can also 
+You can also
 [install Spark via the DC/OS web interface](/usage/services/install/).
-**Note:** If you install Spark via the web interface, run the 
+**Note:** If you install Spark via the web interface, run the
 following command from the DC/OS CLI to install the Spark CLI:
 
     $ dcos package install spark --cli
@@ -177,7 +182,7 @@ you must also configure the principal and keytab for the history
 server.  **WARNING**: The keytab contains secrets, so you should
 ensure you have SSL enabled while installing DC/OS Spark.
 
-    Base64 encode your keytab: 
+    Base64 encode your keytab:
 
         $ cat spark.keytab | base64
 
@@ -374,7 +379,7 @@ updated.
 1.  Reinstall Spark.
 
         $ dcos package install spark
-    
+
 <a name="run-a-spark-job"></a>
 # Run a Spark Job
 
@@ -411,7 +416,7 @@ properties][14]. You can set Spark properties during submission, or
 you can create a configuration file.
 
 ### Submission
- 
+
 All properties are submitted through the `--submit-args` option to
 `dcos spark run`. These are ultimately passed to the [`spark-submit`
 script][13].
@@ -428,7 +433,7 @@ Or you can set arbitrary properties as java system properties by using
     $ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 ### Configuration file
- 
+
 To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable
 `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
@@ -497,7 +502,7 @@ honored. To debug issues with their communication, run your jobs with
 the `--verbose` flag.
 
 ## HDFS Kerberos
- 
+
 To debug authentication in a Spark job, enable Java security debug
 output:
 
@@ -533,3 +538,5 @@ dependency management.
  [14]: http://spark.apache.org/docs/latest/configuration.html#spark-properties
  [15]: http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-directory
  [16]: https://github.com/mesosphere/dcos-vagrant
+ [17]: https://github.com/mesopshere/spark
+ [18]: https://github.com/mesopshere/spark-build
