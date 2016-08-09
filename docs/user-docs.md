@@ -9,9 +9,9 @@ for graph processing, and Spark Streaming for stream processing. For
 more information, see the [Apache Spark documentation][1].
 
 DC/OS Spark consists of
-[Apache Spark with a few custom commits][17].
+[Apache Spark with a few custom commits][17]
 along with
-[DC/OS specific packaging][18].
+[DC/OS-specific packaging][18].
 
 DC/OS Spark includes:
 
