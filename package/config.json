@@ -46,6 +46,11 @@
                     "type": "string",
                     "description": "Spark distribution URI.  The DCOS Spark CLI will fetch this Spark distribution.  This variable has no effect on the Spark distribution running the dispatcher or the drivers.  The Docker image running this Marathon app contains that distribution.",
                     "default": "$spark_uri"
+                },
+                "log-level": {
+                    "type": "string",
+                    "description": "log4j log level for The Spark Dispatcher.  May be set to any valid log4j log level: https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Level.html",
+                    "default": "INFO"
                 }
             }
         },
