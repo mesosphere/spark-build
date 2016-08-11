@@ -41,9 +41,17 @@ function add_if_non_empty() {
 	fi
 }
 
+if [ "${SPARK_SSL_KEYSTOREBASE64}" != "" ]; then
+    echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > /tmp/dispatcher-keystore.jks
+    add_if_non_empty spark.ssl.keyStore /tmp/dispatcher-keystore.jks
+fi
+
+if [ "${SPARK_SSL_TRUSTSTOREBASE64}" != "" ]; then
+    echo "${SPARK_SSL_TRUSTSTOREBASE64}" | base64 -d > /tmp/dispatcher-truststore.jks
+    add_if_non_empty spark.ssl.trustStore /tmp/dispatcher-truststore.jks
+fi
+
 add_if_non_empty spark.ssl.enabled "${SPARK_SSL_ENABLED}"
-add_if_non_empty spark.ssl.keyStoreBase64 "${SPARK_SSL_KEYSTOREBASE64}"
-add_if_non_empty spark.ssl.trustStoreBase64 "${SPARK_SSL_TRUSTSTOREBASE64}"
 add_if_non_empty spark.ssl.keyPassword "${SPARK_SSL_KEYPASSWORD}"
 add_if_non_empty spark.ssl.keyStorePassword "${SPARK_SSL_KEYSTOREPASSWORD}"
 add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
