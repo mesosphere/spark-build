@@ -35,6 +35,9 @@ fi
 sed "s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
     conf/mesos-cluster-dispatcher.properties.template >conf/mesos-cluster-dispatcher.properties
 
+sed "s,<LOG_LEVEL>,${SPARK_LOG_LEVEL}," \
+    conf/log4j.properties.template >conf/log4j.properties
+
 function add_if_non_empty() {
 	if [ -n "$2" ]; then
 		echo "$1=$2" >> conf/mesos-cluster-dispatcher.properties
