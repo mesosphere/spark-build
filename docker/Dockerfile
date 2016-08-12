@@ -39,7 +39,6 @@ ENV HADOOP_CONF_DIR /etc/hadoop
 RUN mkdir /etc/hadoop
 
 ADD dist /opt/spark/dist
-ADD hadoop/* /etc/hadoop/
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
 ADD nginx /etc/nginx
