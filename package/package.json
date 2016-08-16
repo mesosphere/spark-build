@@ -1,5 +1,4 @@
 {
-    "packagingVersion": "3.0",
     "postInstallNotes": "DC/OS Spark is being installed!\n\n\tDocumentation: https://docs.mesosphere.com/current/usage/service-guides/spark/\n\tIssues: https://docs.mesosphere.com/support/",
     "scm": "https://github.com/apache/spark.git",
     "maintainer": "support@mesosphere.io",
@@ -20,6 +19,5 @@
     ],
     "website": "https://docs.mesosphere.com/current/usage/service-guides/spark/",
     "selected": true,
-    "version": "{{package-version}}",
-    "minDcosReleaseVersion": "1.7"
+    "version": "{{package-version}}"
 }
