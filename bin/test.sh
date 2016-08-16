@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# Builds spark, docker image, and package from manifest.json
 # Spins up a DCOS cluster and runs tests against it
 #
 # ENV vars:
@@ -8,61 +7,53 @@
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #  DOCKER_IMAGE - Docker image used to make the DC/OS package
 #
-#  # CCM Env Vars:
-#  CLUSTER_NAME - name to use for CCM cluster#
+#  # CLI Env vars:
 #  DCOS_USERNAME - Used for CLI login
 #  DCOS_PASSWORD - Used for CLI login
+#  STUB_UNIVERSE_URL - path to uploaded universe package
+#
+#  # CCM Env Vars:
 #  DCOS_URL (optional) - If given, the tests will run against this
 #                        cluster, and not spin up a new one.
-#  DCOS_CHANNEL (optional)
+#  when DCOS_URL is empty:
+#    CCM_AUTH_TOKEN - auth token for CCM interaction
+#    CLUSTER_NAME - name to use for new CCM cluster
+#    DCOS_CHANNEL (optional) - channel to create the CCM cluster against
 #
 #  # AWS vars used for tests:
 #  AWS_ACCESS_KEY_ID
 #  AWS_SECRET_ACCESS_KEY
 #  S3_BUCKET
 #  S3_PREFIX
-#
-#  # Build:
-#  BUILD_ID - used for naming artifacts
 
 set -x -e
 set -o pipefail
 
+BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-build_universe() {
-    make package
-    (cd build && tar czf package.tgz package)
-
-    # temporarily unset DOCKER_IMAGE so it doesn't conflict with universe's build.bash
-    (unset DOCKER_IMAGE && make universe)
-}
 
 start_cluster() {
-    if [ -z "${DCOS_URL}" ]; then
-        DCOS_URL=http://$(./bin/launch-cluster.sh)
+    if [ -n "${DCOS_URL}" ]; then
+        echo "Using existing cluster: $DCOS_URL"
+    else
+        echo "Launching new cluster"
+        DCOS_URL=http://$(./launch-cluster.sh)
     fi
-    TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
-    dcos config set core.dcos_acs_token ${TOKEN}
 }
 
 configure_cli() {
+    TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js,verify=False);print(r.json()['token'])")
+    dcos config set core.dcos_acs_token "${TOKEN}"
     dcos config set core.dcos_url "${DCOS_URL}"
-
-    # add universe
-    # local S3_FILENAME="${S3_PREFIX}spark-universe-${BUILD_ID}.zip"
-    # aws s3 cp ./build/spark-universe.zip "s3://${S3_BUCKET}/${S3_FILENAME}" --acl public-read
-    # dcos package repo add --index=0 spark-test "http://${S3_BUCKET}.s3.amazonaws.com/${S3_FILENAME}"
-    dcos marathon app add ./build/spark-universe/docker/server/target/marathon.json
-    dcos package repo add --index=0 spark-test http://universe.marathon.mesos:8085/repo-1.7
-    dcos package repo add --index=0 spark-test0 http://universe.marathon.mesos:8085/repo
-
-    # wait for universe server to come up
-    sleep 45
+    dcos config show
+    dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
+    dcos package repo list
 }
 
 install_spark() {
     # with universe server running, there are no longer enough CPUs to
     # launch spark jobs if we give the dispatcher an entire CPU
+    # TODO: remove this?
     echo '{"service": {"cpus": 0.1}}' > /tmp/spark.json
 
     dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
@@ -87,8 +78,19 @@ run_tests() {
     popd
 }
 
-build_universe;
+# Grab dcos-commons build/release tools:
+cd ${BIN_DIR}
+rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
+_notify_github() {
+    ./dcos-commons-tools/github_update.py $1 test $2
+}
+
+_notify_github pending "Starting Cluster"
 start_cluster;
+_notify_github pending "Configuring CLI"
 configure_cli;
+_notify_github pending "Installing Spark"
 install_spark;
+_notify_github pending "Running Tests"
 run_tests;
+_notify_github success "Tests Passed"

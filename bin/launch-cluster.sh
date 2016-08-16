@@ -12,6 +12,11 @@ set -o pipefail
 if [ -z "${DCOS_CHANNEL}" ]; then
     DCOS_CHANNEL=testing/master
 fi
+if [ -z "${CCM_AUTH_TOKEN}" -o -z "${CLUSTER_NAME}" ]; then
+    echo "Required env missing: CCM_AUTH_TOKEN and/or CLUSTER_NAME"
+    env
+    exit 1
+fi
 
 
 CCM_URL=https://ccm.mesosphere.com/api/cluster/
@@ -44,7 +49,7 @@ while true; do
                   --verify no \
                   "${CCM_URL}active/all/" \
                   "${AUTH_HEADER}" | jq ".[] | select(.id == ${CLUSTER_ID}) | .status");
-    if [ $STATUS -eq 0 ]; then
+    if [ -n "$STATUS" -a "$STATUS" == "0" ]; then
         break;
     fi;
     sleep 10;

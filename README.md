@@ -7,11 +7,11 @@ described below.
 
 ## Configuring
 
-edit `manifest.json`.
+edit `manifest.sh`.
 
 ## Push a docker image
 
-Build and push a docker image using the Spark distribution specified in `manifest.json`
+Build and push a docker image using the Spark distribution specified in `manifest.sh`
 
 ```
 DOCKER_IMAGE=<name> make docker

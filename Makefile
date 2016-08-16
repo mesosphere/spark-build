@@ -1,13 +1,7 @@
-docker:
-	bin/make-docker.sh
-
-package:
-	bin/make-package.py
-
-universe:
-	bin/make-universe.sh
+build:
+	bin/build.sh
 
 test:
 	bin/test.sh
 
-.PHONY: package docker universe test
+.PHONY: build test
