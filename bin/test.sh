@@ -78,6 +78,17 @@ run_tests() {
     popd
 }
 
+# Check env early, before starting the cluster:
+if [ -z "$TEST_RUNNER_DIR" -o -z "$DOCKER_IMAGE" \
+        -o -z "$DCOS_USERNAME" -o -z "$DCOS_PASSWORD" \
+        -o -z "$STUB_UNIVERSE_URL" \
+        -o -z "$AWS_ACCESS_KEY_ID" -o -z "$AWS_SECRET_ACCESS_KEY" \
+        -o -z "$S3_BUCKET" -o -z "$S3_PREFIX" ]; then
+    echo "Missing required env. See check in ${BIN_DIR}/test.sh."
+    env
+    exit 1
+fi
+
 # Grab dcos-commons build/release tools:
 cd ${BIN_DIR}
 rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz

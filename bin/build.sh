@@ -53,6 +53,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+_notify_github success "Build succeeded"
+
 # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
 TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
 TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \

@@ -90,8 +90,9 @@ function spark_test {
     docker_login
     # build/upload artifacts: docker + cli + stub universe:
     make build
-    # assign STUB_UNIVERSE_URL:
-    source $WORKSPACE/stub-universe.properties
+    # in CI environments, ci_test.py creates a 'stub-universe.properties' file
+    # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
+    export $(cat $WORKSPACE/stub-universe.properties)
     # run tests against build artifacts:
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
                 TEST_RUNNER_DIR=$(pwd)/../mesos-spark-integration-tests/test-runner/ \
