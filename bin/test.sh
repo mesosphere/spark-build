@@ -32,12 +32,24 @@ set -o pipefail
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
+
+# Grab dcos-commons build/release tools:
+cd ${BIN_DIR}
+rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
+_notify_github() {
+    ./dcos-commons-tools/github_update.py $1 test $2
+}
+
 start_cluster() {
     if [ -n "${DCOS_URL}" ]; then
         echo "Using existing cluster: $DCOS_URL"
     else
         echo "Launching new cluster"
-        DCOS_URL=http://$(./launch-cluster.sh)
+        export DCOS_URL=http://$(./launch-cluster.sh)
+        if [ "$DCOS_URL" = "http://" ]; then
+            _notify_github failure "Cluster launch failed"
+            exit 1
+        fi
     fi
 }
 
@@ -88,13 +100,6 @@ if [ -z "$TEST_RUNNER_DIR" -o -z "$DOCKER_IMAGE" \
     env
     exit 1
 fi
-
-# Grab dcos-commons build/release tools:
-cd ${BIN_DIR}
-rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
-_notify_github() {
-    ./dcos-commons-tools/github_update.py $1 test $2
-}
 
 _notify_github pending "Starting Cluster"
 start_cluster;
