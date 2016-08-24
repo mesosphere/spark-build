@@ -44,16 +44,21 @@ CLUSTER_ID=$(echo "${CCM_RESPONSE}" | jq ".id")
 
 # echo "Waiting for cluster to come up..."
 # wait for cluster to come up
+SECONDS=0
 while true; do
     STATUS=$(http --ignore-stdin \
                   --verify no \
                   "${CCM_URL}active/all/" \
                   "${AUTH_HEADER}" | jq ".[] | select(.id == ${CLUSTER_ID}) | .status");
     if [ -n "$STATUS" -a "$STATUS" == "0" ]; then
-        break;
-    fi;
-    sleep 10;
-done;
+        break
+    fi
+    sleep 10
+    if [ $SECONDS -gt 2700 ]; then # 45 mins
+        echo "Cluster creation timed out"
+        exit 1
+    fi
+done
 
 # get dcos_url
 CLUSTER_INFO=$(http --verify no GET "${CCM_URL}active/all/" "${AUTH_HEADER}" | jq ".[] | select(.id == $CLUSTER_ID) | .cluster_info")
