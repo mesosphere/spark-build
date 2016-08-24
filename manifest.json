@@ -3,6 +3,6 @@
     "linux_cli_sha256": "6cd9d2a72f81d0719228c6d4748076d15c8908c24e7f5f1f67c5d10a97782cd9",
     "mac_cli_sha256": "6d92a13cf6009557944060f482bafb879482a4495686edb03272df29aff52475",
     "windows_cli_sha256": "75946eb21351a0918b24907d21a0e7564a91d933292f1ddf2a8eaf98e3c58a50",
-    "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.1-2.tgz",
+    "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.2.tgz",
     "version": "SNAPSHOT"
 }
