@@ -6,6 +6,7 @@
 #
 #  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
 #  DOCKER_IMAGE - Docker image used to make the DC/OS package
+#  COMMONS_TOOLS_DIR - path to dcos-commons/tools, or empty to fetch latest tgz
 #
 #  CLI Env vars:
 #    DCOS_USERNAME - Used for CLI login
@@ -32,10 +33,6 @@ set -o pipefail
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-notify_github() {
-    ${BIN_DIR}/dcos-commons-tools/github_update.py $1 test $2
-}
-
 check_env() {
     # Check env early, before starting the cluster:
     if [ -z "$TEST_RUNNER_DIR" -o -z "$DOCKER_IMAGE" \
@@ -50,9 +47,16 @@ check_env() {
 }
 
 fetch_commons_tools() {
-    pushd ${BIN_DIR}
-    rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
-    popd
+    if [ -z "${COMMONS_TOOLS_DIR}" ]; then
+        pushd ${BIN_DIR}
+        rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
+        popd
+        export COMMONS_TOOLS_DIR=${BIN_DIR}/dcos-commons-tools/
+    fi
+}
+
+notify_github() {
+    ${COMMONS_TOOLS_DIR}/github_update.py $1 test $2
 }
 
 start_cluster() {
@@ -61,7 +65,7 @@ start_cluster() {
     else
         notify_github pending "Starting Cluster"
         echo "Launching new cluster"
-        export DCOS_URL=http://$(./launch-cluster.sh)
+        export DCOS_URL=http://$(${BIN_DIR}/launch-cluster.sh)
         if [ $? -ne 0 -o "$DCOS_URL" = "http://" ]; then
             notify_github failure "Cluster launch failed"
             exit 1

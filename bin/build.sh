@@ -10,7 +10,8 @@
 #   SPARK_DIST_URI - where fetch spark distribution from
 #
 # ENV vars:
-#   DOCKER_IMAGE - <image>:<version> (or mesosphere/spark-dev:COMMIT)
+#   COMMONS_TOOLS_DIR - path to dcos-commons/tools/, or empty to fetch latest release tgz
+#   DOCKER_IMAGE - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   ghprbActualCommit / GIT_COMMIT - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
 set +e
@@ -38,13 +39,16 @@ configure_docker_image() {
 }
 
 fetch_commons_tools() {
-    pushd ${BIN_DIR}
-    rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
-    popd
+    if [ -z "${COMMONS_TOOLS_DIR}" ]; then
+        pushd ${BIN_DIR}
+        rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
+        popd
+        export COMMONS_TOOLS_DIR=${BIN_DIR}/dcos-commons-tools/
+    fi
 }
 
 notify_github() {
-    ${BIN_DIR}/dcos-commons-tools/github_update.py $1 build $2
+    ${COMMONS_TOOLS_DIR}/github_update.py $1 build $2
 }
 
 build_cli() {
@@ -73,7 +77,7 @@ upload_cli_and_stub_universe() {
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
-        ${BIN_DIR}/dcos-commons-tools/ci_upload.py \
+        ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
             ${BASEDIR}/cli/dist/*.whl
