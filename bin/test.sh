@@ -5,7 +5,7 @@
 #
 # ENV vars:
 #
-#  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
+#  TEST_DIR - mesos-spark-integration-tests/
 #  DOCKER_IMAGE - Docker image used to make the DC/OS package
 #
 #  # CCM Env Vars:
@@ -77,13 +77,13 @@ install_spark() {
 }
 
 run_tests() {
-    pushd ${TEST_RUNNER_DIR}
-    sbt -Dconfig.file=src/main/resources/dcos-application.conf \
-        -Daws.access_key=${AWS_ACCESS_KEY_ID} \
-        -Daws.secret_key=${AWS_SECRET_ACCESS_KEY} \
-        -Daws.s3.bucket=${S3_BUCKET} \
-        -Daws.s3.prefix=${S3_PREFIX} \
-        "dcos"
+    pushd tests
+    if [[ ! -d env ]]; then
+        virtualenv -p python3.4 env
+    fi
+    source env/bin/activate
+    pip install -r requirements.txt
+    TEST_JAR_PATH="${TEST_DIR}test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar" python test.py
     popd
 }
 

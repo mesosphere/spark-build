@@ -92,7 +92,7 @@ function spark_test {
     docker_login
     make docker
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
-                TEST_RUNNER_DIR=$(pwd)/../mesos-spark-integration-tests/test-runner/ \
+                TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
                 DCOS_CHANNEL=testing/master \
                 DCOS_USERNAME=bootstrapuser \
                 DCOS_PASSWORD=deleteme \
