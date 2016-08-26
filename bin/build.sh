@@ -68,7 +68,7 @@ notify_github() {
 
 build_cli() {
     notify_github pending "Building CLI"
-    make --directory=$BASEDIR/cli env test packages
+    CLI_VERSION=$CLI_VERSION make --directory=$BASEDIR/cli env test packages
     if [ $? -ne 0 ]; then
         notify_github failure "CLI build failed"
         exit 1
