@@ -60,6 +60,7 @@ function update_manifest {
     pushd spark-build
 
     # update manifest.sh with new spark dist:
+    SPARK_DIST=$(ls ../spark/spark*.tgz)
     sed -i "s,export SPARK_DIST_URI=.*,export SPARK_DIST_URI=http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST}),g" manifest.sh
 
     popd

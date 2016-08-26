@@ -24,17 +24,17 @@ configure_docker_image() {
         # determine image label based on git commit:
         if [ -n "$ghprbActualCommit" ]; then
             # always overrides default GIT_COMMIT:
-            export GIT_COMMIT=$ghprbActualCommit
+            GIT_COMMIT=$ghprbActualCommit
         fi
         if [ -z "$GIT_COMMIT" ]; then
             # Commit not explicitly provided by CI. Fetch directly from Git:
-            export GIT_COMMIT="$(git rev-parse HEAD)"
+            GIT_COMMIT="$(git rev-parse HEAD)"
         fi
         if [ -z "$GIT_COMMIT" ]; then
             echo "Unable to determine git commit. Giving up."
             exit 1
         fi
-        export DOCKER_IMAGE="mesosphere/spark-dev:$GIT_COMMIT"
+        DOCKER_IMAGE="mesosphere/spark-dev:$GIT_COMMIT"
     fi
 }
 
