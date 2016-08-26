@@ -59,9 +59,12 @@ function upload_to_s3 {
 function update_manifest {
     pushd spark-build
 
-    # update manifest.sh with new spark dist:
+    # update manifest.json with new spark dist:
     SPARK_DIST=$(ls ../spark/spark*.tgz)
-    sed -i "s,export SPARK_DIST_URI=.*,export SPARK_DIST_URI=http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST}),g" manifest.sh
+    SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
+    cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
+    mv manifest.json.tmp manifest.json
+
 
     popd
 }

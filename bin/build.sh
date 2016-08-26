@@ -6,8 +6,8 @@
 #   - stub universe zip to S3
 #
 # Manifest config:
-#   CLI_VERSION - version label to use for CLI package
-#   SPARK_DIST_URI - where fetch spark distribution from
+#   cli_version - version label to use for CLI package
+#   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
 #   COMMONS_TOOLS_DIR - path to dcos-commons/tools/, or empty to fetch latest release tgz
@@ -19,7 +19,21 @@ set +e
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASEDIR="${BIN_DIR}/.."
 
-configure_docker_image() {
+configure_env() {
+    if [ -z "${SPARK_DIST_URI}" ]; then
+        SPARK_DIST_URI=$(cat $BASEDIR/manifest.json | jq .spark_uri)
+        SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
+        SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
+        echo "Using Spark dist URI: $SPARK_DIST_URI"
+    fi
+
+    if [ -z "${CLI_VERSION}" ]; then
+        CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
+        CLI_VERSION="${CLI_VERSION%\"}"
+        CLI_VERSION="${CLI_VERSION#\"}"
+        echo "Using CLI Version: $CLI_VERSION"
+    fi
+
     if [ -z "$DOCKER_IMAGE" ]; then
         # determine image label based on git commit:
         if [ -n "$ghprbActualCommit" ]; then
@@ -35,6 +49,7 @@ configure_docker_image() {
             exit 1
         fi
         DOCKER_IMAGE="mesosphere/spark-dev:$GIT_COMMIT"
+        echo "Using Docker image: $DOCKER_IMAGE"
     fi
 }
 
@@ -83,10 +98,8 @@ upload_cli_and_stub_universe() {
             ${BASEDIR}/cli/dist/*.whl
 }
 
-# set CLI_VERSION, SPARK_DIST_URI:
-source $BASEDIR/manifest.sh
-# set DOCKER_IMAGE:
-configure_docker_image
+# set CLI_VERSION, SPARK_URI, and DOCKER_IMAGE:
+configure_env
 
 fetch_commons_tools
 

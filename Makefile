@@ -1,3 +1,6 @@
+docker:
+	bin/make-docker.sh
+
 build:
 	bin/build.sh
 

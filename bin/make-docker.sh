@@ -4,7 +4,7 @@
 #
 # ENV vars:
 #   DOCKER_IMAGE - <image>:<version>
-#   SPARK_DIST_URI - e.g. http://<domain>/spark-1.2.3.tgz
+#   SPARK_DIST_URI (default: manifest.json "spark_uri" value) - e.g. http://<domain>/spark-1.2.3.tgz
 
 set -x -e -o pipefail
 
@@ -40,7 +40,13 @@ function push_docker {
 }
 
 [[ -n "${DOCKER_IMAGE}" ]] || (echo "DOCKER_IMAGE is a required env var." 1>&2; exit 1)
-[[ -n "${SPARK_DIST_URI}" ]] || (echo "SPARK_DIST_URI is a required env var." 1>&2; exit 1)
+
+if [ -z "${SPARK_DIST_URI}" ]; then
+    SPARK_URI=$(cat manifest.json | jq .spark_uri)
+    SPARK_URI="${SPARK_URI%\"}"
+    SPARK_URI="${SPARK_URI#\"}"
+    SPARK_DIST_URI=${SPARK_URI}
+fi
 
 DIST_TGZ=$(basename "${SPARK_DIST_URI}")
 DIST="${DIST_TGZ%.*}"

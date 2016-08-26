@@ -132,7 +132,7 @@ These instructions are for the `spark-build` repo (this repo).
 
 ```
 git checkout master
-# Update manifest.sh with the latest `SPARK_DIST_URI` with the S3 URL acquired above
+# Update manifest.json with the latest `spark-uri` with the S3 URL acquired above
 git commit -a -m "Updated spark-uri to version <dist-version>"
 # The <package-version> for the tag is the same as the previous
 # <package-version>.  We only bump the <package-version> when the actual
