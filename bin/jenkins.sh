@@ -42,7 +42,6 @@ function rename_dist {
 function upload_to_s3 {
     pushd spark
 
-    echo ${AWS_ACCESS_KEY_ID}
     aws --debug s3 cp \
         --acl public-read \
         spark-*.tgz \
