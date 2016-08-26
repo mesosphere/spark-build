@@ -46,7 +46,6 @@ def task_log(task_id):
 
 def main():
     jar_url = upload_jar(os.getenv('TEST_JAR_PATH'))
-    #'/home/mgummelt/code/mesos-spark-integration-tests/test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar')
     task_id = submit_job(jar_url)
     print('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
