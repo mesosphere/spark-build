@@ -71,6 +71,14 @@ start_cluster() {
             exit 1
         fi
     fi
+
+    # EE
+    #TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+
+    # Open
+    TOKEN=$(python -c "import requests; import sys; js = {'token':'"${DCOS_OAUTH_TOKEN}"'}; r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js); sys.stderr.write(str(r.json())); print(r.json()['token'])")
+
+    dcos config set core.dcos_acs_token ${TOKEN}
 }
 
 configure_cli() {
