@@ -51,7 +51,7 @@ fetch_commons_tools() {
         pushd ${BIN_DIR}
         rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
         popd
-        export COMMONS_TOOLS_DIR=${BIN_DIR}/dcos-commons-tools/
+        COMMONS_TOOLS_DIR=${BIN_DIR}/dcos-commons-tools/
     fi
 }
 
@@ -65,27 +65,28 @@ start_cluster() {
     else
         notify_github pending "Starting Cluster"
         echo "Launching new cluster"
-        export DCOS_URL=http://$(${BIN_DIR}/launch-cluster.sh)
+
+        DCOS_URL=$(${COMMONS_TOOLS_DIR}/launch_ccm_cluster.py | jq .url)
         if [ $? -ne 0 -o "$DCOS_URL" = "http://" ]; then
             notify_github failure "Cluster launch failed"
             exit 1
         fi
     fi
-
-    # EE
-    #TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
-
-    # Open
-    TOKEN=$(python -c "import requests; import sys; js = {'token':'"${DCOS_OAUTH_TOKEN}"'}; r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js); sys.stderr.write(str(r.json())); print(r.json()['token'])")
-
-    dcos config set core.dcos_acs_token ${TOKEN}
 }
 
 configure_cli() {
     notify_github pending "Configuring CLI"
-    TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js,verify=False);print(r.json()['token'])")
-    dcos config set core.dcos_acs_token "${TOKEN}"
+
+    # EE
+    #TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
+
+    # # Open
+    # TOKEN=$(python -c "import requests; import sys; js = {'token':'"${DCOS_OAUTH_TOKEN}"'}; r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js); sys.stderr.write(str(r.json())); print(r.json()['token'])")
+
+    # dcos config set core.dcos_acs_token "${TOKEN}"
+
     dcos config set core.dcos_url "${DCOS_URL}"
+    ${COMMONS_TOOLS_DIR}/dcos_login.py
     dcos config show
     dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
     dcos package repo list
@@ -137,7 +138,6 @@ run_tests() {
 
 check_env
 fetch_commons_tools
-
 start_cluster
 configure_cli
 install_spark
