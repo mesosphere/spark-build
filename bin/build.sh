@@ -14,8 +14,6 @@
 #   DOCKER_IMAGE - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   ghprbActualCommit / GIT_COMMIT - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
-set +e
-
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASEDIR="${BIN_DIR}/.."
 
