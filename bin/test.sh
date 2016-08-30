@@ -5,7 +5,7 @@
 #
 # ENV vars:
 #
-#  TEST_DIR - mesos-spark-integration-tests/
+#  TEST_JAR_PATH - /path/to/mesos-spark-integration-tests.jar
 #  DOCKER_IMAGE - Docker image used to make the DC/OS package
 #
 #  # CCM Env Vars:
@@ -83,7 +83,7 @@ run_tests() {
     fi
     source env/bin/activate
     pip install -r requirements.txt
-    TEST_JAR_PATH="${TEST_DIR}test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar" python test.py
+    python test.py
     popd
 }
 
