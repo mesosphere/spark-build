@@ -11,31 +11,22 @@ edit `manifest.json`.
 
 ## Push a docker image
 
-Build and push a docker image using the Spark distribution specified in `manifest.json`
+Build and push a docker image using the Spark distribution specified in `manifest.json`. This is also executed automatically via `make build`, below.
 
 ```
 DOCKER_IMAGE=<name> make docker
 ```
 
-## Create a package
+## Create a CLI package, docker image, and universe
 
-Write a package to `build/package`.  Use the `DOCKER_IMAGE` name you
-created above.
-
-```
-DOCKER_IMAGE=<name> make package
-```
-
-## Create a universe
-
-Write a universe to `build/spark-universe`.  You can then upload this to
-e.g. S3, and point your DC/OS cluster at it via `dcos package repo
-add`.
+The `DOCKER_IMAGE` value may either be a provided custom value, or may be left unset to automatically use the current git commit SHA. The created universe and CLI will be uploaded to a default S3 bucket, or may be customized as in the example below:
 
 ```
-make universe
+DOCKER_IMAGE=<name> \
+S3_BUCKET=<your-bucket> \
+S3_DIR_PATH=<base-path-in-bucket> \
+    make build
 ```
-
 
 ## Test
 
@@ -43,6 +34,4 @@ make universe
 make test
 ```
 
-This requires several env variables, and is primarily used in CI.  It
-calls `make package` and `make universe`.  Read the comment at the top
-of the file for a complete description.
+This requires several env variables, and is primarily used in CI. Read the comment at the top of the file for a complete description.

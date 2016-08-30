@@ -1,2 +1,3 @@
 build/
+dcos-commons-tools/
 tests/env

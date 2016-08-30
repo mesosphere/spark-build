@@ -8,6 +8,11 @@
 
 set -x -e -o pipefail
 
+# The rest of this script currently assumes paths which are relative to the base repo dir:
+BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASEDIR="${BIN_DIR}/.."
+cd $BASEDIR
+
 function fetch_spark() {
     mkdir -p build/dist
     [ -f "build/dist/${DIST_TGZ}" ] || curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"

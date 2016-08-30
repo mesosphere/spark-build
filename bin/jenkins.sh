@@ -53,17 +53,19 @@ function upload_to_s3 {
 function update_manifest {
     pushd spark-build
 
-    # update manifest.json
+    # update manifest.json with new spark dist:
     SPARK_DIST=$(ls ../spark/spark*.tgz)
     SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
     cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
     mv manifest.json.tmp manifest.json
+
 
     popd
 }
 
 function install_cli {
     curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
+    rm -rf cli/
     mkdir cli
     bash install.sh cli http://change.me --add-path no
     source cli/bin/env-setup
@@ -84,7 +86,12 @@ function spark_test {
 
     pushd spark-build
     docker_login
-    make docker
+    # build/upload artifacts: docker + cli + stub universe:
+    make build
+    # in CI environments, ci_test.py creates a 'stub-universe.properties' file
+    # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
+    export $(cat $WORKSPACE/stub-universe.properties)
+    # run tests against build artifacts:
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
                 TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
                 DCOS_CHANNEL=testing/master \
