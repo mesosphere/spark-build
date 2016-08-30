@@ -1,31 +1,6 @@
 #!/usr/bin/env bash
 
 # Spins up a DCOS cluster and runs tests against it
-#
-# ENV vars:
-#
-#  TEST_JAR_PATH - /path/to/mesos-spark-integration-tests.jar
-#  DOCKER_IMAGE - Docker image used to make the DC/OS package
-#  COMMONS_TOOLS_DIR - path to dcos-commons/tools, or empty to fetch latest tgz
-#
-#  CLI Env vars:
-#    DCOS_USERNAME - Used for CLI login
-#    DCOS_PASSWORD - Used for CLI login
-#    STUB_UNIVERSE_URL - path to uploaded universe package
-#
-#  CCM Env Vars:
-#    DCOS_URL (optional) - If given, the tests will run against this
-#                          cluster, and not spin up a new one.
-#  when DCOS_URL is empty:
-#    CCM_AUTH_TOKEN - auth token for CCM interaction
-#    CLUSTER_NAME - name to use for new CCM cluster
-#    DCOS_CHANNEL (optional) - channel to create the CCM cluster against
-#
-#  AWS vars used for tests:
-#    AWS_ACCESS_KEY_ID
-#    AWS_SECRET_ACCESS_KEY
-#    S3_BUCKET
-#    S3_PREFIX
 
 set +e
 set -x
@@ -35,11 +10,15 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 check_env() {
     # Check env early, before starting the cluster:
-    if [ -z "$TEST_RUNNER_DIR" -o -z "$DOCKER_IMAGE" \
-            -o -z "$DCOS_USERNAME" -o -z "$DCOS_PASSWORD" \
+    if [ -z "$DOCKER_IMAGE" \
+            -o -z "$DCOS_USERNAME" \
+            -o -z "$DCOS_PASSWORD" \
             -o -z "$STUB_UNIVERSE_URL" \
-            -o -z "$AWS_ACCESS_KEY_ID" -o -z "$AWS_SECRET_ACCESS_KEY" \
-            -o -z "$S3_BUCKET" -o -z "$S3_PREFIX" ]; then
+            -o -z "$AWS_ACCESS_KEY_ID" \
+            -o -z "$AWS_SECRET_ACCESS_KEY" \
+            -o -z "$S3_BUCKET" \
+            -o -z "$S3_PREFIX" \
+            -o -z "$TEST_JAR_PATH"]; then
         echo "Missing required env. See check in ${BIN_DIR}/test.sh."
         env
         exit 1
