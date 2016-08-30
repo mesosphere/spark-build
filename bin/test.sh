@@ -4,7 +4,7 @@
 #
 # ENV vars:
 #
-#  TEST_RUNNER_DIR - mesos-spark-integration-tests/test-runner/
+#  TEST_JAR_PATH - /path/to/mesos-spark-integration-tests.jar
 #  DOCKER_IMAGE - Docker image used to make the DC/OS package
 #  COMMONS_TOOLS_DIR - path to dcos-commons/tools, or empty to fetch latest tgz
 #
@@ -122,17 +122,14 @@ install_spark() {
 
 run_tests() {
     notify_github pending "Running Tests"
-    pushd ${TEST_RUNNER_DIR}
-    sbt -Dconfig.file=src/main/resources/dcos-application.conf \
-        -Daws.access_key=${AWS_ACCESS_KEY_ID} \
-        -Daws.secret_key=${AWS_SECRET_ACCESS_KEY} \
-        -Daws.s3.bucket=${S3_BUCKET} \
-        -Daws.s3.prefix=${S3_PREFIX} \
-        "dcos"
-    if [ $? -ne 0 ]; then
-        notify_github failure "Tests failed"
-        exit 1
+
+    pushd tests
+    if [[ ! -d env ]]; then
+        virtualenv -p python3 env
     fi
+    source env/bin/activate
+    pip install -r requirements.txt
+    python test.py
     popd
 }
 
