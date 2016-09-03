@@ -93,11 +93,8 @@ function spark_test {
     export $(cat $WORKSPACE/stub-universe.properties)
     # run tests against build artifacts:
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
-                TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
-                DCOS_CHANNEL=testing/master \
-                DCOS_USERNAME=bootstrapuser \
-                DCOS_PASSWORD=deleteme \
-                make test
+    TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
+        make test
     popd
 }
 
