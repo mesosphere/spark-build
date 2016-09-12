@@ -3,6 +3,10 @@
 set -ex
 set -o pipefail
 
+export TEST_JAR_PATH=$(pwd)/mesos-spark-integration-tests-assembly-0.1.0.jar
+export COMMONS_TOOLS_DIR=$(pwd)/dcos-commons/tools/
+export CCM_TEMPLATE=single-master.cloudformation.json
+
 function make_distribution {
     # ./build/sbt assembly
     pushd spark
