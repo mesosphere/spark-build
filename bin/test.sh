@@ -2,7 +2,7 @@
 
 # Spins up a DCOS cluster and runs tests against it
 
-set +e
+set -e
 set -x
 set -o pipefail
 
