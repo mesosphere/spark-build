@@ -1,3 +1,9 @@
+# Env:
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   S3_BUCKET
+#   S3_PREFIX
+
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import re

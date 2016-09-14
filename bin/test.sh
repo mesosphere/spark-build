@@ -108,7 +108,9 @@ run_tests() {
     fi
     source env/bin/activate
     pip install -r requirements.txt
-    python test.py
+    AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID} \
+                     AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY} \
+                     python test.py
     popd
 }
 
