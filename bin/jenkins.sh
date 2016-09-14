@@ -92,7 +92,7 @@ function spark_test {
     docker_login
     # build/upload artifacts: docker + cli + stub universe:
     make build
-    # in CI environments, ci_test.py creates a 'stub-universe.properties' file
+    # in CI environments, ci_upload.py creates a 'stub-universe.properties' file
     # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
     export $(cat $WORKSPACE/stub-universe.properties)
     # run tests against build artifacts:
