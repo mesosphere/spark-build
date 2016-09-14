@@ -18,6 +18,8 @@ check_env() {
             -o -z "$AWS_SECRET_ACCESS_KEY" \
             -o -z "$S3_BUCKET" \
             -o -z "$S3_PREFIX" \
+            -o -z "$DEV_S3_BUCKET" \
+            -o -z "$DEV_S3_PREFIX" \
             -o -z "$TEST_JAR_PATH" ]; then
         echo "Missing required env. See check in ${BIN_DIR}/test.sh."
         env
@@ -110,6 +112,8 @@ run_tests() {
     pip install -r requirements.txt
     AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID} \
                      AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY} \
+                     S3_BUCKET=${DEV_S3_BUCKET} \
+                     S3_PREFIX=${DEV_S3_PREFIX} \
                      python test.py
     popd
 }
