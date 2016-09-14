@@ -92,7 +92,7 @@ upload_cli_and_stub_universe() {
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_PACKAGE_VERSION=${VERSION} \
     ARTIFACT_DIR="https://downloads.mesosphere.com/spark/assets" \
-    S3_URL="s3://${S3_BUCKET/${S3_PREFIX}" \
+    S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}" \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
