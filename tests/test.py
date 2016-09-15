@@ -1,3 +1,10 @@
+# Env:
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   S3_BUCKET
+#   S3_PREFIX
+#   TEST_JAR_PATH
+
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import re
@@ -8,15 +15,14 @@ import shakedown
 def upload_jar(jar):
     conn = S3Connection(os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'])
     bucket = conn.get_bucket(os.environ['S3_BUCKET'])
+    basename = os.path.basename(jar)
 
-    key = Key(bucket, 'S3_PREFIX')
+    key = Key(bucket, '{}/{}'.format(os.environ['S3_PREFIX'], basename))
     key.metadata = {'Content-Type': 'application/java-archive'}
     key.set_contents_from_filename(jar)
     key.make_public()
 
-    basename = os.path.basename(jar)
-
-    jar_url = "http://{0}.s3.amazonaws.com/{1}{2}".format(
+    jar_url = "http://{0}.s3.amazonaws.com/{1}/{2}".format(
         os.environ['S3_BUCKET'],
         os.environ['S3_PREFIX'],
         basename)

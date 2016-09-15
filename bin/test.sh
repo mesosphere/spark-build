@@ -2,7 +2,7 @@
 
 # Spins up a DCOS cluster and runs tests against it
 
-set +e
+set -e
 set -x
 set -o pipefail
 
@@ -98,7 +98,12 @@ run_tests() {
     fi
     source env/bin/activate
     pip install -r requirements.txt
-    python test.py
+    AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID} \
+                     AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY} \
+                     S3_BUCKET=${DEV_S3_BUCKET} \
+                     S3_PREFIX=${DEV_S3_PREFIX} \
+                     TEST_JAR_PATH=${TEST_JAR_PATH} \
+                     python test.py
     if [ $? -ne 0 ]; then
         notify_github failure "Tests failed"
     fi

@@ -13,6 +13,8 @@
 #   DOCKER_IMAGE - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   ghprbActualCommit / GIT_COMMIT - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
+set -e -x -o pipefail
+
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASEDIR="${BIN_DIR}/.."
 
@@ -81,6 +83,9 @@ upload_cli_and_stub_universe() {
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
+    TEMPLATE_PACKAGE_VERSION=${VERSION} \
+    ARTIFACT_DIR="https://downloads.mesosphere.com/spark/assets" \
+    S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}" \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
