@@ -3,6 +3,7 @@
 #   AWS_SECRET_ACCESS_KEY
 #   S3_BUCKET
 #   S3_PREFIX
+#   TEST_JAR_PATH
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -22,7 +23,7 @@ def upload_jar(jar):
 
     basename = os.path.basename(jar)
 
-    jar_url = "http://{0}.s3.amazonaws.com/{1}{2}".format(
+    jar_url = "http://{0}.s3.amazonaws.com/{1}/{2}".format(
         os.environ['S3_BUCKET'],
         os.environ['S3_PREFIX'],
         basename)

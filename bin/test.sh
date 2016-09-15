@@ -112,6 +112,7 @@ run_tests() {
                      AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY} \
                      S3_BUCKET=${DEV_S3_BUCKET} \
                      S3_PREFIX=${DEV_S3_PREFIX} \
+                     TEST_JAR_PATH=${TEST_JAR_PATH} \
                      python test.py
     popd
 }
