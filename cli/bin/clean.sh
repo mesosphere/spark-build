@@ -1,8 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash
 
-set -eux
+set +x
 
-BASEDIR=`dirname $0`/..
+BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $BIN_DIR/..
 
-rm -rf $BASEDIR/.tox $BASEDIR/env $BASEDIR/build $BASEDIR/dist
-echo "Deleted virtualenv and test artifacts."
+rm -f dcos-spark/dcos-spark*
+rm -rf python/build/ python/dist/ python/bin_wrapper.egg-info/

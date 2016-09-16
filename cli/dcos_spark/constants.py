@@ -1,1 +1,0 @@
-PATH_ENV = 'PATH'

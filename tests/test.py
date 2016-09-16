@@ -12,6 +12,7 @@ import os
 import subprocess
 import shakedown
 
+
 def upload_jar(jar):
     conn = S3Connection(os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'])
     bucket = conn.get_bucket(os.environ['S3_BUCKET'])
@@ -43,6 +44,7 @@ def submit_job(jar_url):
     match = re.search(regex, stdout)
     return match.group(1)
 
+
 def task_log(task_id):
     cmd = "dcos task log --completed --lines=1000 {}".format(task_id)
     print('Running {}'.format(cmd))
@@ -59,4 +61,6 @@ def main():
     print(log)
     assert "All tests passed" in log
 
-main()
+
+if __name__ == '__main__':
+    main()
