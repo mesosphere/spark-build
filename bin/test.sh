@@ -55,6 +55,7 @@ configure_cli() {
     notify_github pending "Configuring CLI"
 
     dcos config set core.dcos_url "${DCOS_URL}"
+    dcos config set core.ssl_verify false
     ${COMMONS_TOOLS_DIR}/dcos_login.py
     dcos config show
     dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
@@ -106,6 +107,7 @@ run_tests() {
                      python test.py
     if [ $? -ne 0 ]; then
         notify_github failure "Tests failed"
+        exit 1
     fi
     popd
 }
