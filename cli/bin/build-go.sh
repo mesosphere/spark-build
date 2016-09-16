@@ -3,7 +3,7 @@
 set +x
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $BIN_DIR/..
+cd "$BIN_DIR"/..
 
 if [ -z "$GOPATH" -o -z "$(which go)" ]; then
   echo "Missing GOPATH environment variable or 'go' executable. Please configure a Go build environment."
