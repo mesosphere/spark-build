@@ -3,13 +3,16 @@
 set -ex
 set -o pipefail
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_DIR="${DIR}/../../spark"
+SPARK_BUILD_DIR="${DIR}/.."
+
 export TEST_JAR_PATH=$(pwd)/mesos-spark-integration-tests-assembly-0.1.0.jar
 export COMMONS_TOOLS_DIR=$(pwd)/dcos-commons/tools/
 export CCM_TEMPLATE=single-master.cloudformation.json
 
 function make_distribution {
-    # ./build/sbt assembly
-    pushd spark
+    pushd "${SPARK_DIR}"
 
     if [[ -n "${SPARK_DIST_URI}" ]]; then
         wget "${SPARK_DIST_URI}"
@@ -30,7 +33,7 @@ function make_distribution {
 
 # rename spark/spark-<SHA1>.tgz to spark/spark-<TAG>.tgz
 function rename_dist {
-    pushd spark
+    pushd "${SPARK_DIR}"
 
     local VERSION=${GIT_BRANCH#refs/tags/private-}
 
@@ -44,7 +47,7 @@ function rename_dist {
 }
 
 function upload_to_s3 {
-    pushd spark
+    pushd "${SPARK_DIR}"
 
     aws --debug s3 cp \
         --acl public-read \
@@ -55,14 +58,13 @@ function upload_to_s3 {
 }
 
 function update_manifest {
-    pushd spark-build
+    pushd "${SPARK_BUILD_DIR}"
 
     # update manifest.json with new spark dist:
     SPARK_DIST=$(ls ../spark/spark*.tgz)
     SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
     cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
     mv manifest.json.tmp manifest.json
-
 
     popd
 }
