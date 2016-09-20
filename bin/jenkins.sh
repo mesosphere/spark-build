@@ -100,9 +100,6 @@ function spark_test {
     # run tests against build artifacts:
     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
                 TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
-                DCOS_CHANNEL=testing/master \
-                DCOS_USERNAME=bootstrapuser \
-                DCOS_PASSWORD=deleteme \
                 S3_BUCKET=${DEV_S3_BUCKET} \
                 S3_PREFIX=${DEV_S3_PREFIX} \
                 make test

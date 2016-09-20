@@ -11,8 +11,6 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 check_env() {
     # Check env early, before starting the cluster:
     if [ -z "$DOCKER_IMAGE" \
-            -o -z "$DCOS_USERNAME" \
-            -o -z "$DCOS_PASSWORD" \
             -o -z "$STUB_UNIVERSE_URL" \
             -o -z "$AWS_ACCESS_KEY_ID" \
             -o -z "$AWS_SECRET_ACCESS_KEY" \
@@ -56,15 +54,8 @@ start_cluster() {
 configure_cli() {
     notify_github pending "Configuring CLI"
 
-    # EE
-    #TOKEN=$(python -c "import requests;js={'uid':'"${DCOS_USERNAME}"', 'password': '"${DCOS_PASSWORD}"'};r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js);print(r.json()['token'])")
-
-    # # Open
-    # TOKEN=$(python -c "import requests; import sys; js = {'token':'"${DCOS_OAUTH_TOKEN}"'}; r=requests.post('"${DCOS_URL}"/acs/api/v1/auth/login',json=js); sys.stderr.write(str(r.json())); print(r.json()['token'])")
-
-    # dcos config set core.dcos_acs_token "${TOKEN}"
-
     dcos config set core.dcos_url "${DCOS_URL}"
+    dcos config set core.ssl_verify false
     ${COMMONS_TOOLS_DIR}/dcos_login.py
     dcos config show
     dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
@@ -114,6 +105,10 @@ run_tests() {
                      S3_PREFIX=${DEV_S3_PREFIX} \
                      TEST_JAR_PATH=${TEST_JAR_PATH} \
                      python test.py
+    if [ $? -ne 0 ]; then
+        notify_github failure "Tests failed"
+        exit 1
+    fi
     popd
 }
 

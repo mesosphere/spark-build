@@ -6,7 +6,6 @@
 #   - stub universe zip to S3
 #
 # Manifest config:
-#   cli_version - version label to use for CLI package
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
@@ -25,13 +24,6 @@ configure_env() {
         SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
         SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
         echo "Using Spark dist URI: $SPARK_DIST_URI"
-    fi
-
-    if [ -z "${CLI_VERSION}" ]; then
-        CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
-        CLI_VERSION="${CLI_VERSION%\"}"
-        CLI_VERSION="${CLI_VERSION#\"}"
-        echo "Using CLI Version: $CLI_VERSION"
     fi
 
     if [ -z "$DOCKER_IMAGE" ]; then
@@ -68,7 +60,7 @@ notify_github() {
 
 build_cli() {
     notify_github pending "Building CLI"
-    CLI_VERSION=$CLI_VERSION make --directory=$BASEDIR/cli env test packages
+    make --directory=$BASEDIR/cli all
     if [ $? -ne 0 ]; then
         notify_github failure "CLI build failed"
         exit 1
@@ -91,17 +83,19 @@ upload_cli_and_stub_universe() {
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
-    TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_PACKAGE_VERSION=${VERSION} \
-    ARTIFACT_DIR="https://downloads.mesosphere.com/spark/assets" \
+    ARTIFACT_DIR="https://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}" \
     S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}" \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
-            ${BASEDIR}/cli/dist/*.whl
+            ${BASEDIR}/cli/dcos-spark/dcos-spark-darwin \
+            ${BASEDIR}/cli/dcos-spark/dcos-spark-linux \
+            ${BASEDIR}/cli/dcos-spark/dcos-spark.exe \
+            ${BASEDIR}/cli/python/dist/*.whl
 }
 
-# set CLI_VERSION, SPARK_URI, and DOCKER_IMAGE:
+# set SPARK_URI and DOCKER_IMAGE:
 configure_env
 
 fetch_commons_tools
