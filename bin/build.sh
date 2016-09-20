@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-# Builds and uploads:
-#   - CLI to S3
-#   - Spark docker image to dockerhub
-#   - stub universe zip to S3
+# Builds a universe for this spark package
 #
 # Manifest config:
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)

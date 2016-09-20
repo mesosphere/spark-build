@@ -12,11 +12,10 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-
 source "${DIR}/jenkins.sh"
 
 make_distribution
 upload_to_s3
 
-SPARK_DIST_URL="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-${GIT_COMMIT}.tgz"
-echo "SPARK_DIST_URL=${SPARK_DIST_URL}" > spark_dist_uri.properties
+SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-${GIT_COMMIT}.tgz"
+echo "SPARK_DIST_URI=${SPARK_DIST_URI}" > spark_dist_uri.properties
