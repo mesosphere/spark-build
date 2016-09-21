@@ -3,6 +3,7 @@
 # Builds a universe for this spark package
 #
 # Manifest config:
+#   cli_version - version label to use for CLI package
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
@@ -21,6 +22,13 @@ configure_env() {
         SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
         SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
         echo "Using Spark dist URI: $SPARK_DIST_URI"
+    fi
+
+    if [ -z "${CLI_VERSION}" ]; then
+        CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
+        CLI_VERSION="${CLI_VERSION%\"}"
+        CLI_VERSION="${CLI_VERSION#\"}"
+        echo "Using CLI Version: $CLI_VERSION"
     fi
 
     if [ -z "$DOCKER_IMAGE" ]; then
@@ -57,7 +65,7 @@ notify_github() {
 
 build_cli() {
     notify_github pending "Building CLI"
-    make --directory=$BASEDIR/cli all
+    CLI_VERSION=$CLI_VERSION make --directory=$BASEDIR/cli env test packages
     if [ $? -ne 0 ]; then
         notify_github failure "CLI build failed"
         exit 1
@@ -86,13 +94,10 @@ upload_cli_and_stub_universe() {
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
-            ${BASEDIR}/cli/dcos-spark/dcos-spark-darwin \
-            ${BASEDIR}/cli/dcos-spark/dcos-spark-linux \
-            ${BASEDIR}/cli/dcos-spark/dcos-spark.exe \
-            ${BASEDIR}/cli/python/dist/*.whl
+            ${BASEDIR}/cli/dist/*.whl
 }
 
-# set SPARK_URI and DOCKER_IMAGE:
+# set CLI_VERSION, SPARK_URI, and DOCKER_IMAGE:
 configure_env
 
 fetch_commons_tools
