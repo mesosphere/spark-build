@@ -18,4 +18,4 @@ make_distribution
 upload_to_s3
 
 SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-${GIT_COMMIT}.tgz"
-echo "SPARK_DIST_URI=${SPARK_DIST_URI}" > spark_dist_uri.properties
+echo "${SPARK_DIST_URI}" > spark_dist_uri
