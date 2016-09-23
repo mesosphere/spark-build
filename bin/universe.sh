@@ -8,6 +8,7 @@
 # ENV vars:
 #   COMMONS_TOOLS_DIR - path to dcos-commons/tools/, or empty to fetch latest release tgz
 #   DOCKER_IMAGE - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
+#   SPARK_DIST_URI (optional) - URI of spark distribution to use [default: "spark_uri" value in manifest.json]
 #   ghprbActualCommit / GIT_COMMIT - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
 set -e -x -o pipefail
