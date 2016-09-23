@@ -139,13 +139,23 @@ executors, for example with `spark.executor.memory`.
 
 ### HDFS
 
-By default, DC/OS Spark jobs are configured to read from DC/OS HDFS. To
-submit Spark jobs that read from a different HDFS cluster, customize
-`hdfs.config-url` to be a URL that serves `hdfs-site.xml` and
-`core-site.xml`. [Learn more][8].
+To configure Spark for a specific HDFS cluster, configure
+`hdfs.config-url` to be a URL that serves your `hdfs-site.xml` and
+`core-site.xml`. For example:
+
+    {
+      "hdfs": {
+        "config-url": "http://mydomain.com/hdfs-config"
+      }
+    }
+
+
+where `http://mydomain.com/hdfs-config/hdfs-site.xml` and
+`http://mydomain.com/hdfs-config/core-site.xml` are valid
+URLs.[Learn more][8].
 
 For DC/OS HDFS, these configuration files are served at
-`http://<hdfs.framework-name>.marathon.mesos:<port>/config/`, where
+`http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connect`, where
 `<hdfs.framework-name>` is a configuration variable set in the HDFS
 package, and `<port>` is the port of its marathon app.
 
