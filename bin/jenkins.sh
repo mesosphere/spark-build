@@ -7,10 +7,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 
-export TEST_JAR_PATH=$(pwd)/mesos-spark-integration-tests-assembly-0.1.0.jar
-export COMMONS_TOOLS_DIR=$(pwd)/dcos-commons/tools/
-export CCM_TEMPLATE=single-master.cloudformation.json
-
 function make_distribution {
     pushd "${SPARK_DIR}"
 
@@ -49,6 +45,7 @@ function rename_dist {
 function upload_to_s3 {
     pushd "${SPARK_DIR}"
 
+    env
     aws --debug s3 cp \
         --acl public-read \
         spark-*.tgz \
