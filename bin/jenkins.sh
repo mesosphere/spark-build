@@ -68,10 +68,10 @@ function update_manifest {
 
 function install_cli {
     curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
-    rm -rf cli/
-    mkdir cli
-    bash install.sh cli http://change.me --add-path no
-    source cli/bin/env-setup
+    rm -rf dcos-cli/
+    mkdir dcos-cli
+    bash install.sh dcos-cli http://change.me --add-path no
+    source dcos-cli/bin/env-setup
 
     # hack because the installer forces an old CLI version
     pip install -U dcoscli
