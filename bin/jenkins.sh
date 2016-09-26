@@ -49,7 +49,7 @@ function upload_to_s3 {
     aws --debug s3 cp \
         --acl public-read \
         spark-*.tgz \
-        "s3://${S3_BUCKET}/${S3_PREFIX}"
+        "s3://${S3_BUCKET}/${S3_PREFIX}/"
 
     popd
 }
