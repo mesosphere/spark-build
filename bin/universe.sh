@@ -53,6 +53,8 @@ fetch_commons_tools() {
 }
 
 build_cli() {
+    pwd
+    ls -all $BASEDIR/cli
     make --directory=$BASEDIR/cli all
 }
 
