@@ -21,5 +21,5 @@ make_distribution
 upload_to_s3
 
 SPARK_FILENAME=$(basename $(ls ${SPARK_DIR}/spark*.tgz))
-SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}${SPARK_FILENAME}"
+SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/${SPARK_FILENAME}"
 echo "SPARK_DIST_URI=${SPARK_DIST_URI}" > spark_dist_uri.properties
