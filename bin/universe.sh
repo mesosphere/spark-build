@@ -52,29 +52,18 @@ fetch_commons_tools() {
     fi
 }
 
-notify_github() {
-    ${COMMONS_TOOLS_DIR}/github_update.py $1 build $2
-}
-
 build_cli() {
-    notify_github pending "Building CLI"
     make --directory=$BASEDIR/cli all
-    if [ $? -ne 0 ]; then
-        notify_github failure "CLI build failed"
-        exit 1
-    fi
 }
 
 build_push_docker() {
     echo "###"
     echo "# Using docker image: $DOCKER_IMAGE"
     echo "###"
-    notify_github pending "Building Docker: $DOCKER_IMAGE"
-    $BIN_DIR/make-docker.sh
-    if [ $? -ne 0 ]; then
-        notify_github failure "Docker build failed"
-        exit 1
-    fi
+
+    pushd "${BASEDIR}"
+    make docker
+    popd
 }
 
 upload_cli_and_stub_universe() {
@@ -95,11 +84,7 @@ upload_cli_and_stub_universe() {
 
 # set SPARK_URI and DOCKER_IMAGE:
 configure_env
-
 fetch_commons_tools
-
 build_cli
 build_push_docker
-notify_github success "Build succeeded"
-
 upload_cli_and_stub_universe
