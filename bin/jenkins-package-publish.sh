@@ -12,7 +12,7 @@ install_cli
 docker_login
 make universe
 cp ../stub-universe.properties ../build.propertes
-VERSION=${GIT_BRANCH#refs/tags/}
+VERSION=${GIT_BRANCH#origin/tags/}
 echo "RELEASE_VERSION=${VERSION}" >> ../build.properties
 echo "DOCKER_IMAGE=mesosphere/spark:${VERSION}" >> ../build.properties
 popd
