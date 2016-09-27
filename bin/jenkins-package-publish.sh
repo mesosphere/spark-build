@@ -8,6 +8,8 @@ SPARK_BUILD_DIR=${DIR}/..
 source spark-build/bin/jenkins.sh
 
 pushd "${SPARK_BUILD_DIR}"
+install_cli
+docker_login
 make universe
 cp ../stub_universe.properties ../build.propertes
 echo "RELEASE_VERSION=${GIT_BRANCH#refs/tags/}" >> ../build.properties
