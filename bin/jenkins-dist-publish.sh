@@ -9,6 +9,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR=${DIR}/..
 
 pushd "${SPARK_BUILD_DIR}"
-VERSION=${GIT_BRANCH#refs/tags/custom-}
+VERSION=${GIT_BRANCH#origin/tags/custom-}
 DIST_NAME="spark-${VERSION}" make dist
 popd
