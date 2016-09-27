@@ -27,11 +27,11 @@ function make_distribution {
     popd
 }
 
-# # rename spark/spark-<SHA1>.tgz to spark/spark-<TAG>.tgz
+# rename spark/spark-*.tgz to spark/spark-<TAG>.tgz
 # function rename_dist {
 #     pushd "${SPARK_DIR}"
 
-#     local VERSION=${GIT_BRANCH#refs/tags/private-}
+#     local VERSION=${GIT_BRANCH#refs/tags/custom-}
 
 #     # rename to spark-<tag>
 #     tar xvf spark-*.tgz
@@ -42,6 +42,7 @@ function make_distribution {
 #     popd
 # }
 
+# uploads spark/spark-*.tgz to S3
 function upload_to_s3 {
     pushd "${SPARK_DIR}"
 
