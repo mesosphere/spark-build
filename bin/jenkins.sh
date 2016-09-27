@@ -27,20 +27,20 @@ function make_distribution {
     popd
 }
 
-# rename spark/spark-<SHA1>.tgz to spark/spark-<TAG>.tgz
-function rename_dist {
-    pushd "${SPARK_DIR}"
+# # rename spark/spark-<SHA1>.tgz to spark/spark-<TAG>.tgz
+# function rename_dist {
+#     pushd "${SPARK_DIR}"
 
-    local VERSION=${GIT_BRANCH#refs/tags/private-}
+#     local VERSION=${GIT_BRANCH#refs/tags/private-}
 
-    # rename to spark-<tag>
-    tar xvf spark-*.tgz
-    rm spark-*.tgz
-    mv spark-* spark-${VERSION}
-    tar czf spark-${VERSION}.tgz spark-${VERSION}
+#     # rename to spark-<tag>
+#     tar xvf spark-*.tgz
+#     rm spark-*.tgz
+#     mv spark-* spark-${VERSION}
+#     tar czf spark-${VERSION}.tgz spark-${VERSION}
 
-    popd
-}
+#     popd
+# }
 
 function upload_to_s3 {
     pushd "${SPARK_DIR}"
@@ -54,17 +54,17 @@ function upload_to_s3 {
     popd
 }
 
-function update_manifest {
-    pushd "${SPARK_BUILD_DIR}"
+# function update_manifest {
+#     pushd "${SPARK_BUILD_DIR}"
 
-    # update manifest.json with new spark dist:
-    SPARK_DIST=$(ls ../spark/spark*.tgz)
-    SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
-    cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
-    mv manifest.json.tmp manifest.json
+#     # update manifest.json with new spark dist:
+#     SPARK_DIST=$(ls ../spark/spark*.tgz)
+#     SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
+#     cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
+#     mv manifest.json.tmp manifest.json
 
-    popd
-}
+#     popd
+# }
 
 function install_cli {
     curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
@@ -84,27 +84,27 @@ function docker_login {
     docker login --email=docker@mesosphere.io --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
 }
 
-function spark_test {
-    install_cli
+# function spark_test {
+#     install_cli
 
-    pushd spark-build
-    docker_login
-    # build/upload artifacts: docker + cli + stub universe:
-    make build
-    # in CI environments, ci_upload.py creates a 'stub-universe.properties' file
-    # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
-    export $(cat $WORKSPACE/stub-universe.properties)
-    # run tests against build artifacts:
-    CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
-                TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
-                S3_BUCKET=${DEV_S3_BUCKET} \
-                S3_PREFIX=${DEV_S3_PREFIX} \
-                make test
-    popd
-}
+#     pushd spark-build
+#     docker_login
+#     # build/upload artifacts: docker + cli + stub universe:
+#     make build
+#     # in CI environments, ci_upload.py creates a 'stub-universe.properties' file
+#     # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
+#     export $(cat $WORKSPACE/stub-universe.properties)
+#     # run tests against build artifacts:
+#     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
+#                 TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
+#                 S3_BUCKET=${DEV_S3_BUCKET} \
+#                 S3_PREFIX=${DEV_S3_PREFIX} \
+#                 make test
+#     popd
+# }
 
-function upload_distribution {
-    make_distribution
-    upload_to_s3
-    update_manifest
-}
+# function upload_distribution {
+#     make_distribution
+#     upload_to_s3
+#     update_manifest
+# }
