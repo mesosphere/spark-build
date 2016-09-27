@@ -11,7 +11,7 @@ pushd "${SPARK_BUILD_DIR}"
 install_cli
 docker_login
 make universe
-cp ../stub_universe.properties ../build.propertes
+cp ../stub-universe.properties ../build.propertes
 VERSION=${GIT_BRANCH#refs/tags/}
 echo "RELEASE_VERSION=${VERSION}" >> ../build.properties
 echo "DOCKER_IMAGE=mesosphere/spark:${VERSION}" >> ../build.properties
