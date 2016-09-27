@@ -17,7 +17,8 @@ SPARK_DIR="${DIR}/../../spark"
 
 source "${DIR}/jenkins.sh"
 
-make_distribution
+GIT_COMMIT_NAME="spark-${GIT_COMMIT}"
+DIST_NAME=${DIST_NAME:-$GIT_COMMIT_NAME} make_distribution
 upload_to_s3
 
 SPARK_FILENAME=$(basename $(ls ${SPARK_DIR}/spark*.tgz))

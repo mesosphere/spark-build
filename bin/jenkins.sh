@@ -8,6 +8,8 @@ SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 
 function make_distribution {
+    # Env var: DIST_NAME
+
     pushd "${SPARK_DIR}"
 
     if [[ -n "${SPARK_DIST_URI}" ]]; then
@@ -19,28 +21,27 @@ function make_distribution {
             ./dev/make-distribution.sh -Pmesos -Phadoop-2.6 -DskipTests
         fi
 
-        local DIST="spark-${GIT_COMMIT}"
-        mv dist ${DIST}
-        tar czf ${DIST}.tgz ${DIST}
+        mv dist ${DIST_NAME}
+        tar czf ${DIST_NAME}.tgz ${DIST_NAME}
     fi
 
     popd
 }
 
 # rename spark/spark-*.tgz to spark/spark-<TAG>.tgz
-# function rename_dist {
-#     pushd "${SPARK_DIR}"
+function rename_dist {
+    pushd "${SPARK_DIR}"
 
-#     local VERSION=${GIT_BRANCH#refs/tags/custom-}
+    local VERSION=${GIT_BRANCH#refs/tags/custom-}
 
-#     # rename to spark-<tag>
-#     tar xvf spark-*.tgz
-#     rm spark-*.tgz
-#     mv spark-* spark-${VERSION}
-#     tar czf spark-${VERSION}.tgz spark-${VERSION}
+    # rename to spark-<tag>
+    tar xvf spark-*.tgz
+    rm spark-*.tgz
+    mv spark-* spark-${VERSION}
+    tar czf spark-${VERSION}.tgz spark-${VERSION}
 
-#     popd
-# }
+    popd
+}
 
 # uploads spark/spark-*.tgz to S3
 function upload_to_s3 {
