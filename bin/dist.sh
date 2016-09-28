@@ -10,7 +10,7 @@ SPARK_DIR="${DIR}/../../spark"
 check_env() {
     # Check env early, before starting the cluster:
     if [ -z "$S3_BUCKET" \
-            -o -z "$S3_PREFIX" \
+            -o -z "${S3_PREFIX+x}" \
             -o -z "$DIST_NAME" ]; then
         echo "Missing required env. See check in ${BIN_DIR}/dist.sh."
         env
