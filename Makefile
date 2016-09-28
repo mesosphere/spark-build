@@ -10,4 +10,4 @@ test:
 dist:
 	bin/dist.sh
 
-.PHONY: build test
+.PHONY: docker universe test dist

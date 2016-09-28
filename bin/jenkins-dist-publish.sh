@@ -1,11 +1,14 @@
 #!/bin/bash
 
-export S3_BUCKET=downloads.mesosphere.io
-export S3_PREFIX=spark/assets
-export AWS_ACCESS_KEY_ID=${PROD_AWS_ACCESS_KEY_ID}
-export AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY}
+# Env Vars:
+#   GIT_BRANCH (assumed to have prefix "refs/tags/custom-")
 
-source spark-build/bin/jenkins.sh
+set -e -x -o pipefail
 
-rename_dist
-upload_to_s3
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_BUILD_DIR=${DIR}/..
+
+pushd "${SPARK_BUILD_DIR}"
+VERSION=${GIT_BRANCH#origin/tags/custom-}
+DIST_NAME="spark-${VERSION}" make dist
+popd
