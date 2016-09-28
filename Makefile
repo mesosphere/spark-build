@@ -1,8 +1,8 @@
 docker:
 	bin/make-docker.sh
 
-build:
-	bin/build.sh
+universe:
+	bin/universe.sh
 
 test:
 	bin/test.sh
@@ -10,4 +10,4 @@ test:
 dist:
 	bin/dist.sh
 
-.PHONY: build test
+.PHONY: docker universe test dist

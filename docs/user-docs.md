@@ -1,6 +1,6 @@
 # Overview
 
-Spark is a fast and general-purpose cluster computing system for big
+Apache Spark is a fast and general-purpose cluster computing system for big
 data. It provides high-level APIs in Scala, Java, Python, and R, and
 an optimized engine that supports general computation graphs for data
 analysis. It also supports a rich set of higher-level tools including
@@ -8,7 +8,7 @@ Spark SQL for SQL and DataFrames, MLlib for machine learning, GraphX
 for graph processing, and Spark Streaming for stream processing. For
 more information, see the [Apache Spark documentation][1].
 
-DC/OS Spark consists of
+Apache DC/OS Spark consists of
 [Apache Spark with a few custom commits][17]
 along with
 [DC/OS-specific packaging][18].
@@ -531,7 +531,7 @@ dependency management.
  [7]: #custom
  [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
  [9]: #ssl
- [10]: https://docs.mesosphere.com/administration/sshcluster/
+ [10]: https://docs.mesosphere.com/administration/access-node/sshcluster/
  [11]: https://docs.mesosphere.com/administration/dcosarchitecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
  [13]: http://spark.apache.org/docs/latest/submitting-applications.html

@@ -7,9 +7,10 @@
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
-#   COMMONS_TOOLS_DIR - path to dcos-commons/tools/, or empty to fetch latest release tgz
-#   DOCKER_IMAGE - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
-#   ghprbActualCommit / GIT_COMMIT - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
+#   DOCKER_IMAGE (optional) - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
+#   COMMONS_TOOLS_DIR (optional) - path to dcos-commons/tools/, or empty to fetch latest release tgz
+#   SPARK_DIST_URI (optional) - URI of spark distribution to use [default: "spark_uri" value in manifest.json]
+#   ghprbActualCommit / GIT_COMMIT (optional) - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
 set -e -x -o pipefail
 
@@ -59,38 +60,29 @@ fetch_commons_tools() {
     fi
 }
 
-notify_github() {
-    ${COMMONS_TOOLS_DIR}/github_update.py $1 build $2
-}
-
 build_cli() {
-    notify_github pending "Building CLI"
-    CLI_VERSION=$CLI_VERSION make --directory=$BASEDIR/cli env test packages
-    if [ $? -ne 0 ]; then
-        notify_github failure "CLI build failed"
-        exit 1
-    fi
+    pwd
+    ls -all $BASEDIR/cli
+    make --directory=$BASEDIR/cli all
 }
 
 build_push_docker() {
     echo "###"
     echo "# Using docker image: $DOCKER_IMAGE"
     echo "###"
-    notify_github pending "Building Docker: $DOCKER_IMAGE"
-    $BIN_DIR/make-docker.sh
-    if [ $? -ne 0 ]; then
-        notify_github failure "Docker build failed"
-        exit 1
-    fi
+
+    pushd "${BASEDIR}"
+    make docker
+    popd
 }
 
 upload_cli_and_stub_universe() {
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
+    # ARTIFACT_DIR="https://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}" \
+    # S3_DIR_PATH=${S3_PREFIX:-} \
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
     TEMPLATE_PACKAGE_VERSION=${VERSION} \
-    ARTIFACT_DIR="https://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}" \
-    S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}" \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
@@ -99,11 +91,7 @@ upload_cli_and_stub_universe() {
 
 # set CLI_VERSION, SPARK_URI, and DOCKER_IMAGE:
 configure_env
-
 fetch_commons_tools
-
 build_cli
 build_push_docker
-notify_github success "Build succeeded"
-
 upload_cli_and_stub_universe

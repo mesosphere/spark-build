@@ -10,12 +10,17 @@
 #   AWS_SECRET_ACCESS_KEY
 #   GIT_COMMIT
 
+set -e -x -o pipefail
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_DIR="${DIR}/../../spark"
 
 source "${DIR}/jenkins.sh"
 
-make_distribution
+GIT_COMMIT_NAME="spark-${GIT_COMMIT}"
+DIST_NAME=${DIST_NAME:-$GIT_COMMIT_NAME} make_distribution
 upload_to_s3
 
-SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}spark-${GIT_COMMIT}.tgz"
+SPARK_FILENAME=$(basename $(ls ${SPARK_DIR}/spark*.tgz))
+SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/${SPARK_FILENAME}"
 echo "SPARK_DIST_URI=${SPARK_DIST_URI}" > spark_dist_uri.properties
