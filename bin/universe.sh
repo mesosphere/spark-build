@@ -63,7 +63,7 @@ fetch_commons_tools() {
 build_cli() {
     pwd
     ls -all $BASEDIR/cli
-    make --directory=$BASEDIR/cli all
+    CLI_VERSION=${CLI_VERSION} make --directory=$BASEDIR/cli all
 }
 
 build_push_docker() {
@@ -80,6 +80,7 @@ upload_cli_and_stub_universe() {
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
     # ARTIFACT_DIR="https://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}" \
     # S3_DIR_PATH=${S3_PREFIX:-} \
+    TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
     TEMPLATE_PACKAGE_VERSION=${VERSION} \

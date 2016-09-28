@@ -6,6 +6,8 @@ BASEDIR="${BIN_DIR}/.."
 if [ -n "$CLI_VERSION" ]; then
     echo "Using CLI Version: $CLI_VERSION (default $(cat $BASEDIR/dcos_spark/version.py)"
     echo "version = '${CLI_VERSION}'" > $BASEDIR/dcos_spark/version.py
+else
+    echo "CLI Version not specified (default $(cat $BASEDIR/dcos_spark/version.py)"
 fi
 
 echo "Building wheel..."

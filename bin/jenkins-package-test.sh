@@ -14,6 +14,12 @@ function run() {
 }
 
 pushd "${SPARK_BUILD_DIR}"
+
+export VERSION=${ghprbActualCommit}
+if [ -z "$VERSION" ]; then
+    export VERSION=${GIT_COMMIT}
+fi
+
 run
 popd
 # #!/bin/bash
