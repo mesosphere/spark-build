@@ -9,7 +9,7 @@ function run() {
     source bin/jenkins.sh
     install_cli
     docker_login
-    make dist && export $(cat spark_dist_uri.properties)
+    DIST_NAME="spark-${GIT_COMMIT}" make dist && export $(cat spark_dist_uri.properties)
     make universe && export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }

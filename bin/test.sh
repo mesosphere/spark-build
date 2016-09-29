@@ -10,9 +10,7 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 check_env() {
     # Check env early, before starting the cluster:
-    if [ -z "$DOCKER_IMAGE" \
-            -o -z "$STUB_UNIVERSE_URL" \
-            -o -z "$AWS_ACCESS_KEY_ID" \
+    if [ -z "$AWS_ACCESS_KEY_ID" \
             -o -z "$AWS_SECRET_ACCESS_KEY" \
             -o -z "$S3_BUCKET" \
             -o -z "$S3_PREFIX" \
@@ -53,13 +51,13 @@ start_cluster() {
 
 configure_cli() {
     notify_github pending "Configuring CLI"
-
     dcos config set core.dcos_url "${DCOS_URL}"
     dcos config set core.ssl_verify false
     ${COMMONS_TOOLS_DIR}/dcos_login.py
     dcos config show
-    dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
-    dcos package repo list
+    if [ -n "${STUB_UNIVERSE_URL}" ]; then
+        dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
+    fi
 }
 
 install_spark() {
