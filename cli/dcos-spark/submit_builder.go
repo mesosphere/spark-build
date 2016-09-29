@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/mesosphere/dcos-commons/cli"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -48,34 +50,42 @@ type sparkArgs struct {
 /*
 Relevant files:
 - http://arturmkrtchyan.com/apache-spark-hidden-rest-api
+stock spark:
 - https://github.com/apache/spark/blob/master/launcher/src/main/java/org/apache/spark/launcher/SparkSubmitOptionParser.java
 - https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/deploy/SparkSubmitArguments.scala
 - https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/deploy/SparkSubmit.scala
+patched spark (adds kerberos support for Mesos):
+- https://github.com/mesosphere/spark/blob/custom-master/launcher/src/main/java/org/apache/spark/launcher/SparkSubmitOptionParser.java
+- https://github.com/mesosphere/spark/blob/custom-master/core/src/main/scala/org/apache/spark/deploy/SparkSubmitArguments.scala
+- https://github.com/mesosphere/spark/blob/custom-master/core/src/main/scala/org/apache/spark/deploy/SparkSubmit.scala
 
 To get POST requests from spark-submit:
 - Open spark-2.0.0/conf/log4j.properties.template => set "DEBUG" => write as "log4j.properties"
 - $ SPARK_JAVA_OPTS="-Dlog4j.debug=true -Dlog4j.configuration=log4j.properties ..." ./spark-2.0.0/bin/spark-submit ...
+
+Supported in mesosphere/spark patchset, but not in stock spark (yarn only there):
+- principal:              --principal (spark.yarn.principal, spark.hadoop.yarn.resourcemanager.principal)
+- tgt:                    --tgt (spark.mesos.kerberos.tgt => spark.mesos.kerberos.tgtBase64) - may not be set while keytab is set
+- keytab:                 --keytab (spark.yarn.keytab => spark.mesos.kerberos.keytabBase64) - may not be set while tgt is set
 
 Unsupported flags, omitted here:
 
 managed by us, user cannot change:
 - deployMode:             --deploy-mode <client|cluster> (spark.submit.deployMode/DEPLOY_MODE)
 - master:                 --master mesos://host:port (spark.master/MASTER)
-officially unsupported in DC/OS Spark docs:
+python is officially unsupported in DC/OS Spark docs:
 - pyFiles:                --py-files many.zip,python.egg,files.py (spark.submit.pyFiles)
-client mode only? doesn't seem to be used in POST call at all:
+appears to be client mode only? doesn't seem to be used in POST submit call at all:
 - proxyUser:              --proxy-user SOMENAME
-client mode only (downloads jars to local system):
+client mode only (downloads jars to local system, wouldn't work for POST call):
 - ivyRepoPath:            (spark.jars.ivy)
 - packages:               --packages maven,coordinates,for,jars (spark.jars.packages)
 - packagesExclusions:     --exclude-packages groupId:artifactId,toExclude:fromClasspath (spark.jars.excludes)
 - repositories:           --repositories additional.remote,repositories.to.search
-yarn only:
+yarn only (note: principal/tgt/keytab are supported in patched spark):
 - archives:               --archives
 - executorCores:          --executor-cores NUM (spark.executor.cores/SPARK_EXECUTOR_CORES)
-- keytab:                 --keytab (spark.yarn.keytab)
 - numExecutors:           --num-executors (spark.executor.instances)
-- principal:              --principal (spark.yarn.principal)
 - queue:                  --queue (spark.yarn.queue)
 */
 func sparkSubmitArgSetup() (*kingpin.Application, *sparkArgs) {
@@ -142,6 +152,20 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
+	// For Mesos Kerberos support, added in custom-patched spark:
+
+	val = newSparkVal("keytab", "spark.yarn.keytab", "The full path to the file that contains the keytab for the principal. For renewing the login tickets and the delegation tokens periodically, this keytab is copied to the Mesos dispatcher and driver.")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
+
+	val = newSparkVal("tgt", "spark.mesos.kerberos.tgt", "The full path to the ticket cache file that contains tickets for the Kerberos --principal.")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
+
+	val = newSparkVal("principal", "spark.yarn.principal", "Principal to be used to login to KDC, while running on secure HDFS.")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
+
 	submit.Arg("jar", "Application jar to be run").Required().URLVar(&args.appJar)
 	submit.Arg("args", "Application arguments").StringsVar(&args.appArgs)
 
@@ -204,7 +228,7 @@ ARGLOOP:
 		}
 	}
 	if cli.Verbose {
-		fmt.Printf("Translated arguments: '%s'\n", argsEquals)
+		log.Printf("Translated arguments: '%s'\n", argsEquals)
 	}
 	return argsEquals
 }
@@ -262,7 +286,20 @@ func getStringFromTree(m map[string]interface{}, path []string) (string, error) 
 	}
 }
 
-func submitJson(argsStr string, dockerImage string, submitEnv map[string]string) (string, error) {
+func getBase64Content(path string) string {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var encodebuf bytes.Buffer
+	encoder := base64.NewEncoder(base64.StdEncoding, &encodebuf)
+	encoder.Write(data)
+	encoder.Close() // must be called before returning string to ensure flush
+	return encodebuf.String()
+}
+
+func buildSubmitJson(argsStr string, dockerImage string, submitEnv map[string]string) (string, error) {
 	// first, import any values in the provided properties file (space separated "key val")
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
@@ -270,7 +307,10 @@ func submitJson(argsStr string, dockerImage string, submitEnv map[string]string)
 
 	submit, args := sparkSubmitArgSetup()
 
-	kingpin.MustParse(submit.Parse(cleanUpSubmitArgs(argsStr, args.boolVals)))
+	_, err := submit.Parse(cleanUpSubmitArgs(argsStr, args.boolVals))
+	if err != nil {
+		log.Fatalf("Error when parsing --submit-args: %s", err)
+	}
 
 	for _, boolVal := range(args.boolVals) {
 		if boolVal.b {
@@ -320,15 +360,24 @@ func submitJson(argsStr string, dockerImage string, submitEnv map[string]string)
 		args.properties["spark.app.name"] = args.mainClass
 	}
 
-	// fetch the spark task definition from Marathon:
+	// fetch the spark task definition from Marathon, extract the docker image and HDFS config url:
 	url := cli.CreateURL("replaceme", "")
 	url.Path = fmt.Sprintf("/marathon/v2/apps/%s", cli.ServiceName)
 	responseBytes := cli.GetResponseBytes(cli.CheckHTTPResponse(cli.HTTPQuery(cli.CreateHTTPURLRequest("GET", url, "", ""))))
 
 	responseJson := make(map[string]interface{})
-	err := json.Unmarshal(responseBytes, &responseJson)
+	err = json.Unmarshal(responseBytes, &responseJson)
 	if err != nil {
 		return "", err
+	}
+	if cli.Verbose {
+		log.Printf("Response from Marathon lookup of task '%s':", cli.ServiceName)
+		prettyJson, err := json.MarshalIndent(responseJson, "", " ")
+		if err != nil {
+			log.Fatalf("Failed to prettify json (%s): %s", err, responseJson)
+		} else {
+			fmt.Fprintf(os.Stderr, "%s\n", string(prettyJson))
+		}
 	}
 
 	docker_image, err := getStringFromTree(responseJson, []string{"app", "container", "docker", "image"})
@@ -341,6 +390,34 @@ func submitJson(argsStr string, dockerImage string, submitEnv map[string]string)
 		hdfs_config_url = strings.TrimRight(hdfs_config_url, "/")
 		args.properties["spark.mesos.uris"] = fmt.Sprintf(
 			"%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url)
+	}
+
+	// kerberos configuration (include base64-encoded copy of --keytab OR --tgt):
+	principal, hasPrincipal := args.properties["spark.yarn.principal"]
+	if hasPrincipal {
+		args.properties["spark.hadoop.yarn.resourcemanager.principal"] = principal
+
+		_, hasKeytabBase64 := args.properties["spark.mesos.kerberos.keytabBase64"]
+		_, hasTgtBase64 := args.properties["spark.mesos.kerberos.tgtBase64"]
+		if !hasKeytabBase64 && !hasTgtBase64 {
+			// Read the content of the keytab file or the tgt file and serialize the content as base64 for the POST request.
+			keytab, hasKeytab := args.properties["spark.yarn.keytab"]
+			tgt, hasTgt := args.properties["spark.mesos.kerberos.tgt"]
+			if hasKeytab {
+				if hasTgt {
+					return "", errors.New("--keytab and --tgt cannot both be specified at the same time")
+				}
+				args.properties["spark.mesos.kerberos.keytabBase64"] = getBase64Content(keytab)
+				delete(args.properties, "spark.yarn.keytab")
+			} else if hasTgt {
+				args.properties["spark.mesos.kerberos.tgtBase64"] = getBase64Content(tgt)
+				delete(args.properties, "spark.mesos.kerberos.tgt")
+			} else {
+				return "", errors.New("--keytab or --tgt must be specified when --principal is specified")
+			}
+
+			// Note: We omit HDFS login support: that's only supported in Client Mode.
+		}
 	}
 
 	jsonMap := map[string]interface{} {

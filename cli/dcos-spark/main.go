@@ -38,7 +38,7 @@ type SparkCommand struct {
 }
 
 func (cmd *SparkCommand) runSubmit(c *kingpin.ParseContext) error {
-	jsonPayload, err := submitJson(cmd.submitArgs, cmd.submitDockerImage, cmd.submitEnv)
+	jsonPayload, err := buildSubmitJson(cmd.submitArgs, cmd.submitDockerImage, cmd.submitEnv)
 	if err != nil {
 		return err
 	}
