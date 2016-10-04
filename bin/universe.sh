@@ -83,14 +83,13 @@ upload_cli_and_stub_universe() {
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
-    TEMPLATE_PACKAGE_VERSION=${VERSION} \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
             ${BASEDIR}/package/ \
             ${BASEDIR}/cli/dist/*.whl
 }
 
-# set CLI_VERSION, SPARK_URI, and DOCKER_IMAGE:
+# set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env
 fetch_commons_tools
 build_cli
