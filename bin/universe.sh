@@ -17,6 +17,7 @@ set -e -x -o pipefail
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASEDIR="${BIN_DIR}/.."
 
+# set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env() {
     if [ -z "${SPARK_DIST_URI}" ]; then
         SPARK_DIST_URI=$(cat $BASEDIR/manifest.json | jq .spark_uri)
@@ -25,12 +26,10 @@ configure_env() {
         echo "Using Spark dist URI: $SPARK_DIST_URI"
     fi
 
-    if [ -z "${CLI_VERSION}" ]; then
-        CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
-        CLI_VERSION="${CLI_VERSION%\"}"
-        CLI_VERSION="${CLI_VERSION#\"}"
-        echo "Using CLI Version: $CLI_VERSION"
-    fi
+    CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
+    CLI_VERSION="${CLI_VERSION%\"}"
+    CLI_VERSION="${CLI_VERSION#\"}"
+    echo "Using CLI Version: $CLI_VERSION"
 
     if [ -z "$DOCKER_IMAGE" ]; then
         # determine image label based on git commit:
@@ -89,7 +88,6 @@ upload_cli_and_stub_universe() {
             ${BASEDIR}/cli/dist/*.whl
 }
 
-# set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env
 fetch_commons_tools
 build_cli
