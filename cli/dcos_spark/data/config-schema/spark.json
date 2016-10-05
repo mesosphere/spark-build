@@ -11,7 +11,7 @@
         "distribution_directory": {
             "type": "string",
             "title": "Spark distribution directory",
-            "description": "Local directory used to download and run Spark distributions",
+            "description": "Local directory used to download and run Spark distributions"
         }
     },
     "additionalProperties": false
