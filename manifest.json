@@ -1,3 +1,4 @@
 {
+    "cli_version": "0.5.19",
     "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-2.0.0.tgz"
 }
