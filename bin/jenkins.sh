@@ -32,7 +32,7 @@ function make_distribution {
 function rename_dist {
     pushd "${SPARK_DIR}"
 
-    local VERSION=${GIT_BRANCH#refs/tags/custom-}
+    local VERSION=${GIT_BRANCH#origin/tags/custom-}
 
     # rename to spark-<tag>
     tar xvf spark-*.tgz
