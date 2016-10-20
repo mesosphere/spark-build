@@ -4,6 +4,8 @@
 #   S3_BUCKET
 #   S3_PREFIX
 #   TEST_JAR_PATH
+#   TEST_PYTHON_APP_PATH
+#   TEST_PYTHON_APP_ARGS
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -31,10 +33,13 @@ def upload_jar(jar):
     return jar_url
 
 
-def submit_job(jar_url):
-    spark_job_runner_args = 'http://leader.mesos:5050 dcos \\"*\\" spark:only 2'
-    submit_args = "-Dspark.driver.memory=2g --class com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner {0} {1}".format(
-        jar_url, spark_job_runner_args)
+def submit_job(app_class, app_resource_url, app_args):
+    if (app_class):
+        app_class_option = '--class {} '.format(app_class)
+    else:
+        app_class_option = ''
+    submit_args = "-Dspark.driver.memory=2g {0}{1} {2}".format(
+        app_class_option, app_resource_url, app_args)
     cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
     print('Running {}'.format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
@@ -52,14 +57,24 @@ def task_log(task_id):
     return stdout
 
 
-def main():
-    jar_url = upload_jar(os.getenv('TEST_JAR_PATH'))
-    task_id = submit_job(jar_url)
+def run_tests(app_class, app_path, app_args, expected_output):
+    app_resource_url = upload_jar(app_path)
+    task_id = submit_job(app_class, app_resource_url, app_args)
     print('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
     log = task_log(task_id)
     print(log)
-    assert "All tests passed" in log
+    assert expected_output in log
+
+
+def main():
+    spark_job_runner_args = 'http://leader.mesos:5050 dcos \\"*\\" spark:only 2'
+    run_tests('com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner',
+        os.getenv('TEST_JAR_PATH'), spark_job_runner_args,
+        "All tests passed")
+    run_tests('', 
+        os.getenv('TEST_PYTHON_APP_PATH'), os.getenv('TEST_PYTHON_APP_ARGS'),
+        "Pi is roughly 3")
 
 
 if __name__ == '__main__':
