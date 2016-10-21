@@ -22,11 +22,16 @@ from operator import add
 
 from pyspark.sql import SparkSession
 
+import PySparkTestInclude
 
 if __name__ == "__main__":
     """
         Usage: pi [partitions]
     """
+
+    # Make sure we can include this user-provided module
+    PySparkTestInclude.func()
+
     spark = SparkSession\
         .builder\
         .appName("PythonPi")\
