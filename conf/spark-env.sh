@@ -14,7 +14,9 @@ mkdir -p "${HADOOP_CONF_DIR}"
 MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
 
 # Support environments without DNS
-SPARK_LOCAL_IP=${LIBPROCESS_IP}
+if [ -n "$LIBPROCESS_IP" ]; then
+  SPARK_LOCAL_IP=${LIBPROCESS_IP}
+fi
 
 # Options read when launching programs locally with
 # ./bin/run-example or ./bin/spark-submit
