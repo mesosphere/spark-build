@@ -13,14 +13,19 @@ import subprocess
 import shakedown
 
 
-def upload_jar(jar):
+def upload_file(file_path):
     conn = S3Connection(os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'])
     bucket = conn.get_bucket(os.environ['S3_BUCKET'])
-    basename = os.path.basename(jar)
+    basename = os.path.basename(file_path)
+
+    if basename.endswith('.jar'):
+        content_type = 'application/java-archive'
+    else:
+        content_type = 'application/x-python'
 
     key = Key(bucket, '{}/{}'.format(os.environ['S3_PREFIX'], basename))
-    key.metadata = {'Content-Type': 'application/java-archive'}
-    key.set_contents_from_filename(jar)
+    key.metadata = {'Content-Type': content_type}
+    key.set_contents_from_filename(file_path)
     key.make_public()
 
     jar_url = "http://{0}.s3.amazonaws.com/{1}/{2}".format(
@@ -31,18 +36,18 @@ def upload_jar(jar):
     return jar_url
 
 
-def submit_job(app_class, python_lib_url, app_resource_url, app_args):
-    if (app_class):
+def submit_job(app_resource_url, app_args, app_class, py_files):
+    if app_class is not None:
         app_class_option = '--class {} '.format(app_class)
     else:
         app_class_option = ''
-    if (python_lib_url):
-        python_lib_option = '--py-files {} '.format(python_lib_url)
+    if py_files is not None:
+        py_files_option = '--py-files {} '.format(py_files)
     else:
-        python_lib_option = ''
+        py_files_option = ''
 
     submit_args = "-Dspark.driver.memory=2g {0}{1}{2} {3}".format(
-        app_class_option, python_lib_option, app_resource_url, app_args)
+        app_class_option, py_files_option, app_resource_url, app_args)
     cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
     print('Running {}'.format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
@@ -60,13 +65,13 @@ def task_log(task_id):
     return stdout
 
 
-def run_tests(app_class, python_lib_path, app_path, app_args, expected_output):
-    app_resource_url = upload_jar(app_path)
-    if (python_lib_path):
-      python_lib_url = upload_jar(python_lib_path)
+def run_tests(app_path, app_args, expected_output, app_class=None, py_file_path=None):
+    app_resource_url = upload_file(app_path)
+    if py_file_path is not None:
+      py_file_url = upload_file(py_file_path)
     else:
-      python_lib_url = ''
-    task_id = submit_job(app_class, python_lib_url, app_resource_url, app_args)
+      py_file_url = None
+    task_id = submit_job(app_resource_url, app_args, app_class, py_file_url)
     print('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
     log = task_log(task_id)
@@ -76,18 +81,18 @@ def run_tests(app_class, python_lib_path, app_path, app_args, expected_output):
 
 def main():
     spark_job_runner_args = 'http://leader.mesos:5050 dcos \\"*\\" spark:only 2'
-    run_tests('com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner',
-        '',
-        os.getenv('TEST_JAR_PATH'), spark_job_runner_args,
-        "All tests passed")
+    run_tests(os.getenv('TEST_JAR_PATH'),
+        spark_job_runner_args,
+        "All tests passed",
+        app_class='com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner')
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    python_script_path = os.path.join(script_dir, 'pi_with_include.py')
-    python_lib_path = os.path.join(script_dir, 'PySparkTestInclude.py')
-    run_tests('',
-        python_lib_path,
-        python_script_path, '30',
-        "Pi is roughly 3")
+    python_script_path = os.path.join(script_dir, 'jobs', 'pi_with_include.py')
+    py_file_path = os.path.join(script_dir, 'jobs', 'PySparkTestInclude.py')
+    run_tests(python_script_path,
+        '30',
+        "Pi is roughly 3",
+        py_file_path=py_file_path)
 
 
 if __name__ == '__main__':
