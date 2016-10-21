@@ -4,8 +4,6 @@
 #   S3_BUCKET
 #   S3_PREFIX
 #   TEST_JAR_PATH
-#   TEST_PYTHON_APP_PATH
-#   TEST_PYTHON_APP_ARGS
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
