@@ -72,8 +72,11 @@ def main():
     run_tests('com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner',
         os.getenv('TEST_JAR_PATH'), spark_job_runner_args,
         "All tests passed")
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    python_script_path = os.path.join(script_dir, 'pi.py')
     run_tests('', 
-        os.getenv('TEST_PYTHON_APP_PATH'), os.getenv('TEST_PYTHON_APP_ARGS'),
+        python_script_path, '30',
         "Pi is roughly 3")
 
 
