@@ -59,6 +59,10 @@ dispatcher and the history server
 
         $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
 
+1.  Run a Python Spark job:
+
+        $ dcos spark run --submit-args="http://xhuynh-dev.s3.amazonaws.com/pi.py 30"
+
 1.  View your job:
 
     Visit the Spark cluster dispatcher at
@@ -508,6 +512,10 @@ more][13].
 
         $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
+    Or, for a Python job
+
+        $ dcos spark run --submit-args="http://external.website/mysparkapp.py 30"
+
     `dcos spark run` is a thin wrapper around the standard Spark
 `spark-submit` script. You can submit arbitrary pass-through options
 to this script via the `--submit-args` options.
@@ -554,6 +562,42 @@ Or you can set arbitrary properties as java system properties by using
 To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable
 `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
+
+<a name="pysparkshell"></a>
+# Interactive Spark Shell
+
+You can run Spark commands interactively in the Spark shell. It is available
+in either Scala or Python.
+
+1. Ssh into a node in the DC/OS cluster.
+
+        $ dcos node ssh --master-proxy --mesos-id=271568da-e386-4573-bf2d-35c44de1cd94-S3
+
+1. Run a Spark Docker image.
+
+        $ docker pull mesosphere/spark:1.0.4-2.0.1
+
+        $ docker run -it --net=host mesosphere/spark:1.0.4-2.0.1 /bin/bash
+
+1. Run the Scala Spark shell from within the Docker image.
+
+        $ ./bin/spark-shell --master mesos://10.0.6.152:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+
+    Or, run the Python Spark shell.
+
+        $ ./bin/pyspark --master mesos://10.0.6.152:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+
+1. Run Spark commands interactively.
+
+    In the Scala shell:
+
+        $ val textFile = sc.textFile("/opt/spark/dist/README.md")
+        $ textFile.count()
+
+    In the Python shell:
+
+        $ textFile = sc.textFile("/opt/spark/dist/README.md")
+        $ textFile.count()
 
 <a name="uninstall"></a>
 # Uninstall
@@ -628,14 +672,14 @@ output:
 <a name="limitations"></a>
 # Limitations
 
-*   DC/OS Spark only supports submitting jars.  It does not support
-Python or R.
+*   DC/OS Spark only supports submitting jars and Python scripts. It
+does not support R.
 
 *   Spark jobs run in Docker containers. The first time you run a
 Spark job on a node, it might take longer than you expect because of
 the `docker pull`.
 
-*   Spark shell is not supported. For interactive analytics, we
+*   For interactive analytics, we
 recommend Zeppelin, which supports visualizations and dynamic
 dependency management.
 
