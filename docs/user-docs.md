@@ -18,6 +18,7 @@ DC/OS Spark includes:
 *   [Mesos Cluster Dispatcher][2]
 *   [Spark History Server][3]
 *   DC/OS Spark CLI
+*   Interactive Spark shell
 
 ## Benefits
 
@@ -566,10 +567,10 @@ To set Spark properties with a configuration file, create a
 <a name="pysparkshell"></a>
 # Interactive Spark Shell
 
-You can run Spark commands interactively in the Spark shell. It is available
+You can run Spark commands interactively in the Spark shell. The Spark shell is available
 in either Scala or Python.
 
-1. Ssh into a node in the DC/OS cluster.
+1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/latest/administration/access-node/sshcluster/).
 
         $ dcos node ssh --master-proxy --mesos-id=271568da-e386-4573-bf2d-35c44de1cd94-S3
 
