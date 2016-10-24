@@ -20,8 +20,10 @@ def upload_file(file_path):
 
     if basename.endswith('.jar'):
         content_type = 'application/java-archive'
-    else:
+    elif basename.endswith('.py'):
         content_type = 'application/x-python'
+    else:
+        raise ValueError("Unexpected file type: {}. Expected .jar or .py file.".format(basename))
 
     key = Key(bucket, '{}/{}'.format(os.environ['S3_PREFIX'], basename))
     key.metadata = {'Content-Type': content_type}
