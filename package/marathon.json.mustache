@@ -4,15 +4,10 @@
     "mem": {{service.mem}},
     "cmd": "/sbin/init.sh",
     "env": {
-        "DCOS_SERVICE_NAME": "{{service.name}}",
-        "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
-        "SPARK_USER": "{{service.user}}",
-        "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
-        "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
-        "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
 {{#security.kerberos.krb5conf}}
         "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
 {{/security.kerberos.krb5conf}}
+
 {{#security.ssl.enabled}}
         "SPARK_SSL_ENABLED": "{{security.ssl.enabled}}",
         "SPARK_SSL_KEYSTOREBASE64": "{{security.ssl.keyStoreBase64}}",
@@ -23,6 +18,19 @@
         "SPARK_SSL_PROTOCOL": "{{security.ssl.protocol}}",
         "SPARK_SSL_ENABLEDALGORITHMS": "{{security.ssl.enabledAlgorithms}}",
 {{/security.ssl.enabled}}
+
+{{#security.mesos.authentication.secret_name}}
+        "DCOS_SERVICE_ACCOUNT_CREDENTIAL": { "secret": "serviceCredential" },
+        "MESOS_MODULES": "file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json",
+        "MESOS_AUTHENTICATEE": "com_mesosphere_dcos_ClassicRPCAuthenticatee",
+{{/security.mesos.authentication.secret_name}}
+
+        "DCOS_SERVICE_NAME": "{{service.name}}",
+        "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
+        "SPARK_USER": "{{service.user}}",
+        "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
+        "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
+        "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
         "ENABLE_HISTORY_SERVER": "{{history-server.enabled}}",
         "HISTORY_LOG_DIR": "{{history-server.log-dir}}",
         "HISTORY_CLEANER_ENABLED": "{{history-server.cleaner-enabled}}",
@@ -32,6 +40,15 @@
         "HISTORY_KRB_KEYTAB": "{{history-server.kerberos.keytab}}",
         "SPARK_LOG_LEVEL": "{{service.log-level}}"
     },
+
+{{#security.mesos.authentication.secret_name}}
+    "secrets": {
+        "serviceCredential": {
+            "source": "{{security.mesos.authentication.secret_name}}"
+        }
+    },
+{{/security.mesos.authentication.secret_name}}
+
     "ports": [
         0,
         0,
@@ -43,6 +60,14 @@
         "docker": {
             "image": "{{resource.assets.container.docker.spark_docker}}",
             "network": "HOST",
+{{#service.user}}
+            "parameters": [
+               {
+                 "key": "user",
+                 "value": "{{service.user}}"
+               }
+            ],
+{{/service.user}}
             "forcePullImage": true
         }
     },
@@ -78,6 +103,9 @@
         "DCOS_SERVICE_SCHEME": "http"
 {{/security.ssl.enabled}}
     },
+{{#service.user}}
+    "user": "{{service.user}}",
+{{/service.user}}
     "uris": [
     {{#hdfs.config-url}}
     "{{hdfs.config-url}}/hdfs-site.xml",
