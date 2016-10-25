@@ -572,7 +572,7 @@ in either Scala or Python.
 
 1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/latest/administration/access-node/sshcluster/).
 
-        $ dcos node ssh --master-proxy --mesos-id=271568da-e386-4573-bf2d-35c44de1cd94-S3
+        $ dcos node ssh --master-proxy --mesos-id=<agent-node-id>
 
 1. Run a Spark Docker image.
 
@@ -582,11 +582,11 @@ in either Scala or Python.
 
 1. Run the Scala Spark shell from within the Docker image.
 
-        $ ./bin/spark-shell --master mesos://10.0.6.152:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+        $ ./bin/spark-shell --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
 
     Or, run the Python Spark shell.
 
-        $ ./bin/pyspark --master mesos://10.0.6.152:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+        $ ./bin/pyspark --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
 
 1. Run Spark commands interactively.
 
