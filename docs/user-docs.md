@@ -155,7 +155,7 @@ where `http://mydomain.com/hdfs-config/hdfs-site.xml` and
 URLs.[Learn more][8].
 
 For DC/OS HDFS, these configuration files are served at
-`http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connect`, where
+`http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connection`, where
 `<hdfs.framework-name>` is a configuration variable set in the HDFS
 package, and `<port>` is the port of its marathon app.
 
