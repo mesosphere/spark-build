@@ -62,7 +62,7 @@ dispatcher and the history server
 
 1.  Run a Python Spark job:
 
-        $ dcos spark run --submit-args="http://xhuynh-dev.s3.amazonaws.com/pi.py 30"
+        $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/pi.py 30"
 
 1.  View your job:
 
