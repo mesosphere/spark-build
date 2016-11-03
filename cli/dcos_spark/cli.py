@@ -64,7 +64,7 @@ def kill_job(args):
 
 def log_job(args):
     dcos_client = mesos.DCOSClient()
-    task = mesos.get_master(dcos_client).task(args['<submissionId>'])
+    task = mesos.get_master(dcos_client).task(args['<submissionId>'], True)
     log_file = args.get('--file', "stdout")
     if log_file is None:
         log_file = "stdout"
