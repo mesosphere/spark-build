@@ -7,14 +7,23 @@
 # moves those config files into the standard directory.  In DCOS, the
 # CLI reads the "SPARK_HDFS_CONFIG_URL" marathon label in order to set
 # spark.mesos.uris
+
 mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
 
-MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
+cd $MESOS_SANDBOX
+
+MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so
 
 # Support environments without DNS
-SPARK_LOCAL_IP=${LIBPROCESS_IP}
+if [ -n "$LIBPROCESS_IP" ]; then
+  SPARK_LOCAL_IP=${LIBPROCESS_IP}
+fi
+
+# I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
+# But this fails now due to MESOS-6391, so I'm setting it to /tmp
+MESOS_DIRECTORY=/tmp
 
 # Options read when launching programs locally with
 # ./bin/run-example or ./bin/spark-submit

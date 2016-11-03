@@ -18,6 +18,7 @@ DC/OS Spark includes:
 *   [Mesos Cluster Dispatcher][2]
 *   [Spark History Server][3]
 *   DC/OS Spark CLI
+*   Interactive Spark shell
 
 ## Benefits
 
@@ -58,6 +59,10 @@ dispatcher and the history server
 1.  Run a Spark job:
 
         $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
+
+1.  Run a Python Spark job:
+
+        $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/pi.py 30"
 
 1.  View your job:
 
@@ -155,7 +160,7 @@ where `http://mydomain.com/hdfs-config/hdfs-site.xml` and
 URLs.[Learn more][8].
 
 For DC/OS HDFS, these configuration files are served at
-`http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connect`, where
+`http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connection`, where
 `<hdfs.framework-name>` is a configuration variable set in the HDFS
 package, and `<port>` is the port of its marathon app.
 
@@ -276,7 +281,114 @@ to the history server entry for that job.
 
 <a name="ssl"></a>
 
-### SSL
+### Security
+
+#### Mesos
+
+##### SSL
+
+<table class="table">
+  <tr>
+    <td>
+      `security.mesos.ssl.enabled`
+    </td>
+
+    <td>
+      Set to true to enable SSL on Mesos communication (default: false).
+    </td>
+  </tr>
+</table>
+
+
+##### Authentication
+
+When running in
+[DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/),
+Both the dispatcher and jobs must authenticate to Mesos using a [DC/OS
+Service Account](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/).
+Follow these instructions to authenticate in strict mode:
+
+1. Create a Service Account
+
+Instructions
+[here](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/universe-service-auth/).
+
+2. Assign Permissions
+
+First, allow Spark to run tasks as root:
+
+```
+$ curl -k -L -X PUT \
+       -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
+       "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root" \
+       -d '{"description":"Allows root to execute tasks"}' \
+       -H 'Content-Type: application/json'
+
+$ curl -k -L -X PUT \
+     -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
+     "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/${SERVICE_ACCOUNT_NAME}/create"
+```
+
+Now you must allow Spark to register under the desired role.  This is
+the value used for `service.role` when installing Spark (default:
+`*`):
+
+```
+$ export ROLE=<service.role value>
+$ curl -k -L -X PUT \
+       -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
+       "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}" \
+       -d '{"description":"Allows ${ROLE} to register as a framework with the Mesos master"}' \
+       -H 'Content-Type: application/json'
+
+$ curl -k -L -X PUT \
+       -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
+       "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}/users/${SERVICE_ACCOUNT_NAME}/create"
+```
+
+3. Install Spark
+
+```
+$ dcos package install spark --options=config.json
+```
+
+Where `config.json` contains the following JSON.  Replace
+`<principal>` with the name of your service account, and
+`<secret_name>` with the name of the DC/OS secret containing your
+service account's private key.  These values were created in Step #1
+above.
+
+```
+{
+    "service": {
+        "principal": "<principal>",
+        "user": "nobody"
+    },
+    "security": {
+        "mesos": {
+            "authentication": {
+                "secret_name": "<secret_name>"
+            }
+        }
+    }
+}
+```
+
+4. Submit a Job
+
+We've now installed the Spark Dispatcher, which is authenticating
+itself to the Mesos master.  Spark jobs are also frameworks which must
+authenticate.  The dispatcher will pass the secret along to the jobs,
+so all that's left to do is configure our jobs to use DC/OS authentication:
+
+```
+$ PROPS="-Dspark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json "
+$ PROPS+="-Dspark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee "
+$ PROPS+="-Dspark.mesos.principal=<principal>"
+$ dcos spark run --submit-args="${PROPS} ..."
+```
+
+#### Spark SSL
 
 SSL support in DC/OS Spark encrypts the following channels:
 
@@ -401,6 +513,10 @@ more][13].
 
         $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
+    Or, for a Python job
+
+        $ dcos spark run --submit-args="http://external.website/mysparkapp.py 30"
+
     `dcos spark run` is a thin wrapper around the standard Spark
 `spark-submit` script. You can submit arbitrary pass-through options
 to this script via the `--submit-args` options.
@@ -447,6 +563,42 @@ Or you can set arbitrary properties as java system properties by using
 To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable
 `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
+
+<a name="pysparkshell"></a>
+# Interactive Spark Shell
+
+You can run Spark commands interactively in the Spark shell. The Spark shell is available
+in either Scala or Python.
+
+1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/latest/administration/access-node/sshcluster/).
+
+        $ dcos node ssh --master-proxy --mesos-id=<agent-node-id>
+
+1. Run a Spark Docker image.
+
+        $ docker pull mesosphere/spark:1.0.4-2.0.1
+
+        $ docker run -it --net=host mesosphere/spark:1.0.4-2.0.1 /bin/bash
+
+1. Run the Scala Spark shell from within the Docker image.
+
+        $ ./bin/spark-shell --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+
+    Or, run the Python Spark shell.
+
+        $ ./bin/pyspark --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+
+1. Run Spark commands interactively.
+
+    In the Scala shell:
+
+        $ val textFile = sc.textFile("/opt/spark/dist/README.md")
+        $ textFile.count()
+
+    In the Python shell:
+
+        $ textFile = sc.textFile("/opt/spark/dist/README.md")
+        $ textFile.count()
 
 <a name="uninstall"></a>
 # Uninstall
@@ -521,14 +673,14 @@ output:
 <a name="limitations"></a>
 # Limitations
 
-*   DC/OS Spark only supports submitting jars.  It does not support
-Python or R.
+*   DC/OS Spark only supports submitting jars and Python scripts. It
+does not support R.
 
 *   Spark jobs run in Docker containers. The first time you run a
 Spark job on a node, it might take longer than you expect because of
 the `docker pull`.
 
-*   Spark shell is not supported. For interactive analytics, we
+*   For interactive analytics, we
 recommend Zeppelin, which supports visualizations and dynamic
 dependency management.
 
