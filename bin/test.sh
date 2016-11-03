@@ -100,7 +100,7 @@ run_tests() {
     fi
     source env/bin/activate
     pip install -r requirements.txt
-    python test.py
+    py.test test.py
     if [ $? -ne 0 ]; then
         notify_github failure "Tests failed"
         exit 1
