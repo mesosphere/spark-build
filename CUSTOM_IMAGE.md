@@ -11,7 +11,8 @@ such as Hadoop, Python, or R, follow the steps below. This build does the follow
 
 Prerequisites
 -------------
-You must have the [AWS Command Line Interface](https://aws.amazon.com/cli/) (CLI) installed.
+* [AWS Command Line Interface](https://aws.amazon.com/cli/) (CLI)
+* The [jq](https://github.com/stedolan/jq) JSON parser
 
 Custom Spark Version, Hadoop Version
 ------------------------------------
