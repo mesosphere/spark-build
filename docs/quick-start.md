@@ -1,4 +1,8 @@
-# Quick Start
+---
+post_title: Quick Start
+menu_order: 0
+enterprise: 'yes'
+---
 
 1.  Install DC/OS Spark via the DC/OS CLI:
 

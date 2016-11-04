@@ -1,12 +1,12 @@
 ---
 post_title: Security
-menu_order: 29
+menu_order: 40
 enterprise: 'yes'
 ---
 
-#### Mesos
+# Mesos Security
 
-##### SSL
+## SSL
 
 <table class="table">
   <tr>
@@ -21,7 +21,7 @@ enterprise: 'yes'
 </table>
 
 
-##### Authentication
+## Authentication
 
 When running in
 [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/),
@@ -109,7 +109,7 @@ $ PROPS+="-Dspark.mesos.principal=<principal>"
 $ dcos spark run --submit-args="${PROPS} ..."
 ```
 
-#### Spark SSL
+# Spark SSL
 
 SSL support in DC/OS Spark encrypts the following channels:
 

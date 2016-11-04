@@ -1,6 +1,6 @@
 ---
 post_title: Uninstall
-menu_order: 40
+menu_order: 60
 enterprise: 'yes'
 ---
 

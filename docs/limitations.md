@@ -1,6 +1,6 @@
 ---
 post_title: Limitations
-menu_order: 105
+menu_order: 130
 feature_maturity: stable
 enterprise: 'yes'
 ---

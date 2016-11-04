@@ -1,6 +1,6 @@
 ---
 post_title: Run a Spark Job
-menu_order: 60
+menu_order: 80
 enterprise: 'yes'
 ---
 1.  Before submitting your job, upload the artifact (e.g., jar file)
@@ -33,13 +33,13 @@ dispatcher at `http://<dcos-url>/service/spark/`
 1.  View the job's logs through the Mesos UI at
 `http://<dcos-url>/mesos/`
 
-## Setting Spark properties
+# Setting Spark properties
 
 Spark job settings are controlled by configuring [Spark
 properties][14]. You can set Spark properties during submission, or
 you can create a configuration file.
 
-### Submission
+## Submission
 
 All properties are submitted through the `--submit-args` option to
 `dcos spark run`. These are ultimately passed to the [`spark-submit`
@@ -56,7 +56,7 @@ Or you can set arbitrary properties as java system properties by using
 
     $ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
 
-### Configuration file
+## Configuration file
 
 To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable

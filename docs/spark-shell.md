@@ -1,10 +1,9 @@
 ---
 post_title: Interactive Spark Shell
-menu_order: 65
+menu_order: 90
 enterprise: 'yes'
 ---
 
-<a name="pysparkshell"></a>
 # Interactive Spark Shell
 
 You can run Spark commands interactively in the Spark shell. The Spark shell is available

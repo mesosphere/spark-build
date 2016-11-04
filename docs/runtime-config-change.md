@@ -1,6 +1,6 @@
 ---
 post_title: Runtime Configuration Change
-menu_order: 55
+menu_order: 70
 feature_maturity: stable
 enterprise: 'yes'
 ---

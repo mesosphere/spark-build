@@ -1,6 +1,6 @@
 ---
 post_title: Fault Tolerance
-menu_order: 75
+menu_order: 100
 feature_maturity: stable
 enterprise: 'yes'
 ---
@@ -12,7 +12,7 @@ affect the behavior of three types of Spark components:
 - Batch Jobs
 - Streaming Jobs
 
-## DC/OS Spark Service
+# DC/OS Spark Service
 
 The DC/OS Spark service runs in Marathon and includes the Mesos Cluster
 Dispatcher and the Spark History Server.  The Dispatcher manages jobs
@@ -21,19 +21,19 @@ The Spark History Server reads event logs from HDFS. If the service
 dies, Marathon will restart it, and it will reload data from these
 highly available stores.
 
-## Batch Jobs
+# Batch Jobs
 
 Batch jobs are resilient to executor failures, but not driver
 failures.  The Dispatcher will restart a driver if you submit with
 `--supervise`.
 
-### Driver
+## Driver
 
 When the driver fails, executors are terminated, and the entire Spark
 application fails.  If you submitted your job with `--supervise`, then
 the Dispatcher will restart the job.
 
-### Executors
+## Executors
 
 Batch jobs are resilient to executor failure.  Upon failure, cached
 data, shuffle files, and partially computed RDDs are lost.  However,
@@ -42,7 +42,7 @@ recompute this data from the original data source, caches, or shuffle
 files.  There is a performance cost as data is recomputed, but an
 executor failure will not cause a job to fail.
 
-## Streaming Jobs
+# Streaming Jobs
 
 Whereas batch jobs run once and can usually be restarted upon failure,
 streaming jobs often need to run constantly.  The application must
@@ -55,14 +55,14 @@ you can use the Direct Kafka API.
 For exactly once processing semantics, you must use the Direct Kafka
 API.  All other receivers provide at least once semantics.
 
-### Failures
+## Failures
 
 There are two types of failures:
 
 - Driver
 - Executor
 
-### Job Features
+## Job Features
 
 There are a few variables that affect the reliability of your job:
 
@@ -70,7 +70,7 @@ There are a few variables that affect the reliability of your job:
 - [Receiver reliability][2]
 - [Storage level][3]
 
-### Reliability Features
+## Reliability Features
 
 The two reliability features of a job are data loss and processing
 semantics.  Data loss occurs when the source sends data, but the job
@@ -78,7 +78,7 @@ fails to process it.  Processing semantics describe how many times a
 received message is processed by the job.  It can be either "at least
 once" or "exactly once"
 
-#### Data loss
+### Data loss
 
 A Spark Job loses data when delivered data does not get processed.
 The following is a list of configurations with increasing data
@@ -145,7 +145,7 @@ preservation guarantees:
   executor failure => **no data loss**  
   driver failure => **no data loss**
 
-#### Processing semantics
+### Processing semantics
 
 Processing semantics apply to how many times received messages get
 processed.  With Spark Streaming, this can be either "at least once"

@@ -1,6 +1,6 @@
 ---
 post_title: Upgrade
-menu_order: 34
+menu_order: 50
 feature_maturity: stable
 enterprise: 'yes'
 ---

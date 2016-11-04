@@ -1,13 +1,9 @@
 ---
 post_title: Configure Spark for HDFS
 nav_title: HDFS
-menu_order: 25
+menu_order: 20
 enterprise: 'yes'
 ---
-
-<a name="hdfs"></a>
-
-### HDFS
 
 To configure Spark for a specific HDFS cluster, configure
 `hdfs.config-url` to be a URL that serves your `hdfs-site.xml` and
@@ -29,17 +25,17 @@ For DC/OS HDFS, these configuration files are served at
 `<hdfs.framework-name>` is a configuration variable set in the HDFS
 package, and `<port>` is the port of its marathon app.
 
-### HDFS Kerberos
+# HDFS Kerberos
 
 You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters
 from Spark on Mesos.
 
-#### HDFS Configuration
+## HDFS Configuration
 
 Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to
 connect to it. See instructions [here](#hdfs).
 
-#### Installation
+## Installation
 
 1.  A krb5.conf file tells Spark how to connect to your KDC.  Base64
     encode this file:
@@ -82,7 +78,7 @@ ensure you have SSL enabled while installing DC/OS Spark.
 
         $ dcos package install --options=options.json spark
 
-#### Job Submission
+## Job Submission
 
 To authenticate to a Kerberos KDC, DC/OS Spark supports keytab
 files as well as ticket-granting tickets (TGTs).
@@ -90,21 +86,20 @@ files as well as ticket-granting tickets (TGTs).
 Keytabs are valid infinitely, while tickets can expire. Especially for
 long-running streaming jobs, keytabs are recommended.
 
-##### Keytab Authentication
+### Keytab Authentication
 
 Submit the job with the keytab:
 
     $ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
 
-##### TGT Authentication
+### TGT Authentication
 
 Submit the job with the ticket:
 
     $ dcos spark run --principal user@REALM --tgt <ticket-file-path>
 
 **Note:** These credentials are security-critical. We highly
-recommended [configuring SSL encryption][9] between the Spark
-components when accessing Kerberos-secured HDFS clusters.
+recommended configuring SSL encryption between the Spark
+components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
 
 [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
-[9]: #ssl

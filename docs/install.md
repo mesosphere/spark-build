@@ -1,8 +1,13 @@
 ---
 post_title: Install
-menu_order: 20
+menu_order: 10
 enterprise: 'yes'
 ---
+
+# About Installing Spark on Enterprise DC/OS
+In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.8/administration/installing/custom/configuration-parameters/#security), Spark requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Spark](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/spark-auth/) for instructions.
+
+# Default Installation
 
 To start a basic Spark cluster, run the following command on the DC/OS
 CLI. This command installs the dispatcher, and, optionally, the
@@ -23,7 +28,7 @@ following command from the DC/OS CLI to install the Spark CLI:
 
 <a name="custom"></a>
 
-## Custom Installation
+# Custom Installation
 
 You can customize the default configuration properties by creating a
 JSON options file and passing it to `dcos package install --options`.
@@ -44,7 +49,7 @@ Run the following command to see all configuration options:
 
     $ dcos package describe spark --config
 
-### Minimal Installation
+# Minimal Installation
 
 For development purposes, you may wish to install Spark on a local
 DC/OS cluster. For this, you can use [dcos-vagrant][16].
@@ -71,7 +76,7 @@ history server.
 Also, a limited resource environment can restrict how you size your
 executors, for example with `spark.executor.memory`.
 
-## Multiple Installations
+# Multiple Installations
 
 Installing multiple instances of the DC/OS Spark package provides basic
 multi-team support. Each dispatcher displays only the jobs submitted
