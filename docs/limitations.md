@@ -15,10 +15,3 @@ the `docker pull`.
 *   For interactive analytics, we
 recommend Zeppelin, which supports visualizations and dynamic
 dependency management.
-
-
-TODO
-get names consistent with current names
-get other docs in here
-add metadata in the right order
-work on script
