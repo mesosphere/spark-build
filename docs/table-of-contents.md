@@ -9,6 +9,7 @@
 [Upgrade](upgrade.md)
 [Uninstall](uninstall.md)
 [Runtime Configuration Change](runtime-config-change.md)
+[Custom Docker Image](custom-docker.md)
 [Run a Spark Job](run-job)
 [Interactive Spark Shell](spark-shell.md)
 [Fault Tolerance](fault-tolerance.md)
