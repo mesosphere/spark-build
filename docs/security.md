@@ -1,6 +1,8 @@
-<a name="ssl"></a>
-
-### Security
+---
+post_title: Security
+menu_order: 29
+enterprise: 'yes'
+---
 
 #### Mesos
 

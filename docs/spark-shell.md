@@ -1,3 +1,9 @@
+---
+post_title: Interactive Spark Shell
+menu_order: 65
+enterprise: 'yes'
+---
+
 <a name="pysparkshell"></a>
 # Interactive Spark Shell
 

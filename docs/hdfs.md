@@ -1,3 +1,10 @@
+---
+post_title: Configure Spark for HDFS
+nav_title: HDFS
+menu_order: 25
+enterprise: 'yes'
+---
+
 <a name="hdfs"></a>
 
 ### HDFS

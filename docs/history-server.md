@@ -1,4 +1,8 @@
-### History Server
+---
+post_title: History Server
+menu_order: 27
+enterprise: 'yes'
+---
 
 DC/OS Spark includes the [Spark history server][3]. Because the history
 server requires HDFS, you must explicitly enable it.
