@@ -18,7 +18,7 @@ function make_distribution {
         if [ -f make-distribution.sh ]; then
             ./make-distribution.sh -Phadoop-2.4 -DskipTests
         else
-            ./dev/make-distribution.sh -Pmesos -Phadoop-2.6 -DskipTests
+            ./dev/make-distribution.sh -Pmesos -Phadoop-2.6 -Phive -Phive-thriftserver -Psparkr -DskipTests
         fi
 
         mv dist ${DIST_NAME}
