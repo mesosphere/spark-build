@@ -361,16 +361,16 @@ Follow these instructions to authenticate in strict mode:
      "service": {
        "principal": "<principal>",
        "user": "nobody"
-    },
-    "security": {
+     },
+     "security": {
        "mesos": {
          "authentication": {
            "secret_name": "<secret_name>"
          }
        }
-    }
-  }
-  ```
+     }
+   }
+   ```
 
 1. Submit a Job
 
