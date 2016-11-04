@@ -11,19 +11,18 @@ more][13].
 
         $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
-    Or, for a Python job
-
-        $ dcos spark run --submit-args="http://external.website/mysparkapp.py 30"
+    
+        $ dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
 
     `dcos spark run` is a thin wrapper around the standard Spark
-`spark-submit` script. You can submit arbitrary pass-through options
-to this script via the `--submit-args` options.
+    `spark-submit` script. You can submit arbitrary pass-through options
+    to this script via the `--submit-args` options.
 
     The first time you run a job, the CLI must download the Spark
-distribution to your local machine. This may take a while.
+    distribution to your local machine. This may take a while.
 
     If your job runs successfully, you will get a message with the
-job’s submission ID:
+    job’s submission ID:
 
         Run job succeeded. Submission id: driver-20160126183319-0001
 
