@@ -1,5 +1,5 @@
 ---
-post_title: Interactive Spark Shell
+post_title: Custom Docker Images
 menu_order: 95
 enterprise: 'yes'
 ---
