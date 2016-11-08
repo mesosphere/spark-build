@@ -65,7 +65,7 @@ install_spark() {
 
     if [ "$SECURITY" = "strict" ]; then
         # custom configuration to enable auth stuff:
-        ${REPO_ROOT_DIR}/dcos-commons-tools/setup_permissions.sh nobody "*" # spark's default service.role
+        ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody "*" # spark's default service.role
         echo '{ "service": { "user": "nobody", "principal": "service-acct", "secret_name": "secret" } }' > /tmp/spark.json
         dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
     else
@@ -111,6 +111,7 @@ run_tests() {
 check_env
 fetch_commons_tools
 start_cluster
+# TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
 configure_cli
 install_spark
 run_tests
