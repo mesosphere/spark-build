@@ -8,7 +8,8 @@ SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 
 function make_distribution {
-    # Env var: DIST_NAME
+    # Env: HADOOP_VERSION
+    HADOOP_VERSION=${HADOOP_VERSION:-2.6}
 
     pushd "${SPARK_DIR}"
 
@@ -16,13 +17,15 @@ function make_distribution {
         wget "${SPARK_DIST_URI}"
     else
         if [ -f make-distribution.sh ]; then
-            ./make-distribution.sh -Phadoop-2.4 -DskipTests
+            # location of make-distribution.sh before Spark 2.0
+            ./make-distribution.sh --tgz "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         else
-            ./dev/make-distribution.sh -Pmesos -Phadoop-2.6 -Phive -Phive-thriftserver -Psparkr -DskipTests
+            # location of make-distribution.sh after Spark 2.0
+            ./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -Psparkr -DskipTests
         fi
 
-        mv dist ${DIST_NAME}
-        tar czf ${DIST_NAME}.tgz ${DIST_NAME}
+        # mv dist ${DIST_NAME}
+        # tar czf ${DIST_NAME}.tgz ${DIST_NAME}
     fi
 
     popd
@@ -37,8 +40,8 @@ function rename_dist {
     # rename to spark-<tag>
     tar xvf spark-*.tgz
     rm spark-*.tgz
-    mv spark-* spark-${VERSION}
-    tar czf spark-${VERSION}.tgz spark-${VERSION}
+    mv spark-* "spark-${VERSION}-bin-${HADOOP_VERSION}"
+    tar czf "spark-${VERSION}-bin-${HADOOP_VERSION}.tgz" "spark-${VERSION}-bin-${HADOOP_VERSION}"
 
     popd
 }
