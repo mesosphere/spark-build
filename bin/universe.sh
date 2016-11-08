@@ -9,24 +9,24 @@
 # ENV vars:
 #   DOCKER_IMAGE (optional) - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   COMMONS_TOOLS_DIR (optional) - path to dcos-commons/tools/, or empty to fetch latest release tgz
-#   SPARK_DIST_URI (optional) - URI of spark distribution to use [default: "spark_uri" value in manifest.json]
+#   SPARK_DIST_URI (optional) - URI of spark distribution to use.
 #   ghprbActualCommit / GIT_COMMIT (optional) - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
 set -e -x -o pipefail
 
-BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BASEDIR="${BIN_DIR}/.."
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_BUILD_DIR="${DIR}/.."
 
 # set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env() {
     if [ -z "${SPARK_DIST_URI}" ]; then
-        SPARK_DIST_URI=$(cat $BASEDIR/manifest.json | jq .spark_uri)
+        SPARK_DIST_URI=$(jq ".default_spark_dist.uri" "${SPARK_BUILD_DIR}/manifest.json")
         SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
         SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
         echo "Using Spark dist URI: $SPARK_DIST_URI"
     fi
 
-    CLI_VERSION=$(cat $BASEDIR/manifest.json | jq .cli_version)
+    CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
     CLI_VERSION="${CLI_VERSION%\"}"
     CLI_VERSION="${CLI_VERSION#\"}"
     echo "Using CLI Version: $CLI_VERSION"
@@ -52,17 +52,16 @@ configure_env() {
 
 fetch_commons_tools() {
     if [ -z "${COMMONS_TOOLS_DIR}" ]; then
-        pushd ${BIN_DIR}
+        pushd ${DIR}
         rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
         popd
-        export COMMONS_TOOLS_DIR=${BIN_DIR}/dcos-commons-tools/
+        export COMMONS_TOOLS_DIR=${DIR}/dcos-commons-tools/
     fi
 }
 
 build_cli() {
-    pwd
-    ls -all $BASEDIR/cli
-    CLI_VERSION=${CLI_VERSION} make --directory=$BASEDIR/cli all
+    ls -all "${SPARK_BUILD_DIR}/cli"
+    CLI_VERSION="${CLI_VERSION}" make --directory="${SPARK_BUILD_DIR}/cli" all
 }
 
 build_push_docker() {
@@ -70,7 +69,7 @@ build_push_docker() {
     echo "# Using docker image: $DOCKER_IMAGE"
     echo "###"
 
-    pushd "${BASEDIR}"
+    pushd "${SPARK_BUILD_DIR}"
     make docker
     popd
 }
@@ -84,8 +83,8 @@ upload_cli_and_stub_universe() {
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
-            ${BASEDIR}/package/ \
-            ${BASEDIR}/cli/dist/*.whl
+            ${SPARK_BUILD_DIR}/package/ \
+            ${SPARK_BUILD_DIR}/cli/dist/*.whl
 }
 
 configure_env
