@@ -35,6 +35,7 @@ RUN apt-get update && \
 RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update && \
     apt-get install -y openjdk-8-jdk curl
+RUN apt-get install -y r-base
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 ENV MESOS_NATIVE_JAVA_LIBRARY /usr/lib/libmesos.so
