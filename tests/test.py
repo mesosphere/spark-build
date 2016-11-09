@@ -103,7 +103,7 @@ def main():
         "Pi is roughly 3",
         py_file_path=py_file_path)
 
-    # TO DO: enable R test when R is enabled in Spark (2.1)
+    # TODO: enable R test when R is enabled in Spark (2.1)
     #r_script_path = os.path.join(script_dir, 'jobs', 'dataframe.R')
     #run_tests(r_script_path,
     #    '',
