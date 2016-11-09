@@ -13,17 +13,24 @@ import subprocess
 import shakedown
 
 
+def get_content_type(basename):
+    if basename.endswith('.jar'):
+        content_type = 'application/java-archive'
+    elif basename.endswith('.py'):
+        content_type = 'application/x-python'
+    elif basename.endswith('.R'):
+        content_type = 'application/R'
+    else:
+        raise ValueError("Unexpected file type: {}. Expected .jar, .py, or .R file.".format(basename))
+    return content_type
+
+
 def upload_file(file_path):
     conn = S3Connection(os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'])
     bucket = conn.get_bucket(os.environ['S3_BUCKET'])
     basename = os.path.basename(file_path)
 
-    if basename.endswith('.jar'):
-        content_type = 'application/java-archive'
-    elif basename.endswith('.py'):
-        content_type = 'application/x-python'
-    else:
-        raise ValueError("Unexpected file type: {}. Expected .jar or .py file.".format(basename))
+    content_type = get_content_type(basename)
 
     key = Key(bucket, '{}/{}'.format(os.environ['S3_PREFIX'], basename))
     key.metadata = {'Content-Type': content_type}
@@ -95,6 +102,12 @@ def main():
         '30',
         "Pi is roughly 3",
         py_file_path=py_file_path)
+
+    # TO DO: enable R test when R is enabled in Spark (2.1)
+    #r_script_path = os.path.join(script_dir, 'jobs', 'dataframe.R')
+    #run_tests(r_script_path,
+    #    '',
+    #    "1 Justin")
 
 
 if __name__ == '__main__':
