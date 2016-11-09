@@ -10,7 +10,7 @@ enterprise: 'yes'
 
 1.  Run a Spark job:
 
-        $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
+        $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://s3.amazonaws.com/downloads.mesosphere.io/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
 
 1.  Run a Python Spark job:
 
