@@ -63,12 +63,15 @@ configure_cli() {
 install_spark() {
     notify_github pending "Installing Spark"
 
-    # with universe server running, there are no longer enough CPUs to
-    # launch spark jobs if we give the dispatcher an entire CPU
-    # TODO: remove this?
-    echo '{"service": {"cpus": 0.1}}' > /tmp/spark.json
+    if [ "$SECURITY" = "strict" ]; then
+        # custom configuration to enable auth stuff:
+        ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody "*" # spark's default service.role
+        echo '{ "service": { "user": "nobody", "principal": "service-acct", "secret_name": "secret" } }' > /tmp/spark.json
+        dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
+    else
+        dcos --log-level=INFO package install spark --yes
+    fi
 
-    dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
     if [ $? -ne 0 ]; then
         notify_github failure "Spark install failed"
         exit 1
@@ -108,6 +111,7 @@ run_tests() {
 check_env
 fetch_commons_tools
 start_cluster
+# TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
 configure_cli
 install_spark
 run_tests
