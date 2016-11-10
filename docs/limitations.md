@@ -8,7 +8,9 @@ enterprise: 'yes'
 *   DC/OS Spark only supports submitting jars and Python scripts. It
 does not support R.
 
-*   Mesosphere does not provide support for Spark app development.
+*   Mesosphere does not provide support for Spark app development,
+such as writing a Python app to process data from Kafka or writing 
+Scala code to process data from HDFS.
 
 *   Spark jobs run in Docker containers. The first time you run a
 Spark job on a node, it might take longer than you expect because of
