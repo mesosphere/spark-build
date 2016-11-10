@@ -1,7 +1,7 @@
 ---
 post_title: Troubleshooting
 menu_order: 120
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 # Dispatcher

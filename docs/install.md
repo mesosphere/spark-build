@@ -1,7 +1,7 @@
 ---
 post_title: Install
 menu_order: 10
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 # About Installing Spark on Enterprise DC/OS

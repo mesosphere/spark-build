@@ -1,7 +1,7 @@
 ---
 post_title: Uninstall
 menu_order: 60
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
     $ dcos package uninstall --app-id=<app-id> spark

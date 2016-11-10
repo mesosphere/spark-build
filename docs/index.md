@@ -1,7 +1,7 @@
 ---
 post_title: Spark
 menu_order: 110
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 Apache Spark is a fast and general-purpose cluster computing system for big

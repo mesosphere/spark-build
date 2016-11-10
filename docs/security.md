@@ -1,7 +1,7 @@
 ---
 post_title: Security
 menu_order: 40
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 # Mesos Security

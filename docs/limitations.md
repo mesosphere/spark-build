@@ -2,7 +2,7 @@
 post_title: Limitations
 menu_order: 130
 feature_maturity: stable
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 *   DC/OS Spark only supports submitting jars and Python scripts. It

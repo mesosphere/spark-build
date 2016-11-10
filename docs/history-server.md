@@ -1,7 +1,7 @@
 ---
 post_title: History Server
 menu_order: 30
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 DC/OS Spark includes the [Spark history server][3]. Because the history
