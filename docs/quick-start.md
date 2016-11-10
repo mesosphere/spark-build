@@ -1,6 +1,7 @@
 ---
 post_title: Quick Start
 menu_order: 0
+feature_maturity: stable
 enterprise: 'no'
 ---
 

@@ -1,6 +1,7 @@
 ---
 post_title: Spark
 menu_order: 110
+feature_maturity: stable
 enterprise: 'no'
 ---
 

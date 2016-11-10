@@ -1,6 +1,7 @@
 ---
 post_title: Install
 menu_order: 10
+feature_maturity: stable
 enterprise: 'no'
 ---
 

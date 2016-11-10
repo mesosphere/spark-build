@@ -1,6 +1,7 @@
 ---
 post_title: Custom Docker Images
 menu_order: 95
+feature_maturity: stable
 enterprise: 'no'
 ---
 
