@@ -8,10 +8,8 @@
 
 set -x -e -o pipefail
 
-# The rest of this script currently assumes paths which are relative to the base repo dir:
-BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BASEDIR="${BIN_DIR}/.."
-cd $BASEDIR
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_BUILD_DIR="${DIR}/.."
 
 function fetch_spark() {
     mkdir -p build/dist
@@ -42,15 +40,14 @@ function push_docker {
 [[ -n "${DOCKER_IMAGE}" ]] || (echo "DOCKER_IMAGE is a required env var." 1>&2; exit 1)
 
 if [ -z "${SPARK_DIST_URI}" ]; then
-    SPARK_URI=$(cat manifest.json | jq .spark_uri)
-    SPARK_URI="${SPARK_URI%\"}"
-    SPARK_URI="${SPARK_URI#\"}"
-    SPARK_DIST_URI=${SPARK_URI}
+    SPARK_DIST_URI=$(jq -r ".default_spark_dist.uri" manifest.json)
 fi
 
 DIST_TGZ=$(basename "${SPARK_DIST_URI}")
 DIST="${DIST_TGZ%.*}"
 
+pushd "${SPARK_BUILD_DIR}"
 create_docker_context
 build_docker
 push_docker
+popd

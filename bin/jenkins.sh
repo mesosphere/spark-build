@@ -1,75 +1,65 @@
 #!/bin/bash
 
-set -ex
+set -e -x
 set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_DIR="${DIR}/../../spark"
-SPARK_BUILD_DIR="${DIR}/.."
+SPARK_BUILD_DIR="${DIR}/../../spark-build"
+
+function default_hadoop_version {
+    jq -r ".default_spark_dist.hadoop_version" "${SPARK_BUILD_DIR}/manifest.json"
+}
+
+function default_spark_dist {
+    jq -r ".default_spark_dist.uri" "${SPARK_BUILD_DIR}/manifest.json"
+}
 
 function make_distribution {
-    # Env: HADOOP_VERSION
-    HADOOP_VERSION=${HADOOP_VERSION:-2.6}
-
+    local HADOOP_VERSION=${HADOOP_VERSION:-$(default_hadoop_version)}
     pushd "${SPARK_DIR}"
+
+    rm -rf spark-*.tgz
 
     if [[ -n "${SPARK_DIST_URI}" ]]; then
         wget "${SPARK_DIST_URI}"
     else
         if [ -f make-distribution.sh ]; then
-            # location of make-distribution.sh before Spark 2.0
+            # Spark <2.0
             ./make-distribution.sh --tgz "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         else
-            # location of make-distribution.sh after Spark 2.0
+            # Spark >=2.0
             ./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -Psparkr -DskipTests
         fi
-
-        # mv dist ${DIST_NAME}
-        # tar czf ${DIST_NAME}.tgz ${DIST_NAME}
     fi
 
     popd
 }
 
 # rename spark/spark-*.tgz to spark/spark-<TAG>.tgz
+# globals: $SPARK_VERSION
 function rename_dist {
+    SPARK_DIST_DIR="spark-${SPARK_VERSION}-bin-${HADOOP_VERSION}"
+    SPARK_DIST="${SPARK_DIST_DIR}.tgz"
+
     pushd "${SPARK_DIR}"
-
-    local VERSION=${GIT_BRANCH#origin/tags/custom-}
-
-    # rename to spark-<tag>
     tar xvf spark-*.tgz
     rm spark-*.tgz
-    mv spark-* "spark-${VERSION}-bin-${HADOOP_VERSION}"
-    tar czf "spark-${VERSION}-bin-${HADOOP_VERSION}.tgz" "spark-${VERSION}-bin-${HADOOP_VERSION}"
-
+    mv spark-* "${SPARK_DIST_DIR}"
+    tar czf "${SPARK_DIST}" "${SPARK_DIST_DIR}"
+    rm -rf "${SPARK_DIST_DIR}"
     popd
 }
 
 # uploads spark/spark-*.tgz to S3
 function upload_to_s3 {
-    pushd "${SPARK_DIR}"
-
-    env
-    aws --debug s3 cp \
-        --acl public-read \
-        spark-*.tgz \
-        "s3://${S3_BUCKET}/${S3_PREFIX}/"
-
-    popd
+    aws s3 cp --acl public-read "${SPARK_DIR}/${SPARK_DIST}" "${S3_URL}"
 }
 
-# function update_manifest {
-#     pushd "${SPARK_BUILD_DIR}"
-
-#     # update manifest.json with new spark dist:
-#     SPARK_DIST=$(ls ../spark/spark*.tgz)
-#     SPARK_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}$(basename ${SPARK_DIST})"
-#     cat manifest.json | jq ".spark_uri=\"${SPARK_URI}\"" > manifest.json.tmp
-#     mv manifest.json.tmp manifest.json
-
-#     popd
-# }
+# $1: hadoop version (e.g. "2.6")
+function docker_version() {
+    echo "${SPARK_BUILD_VERSION}-hadoop-$1"
+}
 
 function install_cli {
     curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
@@ -89,27 +79,14 @@ function docker_login {
     docker login --email=docker@mesosphere.io --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
 }
 
-# function spark_test {
-#     install_cli
+function set_hadoop_versions {
+    HADOOP_VERSIONS=( "2.4" "2.6" "2.7" )
+}
 
-#     pushd spark-build
-#     docker_login
-#     # build/upload artifacts: docker + cli + stub universe:
-#     make build
-#     # in CI environments, ci_upload.py creates a 'stub-universe.properties' file
-#     # grab the STUB_UNIVERSE_URL from the file for use by test.sh:
-#     export $(cat $WORKSPACE/stub-universe.properties)
-#     # run tests against build artifacts:
-#     CLUSTER_NAME=spark-package-${BUILD_NUMBER} \
-#                 TEST_DIR=$(pwd)/../mesos-spark-integration-tests/ \
-#                 S3_BUCKET=${DEV_S3_BUCKET} \
-#                 S3_PREFIX=${DEV_S3_PREFIX} \
-#                 make test
-#     popd
-# }
-
-# function upload_distribution {
-#     make_distribution
-#     upload_to_s3
-#     update_manifest
-# }
+function build_and_test() {
+    make dist
+    SPARK_DIST=$(cd ${SPARK_DIR} && ls spark-*.tgz)
+    S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}/spark/${GIT_COMMIT}/" upload_to_s3
+    SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/spark/${GIT_COMMIT}/${SPARK_DIST}" make universe && export $(cat "${WORKSPACE}/stub-universe.properties")
+    make test
+}
