@@ -29,7 +29,8 @@ function make_distribution {
             ./make-distribution.sh --tgz "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         else
             # Spark >=2.0
-            ./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -Psparkr -DskipTests
+            # TODO: add -Psparkr
+            ./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         fi
     fi
 
