@@ -30,7 +30,12 @@ function make_distribution {
         else
             # Spark >=2.0
             # TODO: add -Psparkr
-            ./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
+            if does_profile_exist "mesos"; then
+                MESOS_PROFILE="-Pmesos"
+            else
+                MESOS_PROFILE=""
+            fi
+            ./dev/make-distribution.sh --tgz "${MESOS_PROFILE}" "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         fi
     fi
 
@@ -90,4 +95,9 @@ function build_and_test() {
     S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}/spark/${GIT_COMMIT}/" upload_to_s3
     SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/spark/${GIT_COMMIT}/${SPARK_DIST}" make universe && export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
+}
+
+# $1: hadoop version (e.g. "2.6")
+function does_profile_exist() {
+    (cd "${SPARK_DIR}" && ./build/mvn help:all-profiles | grep "$1")
 }
