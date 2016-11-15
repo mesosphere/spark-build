@@ -114,8 +114,8 @@ def main():
     else:
         print(__doc__)
         return 1
-
     return 0
+
 
 if __name__ == "__main__":
     main()

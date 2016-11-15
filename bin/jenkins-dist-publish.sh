@@ -10,16 +10,11 @@ function publish_dists() {
     set_hadoop_versions
     for HADOOP_VERSION in "${HADOOP_VERSIONS[@]}"
     do
-        if does_hadoop_profile_exist "${HADOOP_VERSION}"; then
+        if does_profile_exist "hadoop-${HADOOP_VERSION}"; then
             publish_dist "${HADOOP_VERSION}"
             # publish_docker "${HADOOP_VERSION}"
         fi
     done
-}
-
-# $1: hadoop version (e.g. "2.6")
-function does_hadoop_profile_exist() {
-    (cd "${SPARK_DIR}" && ./build/mvn help:all-profiles | grep "hadoop-$1")
 }
 
 # $1: hadoop version (e.g. "2.6")
