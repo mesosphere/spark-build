@@ -93,7 +93,8 @@ function build_and_test() {
     make dist
     SPARK_DIST=$(cd ${SPARK_DIR} && ls spark-*.tgz)
     S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}/spark/${GIT_COMMIT}/" upload_to_s3
-    SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/spark/${GIT_COMMIT}/${SPARK_DIST}" make universe && export $(cat "${WORKSPACE}/stub-universe.properties")
+    SPARK_DIST_URI="http://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/spark/${GIT_COMMIT}/${SPARK_DIST}" make universe
+    export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }
 
