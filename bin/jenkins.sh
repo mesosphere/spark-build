@@ -97,7 +97,7 @@ function build_and_test() {
     make test
 }
 
-# $1: hadoop version (e.g. "2.6")
+# $1: profile (e.g. "hadoop-2.6")
 function does_profile_exist() {
     (cd "${SPARK_DIR}" && ./build/mvn help:all-profiles | grep "$1")
 }
