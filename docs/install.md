@@ -1,7 +1,8 @@
 ---
 post_title: Install
 menu_order: 10
-enterprise: 'yes'
+feature_maturity: stable
+enterprise: 'no'
 ---
 
 # About Installing Spark on Enterprise DC/OS
@@ -48,6 +49,23 @@ Then, install Spark with your custom configuration:
 Run the following command to see all configuration options:
 
     $ dcos package describe spark --config
+
+## Customize Spark Distribution
+
+DC/OS Spark does not support arbitrary Spark distributions, but
+Mesosphere does provide multiple pre-built distributions, primarily
+used to select Hadoop versions.  To use one of these distributions,
+first select your desired Spark distribution from
+[here](spark-versions.md), then select the corresponding docker image
+from [here](https://hub.docker.com/r/mesosphere/spark/tags/), then
+use those values to set the following configuration variables:
+
+    {
+      "service": {
+        "spark-dist-uri": "<spark-dist-uri>"
+        "docker-image": "<docker-image>"
+      }
+    }
 
 # Minimal Installation
 

@@ -1,7 +1,8 @@
 ---
 post_title: Custom Docker Images
 menu_order: 95
-enterprise: 'yes'
+feature_maturity: stable
+enterprise: 'no'
 ---
 
 **Note:** Custom Docker images are not supported by Mesosphere.

@@ -1,7 +1,8 @@
 ---
 post_title: Run a Spark Job
 menu_order: 80
-enterprise: 'yes'
+feature_maturity: stable
+enterprise: 'no'
 ---
 1.  Before submitting your job, upload the artifact (e.g., jar file)
 to a location visible to the cluster (e.g., S3 or HDFS). [Learn

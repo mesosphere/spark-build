@@ -1,4 +1,18 @@
 {
     "cli_version": "0.5.19",
-    "spark_uri": "https://downloads.mesosphere.com/spark/assets/spark-2.0.1.tgz"
+    "spark_version": "1.6.3",
+    "default_spark_dist": {
+        "hadoop_version": "2.6",
+        "uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.3-bin-2.6.tgz"
+    },
+    "spark_dist": [
+        {
+            "hadoop_version": "2.4",
+            "uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.3-bin-2.4.tgz"
+        },
+        {
+            "hadoop_version": "2.6",
+            "uri": "https://downloads.mesosphere.com/spark/assets/spark-1.6.3-bin-2.6.tgz"
+        }
+    ]
 }

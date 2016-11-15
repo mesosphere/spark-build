@@ -2,7 +2,7 @@
 post_title: Configure Spark for HDFS
 nav_title: HDFS
 menu_order: 20
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 To configure Spark for a specific HDFS cluster, configure

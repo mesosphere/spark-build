@@ -2,7 +2,7 @@
 post_title: Runtime Configuration Change
 menu_order: 70
 feature_maturity: stable
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 You can customize DC/OS Spark in-place when it is up and running.

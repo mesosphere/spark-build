@@ -1,7 +1,8 @@
 ---
 post_title: Spark
 menu_order: 110
-enterprise: 'yes'
+feature_maturity: stable
+enterprise: 'no'
 ---
 
 Apache Spark is a fast and general-purpose cluster computing system for big
@@ -59,5 +60,5 @@ dispatcher and the history server
  [4]: https://docs.mesosphere.com/1.8/usage/service-guides/hdfs/
  [5]: https://docs.mesosphere.com/1.8/usage/service-guides/kafka/
  [6]: https://zeppelin.incubator.apache.org/
- [17]: https://github.com/mesopshere/spark
- [18]: https://github.com/mesopshere/spark-build
+ [17]: https://github.com/mesosphere/spark
+ [18]: https://github.com/mesosphere/spark-build

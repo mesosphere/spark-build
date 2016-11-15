@@ -1,7 +1,7 @@
 ---
 post_title: Interactive Spark Shell
 menu_order: 90
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 # Interactive Spark Shell

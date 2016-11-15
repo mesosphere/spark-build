@@ -2,7 +2,7 @@
 post_title: Fault Tolerance
 menu_order: 100
 feature_maturity: stable
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 Failures such as host, network, JVM, or application failures can

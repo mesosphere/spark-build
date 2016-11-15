@@ -1,10 +1,11 @@
 ---
 post_title: Quick Start
 menu_order: 0
-enterprise: 'yes'
+feature_maturity: stable
+enterprise: 'no'
 ---
 
-1.  Install DC/OS Spark via the DC/OS CLI:
+1.  Install DC/OS Spark via the DC/OS CLI. **Note:** If you are using Enterprise DC/OS, you may need to follow additional instructions. See the Install and Customize section for more information.
 
         $ dcos package install spark
 
