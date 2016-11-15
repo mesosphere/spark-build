@@ -56,7 +56,7 @@ We cut a DC/OS Spark release in two scenarios:
 1. Apache Spark cuts a release.
 2. We need to make a bugfix release.
 
-Follow the instruction for creating a tag depending on which release
+Follow the instructions for creating a tag depending on which release
 you're doing:
 
 ### Apache Spark tag (Major version)
@@ -95,6 +95,8 @@ git push origin custom-2.0.1
 ```
 
 Then run the [release build][1]
+
+After releasing a Spark distribution, add all builds to this page: https://github.com/mesosphere/spark-build/blob/master/docs/spark-versions.md
 
 ## Release a DC/OS Spark package
 
