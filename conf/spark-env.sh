@@ -16,9 +16,14 @@ cd $MESOS_SANDBOX
 
 MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so
 
-# Support environments without DNS
-if [ -n "$LIBPROCESS_IP" ]; then
-  SPARK_LOCAL_IP=${LIBPROCESS_IP}
+# For non-CNI, tell the Spark driver to bind to LIBPROCESS_IP
+#
+# For CNI, LIBPROCESS_IP is 0.0.0.0, so we can't do this.  Instead, we
+# let Spark perform its default behavior of doing a DNS lookup on the
+# hostname, which should work because the container is set up with a
+# $(hostname) in /etc/hosts.
+if ! getent hosts $(hostname) > /dev/null && [ -n "$LIBPROCESS_IP" ]; then
+    SPARK_LOCAL_IP=${LIBPROCESS_IP}
 fi
 
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866

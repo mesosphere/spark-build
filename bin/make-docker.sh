@@ -12,8 +12,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${DIR}/.."
 
 function fetch_spark() {
+    rm -rf build/dist
     mkdir -p build/dist
-    [ -f "build/dist/${DIST_TGZ}" ] || curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"
+    curl -o "build/dist/${DIST_TGZ}" "${SPARK_DIST_URI}"
     tar xvf "build/dist/${DIST_TGZ}" -C build/dist
 }
 
