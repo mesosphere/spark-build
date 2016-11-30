@@ -15,4 +15,5 @@
 - [Fault Tolerance](fault-tolerance.md)
 - [Job Scheduling](job-scheduling.md)
 - [Troubleshooting](troubleshooting.md)
+- [Version Policy](version-policy.md)
 - [Limitations](limitations.md)
