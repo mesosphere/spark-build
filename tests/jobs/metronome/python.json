@@ -1,0 +1,21 @@
+{
+    "id": "spark-python",
+    "run": {
+        "cmd": "./bin/spark-submit --conf spark.mesos.executor.docker.image={{docker_image}} --master mesos://zk://leader.mesos:2181/mesos --py-files PySparkTestInclude.py --class com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner pi_with_include.py",
+        "cpus": 1,
+        "mem": 2048,
+        "disk": 0,
+        "docker": {
+            "image": "{{docker_image}}"
+        },
+        "artifacts": [
+            {
+                "uri": "{{pi_with_include_uri}}"
+            },
+            {
+                "uri": "{{py_spark_test_include_uri}}"
+            }
+        ]
+    }
+
+}

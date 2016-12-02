@@ -1,0 +1,18 @@
+{
+    "id": "spark-job-runner",
+    "run": {
+        "cmd": "./bin/spark-submit --conf spark.mesos.executor.docker.image={{docker_image}} --master mesos://zk://leader.mesos:2181/mesos --class com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner mesos-spark-integration-tests-assembly-0.1.0.jar http://leader.mesos:5050 dcos \"*\" spark:only 2",
+        "cpus": 1,
+        "mem": 2048,
+        "disk": 0,
+        "docker": {
+            "image": "{{docker_image}}"
+        },
+        "artifacts": [
+            {
+                "uri": "{{test_jar_path}}"
+            }
+        ]
+    }
+
+}

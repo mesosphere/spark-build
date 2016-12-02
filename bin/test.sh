@@ -14,7 +14,8 @@ check_env() {
             -o -z "$AWS_SECRET_ACCESS_KEY" \
             -o -z "$S3_BUCKET" \
             -o -z "$S3_PREFIX" \
-            -o -z "$TEST_JAR_PATH" ]; then
+            -o -z "$TEST_JAR_PATH" \
+            -o -z "$DOCKER_IMAGE"]; then
         echo "Missing required env. See check in ${BIN_DIR}/test.sh."
         env
         exit 1
@@ -55,9 +56,9 @@ configure_cli() {
     dcos config set core.ssl_verify false
     ${COMMONS_TOOLS_DIR}/dcos_login.py
     dcos config show
-    if [ -n "${STUB_UNIVERSE_URL}" ]; then
-        dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
-    fi
+    # if [ -n "${STUB_UNIVERSE_URL}" ]; then
+    #     dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
+    # fi
 }
 
 install_spark() {
@@ -113,7 +114,7 @@ fetch_commons_tools
 start_cluster
 # TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
 configure_cli
-install_spark
+# install_spark
 run_tests
 
 notify_github success "Tests Passed"
