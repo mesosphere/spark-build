@@ -7,10 +7,11 @@
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-import re
 import os
-import subprocess
+import pytest
+import re
 import shakedown
+import subprocess
 
 
 def test_jar():
@@ -32,6 +33,28 @@ def test_python():
                "30",
                "Pi is roughly 3",
                {"--py-files": py_file_url})
+
+
+@pytest.mark.skip(reason="must be run manually against a kerberized HDFS")
+def test_kerberos():
+    '''This test must be run manually against a kerberized HDFS cluster.
+    Instructions for setting one up are here:
+    https://docs.google.com/document/d/1lqlEIs98j1VsAyoEYnhYoaNmYylcoaBAwHpD29yKjU4.
+    You must set 'principal' and 'keytab' to the appropriate values,
+    and change 'krb5.conf' to the name of some text file you've
+    written to HDFS.
+
+    '''
+
+    principal = "nn/ip-10-0-2-134.us-west-2.compute.internal@LOCAL"
+    keytab = "nn.ip-10-0-2-134.us-west-2.compute.internal.keytab"
+    _run_tests(
+        "http://infinity-artifacts.s3.amazonaws.com/spark/sparkjob-assembly-1.0.jar",
+        "hdfs:///krb5.conf",
+        "number of words in",
+        {"--class": "HDFSWordCount", "--principal":  principal, "--keytab": keytab},
+        {"sun.security.krb5.debug": "true"})
+
 
 def test_r():
     # TODO: enable R test when R is enabled in Spark (2.1)
