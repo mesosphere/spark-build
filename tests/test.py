@@ -7,11 +7,64 @@
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+import dcos.config
+import dcos.http
+import dcos.package
 import os
 import pytest
 import re
 import shakedown
 import subprocess
+import urllib
+
+
+def setup_module(module):
+    _require_package('hdfs')
+    _install_spark()
+
+
+def _install_spark():
+    options = {"hdfs":
+               {"config-url":
+                "http://hdfs.marathon.mesos:9000/v1/connection"}}
+
+    if os.environ.get('SECURITY') == 'strict':
+        options['service'] = {"user": "nobody",
+                              "principal": "service-acct",
+                              "secret_name": "secret" }
+
+    shakedown.install_package('spark', options_json=options, wait_for_completion=True)
+
+    def pred():
+        dcos_url = dcos.config.get_config_val("core.dcos_url")
+        spark_url = urllib.parse.urljoin(dcos_url, "/service/spark")
+        status_code = dcos.http.get(spark_url).status_code
+        return status_code == 200
+
+    shakedown.spinner.wait_for(pred)
+
+
+def _require_package(pkg_name):
+    pkg_manager = dcos.package.get_package_manager()
+    installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
+    if not any(pkg['name'] == pkg_name for pkg in installed_pkgs):
+        shakedown.install_package(pkg_name, wait_for_completion=True)
+    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=600)
+
+
+DEFAULT_HDFS_TASK_COUNT=8
+def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
+    running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
+                     if t['state'] == 'TASK_RUNNING']
+    return len(running_tasks) >= expected_tasks
+
+
+def test_teragen():
+    jar_url = "https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar"
+    _run_tests(jar_url,
+               "1g hdfs:///terasort_in",
+               "Number of records written",
+               {"--class": "com.github.ehiggs.spark.terasort.TeraGen"})
 
 
 def test_jar():
