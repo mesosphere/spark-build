@@ -68,7 +68,8 @@ function docker_version() {
 }
 
 function install_cli {
-    git clone git@github.com:dcos/dcos-cli.git
+    git clone git@github.com:mgummelt/dcos-cli.git
+    git checkout pyvenv
 
     (cd dcos-cli && make env)
     (cd dcos-cli/cli && make env)
