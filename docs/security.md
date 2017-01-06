@@ -172,5 +172,5 @@ In addition to the described configuration, make sure to connect the DC/OS clust
 
     $ dcos config set core.dcos_url https://<dcos-url>
 
- [11]: https://docs.mesosphere.com/administration/dcosarchitecture/components/
+ [11]: https://docs.mesosphere.com/1.8/overview/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
