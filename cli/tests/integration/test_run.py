@@ -1,14 +1,14 @@
+import six
+from dcos_spark import spark_submit
+
 import mock
 import pytest
-import six
-
-from dcos_spark import spark_submit
 
 
 @pytest.mark.skip(
-    reason=("This is failing when fake.com fails to connect,"
-            "but I don't want to spend the time to fix it, because this CLI is hopefully going"
-            "away in 1.10."))
+    reason=("This is failing when fake.com fails to connect, "
+            "but I don't want to spend the time to fix it, because this CLI "
+            "is hopefully going away in 1.10."))
 @mock.patch('subprocess.Popen')
 @mock.patch('dcos_spark.spark_submit.spark_app')
 def test_spark_hdfs_config_url(spark_app, Popen):
