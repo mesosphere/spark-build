@@ -1,8 +1,8 @@
+import six
+from dcos_spark import spark_submit
+
 import mock
 import pytest
-import six
-
-from dcos_spark import spark_submit
 
 
 @pytest.mark.skip(
