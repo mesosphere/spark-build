@@ -40,7 +40,7 @@ start_cluster() {
     else
         notify_github pending "Starting Cluster"
         echo "Launching new cluster"
-        STDOUT=$(${COMMONS_TOOLS_DIR}/launch_ccm_cluster.py)
+        STDOUT=$(CCM_AGENTS=5 ${COMMONS_TOOLS_DIR}/launch_ccm_cluster.py)
         DCOS_URL=$(echo "${STDOUT}" | jq .url)
         if [ $? -ne 0 -o "$DCOS_URL" = "http://" ]; then
             notify_github failure "Cluster launch failed"
