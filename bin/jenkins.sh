@@ -29,13 +29,12 @@ function make_distribution {
             ./make-distribution.sh --tgz "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
         else
             # Spark >=2.0
-            # TODO: add -Psparkr
             if does_profile_exist "mesos"; then
                 MESOS_PROFILE="-Pmesos"
             else
                 MESOS_PROFILE=""
             fi
-            ./dev/make-distribution.sh --tgz "${MESOS_PROFILE}" "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
+            ./dev/make-distribution.sh --tgz "${MESOS_PROFILE}" "-Phadoop-${HADOOP_VERSION}" -Psparkr -Phive -Phive-thriftserver -DskipTests
         fi
     fi
 
