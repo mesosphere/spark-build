@@ -73,7 +73,7 @@ compiled with the same Scala version as your version of DC/OS Spark.
 
 The default DC/OS Spark distribution is compiled against Hadoop 2.6
 libraries.  However, you may choose a different version by following
-the instructions in the "Customize Spark Distribution" section [here](install.md).
+the instructions in the "Customize Spark Distribution" section of the Installation page.
 
 
 [13]: http://spark.apache.org/docs/latest/submitting-applications.html

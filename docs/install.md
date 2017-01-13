@@ -20,8 +20,7 @@ server.
 Go to the **Services** tab of the DC/OS web interface to monitor the deployment. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
-You can also
-[install Spark via the DC/OS web interface](/usage/services/install/).
+You can also [install Spark via the DC/OS web interface](https://docs.mesosphere.com/1.8/usage/webinterface/#universe).
 **Note:** If you install Spark via the web interface, run the
 following command from the DC/OS CLI to install the Spark CLI:
 
@@ -56,8 +55,7 @@ DC/OS Spark does not support arbitrary Spark distributions, but
 Mesosphere does provide multiple pre-built distributions, primarily
 used to select Hadoop versions.  To use one of these distributions,
 first select your desired Spark distribution from
-[here](spark-versions.md), then select the corresponding docker image
-from [here](https://hub.docker.com/r/mesosphere/spark/tags/), then
+[here](https://github.com/mesosphere/spark-build/blob/master/docs/spark-versions.md), then select the corresponding docker image from [here](https://hub.docker.com/r/mesosphere/spark/tags/), then
 use those values to set the following configuration variables:
 
     {

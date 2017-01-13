@@ -60,35 +60,11 @@ configure_cli() {
     fi
 }
 
-install_spark() {
-    notify_github pending "Installing Spark"
-
+setup_permissions() {
     if [ "$SECURITY" = "strict" ]; then
         # custom configuration to enable auth stuff:
         ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody "*" # spark's default service.role
-        echo '{ "service": { "user": "nobody", "principal": "service-acct", "secret_name": "secret" } }' > /tmp/spark.json
-        dcos --log-level=INFO package install spark --options=/tmp/spark.json --yes
-    else
-        dcos --log-level=INFO package install spark --yes
     fi
-
-    if [ $? -ne 0 ]; then
-        notify_github failure "Spark install failed"
-        exit 1
-    fi
-
-    SECONDS=0
-    while [[ $(dcos marathon app list --json | jq '.[] | select(.id=="/spark") | .tasksHealthy') -ne "1" ]]
-    do
-        sleep 5
-        if [ $SECONDS -gt 600 ]; then # 10 mins
-            notify_github failure "Spark install timed out"
-            exit 1
-        fi
-    done
-
-    # sleep 30s due to mesos-dns propagation delays to /service/sparkcli/
-    sleep 30
 }
 
 run_tests() {
@@ -113,7 +89,7 @@ fetch_commons_tools
 start_cluster
 # TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
 configure_cli
-install_spark
+setup_permissions
 run_tests
 
 notify_github success "Tests Passed"

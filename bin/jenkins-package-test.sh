@@ -9,7 +9,8 @@ function run() {
     source bin/jenkins.sh
     install_cli
     docker_login
-    make universe && export $(cat "${WORKSPACE}/stub-universe.properties")
+    make universe
+    export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }
 
