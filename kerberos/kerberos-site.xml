@@ -1,0 +1,63 @@
+<property>
+	<name>hadoop.security.authentication</name>
+	<value>kerberos</value>
+</property>
+
+<property>
+	<name>dfs.block.access.token.enable</name>
+	<value>true</value>
+</property>
+
+<property>
+	<name>dfs.namenode.keytab.file</name>
+	<value>/tmp/hdfs.keytab</value>
+</property>
+<property>
+	<name>dfs.namenode.kerberos.principal</name>
+	<value>hdfs@LOCAL</value>
+</property>
+
+<property>
+	<name>dfs.secondary.namenode.keytab.file</name>
+	<value>/tmp/hdfs.keytab</value>
+</property>
+<property>
+	<name>dfs.secondary.namenode.kerberos.principal</name>
+	<value>hdfs@LOCAL</value>
+</property>
+
+<property>
+	<name>dfs.journalnode.kerberos.principal</name>
+	<value>hdfs@LOCAL</value>
+</property>
+<property>
+	<name>dfs.journalnode.keytab.file</name>
+	<value>/tmp/hdfs.keytab</value>
+</property>
+
+<property>
+	<name>dfs.datanode.keytab.file</name>
+	<value>/tmp/hdfs.keytab</value>
+</property>
+<property>
+	<name>dfs.datanode.kerberos.principal</name>
+	<value>hdfs@LOCAL</value>
+</property>
+
+<property>
+	<name>dfs.web.authentication.kerberos.keytab</name>
+	<value>/tmp/hdfs.keytab</value>
+</property>
+<property>
+	<name>dfs.web.authentication.kerberos.principal</name>
+	<value>hdfs@LOCAL</value>
+</property>
+
+<property>
+	<name>hadoop.proxyuser.hdfs.hosts</name>
+	<value>*</value>
+</property>
+<property>
+	<name>hadoop.proxyuser.hdfs.groups</name>
+	<value>*</value>
+</property>
