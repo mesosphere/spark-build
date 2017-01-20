@@ -17,10 +17,11 @@ server.
 
     $ dcos package install spark
 
-Go to the **Services** tab of the DC/OS web interface to monitor the deployment. Once it is
+Go to the **Services** > **Deployments** tab of the DC/OS web interface to monitor the deployment. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
 You can also [install Spark via the DC/OS web interface](https://docs.mesosphere.com/1.8/usage/webinterface/#universe).
+
 **Note:** If you install Spark via the web interface, run the
 following command from the DC/OS CLI to install the Spark CLI:
 
