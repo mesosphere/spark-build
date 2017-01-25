@@ -40,4 +40,4 @@ configuration file. Here we call it `options.json`:
 to the history server entry for that job.
 
  [3]: http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-fact
- [10]: https://docs.mesosphere.com/1.8/administration/access-node/sshcluster/
+ [10]: https://docs.mesosphere.com/1.9/administration/access-node/sshcluster/

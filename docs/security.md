@@ -22,11 +22,11 @@ enterprise: 'no'
 
 ## Authentication
 
-When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/).
+When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/).
 
 Follow these instructions to authenticate in strict mode:
 
-1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/universe-service-auth/).
+1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/universe-service-auth/).
 
 1. Assign Permissions
 
@@ -169,5 +169,5 @@ In addition to the described configuration, make sure to connect the DC/OS clust
 
     $ dcos config set core.dcos_url https://<dcos-url>
 
- [11]: https://docs.mesosphere.com/1.8/overview/components/
+ [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html

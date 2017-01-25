@@ -57,8 +57,8 @@ dispatcher and the history server
  [1]: http://spark.apache.org/documentation.html
  [2]: http://spark.apache.org/docs/latest/running-on-mesos.html#cluster-mode
  [3]: http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-fact
- [4]: https://docs.mesosphere.com/1.8/usage/service-guides/hdfs/
- [5]: https://docs.mesosphere.com/1.8/usage/service-guides/kafka/
+ [4]: https://docs.mesosphere.com/1.9/usage/service-guides/hdfs/
+ [5]: https://docs.mesosphere.com/1.9/usage/service-guides/kafka/
  [6]: https://zeppelin.incubator.apache.org/
  [17]: https://github.com/mesosphere/spark
  [18]: https://github.com/mesosphere/spark-build
