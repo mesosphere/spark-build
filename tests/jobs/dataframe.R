@@ -34,7 +34,7 @@ printSchema(df)
 
 # Create a DataFrame from a JSON file
 path <- file.path(Sys.getenv("SPARK_HOME"), "examples/src/main/resources/people.json")
-peopleDF <- read.json(path)
+peopleDF <- read.json(paste("file://", path, sep=""))
 printSchema(peopleDF)
 # root
 #  |-- age: long (nullable = true)

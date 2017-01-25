@@ -6,7 +6,7 @@ enterprise: 'no'
 ---
 
 # About Installing Spark on Enterprise DC/OS
-In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.8/administration/installing/custom/configuration-parameters/#security), Spark requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Spark](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/spark-auth/) for instructions.
+In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.9/administration/installing/custom/configuration-parameters/#security), Spark requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Spark](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/spark-auth/) for instructions.
 
 # Default Installation
 
@@ -17,10 +17,11 @@ server.
 
     $ dcos package install spark
 
-Go to the **Services** tab of the DC/OS web interface to monitor the deployment. Once it is
+Go to the **Services** > **Deployments** tab of the DC/OS web interface to monitor the deployment. Once it is
 complete, visit Spark at `http://<dcos-url>/service/spark/`.
 
-You can also [install Spark via the DC/OS web interface](https://docs.mesosphere.com/1.8/usage/webinterface/#universe).
+You can also [install Spark via the DC/OS web interface](https://docs.mesosphere.com/1.9/usage/webinterface/#universe).
+
 **Note:** If you install Spark via the web interface, run the
 following command from the DC/OS CLI to install the Spark CLI:
 

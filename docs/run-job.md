@@ -64,7 +64,7 @@ To set Spark properties with a configuration file, create a
 
 # Versioning
 
-The DC/OS Spark docker image contains OpenJDK 8 and Python 2.7.6.
+The DC/OS Spark Docker image contains OpenJDK 8 and Python 2.7.6.
 
 DC/OS Spark distributions 1.X are compiled with Scala 2.10.  DC/OS
 Spark distributions 2.X are compiled with Scala 2.11.  Scala is not

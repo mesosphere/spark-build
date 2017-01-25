@@ -66,6 +66,8 @@ def test_teragen():
                "Number of records written",
                {"--class": "com.github.ehiggs.spark.terasort.TeraGen"})
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def test_jar():
     spark_job_runner_args = 'http://leader.mesos:5050 dcos \\"*\\" spark:only 2'
@@ -77,10 +79,9 @@ def test_jar():
 
 
 def test_python():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    python_script_path = os.path.join(script_dir, 'jobs', 'pi_with_include.py')
+    python_script_path = os.path.join(THIS_DIR, 'jobs', 'pi_with_include.py')
     python_script_url = _upload_file(python_script_path)
-    py_file_path = os.path.join(script_dir, 'jobs', 'PySparkTestInclude.py')
+    py_file_path = os.path.join(THIS_DIR, 'jobs', 'PySparkTestInclude.py')
     py_file_url = _upload_file(py_file_path)
     _run_tests(python_script_url,
                "30",
@@ -110,12 +111,11 @@ def test_kerberos():
 
 
 def test_r():
-    # TODO: enable R test when R is enabled in Spark (2.1)
-    #r_script_path = os.path.join(script_dir, 'jobs', 'dataframe.R')
-    #run_tests(r_script_path,
-    #    '',
-    #    "1 Justin")
-    pass
+    r_script_path = os.path.join(THIS_DIR, 'jobs', 'dataframe.R')
+    r_script_url = _upload_file(r_script_path)
+    _run_tests(r_script_url,
+               '',
+               "1 Justin")
 
 
 def test_cni():
