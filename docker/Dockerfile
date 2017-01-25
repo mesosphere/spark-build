@@ -32,7 +32,6 @@ RUN apt-get update && \
             runit \
             nginx
 
-RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update && \
     apt-get install -y curl
 RUN apt-get install -y r-base
