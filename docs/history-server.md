@@ -22,9 +22,12 @@ your cluster][10] and run:
 configuration file. Here we call it `options.json`:
 
         {
-           "history-server": {
-             "enabled": true
-           }
+          "history-server": {
+            "enabled": true
+          },
+          "hdfs": {
+            "config-url": "http://hdfs.marathon.mesos:9000/v1/connection"
+          }
         }
 
 1.  Install Spark:
