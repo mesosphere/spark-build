@@ -18,6 +18,5 @@ the `docker pull`.
 
 *   DC/OS Spark only supports running the Spark shell from within a
 DC/OS cluster. See the Spark Shell section for more information. 
-For interactive analytics, we
-recommend Zeppelin, which supports visualizations and dynamic
+For interactive analytics, we recommend Zeppelin, which supports visualizations and dynamic
 dependency management.
