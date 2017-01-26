@@ -32,12 +32,16 @@ RUN apt-get update && \
             runit \
             nginx
 
-RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk curl
+    apt-get install -y curl
 RUN apt-get install -y r-base
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+RUN cd /usr/lib/jvm && \
+    curl -O https://downloads.mesosphere.com/java/jre-8u121-linux-x64.tar.gz && \
+    tar zxf jre-8u121-linux-x64.tar.gz && \
+    rm jre-8u121-linux-x64.tar.gz
+
+ENV JAVA_HOME /usr/lib/jvm/jre1.8.0_121
 ENV MESOS_NATIVE_JAVA_LIBRARY /usr/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
 
