@@ -12,8 +12,9 @@ more][13].
 
         $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
-
         $ dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
+
+        $ dcos spark run --submit-args="http://external.website/mysparkapp.R"
 
     `dcos spark run` is a thin wrapper around the standard Spark
     `spark-submit` script. You can submit arbitrary pass-through options
