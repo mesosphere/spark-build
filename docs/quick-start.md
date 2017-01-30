@@ -17,6 +17,10 @@ enterprise: 'no'
 
         $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/pi.py 30"
 
+1.  Run an R Spark job:
+
+        $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/dataframe.R"
+
 1.  View your job:
 
     Visit the Spark cluster dispatcher at

@@ -7,7 +7,7 @@ enterprise: 'no'
 # Interactive Spark Shell
 
 You can run Spark commands interactively in the Spark shell. The Spark shell is available
-in either Scala or Python.
+in either Scala, Python, or R.
 
 1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/latest/administration/access-node/sshcluster/).
 
@@ -27,6 +27,10 @@ in either Scala or Python.
 
         $ ./bin/pyspark --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
 
+    Or, run the R Spark shell.
+
+        $ ./bin/sparkR --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.7-2.1.0-hadoop-2.6 --conf spark.mesos.executor.home=/opt/spark/dist
+
 1. Run Spark commands interactively.
 
     In the Scala shell:
@@ -38,3 +42,8 @@ in either Scala or Python.
 
         $ textFile = sc.textFile("/opt/spark/dist/README.md")
         $ textFile.count()
+
+    In the R shell:
+
+        $ df <- as.DataFrame(faithful)
+        $ head(df)
