@@ -18,6 +18,8 @@ import subprocess
 import urllib
 
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def setup_module(module):
     _require_package('hdfs')
     _install_spark()
@@ -30,8 +32,8 @@ def _install_spark():
 
     if os.environ.get('SECURITY') == 'strict':
         options['service'] = {"user": "nobody",
-                              "principal": "service-acct",
-                              "secret_name": "secret" }
+                              "principal": "service-acct"}
+        options['security'] = {"mesos": {"authentication": {"secret_name": "secret"}}}
 
     shakedown.install_package('spark', options_json=options, wait_for_completion=True)
 
@@ -66,7 +68,7 @@ def test_teragen():
                "Number of records written",
                {"--class": "com.github.ehiggs.spark.terasort.TeraGen"})
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 
 def test_jar():
