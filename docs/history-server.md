@@ -22,9 +22,12 @@ your cluster][10] and run:
 configuration file. Here we call it `options.json`:
 
         {
-           "history-server": {
-             "enabled": true
-           }
+          "history-server": {
+            "enabled": true
+          },
+          "hdfs": {
+            "config-url": "http://hdfs.marathon.mesos:9000/v1/connection"
+          }
         }
 
 1.  Install Spark:
@@ -40,4 +43,4 @@ configuration file. Here we call it `options.json`:
 to the history server entry for that job.
 
  [3]: http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-fact
- [10]: https://docs.mesosphere.com/1.8/administration/access-node/sshcluster/
+ [10]: https://docs.mesosphere.com/1.9/administration/access-node/sshcluster/

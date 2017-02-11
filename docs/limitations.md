@@ -5,19 +5,8 @@ feature_maturity: stable
 enterprise: 'no'
 ---
 
-*   DC/OS Spark only supports submitting jars and Python scripts. It
-does not support R.
+*   Mesosphere does not provide support for Spark app development, such as writing a Python app to process data from Kafka or writing Scala code to process data from HDFS.
 
-*   Mesosphere does not provide support for Spark app development,
-such as writing a Python app to process data from Kafka or writing 
-Scala code to process data from HDFS.
+*   Spark jobs run in Docker containers. The first time you run a Spark job on a node, it might take longer than you expect because of the `docker pull`.
 
-*   Spark jobs run in Docker containers. The first time you run a
-Spark job on a node, it might take longer than you expect because of
-the `docker pull`.
-
-*   DC/OS Spark only supports running the Spark shell from within a
-DC/OS cluster. See the Spark Shell section for more information. 
-For interactive analytics, we
-recommend Zeppelin, which supports visualizations and dynamic
-dependency management.
+*   DC/OS Spark only supports running the Spark shell from within a DC/OS cluster. See the Spark Shell section for more information. For interactive analytics, we recommend Zeppelin, which supports visualizations and dynamic dependency management.

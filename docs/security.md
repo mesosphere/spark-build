@@ -3,7 +3,6 @@ post_title: Security
 menu_order: 40
 enterprise: 'no'
 ---
-
 # Mesos Security
 
 ## SSL
@@ -23,13 +22,11 @@ enterprise: 'no'
 
 ## Authentication
 
-When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/).
+When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/).
 
 Follow these instructions to authenticate in strict mode:
 
-1. Create a Service Account
-
-    Instructions [here](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/universe-service-auth/).
+1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/universe-service-auth/).
 
 1. Assign Permissions
 
@@ -47,7 +44,7 @@ Follow these instructions to authenticate in strict mode:
          "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/${SERVICE_ACCOUNT_NAME}/create"
     ```
 
-    Now you must allow Spark to register under the desired role.  This is the value used for `service.role` when installing Spark (default: `*`):
+    Now, you must allow Spark to register under the desired role. This is the value used for `service.role` when installing Spark (default: `*`):
     
     ```
     $ export ROLE=<service.role value>
@@ -88,7 +85,7 @@ Follow these instructions to authenticate in strict mode:
 
 1. Submit a Job
 
-    We've now installed the Spark Dispatcher, which is authenticating itself to the Mesos master.  Spark jobs are also frameworks which must authenticate. The dispatcher will pass the secret along to the jobs, so all that's left to do is configure our jobs to use DC/OS authentication:
+    We've now installed the Spark Dispatcher, which is authenticating itself to the Mesos master. Spark jobs are also frameworks that must authenticate. The dispatcher will pass the secret along to the jobs, so all that's left to do is configure our jobs to use DC/OS authentication:
     
     ```
     $ PROPS="-Dspark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json "
@@ -172,5 +169,5 @@ In addition to the described configuration, make sure to connect the DC/OS clust
 
     $ dcos config set core.dcos_url https://<dcos-url>
 
- [11]: https://docs.mesosphere.com/1.8/overview/components/
+ [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
