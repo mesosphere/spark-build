@@ -25,10 +25,16 @@ def setup_module(module):
     _install_spark()
 
 
+def teardown_module(module):
+    shakedown.uninstall_package_and_wait('spark')
+    shakedown.uninstall_package_and_wait('hdfs')
+    _run_janitor('hdfs')
+
+
 def _install_spark():
     options = {"hdfs":
                {"config-url":
-                "http://hdfs.marathon.mesos:9000/v1/connection"}}
+                "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
 
     if os.environ.get('SECURITY') == 'strict':
         options['service'] = {"user": "nobody",
@@ -51,14 +57,23 @@ def _require_package(pkg_name):
     installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
     if not any(pkg['name'] == pkg_name for pkg in installed_pkgs):
         shakedown.install_package(pkg_name, wait_for_completion=True)
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=600)
+    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
 
 
-DEFAULT_HDFS_TASK_COUNT=8
+DEFAULT_HDFS_TASK_COUNT=10
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
     running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
                      if t['state'] == 'TASK_RUNNING']
     return len(running_tasks) >= expected_tasks
+
+
+def _run_janitor(service_name):
+    janitor_cmd = (
+        'docker run mesosphere/janitor /janitor.py '
+        '-r {svc}-role -p {svc}-principal -z dcos-service-{svc} --auth_token={auth}')
+    shakedown.run_command_on_master(janitor_cmd.format(
+        svc=service_name,
+        auth=shakedown.run_dcos_command('config show core.dcos_acs_token')[0].strip()))
 
 
 def test_teragen():
