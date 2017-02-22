@@ -15,6 +15,7 @@ import pytest
 import re
 import shakedown
 import subprocess
+import time
 import urllib
 
 
@@ -56,6 +57,11 @@ def _require_package(pkg_name):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
     if not any(pkg['name'] == pkg_name for pkg in installed_pkgs):
+        shakedown.add_package_repo(
+            'stub-hdfs',
+            'https://infinity-artifacts.s3.amazonaws.com/master-latest-nightly/hdfs/stub-universe-hdfs.zip',
+            0)
+        time.sleep(90)
         shakedown.install_package(pkg_name, wait_for_completion=True)
     shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
 
