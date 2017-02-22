@@ -132,7 +132,7 @@ def test_r():
     r_script_url = _upload_file(r_script_path)
     _run_tests(r_script_url,
                '',
-               "1 Justin")
+               "Justin")
 
 
 def test_cni():
