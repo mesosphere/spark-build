@@ -163,6 +163,11 @@ def _run_tests(app_url, app_args, expected_output, args={}, config={}):
 
 
 def _submit_job(app_url, app_args, args={}, config={}):
+    if os.environ.get('SECURITY') == 'strict':
+        config['spark.mesos.driverEnv.MESOS_MODULES'] = \
+            'file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json'
+        config['spark.mesos.driverEnv.MESOS_AUTHENTICATEE'] = 'com_mesosphere_dcos_ClassicRPCAuthenticatee'
+        config['spark.mesos.principal'] = 'service-acct'
     args_str = ' '.join('{0} {1}'.format(k, v) for k,v in args.items())
     config_str = ' '.join('-D{0}={1}'.format(k, v) for k,v in config.items())
     submit_args = ' '.join(arg for arg in ["-Dspark.driver.memory=2g", args_str, app_url, app_args, config_str] if arg != "")
