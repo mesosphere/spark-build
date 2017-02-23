@@ -64,7 +64,7 @@ setup_permissions() {
     if [ "$SECURITY" = "strict" ]; then
         # custom configuration to enable auth stuff:
         ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody "*" # spark's default service.role
-        ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody hdfs-role
+        ${COMMONS_TOOLS_DIR}/setup_permissions.sh root hdfs-role
     fi
 }
 
