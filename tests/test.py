@@ -62,7 +62,10 @@ def _require_package(pkg_name):
             'https://infinity-artifacts.s3.amazonaws.com/master-latest-nightly/hdfs/stub-universe-hdfs.zip',
             0)
         time.sleep(90)
-        shakedown.install_package(pkg_name, wait_for_completion=True)
+        options = {}
+        if os.environ.get('SECURITY') == 'strict':
+            options['service'] = {'principal': 'service-acct', 'secret_name': 'secret'}
+        shakedown.install_package(pkg_name, options_json=options, wait_for_completion=True)
     shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
 
 
