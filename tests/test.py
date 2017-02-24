@@ -57,11 +57,6 @@ def _require_package(pkg_name):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
     if not any(pkg['name'] == pkg_name for pkg in installed_pkgs):
-        shakedown.add_package_repo(
-            'stub-hdfs',
-            'https://infinity-artifacts.s3.amazonaws.com/master-latest-nightly/hdfs/stub-universe-hdfs.zip',
-            0)
-        time.sleep(90)
         options = {}
         if os.environ.get('SECURITY') == 'strict':
             options['service'] = {'principal': 'service-acct', 'secret_name': 'secret'}
