@@ -22,7 +22,7 @@ import urllib
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def setup_module(module):
-    _require_package('hdfs')
+    _require_package('hdfs', _get_hdfs_options())
     _install_spark()
 
 
@@ -37,7 +37,7 @@ def _install_spark():
                {"config-url":
                 "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
 
-    if os.environ.get('SECURITY') == 'strict':
+    if _is_strict():
         options['service'] = {"user": "nobody",
                               "principal": "service-acct"}
         options['security'] = {"mesos": {"authentication": {"secret_name": "secret"}}}
@@ -53,13 +53,22 @@ def _install_spark():
     shakedown.spinner.wait_for(pred)
 
 
-def _require_package(pkg_name):
+def _get_hdfs_options():
+    if _is_strict():
+        options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
+    else:
+        options = {}
+    return options
+
+
+def _is_strict():
+    return os.environ.get('SECURITY') == 'strict'
+
+
+def _require_package(pkg_name, options):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
     if not any(pkg['name'] == pkg_name for pkg in installed_pkgs):
-        options = {}
-        if os.environ.get('SECURITY') == 'strict':
-            options['service'] = {'principal': 'service-acct', 'secret_name': 'secret'}
         shakedown.install_package(pkg_name, options_json=options, wait_for_completion=True)
     shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
 
@@ -158,7 +167,7 @@ def _run_tests(app_url, app_args, expected_output, args={}, config={}):
 
 
 def _submit_job(app_url, app_args, args={}, config={}):
-    if os.environ.get('SECURITY') == 'strict':
+    if _is_strict():
         config['spark.mesos.driverEnv.MESOS_MODULES'] = \
             'file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json'
         config['spark.mesos.driverEnv.MESOS_AUTHENTICATEE'] = 'com_mesosphere_dcos_ClassicRPCAuthenticatee'
