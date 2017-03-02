@@ -64,7 +64,7 @@ setup_permissions() {
     if [ "$SECURITY" = "strict" ]; then
         # custom configuration to enable auth stuff:
         ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody "*" # spark's default service.role
-        ${COMMONS_TOOLS_DIR}/setup_permissions.sh nobody hdfs-role
+        ${COMMONS_TOOLS_DIR}/setup_permissions.sh root hdfs-role
     fi
 }
 
@@ -77,7 +77,7 @@ run_tests() {
     fi
     source env/bin/activate
     pip install -r requirements.txt
-    py.test test.py
+    py.test -s test.py
     if [ $? -ne 0 ]; then
         notify_github failure "Tests failed"
         exit 1
