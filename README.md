@@ -33,10 +33,13 @@ S3_DIR_PATH=<base-path-in-bucket> \
 You must have a local DC/OS CLI installed and configured against a
 running DC/OS cluster.
 
-```
+```bash
 $ cd tests
 $ virtualenv -p python3 env
 $ source env/bin/activate
 $ pip install -r requirements.txt
 $ py.test test.py
 ```
+
+The tests require several env variables.  Read the comment at the top
+of the `test.py` for a complete description.

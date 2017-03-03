@@ -6,7 +6,7 @@
             "type": "object",
             "properties": {
                 "name": {
-                    "default": "spark",
+                    "default": "spark-dispatcher",
                     "description": "The Spark Dispatcher will register with Mesos with this as a framework name.  This service will be available at http://<dcos_url>/service/<name>/",
                     "type": "string"
                 },
