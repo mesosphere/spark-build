@@ -47,8 +47,8 @@ configure_cli() {
 initialize_service_account() {
     if [ "$SECURITY" = "strict" ]; then
         ${COMMONS_DIR}/tools/create_service_account.sh --strict
-        ${COMMONS_DIR}/tools/setup_permissions.sh service-acct root "*"
-        ${COMMONS_DIR}/tools/setup_permissions.sh service-acct root hdfs-role
+        ${COMMONS_DIR}/tools/setup_permissions.sh root "*"
+        ${COMMONS_DIR}/tools/setup_permissions.sh root hdfs-role
     fi
 }
 
