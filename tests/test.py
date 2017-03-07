@@ -261,10 +261,6 @@ def _require_package(pkg_name, options = {}):
             wait_for_completion=True)
 
 
-def _is_strict():
-    return os.environ.get('SECURITY') == 'strict'
-
-
 DEFAULT_HDFS_TASK_COUNT=10
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
     running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
