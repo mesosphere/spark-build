@@ -4,8 +4,7 @@ set -x
 
 export DISPATCHER_PORT="${PORT0}"
 export DISPATCHER_UI_PORT="${PORT1}"
-export HISTORY_SERVER_PORT="${PORT2}"
-export SPARK_PROXY_PORT="${PORT3}"
+export SPARK_PROXY_PORT="${PORT2}"
 
 # determine scheme and derive WEB
 SCHEME=http
@@ -18,13 +17,7 @@ fi
 # TODO(mgummelt): I'm pretty sure this isn't used.  Remove after some time.
 # export WEBUI_URL="${SCHEME}://${FRAMEWORK_NAME}${DNS_SUFFIX}:${SPARK_PROXY_PORT}"
 
-export HISTORY_SERVER_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}/history"
 export DISPATCHER_UI_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}"
-
-# configure history server
-if [[ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]]; then
-    ln -s /var/lib/runit/service/history-server /etc/service/history-server
-fi
 
 # Update nginx spark.conf to use http or https
 grep -v "#${OTHER_SCHEME}#" /etc/nginx/conf.d/spark.conf.template |
@@ -33,7 +26,6 @@ grep -v "#${OTHER_SCHEME}#" /etc/nginx/conf.d/spark.conf.template |
 sed -i "s,<PORT>,${SPARK_PROXY_PORT}," /etc/nginx/conf.d/spark.conf
 sed -i "s,<DISPATCHER_URL>,${SCHEME}://${HOST}:${DISPATCHER_PORT}," /etc/nginx/conf.d/spark.conf
 sed -i "s,<DISPATCHER_UI_URL>,http://${HOST}:${DISPATCHER_UI_PORT}," /etc/nginx/conf.d/spark.conf
-sed -i "s,<HISTORY_SERVER_URL>,http://${HOST}:${HISTORY_SERVER_PORT}," /etc/nginx/conf.d/spark.conf
 sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
 
 # Disabled algorithms for Nginx because it crashes with the usual multi-1000

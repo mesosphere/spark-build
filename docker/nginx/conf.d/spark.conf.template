@@ -27,11 +27,4 @@ server {
         proxy_pass <DISPATCHER_UI_URL>/;
         proxy_set_header Host $host;
    }
-
-   location /history/ {
-        proxy_redirect http://$host $scheme://$host/history;
-        proxy_pass <HISTORY_SERVER_URL>/;
-        proxy_set_header Host $host;
-   }
 }
-

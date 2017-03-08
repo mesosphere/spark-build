@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-set -x
-
-mkdir -p "${MESOS_SANDBOX}"/history-server
-exec svlogd "${MESOS_SANDBOX}"/history-server
-
