@@ -8,21 +8,24 @@ function publish_docker_images() {
     for i in $(seq 0 ${NUM_SPARK_DIST});
     do
         local HADOOP_VERSION=$(jq -r ".spark_dist[${i}].hadoop_version" manifest.json)
+
         SPARK_DIST_URI=$(jq -r ".spark_dist[${i}].uri" manifest.json) \
-                      DOCKER_IMAGE="${DOCKER_IMAGE}:$(docker_version ${HADOOP_VERSION})" make docker
+                      DOCKER_IMAGE="${DOCKER_IMAGE}:$(docker_version ${HADOOP_VERSION})" \
+                      make docker
     done
 }
 
 function make_universe() {
     DOCKER_VERSION=$(docker_version $(default_hadoop_version))
+
     DOCKER_BUILD=false \
                 DOCKER_IMAGE=${DOCKER_IMAGE}:${DOCKER_VERSION} \
                 SPARK_DIST_URI=$(default_spark_dist) \
-                make universe
+                make --directory=dispatcher universe
 }
 
 function write_properties() {
-    cp ../stub-universe.properties ../build.properties
+    cp "${WORKSPACE}/stub-universe.properties" ../build.properties
     echo "RELEASE_VERSION=${SPARK_BUILD_VERSION}" >> ../build.properties
 }
 
