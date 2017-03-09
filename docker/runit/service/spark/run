@@ -35,14 +35,6 @@ function add_if_non_empty() {
 }
 
 function configure_properties() {
-    HISTORY_SERVER_CONF=""
-    if [ "${ENABLE_HISTORY_SERVER:=false}" = "true" ]; then
-        HISTORY_SERVER_CONF="spark.mesos.historyServer.url=${HISTORY_SERVER_WEB_PROXY_BASE}"
-    fi
-
-    sed "s,<HISTORY_SERVER_CONF>,${HISTORY_SERVER_CONF}," \
-        /opt/spark/dist/conf/mesos-cluster-dispatcher.properties.template >/opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-
     if [ "${SPARK_SSL_KEYSTOREBASE64}" != "" ]; then
         echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > /tmp/dispatcher-keystore.jks
         add_if_non_empty spark.ssl.keyStore /tmp/dispatcher-keystore.jks
@@ -53,6 +45,7 @@ function configure_properties() {
         add_if_non_empty spark.ssl.trustStore /tmp/dispatcher-truststore.jks
     fi
 
+    add_if_non_empty spark.mesos.dispatcher.historyServer.url "${SPARK_HISTORY_SERVER_URL}"
     add_if_non_empty spark.ssl.enabled "${SPARK_SSL_ENABLED}"
     add_if_non_empty spark.ssl.keyPassword "${SPARK_SSL_KEYPASSWORD}"
     add_if_non_empty spark.ssl.keyStorePassword "${SPARK_SSL_KEYSTOREPASSWORD}"

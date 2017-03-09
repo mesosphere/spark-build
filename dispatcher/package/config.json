@@ -56,6 +56,10 @@
                     "type": "string",
                     "description": "log4j log level for The Spark Dispatcher.  May be set to any valid log4j log level: https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Level.html",
                     "default": "INFO"
+                },
+                "spark-history-server-url": {
+                    "type": "string",
+                    "description": "URL of The Spark History Server (e.g. http://<dcos_url>/service/spark-history"
                 }
             }
         },

@@ -25,6 +25,10 @@
         "MESOS_AUTHENTICATEE": "com_mesosphere_dcos_ClassicRPCAuthenticatee",
 {{/security.mesos.authentication.secret_name}}
 
+{{#service.spark-history-server-url}}
+        "SPARK_HISTORY_SERVER_URL": "{{service.spark-history-server-url}}",
+{{/service.spark-history-server-url}}
+
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
         "SPARK_USER": "{{service.user}}",
