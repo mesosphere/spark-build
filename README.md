@@ -30,8 +30,12 @@ S3_DIR_PATH=<base-path-in-bucket> \
 
 ## Test
 
-```
-make test
-```
+You must have a local DC/OS CLI installed and configured against a
+running DC/OS cluster.
 
-This requires several env variables, and is primarily used in CI. Read the comment at the top of the file for a complete description.
+```
+$ cd tests
+$ source env/bin/activate
+$ pip install -r requirements.txt
+$ py.test test.py
+```
