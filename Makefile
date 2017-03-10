@@ -1,13 +1,10 @@
-docker:
-	bin/make-docker.sh
+dist:
+	bin/dist.sh
 
-universe:
-	bin/universe.sh
+docker:
+	bin/docker.sh
 
 test:
 	bin/test.sh
 
-dist:
-	bin/dist.sh
-
-.PHONY: docker universe test dist
+.PHONY: dist docker test

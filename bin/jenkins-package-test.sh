@@ -9,12 +9,12 @@ function run() {
     source bin/jenkins.sh
     install_cli
     docker_login
-    make universe
+
+    make --directory=dispatcher universe
     export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }
 
 pushd "${SPARK_BUILD_DIR}"
-
 run
 popd

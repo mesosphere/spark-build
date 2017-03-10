@@ -25,19 +25,16 @@
         "MESOS_AUTHENTICATEE": "com_mesosphere_dcos_ClassicRPCAuthenticatee",
 {{/security.mesos.authentication.secret_name}}
 
+{{#service.spark-history-server-url}}
+        "SPARK_HISTORY_SERVER_URL": "{{service.spark-history-server-url}}",
+{{/service.spark-history-server-url}}
+
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
         "SPARK_USER": "{{service.user}}",
         "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
-        "ENABLE_HISTORY_SERVER": "{{history-server.enabled}}",
-        "HISTORY_LOG_DIR": "{{history-server.log-dir}}",
-        "HISTORY_CLEANER_ENABLED": "{{history-server.cleaner-enabled}}",
-        "HISTORY_CLEANER_INTERVAL": "{{history-server.cleaner-interval}}",
-        "HISTORY_CLEANER_MAXAGE": "{{history-server.cleaner-maxage}}",
-        "HISTORY_KRB_PRINCIPAL": "{{history-server.kerberos.principal}}",
-        "HISTORY_KRB_KEYTAB": "{{history-server.kerberos.keytab}}",
         "SPARK_LOG_LEVEL": "{{service.log-level}}"
     },
 
@@ -50,7 +47,6 @@
 {{/security.mesos.authentication.secret_name}}
 
     "ports": [
-        0,
         0,
         0,
         0
@@ -75,11 +71,11 @@
         {
 {{#security.ssl.enabled}}
             "protocol": "COMMAND",
-            "command": { "value": "curl -f -k https://$HOST:$PORT3/" },
+            "command": { "value": "curl -f -k https://$HOST:$PORT2/" },
 {{/security.ssl.enabled}}
 {{^security.ssl.enabled}}
             "path": "/",
-            "portIndex": 3,
+            "portIndex": 2,
             "protocol": "HTTP",
 {{/security.ssl.enabled}}
             "gracePeriodSeconds": 5,
@@ -95,7 +91,7 @@
         "SPARK_URI": "{{service.spark-dist-uri}}",
         "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}",
         "DCOS_SERVICE_NAME": "{{service.name}}",
-        "DCOS_SERVICE_PORT_INDEX": "3",
+        "DCOS_SERVICE_PORT_INDEX": "2",
 {{#security.ssl.enabled}}
         "DCOS_SERVICE_SCHEME": "https"
 {{/security.ssl.enabled}}

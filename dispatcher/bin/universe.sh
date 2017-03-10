@@ -15,7 +15,8 @@
 set -e -x -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SPARK_BUILD_DIR="${DIR}/.."
+DISPATCHER_DIR="${DIR}/.."
+SPARK_BUILD_DIR="${DIR}/../.."
 
 # set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env() {
@@ -59,19 +60,16 @@ fetch_commons_tools() {
     fi
 }
 
-build_cli() {
-    ls -all "${SPARK_BUILD_DIR}/cli"
-    CLI_VERSION="${CLI_VERSION}" make --directory="${SPARK_BUILD_DIR}/cli" all
+make_cli() {
+    CLI_VERSION="${CLI_VERSION}" make --directory=cli all
 }
 
-build_push_docker() {
+make_docker() {
     echo "###"
     echo "# Using docker image: $DOCKER_IMAGE"
     echo "###"
 
-    pushd "${SPARK_BUILD_DIR}"
-    make docker
-    popd
+    make --directory="${SPARK_BUILD_DIR}" docker
 }
 
 upload_cli_and_stub_universe() {
@@ -83,12 +81,12 @@ upload_cli_and_stub_universe() {
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
-            ${SPARK_BUILD_DIR}/package/ \
-            ${SPARK_BUILD_DIR}/cli/dist/*.whl
+            ${DISPATCHER_DIR}/package/ \
+            ${DISPATCHER_DIR}/cli/dist/*.whl
 }
 
 configure_env
 fetch_commons_tools
-build_cli
-build_push_docker
+make_cli
+make_docker
 upload_cli_and_stub_universe
