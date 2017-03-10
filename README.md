@@ -35,6 +35,7 @@ running DC/OS cluster.
 
 ```
 $ cd tests
+$ virtualenv -p python3 env
 $ source env/bin/activate
 $ pip install -r requirements.txt
 $ py.test test.py
