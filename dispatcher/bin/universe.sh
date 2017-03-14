@@ -7,6 +7,8 @@
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
+#   DEV (optional) - if "true", spark will be built from source rather than
+#                    using the distribution specified in manifest.json.
 #   DOCKER_IMAGE (optional) - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   COMMONS_TOOLS_DIR (optional) - path to dcos-commons/tools/, or empty to fetch latest release tgz
 #   SPARK_DIST_URI (optional) - URI of spark distribution to use.
@@ -17,14 +19,20 @@ set -e -x -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DISPATCHER_DIR="${DIR}/.."
 SPARK_BUILD_DIR="${DIR}/../.."
+SPARK_DIR="${DIR}/../../../spark"
 
 # set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env() {
     if [ -z "${SPARK_DIST_URI}" ]; then
-        SPARK_DIST_URI=$(jq ".default_spark_dist.uri" "${SPARK_BUILD_DIR}/manifest.json")
-        SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
-        SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
-        echo "Using Spark dist URI: $SPARK_DIST_URI"
+        if [[ "${DEV}" = "true" ]]; then
+            (cd "${SPARK_BUILD_DIR}" && make dist)
+            SPARK_DIST_URI="file://${SPARK_DIR}/spark-SNAPSHOT.tgz"
+        else
+            SPARK_DIST_URI=$(default_spark_dist)
+            SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
+            SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
+        fi
+        echo "Using Spark dist URI: ${SPARK_DIST_URI}"
     fi
 
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
@@ -69,7 +77,10 @@ make_docker() {
     echo "# Using docker image: $DOCKER_IMAGE"
     echo "###"
 
-    make --directory="${SPARK_BUILD_DIR}" docker
+    (cd "${SPARK_BUILD_DIR}" &&
+            DOCKER_IMAGE=${DOCKER_IMAGE} \
+                        SPARK_DIST_URI="${SPARK_DIST_URI}" \
+                        make docker)
 }
 
 upload_cli_and_stub_universe() {
@@ -85,6 +96,7 @@ upload_cli_and_stub_universe() {
             ${DISPATCHER_DIR}/cli/dist/*.whl
 }
 
+source "${SPARK_BUILD_DIR}/bin/jenkins.sh"
 configure_env
 fetch_commons_tools
 make_cli
