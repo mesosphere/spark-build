@@ -55,9 +55,7 @@ initialize_service_account() {
 }
 
 build_scala_test_jar() {
-    pushd tests/jobs/scala
-    sbt assembly
-    popd
+    (cd tests/jobs/scala && sbt assembly)
 }
 
 run_tests() {
