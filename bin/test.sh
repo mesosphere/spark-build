@@ -54,6 +54,10 @@ initialize_service_account() {
     fi
 }
 
+build_scala_test_jar() {
+    (cd tests/jobs/scala && sbt assembly)
+}
+
 run_tests() {
     pushd tests
     if [[ ! -d venv ]]; then
@@ -61,7 +65,8 @@ run_tests() {
     fi
     source venv/bin/activate
     pip install -r requirements.txt
-    py.test -s test.py
+    SCALA_TEST_JAR_PATH=$(pwd)/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+                       py.test -s test.py
     popd
 }
 
@@ -70,4 +75,5 @@ start_cluster
 # TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
 configure_cli
 initialize_service_account
+build_scala_test_jar
 run_tests

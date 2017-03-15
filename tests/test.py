@@ -4,17 +4,18 @@
 #   COMMONS_DIR
 #   S3_BUCKET
 #   S3_PREFIX
-#   TEST_JAR_PATH
+#   TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
+#   SCALA_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
 import dcos.config
 import dcos.http
 import dcos.package
+
 import logging
 import os
 import pytest
 import re
+import s3
 import shakedown
 import subprocess
 import time
@@ -29,6 +30,7 @@ def _init_logging():
 _init_logging()
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def setup_module(module):
     if _hdfs_enabled():
@@ -65,9 +67,9 @@ def test_teragen():
 
 
 def test_python():
-    python_script_path = os.path.join(THIS_DIR, 'jobs', 'pi_with_include.py')
+    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = _upload_file(python_script_path)
-    py_file_path = os.path.join(THIS_DIR, 'jobs', 'PySparkTestInclude.py')
+    py_file_path = os.path.join(THIS_DIR, 'jobs', 'python', 'PySparkTestInclude.py')
     py_file_url = _upload_file(py_file_path)
     _run_tests(python_script_url,
                "30",
@@ -97,7 +99,7 @@ def test_kerberos():
 
 
 def test_r():
-    r_script_path = os.path.join(THIS_DIR, 'jobs', 'dataframe.R')
+    r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = _upload_file(r_script_path)
     _run_tests(r_script_url,
                '',
@@ -113,6 +115,139 @@ def test_cni():
                {"spark.mesos.network.name": "dcos"})
 
 
+def test_s3():
+    linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
+    s3.upload_file(linecount_path)
+
+    app_args = "{} {}".format(
+        s3.s3n_url('linecount.txt'),
+        s3.s3n_url("linecount-out"))
+
+    _run_tests(_upload_file(os.environ["SCALA_TEST_JAR_PATH"]),
+               app_args,
+               "",
+               {"--class": "S3Job"},
+               {"spark.mesos.driverEnv.AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
+                "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"]})
+
+    assert len(list(s3.list("linecount-out"))) > 0
+
+
+def _hdfs_enabled():
+    return os.environ.get("HDFS_DISABLED") is None
+
+
+def _require_hdfs():
+    LOGGER.info("Ensuring HDFS is installed.")
+
+    _require_package('hdfs', _get_hdfs_options())
+    _wait_for_hdfs()
+
+
+def _require_spark():
+    LOGGER.info("Ensuring Spark is installed.")
+
+    _require_package('spark', _get_spark_options())
+    _wait_for_spark()
+
+
+# This should be in shakedown (DCOS_OSS-679)
+def _require_package(pkg_name, options = {}):
+    pkg_manager = dcos.package.get_package_manager()
+    installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
+
+    if any(pkg['name'] == pkg_name for pkg in installed_pkgs):
+        LOGGER.info("Package {} already installed.".format(pkg_name))
+    else:
+        LOGGER.info("Installing package {}".format(pkg_name))
+        shakedown.install_package(
+            pkg_name,
+            options_json=options,
+            wait_for_completion=True)
+
+
+def _wait_for_spark():
+    def pred():
+        dcos_url = dcos.config.get_config_val("core.dcos_url")
+        spark_url = urllib.parse.urljoin(dcos_url, "/service/spark")
+        status_code = dcos.http.get(spark_url).status_code
+        return status_code == 200
+
+    shakedown.wait_for(pred)
+
+
+def _get_hdfs_options():
+    if _is_strict():
+        options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
+    else:
+        options = {}
+    return options
+
+
+def _wait_for_hdfs():
+    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
+
+
+DEFAULT_HDFS_TASK_COUNT=10
+def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
+    running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
+                     if t['state'] == 'TASK_RUNNING']
+    return len(running_tasks) >= expected_tasks
+
+
+def _get_spark_options():
+    if _hdfs_enabled():
+        options = {"hdfs":
+                   {"config-url":
+                    "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
+    else:
+        options = {}
+
+    if _is_strict():
+        options.update({'service':
+                        {"principal": "service-acct"},
+                        "security":
+                        {"mesos":
+                         {"authentication":
+                          {"secret_name": "secret"}}}})
+
+    return options
+
+
+def _install_spark():
+    options = {"hdfs":
+               {"config-url":
+                "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
+
+    if _is_strict():
+        options['service'] = {"user": "nobody",
+                              "principal": "service-acct"}
+        options['security'] = {"mesos": {"authentication": {"secret_name": "secret"}}}
+
+    shakedown.install_package('spark', options_json=options, wait_for_completion=True)
+
+    def pred():
+        dcos_url = dcos.config.get_config_val("core.dcos_url")
+        spark_url = urllib.parse.urljoin(dcos_url, "/service/spark")
+        status_code = dcos.http.get(spark_url).status_code
+        return status_code == 200
+
+    shakedown.spinner.wait_for(pred)
+
+
+def _is_strict():
+    return os.environ.get('SECURITY') == 'strict'
+
+
+def _run_janitor(service_name):
+    janitor_cmd = (
+        'docker run mesosphere/janitor /janitor.py '
+        '-r {svc}-role -p {svc}-principal -z dcos-service-{svc} --auth_token={auth}')
+    shakedown.run_command_on_master(janitor_cmd.format(
+        svc=service_name,
+        auth=shakedown.dcos_acs_token()))
+
+
 def _run_tests(app_url, app_args, expected_output, args={}, config={}):
     task_id = _submit_job(app_url, app_args, args, config)
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
@@ -120,10 +255,6 @@ def _run_tests(app_url, app_args, expected_output, args={}, config={}):
     log = _task_log(task_id)
     LOGGER.info("task log: {}".format(log))
     assert expected_output in log
-
-
-def _is_strict():
-    return os.environ.get('SECURITY') == 'strict'
 
 
 def _submit_job(app_url, app_args, args={}, config={}):
@@ -149,35 +280,15 @@ def _submit_job(app_url, app_args, args={}, config={}):
 
 
 def _upload_file(file_path):
-    conn = S3Connection(os.environ['AWS_ACCESS_KEY_ID'], os.environ['AWS_SECRET_ACCESS_KEY'])
-    bucket = conn.get_bucket(os.environ['S3_BUCKET'])
-    basename = os.path.basename(file_path)
-
-    content_type = _get_content_type(basename)
-
-    key = Key(bucket, '{}/{}'.format(os.environ['S3_PREFIX'], basename))
-    key.metadata = {'Content-Type': content_type}
-    key.set_contents_from_filename(file_path)
-    key.make_public()
-
-    jar_url = "http://{0}.s3.amazonaws.com/{1}/{2}".format(
+    print("Uploading {} to s3://{}/{}".format(
+        file_path,
         os.environ['S3_BUCKET'],
-        os.environ['S3_PREFIX'],
-        basename)
+        os.environ['S3_PREFIX']))
 
-    return jar_url
+    s3.upload_file(file_path)
 
-
-def _get_content_type(basename):
-    if basename.endswith('.jar'):
-        content_type = 'application/java-archive'
-    elif basename.endswith('.py'):
-        content_type = 'application/x-python'
-    elif basename.endswith('.R'):
-        content_type = 'application/R'
-    else:
-        raise ValueError("Unexpected file type: {}. Expected .jar, .py, or .R file.".format(basename))
-    return content_type
+    basename = os.path.basename(file_path)
+    return s3.http_url(basename)
 
 
 def _task_log(task_id):
@@ -185,93 +296,3 @@ def _task_log(task_id):
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
     return stdout
-
-
-def _hdfs_enabled():
-    return os.environ.get("HDFS_DISABLED") is None
-
-
-def _require_hdfs():
-    LOGGER.info("Ensuring HDFS is installed.")
-
-    _require_package('hdfs', _get_hdfs_options())
-    _wait_for_hdfs()
-
-
-def _get_hdfs_options():
-    if _is_strict():
-        options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
-    else:
-        options = {}
-    return options
-
-
-def _wait_for_hdfs():
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
-
-
-def _require_spark():
-    LOGGER.info("Ensuring Spark is installed.")
-
-    _require_package('spark', _get_spark_options())
-    _wait_for_spark()
-
-
-def _get_spark_options():
-    if _hdfs_enabled():
-        options = {"hdfs":
-                   {"config-url":
-                    "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
-    else:
-        options = {}
-
-    if _is_strict():
-        options.update({'service':
-                        {"principal": "service-acct"},
-                        "security":
-                        {"mesos":
-                         {"authentication":
-                          {"secret_name": "secret"}}}})
-
-    return options
-
-
-def _wait_for_spark():
-    def pred():
-        dcos_url = dcos.config.get_config_val("core.dcos_url")
-        spark_url = urllib.parse.urljoin(dcos_url, "/service/spark")
-        status_code = dcos.http.get(spark_url).status_code
-        return status_code == 200
-
-    shakedown.wait_for(pred)
-
-
-# This should be in shakedown (DCOS_OSS-679)
-def _require_package(pkg_name, options = {}):
-    pkg_manager = dcos.package.get_package_manager()
-    installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
-
-    if any(pkg['name'] == pkg_name for pkg in installed_pkgs):
-        LOGGER.info("Package {} already installed.".format(pkg_name))
-    else:
-        LOGGER.info("Installing package {}".format(pkg_name))
-        shakedown.install_package(
-            pkg_name,
-            options_json=options,
-            wait_for_completion=True)
-
-
-DEFAULT_HDFS_TASK_COUNT=10
-def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
-    running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
-                     if t['state'] == 'TASK_RUNNING']
-    return len(running_tasks) >= expected_tasks
-
-
-def _run_janitor(service_name):
-    janitor_cmd = (
-        'docker run mesosphere/janitor /janitor.py '
-        '-r {svc}-role -p {svc}-principal -z dcos-service-{svc} --auth_token={auth}')
-    shakedown.run_command_on_master(janitor_cmd.format(
-        svc=service_name,
-        auth=shakedown.dcos_acs_token()))
