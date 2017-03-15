@@ -52,19 +52,6 @@ function configure_properties() {
     add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
     add_if_non_empty spark.ssl.protocol "${SPARK_SSL_PROTOCOL}"
     add_if_non_empty spark.ssl.enabledAlgorithms "${SPARK_SSL_ENABLEDALGORITHMS}"
-
-    # write defaults
-    if [ "${DCOS_SERVICE_ACCOUNT_CREDENTIAL}" != "" ]; then
-        # write defaults using both property names, since 2.0 uses one and 2.1 uses the other
-        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-        echo "spark.mesos.cluster.taskProperty.spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-
-        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-        echo "spark.mesos.cluster.taskProperty.spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-
-        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.principal=${SPARK_DISPATCHER_MESOS_PRINCIPAL}" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-        echo "spark.mesos.cluster.taskProperty.spark.mesos.principal=${SPARK_DISPATCHER_MESOS_PRINCIPAL}" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
-    fi
 }
 
 
