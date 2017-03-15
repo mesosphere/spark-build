@@ -28,7 +28,7 @@ your cluster][10] and run:
 
         $ dcos package install spark-history --options=spark-history-options.json
 
-1.  Create `spark-dispatcher-options.json`;
+1. Create `spark-dispatcher-options.json`;
 
         {
           "service": {
