@@ -45,7 +45,7 @@ your cluster][10] and run:
 
 1.  Run jobs with the event log enabled:
 
-        $ dcos spark run --submit-args="-Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
+        $ dcos spark run --submit-args="--conf spark.eventLog.enabled=true --conf spark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
 
 1.  Visit your job in the dispatcher at
 `http://<dcos_url>/service/spark/`. It will include a link to the

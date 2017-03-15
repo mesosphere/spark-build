@@ -31,21 +31,21 @@ Follow these instructions to authenticate in strict mode:
 1. Assign Permissions
 
     First, allow Spark to run tasks as root:
-    
+
     ```
     $ curl -k -L -X PUT \
            -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
            "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root" \
            -d '{"description":"Allows root to execute tasks"}' \
            -H 'Content-Type: application/json'
-    
+
     $ curl -k -L -X PUT \
          -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
          "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/${SERVICE_ACCOUNT_NAME}/create"
     ```
 
     Now, you must allow Spark to register under the desired role. This is the value used for `service.role` when installing Spark (default: `*`):
-    
+
     ```
     $ export ROLE=<service.role value>
     $ curl -k -L -X PUT \
@@ -53,7 +53,7 @@ Follow these instructions to authenticate in strict mode:
            "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}" \
            -d '{"description":"Allows ${ROLE} to register as a framework with the Mesos master"}' \
            -H 'Content-Type: application/json'
-    
+
     $ curl -k -L -X PUT \
            -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
            "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}/users/${SERVICE_ACCOUNT_NAME}/create"
@@ -86,11 +86,11 @@ Follow these instructions to authenticate in strict mode:
 1. Submit a Job
 
     We've now installed the Spark Dispatcher, which is authenticating itself to the Mesos master. Spark jobs are also frameworks that must authenticate. The dispatcher will pass the secret along to the jobs, so all that's left to do is configure our jobs to use DC/OS authentication:
-    
+
     ```
-    $ PROPS="-Dspark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json "
-    $ PROPS+="-Dspark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee "
-    $ PROPS+="-Dspark.mesos.principal=<principal>"
+    $ PROPS="--conf spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json "
+    $ PROPS+="--conf spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee "
+    $ PROPS+="--conf spark.mesos.principal=<principal>"
     $ dcos spark run --submit-args="${PROPS} ..."
     ```
 
