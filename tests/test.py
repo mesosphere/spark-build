@@ -54,7 +54,7 @@ def test_jar():
     _run_tests(jar_url,
                spark_job_runner_args,
                "All tests passed",
-               {"--class": 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'})
+               ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
 def test_teragen():
@@ -63,7 +63,7 @@ def test_teragen():
         _run_tests(jar_url,
                    "1g hdfs:///terasort_in",
                    "Number of records written",
-                   {"--class": "com.github.ehiggs.spark.terasort.TeraGen"})
+                   ["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
 
 
 def test_python():
@@ -74,7 +74,7 @@ def test_python():
     _run_tests(python_script_url,
                "30",
                "Pi is roughly 3",
-               {"--py-files": py_file_url})
+               ["--py-files", py_file_url])
 
 
 @pytest.mark.skip(reason="must be run manually against a kerberized HDFS")
@@ -94,8 +94,10 @@ def test_kerberos():
         "http://infinity-artifacts.s3.amazonaws.com/spark/sparkjob-assembly-1.0.jar",
         "hdfs:///krb5.conf",
         "number of words in",
-        {"--class": "HDFSWordCount", "--principal":  principal, "--keytab": keytab},
-        {"sun.security.krb5.debug": "true"})
+        ["--class", "HDFSWordCount",
+         "--principal",  principal,
+         "--keytab", keytab,
+         "--conf", "sun.security.krb5.debug=true"])
 
 
 def test_r():
@@ -111,8 +113,8 @@ def test_cni():
     _run_tests(SPARK_EXAMPLES,
                "",
                "Pi is roughly 3",
-               {"--class": "org.apache.spark.examples.SparkPi"},
-               {"spark.mesos.network.name": "dcos"})
+               ["--conf", "spark.mesos.network.name=dcos",
+                "--class", "org.apache.spark.examples.SparkPi"])
 
 
 def test_s3():
@@ -123,18 +125,23 @@ def test_s3():
         s3.s3n_url('linecount.txt'),
         s3.s3n_url("linecount-out"))
 
+    args = ["--conf",
+            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
+                os.environ["AWS_ACCESS_KEY_ID"]),
+            "--conf",
+            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
+                os.environ["AWS_SECRET_ACCESS_KEY"]),
+            "--class", "S3Job"]
     _run_tests(_upload_file(os.environ["SCALA_TEST_JAR_PATH"]),
                app_args,
                "",
-               {"--class": "S3Job"},
-               {"spark.mesos.driverEnv.AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
-                "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"]})
+               args)
 
     assert len(list(s3.list("linecount-out"))) > 0
 
 
 def _hdfs_enabled():
-    return os.environ.get("HDFS_DISABLED") is None
+    return os.environ.get("HDFS_ENABLED") != "false"
 
 
 def _require_hdfs():
@@ -248,8 +255,8 @@ def _run_janitor(service_name):
         auth=shakedown.dcos_acs_token()))
 
 
-def _run_tests(app_url, app_args, expected_output, args={}, config={}):
-    task_id = _submit_job(app_url, app_args, args, config)
+def _run_tests(app_url, app_args, expected_output, args=[]):
+    task_id = _submit_job(app_url, app_args, args)
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
     log = _task_log(task_id)
@@ -257,21 +264,19 @@ def _run_tests(app_url, app_args, expected_output, args={}, config={}):
     assert expected_output in log
 
 
-def _submit_job(app_url, app_args, args={}, config={}):
+def _submit_job(app_url, app_args, args=[]):
     if _is_strict():
         config['spark.mesos.driverEnv.MESOS_MODULES'] = \
             'file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json'
         config['spark.mesos.driverEnv.MESOS_AUTHENTICATEE'] = 'com_mesosphere_dcos_ClassicRPCAuthenticatee'
         config['spark.mesos.principal'] = 'service-acct'
-    args_str = ' '.join('{0} {1}'.format(k, v) for k,v in args.items())
-    config_str = ' '.join('-D{0}={1}'.format(k, v) for k,v in config.items())
-    submit_args = ' '.join(
-        arg for arg in
-        ["-Dspark.driver.memory=2g", args_str, app_url, app_args, config_str]
-        if arg != "")
+    args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
+    submit_args = ' '.join([args_str, app_url, app_args])
     cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
+
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
+
     LOGGER.info("stdout: {}".format(stdout))
 
     regex = r"Submission id: (\S+)"
