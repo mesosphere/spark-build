@@ -178,8 +178,10 @@ def submit_job(dispatcher, submit_args, docker_image, verbose=False):
             hdfs_url += '/'
         hdfs_config_url = urllib.parse.urljoin(hdfs_url, 'hdfs-site.xml')
         site_config_url = urllib.parse.urljoin(hdfs_url, 'core-site.xml')
-        args += ["--conf", "spark.mesos.uris={0},{1}".format(hdfs_config_url,
-                                                             site_config_url)]
+        args = ["--conf", "spark.mesos.uris={0},{1}".format(
+            hdfs_config_url,
+            site_config_url)] + \
+            args
 
     response = run(dispatcher, args, verbose)
     if response[0] is not None:
