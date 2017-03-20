@@ -43,19 +43,15 @@ you can create a configuration file.
 ## Submission
 
 All properties are submitted through the `--submit-args` option to
-`dcos spark run`. These are ultimately passed to the [`spark-submit`
-script][13].
+`dcos spark run`. These are ultimately passed to the
+[`spark-submit` script][13].  View `dcos spark run --help` for a list
+of all these options.  Example
 
 Certain common properties have their own special names. You can view
 these through `dcos spark run --help`. Here is an example of using
 `--supervise`:
 
-    $ dcos spark run --submit-args="--supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
-
-Or you can set arbitrary properties as java system properties by using
-`-D<prop>=<value>`:
-
-    $ dcos spark run --submit-args="-Dspark.executor.memory=4g --class MySampleClass http://external.website/mysparkapp.jar 30`
+    $ dcos spark run --submit-args="--conf spark.executor.memory=4g --supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 ## Configuration file
 

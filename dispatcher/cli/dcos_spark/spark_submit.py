@@ -154,10 +154,22 @@ def show_help():
     return 0
 
 
-def submit_job(dispatcher, args, docker_image, verbose=False):
-    (props, args) = partition(args.split(" "), lambda a: a.startswith("-D"))
+def submit_job(dispatcher, submit_args, docker_image, verbose=False):
+    """
+    Run spark-submit.
 
-    props = props + ["-Dspark.mesos.executor.docker.image=" + docker_image]
+    :param dispatcher: Spark Dispatcher URL.  Used to construct --master.
+    :type dispatcher: string
+    :param args: --submit-args value from `dcos spark run`
+    :type args: string
+    :param docker_image: Docker image to run the driver and executors in.
+    :type docker_image: string
+    :param verbose: If true, prints verbose information to stdout.
+    :type verbose: boolean
+    """
+    args = ["--conf",
+            "spark.mesos.executor.docker.image={}".format(docker_image)] + \
+        submit_args.split()
 
     hdfs_url = _get_spark_hdfs_url()
     if hdfs_url is not None:
@@ -166,10 +178,12 @@ def submit_job(dispatcher, args, docker_image, verbose=False):
             hdfs_url += '/'
         hdfs_config_url = urllib.parse.urljoin(hdfs_url, 'hdfs-site.xml')
         site_config_url = urllib.parse.urljoin(hdfs_url, 'core-site.xml')
-        props = props + ["-Dspark.mesos.uris={0},{1}".format(hdfs_config_url,
-                                                             site_config_url)]
+        args = ["--conf", "spark.mesos.uris={0},{1}".format(
+            hdfs_config_url,
+            site_config_url)] + \
+            args
 
-    response = run(dispatcher, args, verbose, props)
+    response = run(dispatcher, args, verbose)
     if response[0] is not None:
         print("Run job succeeded. Submission id: " +
               response[0]['submissionId'])
@@ -266,13 +280,16 @@ def check_java():
     return False
 
 
-def run(dispatcher, args, verbose, props=[]):
+def run(dispatcher, args, verbose):
     """
-    This method runs spark_submit with the passed in parameters.
-    ie: ./bin/spark-submit --deploy-mode cluster --class
-    org.apache.spark.examples.SparkPi --master mesos://10.127.131.174:8077
-    --executor-memory 1G --total-executor-cores 100 --driver-memory 1G
-    http://10.127.131.174:8000/spark-examples_2.10-1.3.0-SNAPSHOT.jar 30
+    Runs spark-submit.
+
+    :param dispatcher: Spark Dispatcher URL.  Used to construct --master.
+    :type dispatcher: string
+    :param args: Extra arguments to spark-submit
+    :type args: list[string]
+    :param verbose: If true, prints verbose information to stdout.
+    :type verbose: boolean
     """
     if not check_java():
         return (None, 1)
@@ -285,11 +302,12 @@ def run(dispatcher, args, verbose, props=[]):
 
     command = _get_command(dispatcher, args)
 
-    extra_env = {"SPARK_JAVA_OPTS": ' '.join(props)}
-    env = dict(os.environ, **extra_env)
-    # On Windows python 2 complains about unicode in env
-    if util.is_windows_platform() and sys.version_info[0] < 3:
-        env = dict([str(key), str(value)] for key, value in env.iteritems())
+    # On Windows, python 2 complains about unicode in env.
+    env = dict([str(key), str(value)]
+               for key, value in os.environ.iteritems()) \
+        if util.is_windows_platform() and sys.version_info[0] < 3 \
+        else os.environ
+
     process = subprocess.Popen(
         command,
         env=env,
@@ -302,9 +320,8 @@ def run(dispatcher, args, verbose, props=[]):
         proxy_thread.proxy.shutdown()
         proxy_thread.join()
 
-    if verbose is True:
+    if verbose:
         print("Ran command: " + " ".join(command))
-        print("With added env vars: {0}".format(extra_env))
         print("Stdout:")
         print(stdout)
         print("Stderr:")

@@ -39,4 +39,4 @@ the `--verbose` flag.
 To debug authentication in a Spark job, enable Java security debug
 output:
 
-    $ dcos spark run --submit-args="-Dsun.security.krb5.debug=true..."
+    $ dcos spark run --submit-args="--conf sun.security.krb5.debug=true..."
