@@ -266,10 +266,9 @@ def _run_tests(app_url, app_args, expected_output, args=[]):
 
 def _submit_job(app_url, app_args, args=[]):
     if _is_strict():
-        config['spark.mesos.driverEnv.MESOS_MODULES'] = \
-            'file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json'
-        config['spark.mesos.driverEnv.MESOS_AUTHENTICATEE'] = 'com_mesosphere_dcos_ClassicRPCAuthenticatee'
-        config['spark.mesos.principal'] = 'service-acct'
+        args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
+        args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
+        args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
     cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
