@@ -15,7 +15,7 @@ check_env() {
             -o -z "$S3_BUCKET" \
             -o -z "$S3_PREFIX" \
             -o -z "$TEST_JAR_PATH" \
-            -o -z "$COMMONS_DIR"]; then
+            -o -z "$COMMONS_DIR" ]; then
        echo "Missing required env. See check in ${BIN_DIR}/test.sh."
        echo "Environment:"
        env
