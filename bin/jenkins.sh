@@ -23,7 +23,7 @@ function make_distribution {
 
     if [[ -n "${SPARK_DIST_URI}" ]]; then
         wget "${SPARK_DIST_URI}"
-    elif [[ "${DEV}" -eq "true" ]]; then
+    elif [[ -n "${DEV}" ]]; then
         make_dev_distribution
     else
         make_prod_distribution
