@@ -4,8 +4,7 @@ menu_order: 30
 enterprise: 'no'
 ---
 
-DC/OS Spark includes The [Spark History Server][3]. Because the history
-server requires HDFS, you must explicitly enable it.
+DC/OS Spark includes The [Spark History Server][3]. Because the history server requires HDFS, you must explicitly enable it.
 
 1.  Install HDFS:
 
@@ -13,8 +12,7 @@ server requires HDFS, you must explicitly enable it.
 
     **Note:** HDFS requires 5 private nodes.
 
-1.  Create a history HDFS directory (default is `/history`). [SSH into
-your cluster][10] and run:
+1.  Create a history HDFS directory (default is `/history`). [SSH into your cluster][10] and run:
 
         $ hdfs dfs -mkdir /history
 
@@ -47,9 +45,7 @@ your cluster][10] and run:
 
         $ dcos spark run --submit-args="--conf spark.eventLog.enabled=true --conf spark.eventLog.dir=hdfs://hdfs/history ... --class MySampleClass  http://external.website/mysparkapp.jar"
 
-1.  Visit your job in the dispatcher at
-`http://<dcos_url>/service/spark/`. It will include a link to the
-history server entry for that job.
+1.  Visit your job in the dispatcher at `http://<dcos_url>/service/spark/`. It will include a link to the history server entry for that job.
 
  [3]: http://spark.apache.org/docs/latest/monitoring.html#viewing-after-the-fact
  [10]: https://docs.mesosphere.com/1.9/administration/access-node/sshcluster/
