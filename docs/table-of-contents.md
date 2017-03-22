@@ -15,5 +15,6 @@
 - [Fault Tolerance](fault-tolerance.md)
 - [Job Scheduling](job-scheduling.md)
 - [Troubleshooting](troubleshooting.md)
+- [Spark Versions](spark-versions.md)
 - [Version Policy](version-policy.md)
 - [Limitations](limitations.md)
