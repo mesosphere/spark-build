@@ -107,7 +107,8 @@ The following is a description of the most common Spark on Mesos scheduling prop
       </td>
 
       <tr>
-      </tr></table>
+      </tr>
+ </table>
 
  [1]: http://spark.apache.org/docs/latest/configuration.html
  [2]: http://spark.apache.org/docs/latest/running-on-mesos.html
