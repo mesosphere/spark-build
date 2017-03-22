@@ -1,8 +1,8 @@
 # DC/OS Apache Spark: Table of Contents
 
 - [Overview](index.md)
-- [Quick Start](quick-start.md)
 - [Install and Customize](install.md)
+- [Kick the Tires](quick-start.md)
 - [HDFS](hdfs.md)
 - [History Server](history-server)
 - [Security](security.md)
