@@ -38,77 +38,35 @@ In "fine-grained" mode, each Spark **task** is represented by a single Mesos tas
 The following is a description of the most common Spark on Mesos scheduling properties. For a full list, see the [Spark configuration page][1] and the [Spark on Mesos configuration page][2].
 
 <table class="table">
-  <tr>
-    <th>
-      property
-    </th>
+<tr>
+<th>property</th>
+<th>default</th>
+<th>description</th>
+</tr>
+	
+<tr>
+<td>spark.mesos.coarse</td>
+<td>true</td>
+<td>Described above.</td>
+</tr>
 
-    <th>
-      default
-    </th>
+ <tr>
+<td>spark.executor.memory</td>
+<td>1g</td>
+<td>Executor memory allocation.</td>
+</tr>
 
-    <th>
-      description
-    </th>
+<tr>
+<td>spark.executor.cores</td>
+<td>All available cores in the offer</td>
+<td>Coarse-grained mode only. DC/OS Spark >= 1.6.1. Executor CPU allocation.</td>
+</tr>
 
-    <tr>
-      <td>
-        spark.mesos.coarse
-      </td>
-
-      <td>
-        true
-      </td>
-
-      <td>
-        Described above.
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        spark.executor.memory
-      </td>
-
-      <td>
-        1g
-      </td>
-
-      <td>
-        Executor memory allocation.
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        spark.executor.cores
-      </td>
-
-      <td>
-        All available cores in the offer
-      </td>
-
-      <td>
-        Coarse-grained mode only. DC/OS Spark >= 1.6.1. Executor CPU allocation.
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        spark.cores.max
-      </td>
-
-      <td>
-        unlimited
-      </td>
-
-      <td>
-        Maximum total number of cores to allocate.
-      </td>
-
-      <tr>
-      </tr>
- </table>
-
+<tr>
+<td>spark.cores.max</td>
+<td>unlimited</td>
+<td>Maximum total number of cores to allocate.</td>
+</tr>
+</table>
  [1]: http://spark.apache.org/docs/latest/configuration.html
  [2]: http://spark.apache.org/docs/latest/running-on-mesos.html
