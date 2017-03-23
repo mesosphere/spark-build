@@ -14,7 +14,8 @@ DC/OS Spark includes The [Spark History Server][3]. Because the history server r
 
 1.  Create a history HDFS directory (default is `/history`). [SSH into your cluster][10] and run:
 
-        $ hdfs dfs -mkdir /history
+        $ docker run -it mesosphere/hdfs-client:1.0.0-2.6.0 bash
+        $ ./bin/hdfs dfs -mkdir /history
 
 1. Create `spark-history-options.json`:
 
