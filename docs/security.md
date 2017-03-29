@@ -26,7 +26,7 @@ When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/
 
 Follow these instructions to authenticate in strict mode:
 
-1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/universe-service-auth/).
+1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/spark-auth/).
 
 1. Assign Permissions
 
