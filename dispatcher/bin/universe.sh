@@ -7,11 +7,10 @@
 #   spark_uri - where fetch spark distribution from (or SPARK_DIST_URI if provided)
 #
 # ENV vars:
-#   DEV (optional) - if "true", spark will be built from source rather than
-#                    using the distribution specified in manifest.json.
+#   DIST (optional) - if "dev", spark will be built from source rather than
+#                     using the distribution specified in manifest.json.
 #   DOCKER_IMAGE (optional) - "<image>:<version>", falls back to mesosphere/spark-dev:COMMIT)
 #   COMMONS_TOOLS_DIR (optional) - path to dcos-commons/tools/, or empty to fetch latest release tgz
-#   SPARK_DIST_URI (optional) - URI of spark distribution to use.
 #   ghprbActualCommit / GIT_COMMIT (optional) - COMMIT value to use for DOCKER_IMAGE, if DOCKER_IMAGE isn't specified
 
 set -e -x -o pipefail
@@ -23,18 +22,6 @@ SPARK_DIR="${DIR}/../../../spark"
 
 # set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
 configure_env() {
-    if [ -z "${SPARK_DIST_URI}" ]; then
-        if [[ "${DEV}" = "true" ]]; then
-            (cd "${SPARK_BUILD_DIR}" && make dist)
-            SPARK_DIST_URI="file://${SPARK_DIR}/spark-SNAPSHOT.tgz"
-        else
-            SPARK_DIST_URI=$(default_spark_dist)
-            SPARK_DIST_URI="${SPARK_DIST_URI%\"}"
-            SPARK_DIST_URI="${SPARK_DIST_URI#\"}"
-        fi
-        echo "Using Spark dist URI: ${SPARK_DIST_URI}"
-    fi
-
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
     CLI_VERSION="${CLI_VERSION%\"}"
     CLI_VERSION="${CLI_VERSION#\"}"
@@ -78,9 +65,7 @@ make_docker() {
     echo "###"
 
     (cd "${SPARK_BUILD_DIR}" &&
-            DOCKER_IMAGE=${DOCKER_IMAGE} \
-                        SPARK_DIST_URI="${SPARK_DIST_URI}" \
-                        make docker)
+            DOCKER_IMAGE=${DOCKER_IMAGE} make docker)
 }
 
 upload_cli_and_stub_universe() {
