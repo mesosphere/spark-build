@@ -16,7 +16,7 @@ function create_docker_context {
 
     rm -rf build/docker
     mkdir -p build/docker/dist
-    cp -r "build/dist/${DIST}/." build/docker/dist
+    cp -r build/dist/spark-*/. build/docker/dist
     cp -r conf/* build/docker/dist/conf
     cp -r docker/* build/docker
 }
@@ -32,13 +32,6 @@ function push_docker {
 }
 
 [[ -n "${DOCKER_IMAGE}" ]] || (echo "DOCKER_IMAGE is a required env var." 1>&2; exit 1)
-
-if [ -z "${SPARK_DIST_URI}" ]; then
-    SPARK_DIST_URI=$(jq -r ".default_spark_dist.uri" manifest.json)
-fi
-
-DIST_TGZ=$(basename "${SPARK_DIST_URI}")
-DIST="${DIST_TGZ%.*}"
 
 pushd "${SPARK_BUILD_DIR}"
 create_docker_context
