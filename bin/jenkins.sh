@@ -16,7 +16,7 @@ function default_spark_dist {
     jq -r ".default_spark_dist.uri" "${SPARK_BUILD_DIR}/manifest.json"
 }
 
-# Writes a Spark distribution to ${SPARK_BUILD_DIR}/build/spark/spark-*.tgz
+# Writes a Spark distribution to ${SPARK_BUILD_DIR}/build/dist/spark-*.tgz
 function make_distribution {
     local HADOOP_VERSION=${HADOOP_VERSION:-$(default_hadoop_version)}
 
