@@ -113,14 +113,11 @@ function docker_version() {
 }
 
 function install_cli {
-    curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
-    rm -rf dcos-cli/
-    mkdir dcos-cli
-    bash install.sh dcos-cli http://change.me --add-path no
-    source dcos-cli/bin/env-setup
+    git clone git@github.com:dcos/dcos-cli.git
 
-    # hack because the installer forces an old CLI version
-    pip install -U dcoscli
+    (cd dcos-cli && make env)
+    (cd dcos-cli/cli && make env)
+    source dcos-cli/cli/bin/env-setup-dev
 
     # needed in `make test`
     pip3 install jsonschema
