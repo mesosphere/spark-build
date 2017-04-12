@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Builds and pushes a Spark docker image
+# Builds and pushes a Spark docker image.
 #
 # ENV vars:
 #   DOCKER_IMAGE - <image>:<version>

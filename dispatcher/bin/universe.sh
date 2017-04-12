@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Builds a universe for this spark package
+# Builds a universe for this spark package, and uploads it to S3.
 #
 # Manifest config:
 #   cli_version - version label to use for CLI package
@@ -20,7 +20,7 @@ DISPATCHER_DIR="${DIR}/.."
 SPARK_BUILD_DIR="${DIR}/../.."
 SPARK_DIR="${DIR}/../../../spark"
 
-# set CLI_VERSION, SPARK_DIST_URI, and DOCKER_IMAGE:
+# set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
     CLI_VERSION="${CLI_VERSION%\"}"
@@ -60,20 +60,13 @@ make_cli() {
 }
 
 make_docker() {
-    echo "###"
-    echo "# Using docker image: $DOCKER_IMAGE"
-    echo "###"
-
-    (cd "${SPARK_BUILD_DIR}" &&
-            DOCKER_IMAGE=${DOCKER_IMAGE} make docker)
+    (cd "${SPARK_BUILD_DIR}" && DOCKER_IMAGE=${DOCKER_IMAGE} make docker)
 }
 
 upload_cli_and_stub_universe() {
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
-    # ARTIFACT_DIR="https://${S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}" \
-    # S3_DIR_PATH=${S3_PREFIX:-} \
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
-    TEMPLATE_SPARK_DIST_URI=${SPARK_DIST_URI} \
+    TEMPLATE_SPARK_DIST_URI=$(default_spark_dist) \
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
