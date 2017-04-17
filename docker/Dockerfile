@@ -30,18 +30,19 @@ RUN apt-get update && \
     apt-get install -y \
             software-properties-common \
             runit \
-            nginx
+            nginx \
+            krb5-user
 
 RUN apt-get update && \
     apt-get install -y curl
 RUN apt-get install -y r-base
 
 RUN cd /usr/lib/jvm && \
-    curl -O https://downloads.mesosphere.com/java/jre-8u121-linux-x64.tar.gz && \
-    tar zxf jre-8u121-linux-x64.tar.gz && \
-    rm jre-8u121-linux-x64.tar.gz
+    curl -O https://downloads.mesosphere.com/java/jre-8u112-linux-x64-jce-unlimited.tar.gz && \
+    tar zxf jre-8u112-linux-x64-jce-unlimited.tar.gz && \
+    rm jre-8u112-linux-x64-jce-unlimited.tar.gz
 
-ENV JAVA_HOME /usr/lib/jvm/jre1.8.0_121
+ENV JAVA_HOME /usr/lib/jvm/jre1.8.0_112
 ENV MESOS_NATIVE_JAVA_LIBRARY /usr/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
 
