@@ -7,7 +7,7 @@ SPARK_BUILD_DIR=${DIR}/..
 
 function run() {
     source bin/jenkins.sh
-    install_cli
+    #install_cli
     docker_login
 
     make --directory=dispatcher universe
