@@ -50,7 +50,7 @@ build_scala_test_jar() {
 }
 
 run_tests() {
-    SCALA_TEST_JAR_PATH=$(pwd)/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+    SCALA_TEST_JAR_PATH=${SPARK_BUILD_DIR}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
                        CLUSTER_URL=${DCOS_URL} \
                        STUB_UNIVERSE_URL=${STUB_UNIVERSE_URL} \
                        ${COMMONS_DIR}/tools/run_tests.py shakedown ${SPARK_BUILD_DIR}/tests ${SPARK_BUILD_DIR}/tests/requirements.txt
