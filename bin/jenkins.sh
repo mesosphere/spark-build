@@ -112,20 +112,6 @@ function docker_version() {
     echo "${SPARK_BUILD_VERSION}-hadoop-$1"
 }
 
-function install_cli {
-    curl -O https://downloads.mesosphere.io/dcos-cli/install.sh
-    rm -rf dcos-cli/
-    mkdir dcos-cli
-    bash install.sh dcos-cli http://change.me --add-path no
-    source dcos-cli/bin/env-setup
-
-    # hack because the installer forces an old CLI version
-    pip install -U dcoscli
-
-    # needed in `make test`
-    pip3 install jsonschema
-}
-
 function docker_login {
     docker login --email=docker@mesosphere.io --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
 }

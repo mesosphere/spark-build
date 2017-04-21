@@ -7,6 +7,7 @@ set -x
 set -o pipefail
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SPARK_BUILD_DIR="${BIN_DIR}/.."
 
 check_env() {
     # Check env early, before starting the cluster:
@@ -36,16 +37,6 @@ start_cluster() {
     fi
 }
 
-configure_cli() {
-    dcos config set core.dcos_url "${DCOS_URL}"
-    dcos config set core.ssl_verify false
-    ${COMMONS_DIR}/tools/dcos_login.py
-    dcos config show
-    if [ -n "${STUB_UNIVERSE_URL}" ]; then
-        dcos package repo add --index=0 spark-test "${STUB_UNIVERSE_URL}"
-    fi
-}
-
 initialize_service_account() {
     if [ "$SECURITY" = "strict" ]; then
         ${COMMONS_DIR}/tools/create_service_account.sh --strict
@@ -59,21 +50,15 @@ build_scala_test_jar() {
 }
 
 run_tests() {
-    pushd tests
-    if [[ ! -d venv ]]; then
-        virtualenv -p python3 venv
-    fi
-    source venv/bin/activate
-    pip install -r requirements.txt
-    SCALA_TEST_JAR_PATH=$(pwd)/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
-                       py.test -s test.py
-    popd
+    SCALA_TEST_JAR_PATH=${SPARK_BUILD_DIR}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+                       CLUSTER_URL=${DCOS_URL} \
+                       STUB_UNIVERSE_URL=${STUB_UNIVERSE_URL} \
+                       ${COMMONS_DIR}/tools/run_tests.py shakedown ${SPARK_BUILD_DIR}/tests ${SPARK_BUILD_DIR}/tests/requirements.txt
 }
 
 check_env
 start_cluster
 # TODO: Migrate the following three commands to dcos-commons-tools/run-tests.py
-configure_cli
 initialize_service_account
 build_scala_test_jar
 run_tests

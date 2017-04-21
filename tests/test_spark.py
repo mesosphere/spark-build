@@ -25,11 +25,16 @@ import urllib
 def _init_logging():
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('dcos').setLevel(logging.WARNING)
+    logging.getLogger('requests').setLevel(logging.WARNING)
 
 
 _init_logging()
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_HDFS_TASK_COUNT=10
+HDFS_PACKAGE_NAME='beta-hdfs'
+HDFS_SERVICE_NAME='hdfs'
+SPARK_PACKAGE_NAME='spark'
 
 
 def setup_module(module):
@@ -39,12 +44,13 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    shakedown.uninstall_package_and_wait('spark')
+    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
     if _hdfs_enabled():
-        shakedown.uninstall_package_and_wait('hdfs')
-        _run_janitor('hdfs')
+        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+        _run_janitor(HDFS_PACKAGE_NAME)
 
 
+@pytest.mark.sanity
 def test_jar():
     master_url = ("https" if _is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
@@ -57,6 +63,7 @@ def test_jar():
                ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
+@pytest.mark.sanity
 def test_teragen():
     if _hdfs_enabled():
         jar_url = "https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar"
@@ -66,6 +73,7 @@ def test_teragen():
                    ["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
 
 
+@pytest.mark.sanity
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = _upload_file(python_script_path)
@@ -100,6 +108,7 @@ def test_kerberos():
          "--conf", "sun.security.krb5.debug=true"])
 
 
+@pytest.mark.sanity
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = _upload_file(r_script_path)
@@ -108,6 +117,7 @@ def test_r():
                "Justin")
 
 
+@pytest.mark.sanity
 def test_cni():
     SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
     _run_tests(SPARK_EXAMPLES,
@@ -117,6 +127,7 @@ def test_cni():
                 "--class", "org.apache.spark.examples.SparkPi"])
 
 
+@pytest.mark.sanity
 def test_s3():
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
     s3.upload_file(linecount_path)
@@ -147,14 +158,14 @@ def _hdfs_enabled():
 def _require_hdfs():
     LOGGER.info("Ensuring HDFS is installed.")
 
-    _require_package('hdfs', _get_hdfs_options())
+    _require_package(HDFS_PACKAGE_NAME, _get_hdfs_options())
     _wait_for_hdfs()
 
 
 def _require_spark():
     LOGGER.info("Ensuring Spark is installed.")
 
-    _require_package('spark', _get_spark_options())
+    _require_package(SPARK_PACKAGE_NAME, _get_spark_options())
     _wait_for_spark()
 
 
@@ -187,7 +198,9 @@ def _get_hdfs_options():
     if _is_strict():
         options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
     else:
-        options = {}
+        options = {"service": {}}
+
+    options["service"]["beta-optin"] = True
     return options
 
 
@@ -195,9 +208,8 @@ def _wait_for_hdfs():
     shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
 
 
-DEFAULT_HDFS_TASK_COUNT=10
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
-    running_tasks = [t for t in shakedown.get_service_tasks('hdfs') \
+    running_tasks = [t for t in shakedown.get_service_tasks(HDFS_SERVICE_NAME) \
                      if t['state'] == 'TASK_RUNNING']
     return len(running_tasks) >= expected_tasks
 
@@ -231,7 +243,10 @@ def _install_spark():
                               "principal": "service-acct"}
         options['security'] = {"mesos": {"authentication": {"secret_name": "secret"}}}
 
-    shakedown.install_package('spark', options_json=options, wait_for_completion=True)
+    shakedown.install_package(
+        SPARK_PACKAGE_NAME,
+        options_json=options,
+        wait_for_completion=True)
 
     def pred():
         dcos_url = dcos.config.get_config_val("core.dcos_url")
