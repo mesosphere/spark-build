@@ -8,7 +8,7 @@ enterprise: 'no'
 
 You can run Spark commands interactively in the Spark shell. The Spark shell is available in either Scala, Python, or R.
 
-1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/latest/administration/access-node/sshcluster/).
+1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/1.9/administering-clusters/sshcluster/).
 
         $ dcos node ssh --master-proxy --mesos-id=<agent-node-id>
 
