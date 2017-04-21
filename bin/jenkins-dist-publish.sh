@@ -34,8 +34,6 @@ SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.0.2"
 source "${DIR}/jenkins.sh"
 
 pushd "${SPARK_BUILD_DIR}"
-install_cli
 docker_login
-# build_and_test
 publish_dists
 popd
