@@ -22,11 +22,11 @@ enterprise: 'no'
 
 ## Authentication
 
-When running in [DC/OS strict security mode](https://docs.mesosphere.com/latest/administration/id-and-access-mgt/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/).
+When running in [DC/OS strict security mode](https://docs.mesosphere.com/1.9/security/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/security/service-auth/).
 
 Follow these instructions to authenticate in strict mode:
 
-1. Create a service account by following the instructions [here](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/spark-auth/).
+1. Create a service account by following the instructions [here](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
 
 1. Assign Permissions
 
