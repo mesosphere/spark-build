@@ -1,7 +1,7 @@
 dist:
 	bin/dist.sh
 
-docker:
+docker: dist
 	bin/docker.sh
 
 test:

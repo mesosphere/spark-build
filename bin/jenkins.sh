@@ -6,6 +6,7 @@ set -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/../../spark-build"
+DIST_DIR="${SPARK_BUILD_DIR}/build/dist"
 
 function default_hadoop_version {
     jq -r ".default_spark_dist.hadoop_version" "${SPARK_BUILD_DIR}/manifest.json"
@@ -15,21 +16,25 @@ function default_spark_dist {
     jq -r ".default_spark_dist.uri" "${SPARK_BUILD_DIR}/manifest.json"
 }
 
+# Writes a Spark distribution to ${SPARK_BUILD_DIR}/build/dist/spark-*.tgz
 function make_distribution {
     local HADOOP_VERSION=${HADOOP_VERSION:-$(default_hadoop_version)}
-    pushd "${SPARK_DIR}"
 
-    rm -rf spark-*.tgz
+    rm -rf "${DIST_DIR}"
+    mkdir -p "${DIST_DIR}"
 
-    if [[ -n "${SPARK_DIST_URI}" ]]; then
-        wget "${SPARK_DIST_URI}"
-    elif [[ -n "${DEV}" ]]; then
+    if [[ "${DIST}" == "dev" ]]; then
         make_dev_distribution
-    else
+    elif [[ "${DIST}" == "prod" ]]; then
         make_prod_distribution
+    else
+        make_manifest_distribution
     fi
+}
 
-    popd
+function make_manifest_distribution {
+    SPARK_DIST_URI=$(default_spark_dist)
+    (cd "${DIST_DIR}" && wget "${SPARK_DIST_URI}")
 }
 
 # Adapted from spark/dev/make-distribution.sh.
@@ -39,6 +44,7 @@ function make_distribution {
 function make_dev_distribution {
     pushd "${SPARK_DIR}"
     rm -rf spark-*.tgz
+
     ./build/sbt -Pmesos "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver package
 
     # jars
@@ -68,11 +74,15 @@ function make_dev_distribution {
     cp -r "${SPARK_DIR}/python" /tmp/spark-SNAPSHOT
 
     (cd /tmp && tar czf spark-SNAPSHOT.tgz spark-SNAPSHOT)
-    cp /tmp/spark-SNAPSHOT.tgz "${SPARK_DIR}"
+    mkdir -p "${DIST_DIR}"
+    cp /tmp/spark-SNAPSHOT.tgz "${DIST_DIR}"
     popd
 }
 
 function make_prod_distribution {
+    pushd "${SPARK_DIR}"
+    rm -rf spark-*.tgz
+
     if [ -f make-distribution.sh ]; then
         # Spark <2.0
         ./make-distribution.sh --tgz "-Phadoop-${HADOOP_VERSION}" -Phive -Phive-thriftserver -DskipTests
@@ -85,6 +95,11 @@ function make_prod_distribution {
         fi
         ./dev/make-distribution.sh --tgz "${MESOS_PROFILE}" "-Phadoop-${HADOOP_VERSION}" -Psparkr -Phive -Phive-thriftserver -DskipTests
     fi
+
+    mkdir -p "${DIST_DIR}"
+    cp spark-*.tgz "${DIST_DIR}"
+
+    popd
 }
 
 # rename spark/spark-*.tgz to spark/spark-<TAG>.tgz
@@ -121,7 +136,7 @@ function set_hadoop_versions {
 }
 
 function build_and_test() {
-    make dist
+    DIST=prod make dist
     SPARK_DIST=$(cd ${SPARK_DIR} && ls spark-*.tgz)
     S3_URL="s3://${S3_BUCKET}/${S3_PREFIX}/spark/${GIT_COMMIT}/" upload_to_s3
 
