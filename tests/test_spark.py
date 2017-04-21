@@ -46,7 +46,7 @@ def setup_module(module):
 def teardown_module(module):
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
     if _hdfs_enabled():
-        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME)
+        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
         _run_janitor(HDFS_PACKAGE_NAME)
 
 
