@@ -115,13 +115,12 @@ scp core@${MASTER_PUBLIC_IP}:/home/core/keytabs.tar.gz .
 echo "Uploading keytabs.tar.gz to s3://${S3_BUCKET}/${S3_PATH}"
 aws s3 cp ./keytabs.tar.gz s3://${S3_BUCKET}/${S3_PATH} --acl public-read
 
-# echo "Copying krb5.conf to the current working directory..."
-# dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker cp ${DOCKER_CONTAINER_ID}:/etc/krb5.conf /home/core/krb5.conf"
-# dcos node ssh --master-proxy --leader "scp core@${SLAVE_HOSTNAME}:/home/core/krb5.conf /home/core/krb5.conf"
-# scp core@${MASTER_PUBLIC_IP}:/home/core/krb5.conf .
-
 echo "Uploading krb5.conf to s3://${S3_BUCKET}/${S3_PATH}"
 aws s3 cp ./krb5.conf s3://${S3_BUCKET}/${S3_PATH} --acl public-read
+
+echo "Uploading spark job"
+(cd "${SPARK_BUILD_DIR}/tests/jobs/scala" && sbt assembly)
+aws s3 cp "${SPARK_BUILD_DIR}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar" s3://${S3_BUCKET}/${S3_PATH} --acl public-read
 
 cat <<EOF > /tmp/hdfs-kerberos-options.json
 {
@@ -138,8 +137,3 @@ EOF
 
 echo "Installing Kerberized HDFS..."
 dcos package install --yes hdfs --options=/tmp/hdfs-kerberos-options.json
-
-pushd "${SPARK_BUILD_DIR}/tests/jobs/scala"
-sbt assembly
-aws s3 cp target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar s3://${S3_BUCKET}/${S3_PATH} --acl public-read
-popd
