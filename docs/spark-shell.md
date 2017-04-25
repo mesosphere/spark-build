@@ -10,7 +10,7 @@ You can run Spark commands interactively in the Spark shell. The Spark shell is 
 
 1. [Launch a long-running interactive bash session using `dcos task exec`](https://dcos.io/docs/1.9/monitoring/debugging/cli-debugging/task-exec/#launch-a-long-running-interactive-bash-session).
 
-1. From your interactive bash session, run a Spark Docker image.
+1. From your interactive bash session, pull and run a Spark Docker image.
 
         docker pull mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6
 
