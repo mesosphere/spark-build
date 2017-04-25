@@ -6,43 +6,43 @@ enterprise: 'no'
 
 # Interactive Spark Shell
 
-You can run Spark commands interactively in the Spark shell. The Spark shell is available in either Scala, Python, or R.
+You can run Spark commands interactively in the Spark shell. The Spark shell is available in Scala, Python, and R.
 
-1. SSH into a node in the DC/OS cluster. [Learn how to SSH into your cluster and get the agent node ID](https://dcos.io/docs/1.9/administering-clusters/sshcluster/).
+1. [Launch a long-running interactive bash session using `dcos task exec`](https://dcos.io/docs/1.9/monitoring/debugging/cli-debugging/task-exec/#launch-a-long-running-interactive-bash-session).
 
-        $ dcos node ssh --master-proxy --mesos-id=<agent-node-id>
+1. From your interactive bash session, pull and run a Spark Docker image.
 
-1. Run a Spark Docker image.
+        docker pull mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6
 
-        $ docker pull mesosphere/spark:1.0.4-2.0.1
-
-        $ docker run -it --net=host mesosphere/spark:1.0.4-2.0.1 /bin/bash
+        docker run -it --net=host mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6 /bin/bash
 
 1. Run the Scala Spark shell from within the Docker image.
 
-        $ ./bin/spark-shell --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+        ./bin/spark-shell --master mesos://<internal-leader-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6 --conf spark.mesos.executor.home=/opt/spark/dist
 
     Or, run the Python Spark shell.
 
-        $ ./bin/pyspark --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.4-2.0.1 --conf spark.mesos.executor.home=/opt/spark/dist
+        ./bin/pyspark --master mesos://<internal-leader-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6 --conf spark.mesos.executor.home=/opt/spark/dist
 
     Or, run the R Spark shell.
 
-        $ ./bin/sparkR --master mesos://<internal-master-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.7-2.1.0-hadoop-2.6 --conf spark.mesos.executor.home=/opt/spark/dist
+        ./bin/sparkR --master mesos://<internal-leader-ip>:5050 --conf spark.mesos.executor.docker.image=mesosphere/spark:1.0.9-2.1.0-1-hadoop-2.6 --conf spark.mesos.executor.home=/opt/spark/dist
+
+    **Hint:** Find your internal leader IP by going to `<dcos-url>/mesos`. The internal leader IP is listed in the upper left hand corner.
 
 1. Run Spark commands interactively.
 
     In the Scala shell:
 
-        $ val textFile = sc.textFile("/opt/spark/dist/README.md")
-        $ textFile.count()
+        val textFile = sc.textFile("/opt/spark/dist/README.md")
+        textFile.count()
 
     In the Python shell:
 
-        $ textFile = sc.textFile("/opt/spark/dist/README.md")
-        $ textFile.count()
+        textFile = sc.textFile("/opt/spark/dist/README.md")
+        textFile.count()
 
     In the R shell:
 
-        $ df <- as.DataFrame(faithful)
-        $ head(df)
+        df <- as.DataFrame(faithful)
+        head(df)
