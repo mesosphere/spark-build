@@ -3,7 +3,7 @@
     "properties": {
         "service": {
             "type": "object",
-            "description": "spark-history configuration properties",
+            "description": "DC/OS Apache Spark History Server configuration properties",
             "properties": {
                 "name": {
                     "default": "spark-history",
