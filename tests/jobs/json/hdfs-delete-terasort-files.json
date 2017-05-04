@@ -1,0 +1,17 @@
+{
+  "description": "Job that deletes Terasort files from HDFS",
+  "id": "hdfs-delete-terasort-files",
+  "run": {
+    "cmd": "/bin/bash && /configure-hdfs.sh && bin/hdfs dfs -rm -r -f /terasort_in /terasort_out /terasort_validate",
+    "docker": {
+      "image": "mesosphere/hdfs-client:1.0.0-2.6.0"
+    },
+    "cpus": 0.1,
+    "mem": 512,
+    "disk": 0,
+    "user": "root",
+    "restart": {
+      "policy": "NEVER"
+    }
+  }
+}
