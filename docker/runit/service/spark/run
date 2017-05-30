@@ -7,7 +7,8 @@ exec 2>&1
 function export_daemon_opts() {
     export SPARK_DAEMON_JAVA_OPTS=""
     if [ "${DCOS_SERVICE_NAME}" != "spark" ]; then
-        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher_${DCOS_SERVICE_NAME}"
+        local ZK_SUFFIX=${DCOS_SERVICE_NAME////__}
+        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher${ZK_SUFFIX}"
     fi
 
     if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
