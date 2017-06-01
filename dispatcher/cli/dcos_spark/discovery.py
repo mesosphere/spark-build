@@ -4,6 +4,7 @@ import os
 
 from dcos import config
 from dcos_spark import service
+
 from six.moves import urllib
 
 
