@@ -136,7 +136,7 @@ def test_s3():
     assert len(list(s3.list("linecount-out"))) > 0
 
 
-@pytest.mark.mgummelt
+@pytest.mark.sanity
 def test_marathon_group():
     app_id = "/path/to/spark"
     options = {"service": {"name": app_id}}
