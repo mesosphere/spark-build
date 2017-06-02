@@ -47,6 +47,8 @@ def test_jar():
                ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
+# Skip until a version of beta-hdfs containing the fix for HDFS-461 is released
+@pytest.mark.skip
 @pytest.mark.sanity
 def test_teragen():
     if utils.hdfs_enabled():
