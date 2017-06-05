@@ -4,7 +4,8 @@ menu_order: 80
 feature_maturity: stable
 enterprise: 'no'
 ---
-1.  Before submitting your job, upload the artifact (e.g., jar file) to a location visible to the cluster (e.g., S3 or HDFS). [Learn more][13].
+1.  Before submitting your job, upload the artifact (e.g., jar file)
+    to a location visible to the cluster (e.g., HTTP, S3, or HDFS). [Learn more][13].
 
 1.  Run the job.
 
@@ -40,7 +41,18 @@ Certain common properties have their own special names. You can view these throu
 
 ## Configuration file
 
-To set Spark properties with a configuration file, create a `spark-defaults.conf` file and set the environment variable `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
+To set Spark properties with a configuration file, create a
+`spark-defaults.conf` file and set the environment variable
+`SPARK_CONF_DIR` to the containing directory. [Learn more][15].
+
+# DC/OS Overlay Network
+
+To submit a Spark job inside the [DC/OS Overlay Network][16]:
+
+    $ dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos"
+
+Note that DC/OS Overlay support requires the [UCR][17], rather than
+the default Docker Containerizer, so you must set `--conf spark.mesos.containerizer=mesos`.
 
 # Versioning
 
@@ -54,3 +66,5 @@ The default DC/OS Spark distribution is compiled against Hadoop 2.6 libraries.  
 [13]: http://spark.apache.org/docs/latest/submitting-applications.html
 [14]: http://spark.apache.org/docs/latest/configuration.html#spark-properties
 [15]: http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-directory
+[16]: https://dcos.io/docs/overview/design/overlay/
+[17]: https://dcos.io/docs/1.9/deploying-services/containerizers/ucr/
