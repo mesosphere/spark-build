@@ -23,9 +23,10 @@ HDFS_PACKAGE_NAME='beta-hdfs'
 HDFS_SERVICE_NAME='hdfs'
 SPARK_PACKAGE_NAME='spark'
 
-
+# Skip HDFS tests until a version of beta-hdfs containing the fix for HDFS-461 is released.
 def hdfs_enabled():
-    return os.environ.get("HDFS_ENABLED") != "false"
+    return False
+    # return os.environ.get("HDFS_ENABLED") != "false"
 
 
 def is_strict():
@@ -126,9 +127,13 @@ def run_tests(app_url, app_args, expected_output, args=[]):
     task_id = _submit_job(app_url, app_args, args)
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
-    log = _task_log(task_id)
-    LOGGER.info("task log: {}".format(log))
-    assert expected_output in log
+    stdout = _task_log(task_id)
+
+    if expected_output not in stdout:
+        stderr = _task_log(task_id, "stderr")
+        LOGGER.error("task stdout: {}".format(stdout))
+        LOGGER.error("task stderr: {}".format(stderr))
+        raise Exception("{} not found in stdout".format(expected_output))
 
 
 def _submit_job(app_url, app_args, args=[]):
@@ -150,8 +155,10 @@ def _submit_job(app_url, app_args, args=[]):
     return match.group(1)
 
 
-def _task_log(task_id):
-    cmd = "dcos task log --completed --lines=1000 {}".format(task_id)
+def _task_log(task_id, filename=None):
+    cmd = "dcos task log --completed --lines=1000 {}".format(task_id) + \
+          ("" if filename is None else " {}".format(filename))
+
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
     return stdout
