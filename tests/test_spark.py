@@ -7,6 +7,7 @@
 #   TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
 #   SCALA_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
+import dcos.config
 import logging
 import os
 import pytest
@@ -42,9 +43,9 @@ def test_jar():
         shakedown.dcos_acs_token())
     jar_url = _upload_file(os.getenv('TEST_JAR_PATH'))
     utils.run_tests(jar_url,
-               spark_job_runner_args,
-               "All tests passed",
-               ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
+                    spark_job_runner_args,
+                    "All tests passed",
+                    ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
 @pytest.mark.sanity
@@ -52,9 +53,9 @@ def test_teragen():
     if utils.hdfs_enabled():
         jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
         utils.run_tests(jar_url,
-                   "1g hdfs:///terasort_in",
-                   "Number of records written",
-                   ["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
+                        "1g hdfs:///terasort_in",
+                        "Number of records written",
+                        ["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
 
 
 @pytest.mark.sanity
@@ -64,9 +65,9 @@ def test_python():
     py_file_path = os.path.join(THIS_DIR, 'jobs', 'python', 'PySparkTestInclude.py')
     py_file_url = _upload_file(py_file_path)
     utils.run_tests(python_script_url,
-               "30",
-               "Pi is roughly 3",
-               ["--py-files", py_file_url])
+                    "30",
+                    "Pi is roughly 3",
+                    ["--py-files", py_file_url])
 
 
 @pytest.mark.skip(reason="must be run manually against a kerberized HDFS")
@@ -133,6 +134,20 @@ def test_s3():
                args)
 
     assert len(list(s3.list("linecount-out"))) > 0
+
+
+@pytest.mark.sanity
+def test_marathon_group():
+    app_id = "/path/to/spark"
+    options = {"service": {"name": app_id}}
+    utils.require_spark(options=options, service_name=app_id)
+    dcos.config.set_val("spark.app_id", app_id)
+
+    try:
+        test_jar()
+        shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
+    finally:
+        dcos.config.unset("spark.app_id")
 
 
 def _run_janitor(service_name):
