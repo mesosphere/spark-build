@@ -59,10 +59,16 @@ def _delete_hdfs_terasort_files():
     job_name = 'hdfs-delete-terasort-files'
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_name))
     metronome_client = dcos.metronome.create_client()
-    _add_job(metronome_client, job_name)
+    if not _job_exists(metronome_client, job_name):
+        _add_job(metronome_client, job_name)
     _run_job_and_wait(metronome_client, job_name, timeout_seconds=300)
     metronome_client.remove_job(job_name)
     LOGGER.info("Job {} completed".format(job_name))
+
+
+def _job_exists(metronome_client, job_name):
+    jobs = metronome_client.get_jobs()
+    return any(job['id'] == job_name for job in jobs)
 
 
 def _add_job(metronome_client, job_name):

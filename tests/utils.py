@@ -40,21 +40,30 @@ def require_hdfs():
     _wait_for_hdfs()
 
 
-def require_spark():
+def require_spark(options={}, service_name=None):
     LOGGER.info("Ensuring Spark is installed.")
 
-    _require_package(SPARK_PACKAGE_NAME, _get_spark_options())
-    _wait_for_spark()
+    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options))
+    _wait_for_spark(service_name)
     _require_spark_cli()
 
 
 # This should be in shakedown (DCOS_OSS-679)
-def _require_package(pkg_name, options = {}):
+def _require_package(pkg_name, service_name=None, options = {}):
     pkg_manager = dcos.package.get_package_manager()
-    installed_pkgs = dcos.package.installed_packages(pkg_manager, None, None, False)
+    installed_pkgs = dcos.package.installed_packages(
+        pkg_manager,
+        None,
+        None,
+        False)
 
-    if any(pkg['name'] == pkg_name for pkg in installed_pkgs):
-        LOGGER.info("Package {} already installed.".format(pkg_name))
+    pkg = next((pkg for pkg in installed_pkgs if pkg['name'] == pkg_name), None)
+    if (pkg is not None) and (service_name is None):
+        LOGGER.info("Package {} is already installed.".format(pkg_name))
+    elif (pkg is not None) and (service_name in pkg['apps']):
+        LOGGER.info("Package {} with app_id={} is already installed.".format(
+            pkg_name,
+            service_name))
     else:
         LOGGER.info("Installing package {}".format(pkg_name))
         shakedown.install_package(
@@ -63,10 +72,11 @@ def _require_package(pkg_name, options = {}):
             wait_for_completion=True)
 
 
-def _wait_for_spark():
+def _wait_for_spark(service_name=None):
     def pred():
         dcos_url = dcos.config.get_config_val("core.dcos_url")
-        spark_url = urllib.parse.urljoin(dcos_url, "/service/spark")
+        path = "/service{}".format(service_name) if service_name else "service/spark"
+        spark_url = urllib.parse.urljoin(dcos_url, path)
         status_code = dcos.http.get(spark_url).status_code
         return status_code == 200
 
@@ -104,13 +114,11 @@ def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
     return len(running_tasks) >= expected_tasks
 
 
-def _get_spark_options():
+def _get_spark_options(options = {}):
     if hdfs_enabled():
-        options = {"hdfs":
-                       {"config-url":
-                            "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}}
-    else:
-        options = {}
+        options.update({"hdfs":
+                        {"config-url":
+                         "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}})
 
     if is_strict():
         options.update({'service':
