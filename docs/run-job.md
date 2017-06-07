@@ -49,7 +49,7 @@ To set Spark properties with a configuration file, create a
 
 To submit a Spark job inside the [DC/OS Overlay Network][16]:
 
-    $ dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos"
+    $ dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos --class MySampleClass http://external.website/mysparkapp.jar"
 
 Note that DC/OS Overlay support requires the [UCR][17], rather than
 the default Docker Containerizer, so you must set `--conf spark.mesos.containerizer=mesos`.
