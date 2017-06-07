@@ -114,19 +114,23 @@ def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
     return len(running_tasks) >= expected_tasks
 
 
-def _get_spark_options(options = {}):
+def _get_spark_options(options = None):
+    if options is None:
+        options = {}
+
     if hdfs_enabled():
-        options.update({"hdfs":
-                        {"config-url":
-                         "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"}})
+        options["hdfs"] = options.get("hdfs", {})
+        options["hdfs"]["config-url"] = "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
 
     if is_strict():
-        options.update({'service':
-                            {"principal": "service-acct"},
-                        "security":
-                            {"mesos":
-                                 {"authentication":
-                                      {"secret_name": "secret"}}}})
+        options["service"] = options.get("service", {})
+        options["service"]["principal"] = "service-acct"
+
+        options["security"] = options.get("security", {})
+        options["security"]["mesos"] = options["security"].get("mesos", {})
+        options["security"]["mesos"]["authentication"] = options["security"]["mesos"].get("authentication", {})
+        options["security"]["mesos"]["authentication"]["secret_name"] = "secret"
+
 
     return options
 

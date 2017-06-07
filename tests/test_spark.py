@@ -136,6 +136,8 @@ def test_s3():
     assert len(list(s3.list("linecount-out"))) > 0
 
 
+# Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
+@pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
 def test_marathon_group():
     app_id = "/path/to/spark"
@@ -145,6 +147,8 @@ def test_marathon_group():
 
     try:
         test_jar()
+
+        LOGGER.info("Uninstalling app_id={}".format(app_id))
         shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
     finally:
         dcos.config.unset("spark.app_id")
