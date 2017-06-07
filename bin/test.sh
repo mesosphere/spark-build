@@ -29,7 +29,7 @@ start_cluster() {
         echo "Using existing cluster: $DCOS_URL"
     else
         echo "Launching new cluster"
-        CCM_JSON=$(CCM_AGENTS=5 ${COMMONS_DIR}/tools/launch_ccm_cluster.py)
+        CCM_JSON=$(CCM_AGENTS=5 ${COMMONS_DIR}/tools/launch_ccm_cluster.py --configure=nomaster)
         DCOS_URL=$(echo "${CCM_JSON}" | jq .url)
         if [ $? -ne 0 -o "$DCOS_URL" = "http://" ]; then
             exit 1
