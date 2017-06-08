@@ -88,7 +88,8 @@ Then run the [release build][1]
 # Wait for apache/spark to tag a release (follow the developers' email
 # list).  Let 2.0.1 be the release version.
 git fetch upstream --tags
-git checkout custom-2.0.0
+git checkout -b custom-branch-2.0.1 custom-branch-2.0.0
+git push origin custom-branch-2.0.1
 git rebase v2.0.1
 git tag -a custom-2.0.1
 git push origin custom-2.0.1
