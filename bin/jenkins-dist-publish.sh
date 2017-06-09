@@ -12,14 +12,13 @@ function publish_dists() {
     do
         if does_profile_exist "hadoop-${HADOOP_VERSION}"; then
             publish_dist "${HADOOP_VERSION}"
-            # publish_docker "${HADOOP_VERSION}"
         fi
     done
 }
 
 # $1: hadoop version (e.g. "2.6")
 function publish_dist() {
-    HADOOP_VERSION=$1 make dist
+    DIST=prod HADOOP_VERSION=$1 make dist
     rename_dist
     AWS_ACCESS_KEY_ID=${PROD_AWS_ACCESS_KEY_ID} \
                      AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY} \
@@ -34,6 +33,5 @@ SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.0.2"
 source "${DIR}/jenkins.sh"
 
 pushd "${SPARK_BUILD_DIR}"
-docker_login
 publish_dists
 popd

@@ -102,13 +102,13 @@ function make_prod_distribution {
     popd
 }
 
-# rename spark/spark-*.tgz to spark/spark-<TAG>.tgz
+# rename build/dist/spark-*.tgz to build/dist/spark-<TAG>.tgz
 # globals: $SPARK_VERSION
 function rename_dist {
     SPARK_DIST_DIR="spark-${SPARK_VERSION}-bin-${HADOOP_VERSION}"
     SPARK_DIST="${SPARK_DIST_DIR}.tgz"
 
-    pushd "${SPARK_DIR}"
+    pushd "${DIST_DIR}"
     tar xvf spark-*.tgz
     rm spark-*.tgz
     mv spark-* "${SPARK_DIST_DIR}"
@@ -117,9 +117,9 @@ function rename_dist {
     popd
 }
 
-# uploads spark/spark-*.tgz to S3
+# uploads build/spark/spark-*.tgz to S3
 function upload_to_s3 {
-    aws s3 cp --acl public-read "${SPARK_DIR}/${SPARK_DIST}" "${S3_URL}"
+    aws s3 cp --acl public-read "${DIST_DIR}/${SPARK_DIST}" "${S3_URL}"
 }
 
 # $1: hadoop version (e.g. "2.6")
