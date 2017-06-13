@@ -33,7 +33,7 @@ function make_distribution {
 }
 
 function make_manifest_distribution {
-    SPARK_DIST_URI=$(default_spark_dist)
+    SPARK_DIST_URI=${SPARK_DIST_URI:-$(default_spark_dist)}
     (cd "${DIST_DIR}" && wget "${SPARK_DIST_URI}")
 }
 
