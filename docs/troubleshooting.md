@@ -24,4 +24,4 @@ The Spark CLI is integrated with the dispatcher so that they always use the same
 
 To debug authentication in a Spark job, enable Java security debug output:
 
-    $ dcos spark run --submit-args="--conf sun.security.krb5.debug=true..."
+    dcos spark run --submit-args="--conf sun.security.krb5.debug=true..."

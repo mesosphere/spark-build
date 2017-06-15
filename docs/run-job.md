@@ -9,11 +9,11 @@ enterprise: 'no'
 
 1.  Run the job.
 
-        $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
+        dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
-        $ dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
+        dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
 
-        $ dcos spark run --submit-args="http://external.website/mysparkapp.R"
+        dcos spark run --submit-args="http://external.website/mysparkapp.R"
 
     `dcos spark run` is a thin wrapper around the standard Spark `spark-submit` script. You can submit arbitrary pass-through options to this script via the `--submit-args` options.
 
@@ -37,7 +37,7 @@ All properties are submitted through the `--submit-args` option to `dcos spark r
 
 Certain common properties have their own special names. You can view these through `dcos spark run --help`. Here is an example of using `--supervise`:
 
-    $ dcos spark run --submit-args="--conf spark.executor.memory=4g --supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
+    dcos spark run --submit-args="--conf spark.executor.memory=4g --supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 ## Configuration file
 
@@ -49,7 +49,7 @@ To set Spark properties with a configuration file, create a
 
 To submit a Spark job inside the [DC/OS Overlay Network][16]:
 
-    $ dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos --class MySampleClass http://external.website/mysparkapp.jar"
+    dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos --class MySampleClass http://external.website/mysparkapp.jar"
 
 Note that DC/OS Overlay support requires the [UCR][17], rather than
 the default Docker Containerizer, so you must set `--conf spark.mesos.containerizer=mesos`.

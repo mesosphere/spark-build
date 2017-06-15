@@ -30,7 +30,7 @@ Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect t
 
 1.  A krb5.conf file tells Spark how to connect to your KDC.  Base64 encode this file:
 
-        $ cat krb5.conf | base64
+        cat krb5.conf | base64
 
 1.  Add the following to your JSON configuration file to enable Kerberos in Spark:
 
@@ -46,7 +46,7 @@ Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect t
 
     Base64 encode your keytab:
 
-        $ cat spark.keytab | base64
+        cat spark.keytab | base64
 
     And add the following to your configuration file:
 
@@ -61,7 +61,7 @@ Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect t
 
 1.  Install Spark with your custom configuration, here called `options.json`:
 
-        $ dcos package install --options=options.json spark
+        dcos package install --options=options.json spark
 
 ## Job Submission
 
@@ -73,13 +73,13 @@ Keytabs are valid infinitely, while tickets can expire. Especially for long-runn
 
 Submit the job with the keytab:
 
-    $ dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
+    dcos spark run --submit-args="--principal user@REALM --keytab <keytab-file-path>..."
 
 ### TGT Authentication
 
 Submit the job with the ticket:
 
-    $ dcos spark run --principal user@REALM --tgt <ticket-file-path>
+    dcos spark run --principal user@REALM --tgt <ticket-file-path>
 
 **Note:** These credentials are security-critical. We highly recommended configuring SSL encryption between the Spark components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
 
