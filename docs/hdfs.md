@@ -5,16 +5,19 @@ menu_order: 20
 enterprise: 'no'
 ---
 
-To configure Spark for a specific HDFS cluster, configure `hdfs.config-url` to be a URL that serves your `hdfs-site.xml` and `core-site.xml`. For example:
+You can configure Spark for a specific HDFS cluster.
 
-    {
-      "hdfs": {
-        "config-url": "http://mydomain.com/hdfs-config"
-      }
-    }
+To configure `hdfs.config-url` to be a URL that serves your `hdfs-site.xml` and `core-site.xml`, use this example where `http://mydomain.com/hdfs-config/hdfs-site.xml` and `http://mydomain.com/hdfs-config/core-site.xml` are valid URLs:
 
+```json
+{
+  "hdfs": {
+    "config-url": "http://mydomain.com/hdfs-config"
+  }
+}
+```
 
-where `http://mydomain.com/hdfs-config/hdfs-site.xml` and `http://mydomain.com/hdfs-config/core-site.xml` are valid URLs.[Learn more][8].
+For more information, see [Inheriting Hadoop Cluster Configuration][8].
 
 For DC/OS HDFS, these configuration files are served at `http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connection`, where `<hdfs.framework-name>` is a configuration variable set in the HDFS package, and `<port>` is the port of its marathon app.
 
@@ -24,11 +27,11 @@ You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters from Spa
 
 ## HDFS Configuration
 
-Once you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect to it. See instructions [here](#hdfs).
+After you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect to it. See instructions [here](#hdfs).
 
 ## Installation
 
-1.  A krb5.conf file tells Spark how to connect to your KDC.  Base64 encode this file:
+1.  A `krb5.conf` file tells Spark how to connect to your KDC.  Base64 encode this file:
 
         cat krb5.conf | base64
 

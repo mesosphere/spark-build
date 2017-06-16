@@ -38,7 +38,7 @@ DC/OS Spark includes The [Spark History Server][3]. Because the history server r
           }
         }
 
-1.  Install The Spark Dispatcher:
+1.  Install the Spark dispatcher:
 
         dcos package install spark --options=spark-dispatcher-options.json
 
