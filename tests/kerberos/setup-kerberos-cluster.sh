@@ -33,14 +33,19 @@
 # 17. cp /vol/krb5.conf /etc/ && cp /vol/hdfs-site.xml /etc/hadoop/ && cp /vol/core-site.xml /etc/hadoop/ && kinit -k -t /vol/keytabs/hdfs.name-0-node.hdfs.mesos.keytab hdfs/name-0-node.hdfs.mesos@LOCAL
 # 18. SPARK_USER=core ./bin/spark-submit --conf spark.mesos.executor.docker.forcePullImage=true --conf spark.driver.extraJavaOptions="-Dsun.security.krb5.debug=true" --conf spark.mesos.executor.docker.image=mgummelt/spark:test --conf spark.mesos.executor.home=/opt/spark/dist --master mesos://leader.mesos:5050 --class HDFSWordCount /vol/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar hdfs:///<file>
 
-set -e -o pipefail
+set -euo pipefail
+set -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${DIR}/../../"
-
-if [[ "${S3_BUCKET}" == "" ]]; then
-    echo "Missing required env vars."
-fi
+S3_PATH=""
+HDFS_PRIMARY="hdfs"
+HTTP_PRIMARY="HTTP"
+FRAMEWORK_NAME="hdfs"
+DOMAIN="${FRAMEWORK_NAME}.autoip.dcos.thisdcos.directory"
+REALM="LOCAL"
+LINUX_USER="core"
+KEYTAB_FILE="hdfs.keytab"
 
 echo "Adding kdc marathon app..."
 dcos marathon app add kdc.json
@@ -59,81 +64,63 @@ SLAVE_HOSTNAME=$(dcos node --json | jq -r ".[] | select(.id==\"${SLAVE_ID}\") | 
 
 echo "Getting docker container id..."
 DOCKER_PS_CMD="docker ps | sed -n '2p' | cut -d\" \" -f1"
-DOCKER_CONTAINER_ID=$(dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "${DOCKER_PS_CMD}")
+DOCKER_CONTAINER_ID=$(dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "${DOCKER_PS_CMD}")
+echo "DOCKER_CONTAINER_ID=${DOCKER_CONTAINER_ID}"
+
 
 echo "Adding Kerberos principals..."
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/name-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/name-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/name-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/name-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/journal-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/journal-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/journal-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/journal-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/journal-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/journal-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/data-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/data-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/data-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/data-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/data-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password HTTP/data-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/zkfc-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password hdfs/zkfc-1-node.hdfs.mesos@LOCAL"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/name-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/name-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/name-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/name-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/journal-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/journal-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/journal-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/journal-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/journal-2-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/journal-2-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/data-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/data-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/data-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/data-1-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/data-2-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HTTP_PRIMARY}/data-2-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/zkfc-0-node.${DOMAIN}@${REALM}"
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} --option StrictHostKeyChecking=no "docker exec ${DOCKER_CONTAINER_ID} kadmin -l add --use-defaults --random-password ${HDFS_PRIMARY}/zkfc-1-node.${DOMAIN}@${REALM}"
 
-echo "Writing keytab files..."
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.name-0-node.hdfs.mesos.keytab hdfs/name-0-node.hdfs.mesos@LOCAL HTTP/name-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.name-1-node.hdfs.mesos.keytab hdfs/name-1-node.hdfs.mesos@LOCAL HTTP/name-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.journal-0-node.hdfs.mesos.keytab hdfs/journal-0-node.hdfs.mesos@LOCAL HTTP/journal-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.journal-1-node.hdfs.mesos.keytab hdfs/journal-1-node.hdfs.mesos@LOCAL HTTP/journal-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.journal-2-node.hdfs.mesos.keytab hdfs/journal-2-node.hdfs.mesos@LOCAL HTTP/journal-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.data-0-node.hdfs.mesos.keytab hdfs/data-0-node.hdfs.mesos@LOCAL HTTP/data-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.data-1-node.hdfs.mesos.keytab hdfs/data-1-node.hdfs.mesos@LOCAL HTTP/data-1-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.data-2-node.hdfs.mesos.keytab hdfs/data-2-node.hdfs.mesos@LOCAL HTTP/data-2-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.zkfc-0-node.hdfs.mesos.keytab hdfs/zkfc-0-node.hdfs.mesos@LOCAL"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k hdfs.zkfc-1-node.hdfs.mesos.keytab hdfs/zkfc-1-node.hdfs.mesos@LOCAL"
-
-echo "Moving keytabs into a keytabs/ directory"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mkdir -p keytabs"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.name-0-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.name-1-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.journal-0-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.journal-1-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.journal-2-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.data-0-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.data-1-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.data-2-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.zkfc-0-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} mv hdfs.zkfc-1-node.hdfs.mesos.keytab keytabs/"
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} tar czf keytabs.tar.gz keytabs"
+echo "Creating ${KEYTAB_FILE}..."
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker exec ${DOCKER_CONTAINER_ID} kadmin -l ext -k ${KEYTAB_FILE} ${HDFS_PRIMARY}/name-0-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/name-0-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/name-1-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/name-1-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/journal-0-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/journal-0-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/journal-1-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/journal-1-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/journal-2-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/journal-2-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/data-0-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/data-0-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/data-1-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/data-1-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/data-2-node.${DOMAIN}@${REALM} ${HTTP_PRIMARY}/data-2-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/zkfc-0-node.${DOMAIN}@${REALM} ${HDFS_PRIMARY}/zkfc-1-node.${DOMAIN}@${REALM}"
 
 echo "Copying keytabs.tar.gz to the current working directory..."
-dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker cp ${DOCKER_CONTAINER_ID}:/keytabs.tar.gz /home/core/keytabs.tar.gz"
-dcos node ssh --master-proxy --leader "scp core@${SLAVE_HOSTNAME}:/home/core/keytabs.tar.gz /home/core/keytabs.tar.gz"
-scp core@${MASTER_PUBLIC_IP}:/home/core/keytabs.tar.gz .
+dcos node ssh --master-proxy --mesos-id=${SLAVE_ID} "docker cp ${DOCKER_CONTAINER_ID}:/${KEYTAB_FILE} /home/${LINUX_USER}/${KEYTAB_FILE}"
+dcos node ssh --master-proxy --leader --option StrictHostKeyChecking=no "scp ${LINUX_USER}@${SLAVE_HOSTNAME}:/home/${LINUX_USER}/${KEYTAB_FILE} /home/${LINUX_USER}/${KEYTAB_FILE}"
+scp ${LINUX_USER}@${MASTER_PUBLIC_IP}:/home/${LINUX_USER}/${KEYTAB_FILE} .
 
-echo "Uploading keytabs.tar.gz to s3://${S3_BUCKET}/${S3_PATH}"
-aws s3 cp ./keytabs.tar.gz s3://${S3_BUCKET}/${S3_PATH} --acl public-read
+echo "Uploading ${KEYTAB_FILE} to s3://${S3_BUCKET}/${S3_PATH}"
+aws s3 cp ./${KEYTAB_FILE} s3://${S3_BUCKET}/${S3_PATH} --acl public-read
 
 echo "Uploading krb5.conf to s3://${S3_BUCKET}/${S3_PATH}"
 aws s3 cp ./krb5.conf s3://${S3_BUCKET}/${S3_PATH} --acl public-read
 
-echo "Uploading spark job"
-(cd "${SPARK_BUILD_DIR}/tests/jobs/scala" && sbt assembly)
-aws s3 cp "${SPARK_BUILD_DIR}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar" s3://${S3_BUCKET}/${S3_PATH} --acl public-read
+dcos security secrets create /hdfs-keytab --value-file hdfs.keytab.base64
 
 cat <<EOF > /tmp/hdfs-kerberos-options.json
 {
-  "service": {
-    "user": "core",
-    "kerberos": {
-      "enabled": true,
-      "keytabs_uri": "https://${S3_BUCKET}.s3.amazonaws.com/${S3_PATH}keytabs.tar.gz",
-      "krb5_conf_uri": "https://${S3_BUCKET}.s3.amazonaws.com/${S3_PATH}krb5.conf"
-    }
+  "hdfs": {
+    "security": {
+      "kerberos": {
+        "enabled": true,
+        "krb5_conf_uri": "https://${S3_BUCKET}.s3.amazonaws.com/${S3_PATH}krb5.conf",
+        "keytab_secret_path": "/hdfs-keytab"
+      },
+      "tls": {
+        "enabled": true
+      }
+    },
+   "hadoop_root_logger": "DEBUG,console"
   }
 }
 EOF
 
-echo "Installing Kerberized HDFS..."
-dcos package install --yes hdfs --options=/tmp/hdfs-kerberos-options.json
+# echo "Installing Kerberized HDFS..."
+# dcos package install --yes hdfs --options=/tmp/hdfs-kerberos-options.json
