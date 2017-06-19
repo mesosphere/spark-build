@@ -26,6 +26,7 @@ def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
     utils.require_spark()
+    _upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
 def teardown_module(module):
@@ -128,10 +129,10 @@ def test_s3():
             "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
                 os.environ["AWS_SECRET_ACCESS_KEY"]),
             "--class", "S3Job"]
-    utils.run_tests(_upload_file(os.environ["SCALA_TEST_JAR_PATH"]),
-               app_args,
-               "",
-               args)
+    utils.run_tests(_scala_test_jar_url(),
+                    app_args,
+                    "",
+                    args)
 
     assert len(list(s3.list("linecount-out"))) > 0
 
@@ -154,6 +155,28 @@ def test_marathon_group():
         dcos.config.unset("spark.app_id")
 
 
+@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+@pytest.mark.sanity
+def test_secrets():
+    try:
+        secret_name = "secret"
+        secret_contents = "mgummelt"
+        utils.create_secret(secret_name, secret_contents)
+
+        secret_file_name = "secret_file"
+        output = "Contents of file {}: {}".format(secret_file_name, secret_contents)
+        args = ["--conf", "spark.mesos.containerizer=mesos",
+                "--conf", "spark.mesos.driver.secret.name={}".format(secret_name),
+                "--conf", "spark.mesos.driver.secret.filename={}".format(secret_file_name),
+                "--class", "SecretsJob"]
+        utils.run_tests(_scala_test_jar_url(),
+                        secret_file_name,
+                        output,
+                        args)
+    finally:
+        utils.delete_secret(secret_name)
+
+
 def _run_janitor(service_name):
     janitor_cmd = (
         'docker run mesosphere/janitor /janitor.py '
@@ -164,7 +187,7 @@ def _run_janitor(service_name):
 
 
 def _upload_file(file_path):
-    print("Uploading {} to s3://{}/{}".format(
+    LOGGER.info("Uploading {} to s3://{}/{}".format(
         file_path,
         os.environ['S3_BUCKET'],
         os.environ['S3_PREFIX']))
@@ -173,3 +196,6 @@ def _upload_file(file_path):
 
     basename = os.path.basename(file_path)
     return s3.http_url(basename)
+
+def _scala_test_jar_url():
+    return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))

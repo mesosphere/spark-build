@@ -2,9 +2,11 @@ import dcos.config
 import dcos.http
 import dcos.package
 
+import json
 import logging
 import os
 import re
+import requests
 import shakedown
 import subprocess
 import urllib
@@ -146,6 +148,23 @@ def run_tests(app_url, app_args, expected_output, args=[]):
         LOGGER.error("task stdout: {}".format(stdout))
         LOGGER.error("task stderr: {}".format(stderr))
         raise Exception("{} not found in stdout".format(expected_output))
+
+
+def delete_secret(name):
+    LOGGER.info("Deleting secret name={}".format(name))
+
+    dcos_url = dcos.config.get_config_val("core.dcos_url")
+    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
+    dcos.http.delete(url)
+
+
+def create_secret(name, value):
+    LOGGER.info("Creating secret name={}".format(name))
+
+    dcos_url = dcos.config.get_config_val("core.dcos_url")
+    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
+    data = {"path": name, "value": value}
+    dcos.http.put(url, data=json.dumps(data))
 
 
 def _submit_job(app_url, app_args, args=[]):
