@@ -31,7 +31,7 @@ DC/OS Spark includes The [Spark History Server][3]. Because the history server r
 
         {
           "service": {
-            "spark-history-server-url": "http://<dcos_url>/service/spark-history
+            "spark-history-server-url": "http://<dcos_url>/service/spark-history"
           },
           "hdfs": {
             "config-url": "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
