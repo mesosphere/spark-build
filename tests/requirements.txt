@@ -1,2 +1,2 @@
 boto
--e git+https://github.com/dcos/shakedown.git@master#egg=shakedown
+dcos-shakedown
