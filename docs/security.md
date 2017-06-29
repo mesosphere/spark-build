@@ -4,7 +4,7 @@ menu_order: 40
 enterprise: 'no'
 ---
 
-This topic describes how to configure security for Spark.
+This topic describes how to configure DC/OS service accounts for Spark.
 
 When running in [DC/OS strict security mode](https://docs.mesosphere.com/1.9/security/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/security/service-auth/).
 
@@ -12,7 +12,7 @@ Follow these instructions to [authenticate in strict mode](https://docs.mesosphe
 
 # Spark SSL
 
-SSL support in DC/OS Spark encrypts the following channels:
+SSL support in DC/OS Apache Spark encrypts the following channels:
 
 *   From the [DC/OS admin router][11] to the dispatcher.
 *   From the dispatcher to the drivers.

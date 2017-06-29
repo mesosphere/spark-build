@@ -4,7 +4,7 @@ menu_order: 30
 enterprise: 'no'
 ---
 
-DC/OS Spark includes The [Spark History Server][3]. Because the history server requires HDFS, you must explicitly enable it.
+DC/OS Apache Spark includes The [Spark History Server][3]. Because the history server requires HDFS, you must explicitly enable it.
 
 1.  Install HDFS:
 

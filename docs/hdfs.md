@@ -45,7 +45,7 @@ After you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect 
            }
         }
 
-1. If you've enabled the history server via `history-server.enabled`, you must also configure the principal and keytab for the history server.  **WARNING**: The keytab contains secrets, so you should ensure you have SSL enabled while installing DC/OS Spark.
+1. If you've enabled the history server via `history-server.enabled`, you must also configure the principal and keytab for the history server.  **WARNING**: The keytab contains secrets, so you should ensure you have SSL enabled while installing DC/OS Apache Spark.
 
     Base64 encode your keytab:
 
@@ -68,7 +68,7 @@ After you've set up a Kerberos-enabled HDFS cluster, configure Spark to connect 
 
 ## Job Submission
 
-To authenticate to a Kerberos KDC, DC/OS Spark supports keytab files as well as ticket-granting tickets (TGTs).
+To authenticate to a Kerberos KDC, DC/OS Apache Spark supports keytab files as well as ticket-granting tickets (TGTs).
 
 Keytabs are valid infinitely, while tickets can expire. Especially for long-running streaming jobs, keytabs are recommended.
 

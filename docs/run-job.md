@@ -56,11 +56,11 @@ the default Docker Containerizer, so you must set `--conf spark.mesos.containeri
 
 # Versioning
 
-The DC/OS Spark Docker image contains OpenJDK 8 and Python 2.7.6.
+The DC/OS Apache Spark Docker image contains OpenJDK 8 and Python 2.7.6.
 
-DC/OS Spark distributions 1.X are compiled with Scala 2.10.  DC/OS Spark distributions 2.X are compiled with Scala 2.11.  Scala is not binary compatible across minor verions, so your Spark job must be compiled with the same Scala version as your version of DC/OS Spark.
+DC/OS Apache Spark distributions 1.X are compiled with Scala 2.10.  DC/OS Apache Spark distributions 2.X are compiled with Scala 2.11.  Scala is not binary compatible across minor verions, so your Spark job must be compiled with the same Scala version as your version of DC/OS Apache Spark.
 
-The default DC/OS Spark distribution is compiled against Hadoop 2.6 libraries.  However, you may choose a different version by following the instructions in the "Customize Spark Distribution" section of the Installation page.
+The default DC/OS Apache Spark distribution is compiled against Hadoop 2.6 libraries.  However, you may choose a different version by following the instructions in the "Customize Spark Distribution" section of the Installation page.
 
 
 [13]: http://spark.apache.org/docs/latest/submitting-applications.html

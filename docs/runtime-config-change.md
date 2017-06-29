@@ -5,7 +5,7 @@ feature_maturity: stable
 enterprise: 'no'
 ---
 
-You can customize DC/OS Spark in-place when it is up and running.
+You can customize DC/OS Apache Spark in-place when it is up and running.
 
 1.  Go to the DC/OS GUI.
 

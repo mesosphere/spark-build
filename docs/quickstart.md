@@ -5,12 +5,12 @@ feature_maturity: stable
 enterprise: 'no'
 ---
 
-This tutorial will get you up and running in minutes with Spark. You will install the DC/OS Spark.
+This tutorial will get you up and running in minutes with Spark. You will install the DC/OS Apache Spark.
 
 **Prerequisites:**
 
 -  [DC/OS and DC/OS CLI installed](https://docs.mesosphere.com/1.9/installing/) with a minimum of three agent nodes with eight GB of memory and ten GB of disk available on each agent.
--  Depending on your [security mode](https://docs.mesosphere.com/1.9/overview/security/security-modes/), Spark requires a service authentication for access to DC/OS. For more information, see [Configuring DC/OS Access for Spark](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
+-  Depending on your [security mode](https://docs.mesosphere.com/1.9/overview/security/security-modes/), Spark requires service authentication for access to DC/OS. For more information, see [Configuring DC/OS Access for Spark](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
 
    | Security mode | Service Account |
    |---------------|-----------------------|
@@ -45,12 +45,12 @@ This tutorial will get you up and running in minutes with Spark. You will instal
        
     -  Type `dcos spark` to view the Spark CLI options.
 
-1.  Run the sample Java Spark Pi job for DC/OS. This runs a Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar). 
+1.  Run the sample SparkPi jar for DC/OS. This runs a Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar). 
 
     1.  Run this command: 
 
         ```bash
-        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
+        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30"
         ```
         
         Your output should resemble:
@@ -80,7 +80,7 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Pi is roughly 3.141853333333333
         ```
 
-1.  Run a Python Spark Pi job. This runs a Python Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/examples/pi.py). 
+1.  Run a Python SparkPi jar. This runs a Python Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/examples/pi.py). 
 
     1.  Run this command:
     
@@ -110,7 +110,7 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Pi is roughly 3.142211
         ```
 
-1.  Run the [SparkDataFrame](https://spark.apache.org/docs/latest/sparkr.html) example job. You can view the example source [here](https://downloads.mesosphere.com/spark/examples/dataframe.R). 
+1.  Run an R job. You can view the example source [here](https://downloads.mesosphere.com/spark/examples/dataframe.R). 
 
     1.  Run this command:
     

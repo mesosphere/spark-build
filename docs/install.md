@@ -10,7 +10,7 @@ Spark is available in the Universe and can be installed by using either the GUI 
 **Prerequisites:**
 
 - [DC/OS and DC/OS CLI installed](https://docs.mesosphere.com/1.9/installing/).
-- Depending on your [security mode](https://docs.mesosphere.com/1.9/overview/security/security-modes/), Kafka requires a service authentication for access to DC/OS. For more information, see [Configuring DC/OS Access for Kafka](https://docs.mesosphere.com/service-docs/kafka/kafka-auth/).
+- Depending on your [security mode](https://docs.mesosphere.com/1.9/overview/security/security-modes/), Spark requires service authentication for access to DC/OS. For more information, see [Configuring DC/OS Access for Spark](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
   
   | Security mode | Service Account |
   |---------------|-----------------------|
@@ -66,7 +66,7 @@ dcos package describe spark --config
 
 ## Customize Spark Distribution
 
-DC/OS Spark does not support arbitrary Spark distributions, but Mesosphere does provide multiple pre-built distributions, primarily used to select Hadoop versions.  
+DC/OS Apache Spark does not support arbitrary Spark distributions, but Mesosphere does provide multiple pre-built distributions, primarily used to select Hadoop versions.  
 
 To use one of these distributions, select your Spark distribution from [here](https://github.com/mesosphere/spark-build/blob/master/docs/spark-versions.md), then select the corresponding Docker image from [here](https://hub.docker.com/r/mesosphere/spark/tags/), then use those values to set the following configuration variables:
 
@@ -99,15 +99,15 @@ For development purposes, you can install Spark on a local DC/OS cluster. For th
    dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
    ```
 
-NOTE: A limited resource environment such as DC/OS Vagrant restricts some of the features available in DC/OS Spark.  For example, unless you have enough resources to start up a 5-agent cluster, you will not be able to install DC/OS HDFS, and you thus won't be able to enable the history server.
+NOTE: A limited resource environment such as DC/OS Vagrant restricts some of the features available in DC/OS Apache Spark.  For example, unless you have enough resources to start up a 5-agent cluster, you will not be able to install DC/OS HDFS, and you thus won't be able to enable the history server.
 
 Also, a limited resource environment can restrict how you size your executors, for example with `spark.executor.memory`.
 
 # Multiple Installations
 
-Installing multiple instances of the DC/OS Spark package provides basic multi-team support. Each dispatcher displays only the jobs submitted to it by a given team, and each team can be assigned different resources.
+Installing multiple instances of the DC/OS Apache Spark package provides basic multi-team support. Each dispatcher displays only the jobs submitted to it by a given team, and each team can be assigned different resources.
 
-To install multiple instances of the DC/OS Spark package, set each `service.name` to a unique name (e.g.: `spark-dev`) in your JSON configuration file during installation. For example, create a JSON options file name `multiple.json`:
+To install multiple instances of the DC/OS Apache Spark package, set each `service.name` to a unique name (e.g.: `spark-dev`) in your JSON configuration file during installation. For example, create a JSON options file name `multiple.json`:
 
 ```json
 {
