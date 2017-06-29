@@ -5,7 +5,7 @@ feature_maturity: stable
 enterprise: 'no'
 ---
 
-This tutorial will get you up and running in minutes with Spark. You will install the DC/OS Apache Spark.
+This tutorial will get you up and running in minutes with Spark. You will install the DC/OS Apache Spark service.
 
 **Prerequisites:**
 
@@ -19,7 +19,7 @@ This tutorial will get you up and running in minutes with Spark. You will instal
    | Strict        | Required |
 
 
-1.  Install the Spark package. This may take a few minutes.
+1.  Install the Spark package. This may take a few minutes. This installs the Spark DC/OS service, Spark CLI, dispatcher, and, optionally, the history server. See [Custom Installation](/service-docs/spark/v1.0.9-2.1.0-1/install/#custom) to install the history server.
 
     ```bash
     dcos package install spark
@@ -44,6 +44,11 @@ This tutorial will get you up and running in minutes with Spark. You will instal
        ![Verify spark installation](/img/spark-gui-install.png)
        
     -  Type `dcos spark` to view the Spark CLI options.
+    -  You can install the Spark CLI with this command:
+     
+       ```bash
+       dcos package install spark --cli
+       ```
 
 1.  Run the sample SparkPi jar for DC/OS. This runs a Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar). 
 
@@ -149,6 +154,6 @@ This tutorial will get you up and running in minutes with Spark. You will instal
 
 ## Next Steps
 
-- To view the status of your job, visit the Spark cluster dispatcher UI at `http://<dcos-url>/service/spark/` . 
+- To view the status of your job, run the `dcos spark webui` command and then visit the Spark cluster dispatcher UI at `http://<dcos-url>/service/spark/` . 
 - To view the logs, the Mesos UI at `http://<your-master-ip>/mesos`.
 - To view details about your Spark job, run the `dcos task log --completed <submissionId>` command.

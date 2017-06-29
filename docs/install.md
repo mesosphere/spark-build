@@ -19,20 +19,21 @@ Spark is available in the Universe and can be installed by using either the GUI 
   | Strict        | Required |
 
 # Default Installation
-To start a basic Spark cluster, run the following command on the DC/OS CLI.
+To install the DC/OS Apache Spark service, run the following command on the DC/OS CLI. This installs the Spark DC/OS service, Spark CLI, dispatcher, and, optionally, the history server. See [Custom Installation][7] to install the history server.
 
 ```bash
 dcos package install spark
 ```
 
-This command installs the Spark CLI, dispatcher, and, optionally, the history server. See [Custom Installation][7] to install the history server.
-
-Go to the **Services** > **Deployments** tab of the DC/OS GUI to monitor the deployment. Once it is
-complete, visit Spark at `http://<dcos-url>/service/spark/`.
+Go to the **Services** > **Deployments** tab of the DC/OS GUI to monitor the deployment. When it has finished deploying , visit Spark at `http://<dcos-url>/service/spark/`.
 
 You can also [install Spark via the DC/OS GUI](https://docs.mesosphere.com/1.9/usage/webinterface/#universe).
 
-**Note:** If you install Spark via the GUI, run the following command from the DC/OS CLI to install the Spark CLI:
+
+## Spark CLI
+You can install the Spark CLI with this command. This is useful if you already have a Spark cluster running, but need the Spark CLI. 
+
+**Important:** If you install Spark via the DC/OS GUI, you must install the Spark CLI as a separate step from the DC/OS CLI.
 
 ```bash
 dcos package install spark --cli
