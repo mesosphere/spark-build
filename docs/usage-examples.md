@@ -9,15 +9,15 @@ enterprise: 'no'
 
 1.  Run a Spark job:
 
-        $ dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 30"
+        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30"
 
 1.  Run a Python Spark job:
 
-        $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/pi.py 30"
+        dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/pi.py 30"
 
 1.  Run an R Spark job:
 
-        $ dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/dataframe.R"
+        dcos spark run --submit-args="https://downloads.mesosphere.com/spark/examples/dataframe.R"
 
 1.  View your job:
 

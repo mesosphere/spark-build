@@ -2,7 +2,7 @@
 
 - [Overview](index.md)
 - [Install and Customize](install.md)
-- [Kick the Tires](quick-start.md)
+- [Quickstart](quick-start.md)
 - [HDFS](hdfs.md)
 - [History Server](history-server)
 - [Security](security.md)
