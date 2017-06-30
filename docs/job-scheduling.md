@@ -59,7 +59,7 @@ The following is a description of the most common Spark on Mesos scheduling prop
 <tr>
 <td>spark.executor.cores</td>
 <td>All available cores in the offer</td>
-<td>Coarse-grained mode only. DC/OS Spark >= 1.6.1. Executor CPU allocation.</td>
+<td>Coarse-grained mode only. DC/OS Apache Spark >= 1.6.1. Executor CPU allocation.</td>
 </tr>
 
 <tr>

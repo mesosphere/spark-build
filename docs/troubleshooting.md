@@ -10,7 +10,7 @@ The Mesos cluster dispatcher is responsible for queuing, tracking, and supervisi
 
 # Jobs
 
-*   DC/OS Spark jobs are submitted through the dispatcher, which displays Spark properties and job state. Start here to verify that the job is configured as you expect.
+*   DC/OS Apache Spark jobs are submitted through the dispatcher, which displays Spark properties and job state. Start here to verify that the job is configured as you expect.
 
 *   The dispatcher further provides a link to the job's entry in the history server, which displays the Spark Job UI. This UI shows the for the job. Go here to debug issues with scheduling and performance.
 
@@ -24,4 +24,4 @@ The Spark CLI is integrated with the dispatcher so that they always use the same
 
 To debug authentication in a Spark job, enable Java security debug output:
 
-    $ dcos spark run --submit-args="--conf sun.security.krb5.debug=true..."
+    dcos spark run --submit-args="--conf sun.security.krb5.debug=true..."

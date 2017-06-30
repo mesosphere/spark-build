@@ -9,11 +9,11 @@ enterprise: 'no'
 
 1.  Run the job.
 
-        $ dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
+        dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
 
-        $ dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
+        dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
 
-        $ dcos spark run --submit-args="http://external.website/mysparkapp.R"
+        dcos spark run --submit-args="http://external.website/mysparkapp.R"
 
     `dcos spark run` is a thin wrapper around the standard Spark `spark-submit` script. You can submit arbitrary pass-through options to this script via the `--submit-args` options.
 
@@ -37,7 +37,7 @@ All properties are submitted through the `--submit-args` option to `dcos spark r
 
 Certain common properties have their own special names. You can view these through `dcos spark run --help`. Here is an example of using `--supervise`:
 
-    $ dcos spark run --submit-args="--conf spark.executor.memory=4g --supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
+    dcos spark run --submit-args="--conf spark.executor.memory=4g --supervise --class MySampleClass http://external.website/mysparkapp.jar 30`
 
 ## Configuration file
 
@@ -49,18 +49,18 @@ To set Spark properties with a configuration file, create a
 
 To submit a Spark job inside the [DC/OS Overlay Network][16]:
 
-    $ dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos --class MySampleClass http://external.website/mysparkapp.jar"
+    dcos spark run --submit-args="--conf spark.mesos.containerizer=mesos --conf spark.mesos.network.name=dcos --class MySampleClass http://external.website/mysparkapp.jar"
 
 Note that DC/OS Overlay support requires the [UCR][17], rather than
 the default Docker Containerizer, so you must set `--conf spark.mesos.containerizer=mesos`.
 
 # Versioning
 
-The DC/OS Spark Docker image contains OpenJDK 8 and Python 2.7.6.
+The DC/OS Apache Spark Docker image contains OpenJDK 8 and Python 2.7.6.
 
-DC/OS Spark distributions 1.X are compiled with Scala 2.10.  DC/OS Spark distributions 2.X are compiled with Scala 2.11.  Scala is not binary compatible across minor verions, so your Spark job must be compiled with the same Scala version as your version of DC/OS Spark.
+DC/OS Apache Spark distributions 1.X are compiled with Scala 2.10.  DC/OS Apache Spark distributions 2.X are compiled with Scala 2.11.  Scala is not binary compatible across minor verions, so your Spark job must be compiled with the same Scala version as your version of DC/OS Apache Spark.
 
-The default DC/OS Spark distribution is compiled against Hadoop 2.6 libraries.  However, you may choose a different version by following the instructions in the "Customize Spark Distribution" section of the Installation page.
+The default DC/OS Apache Spark distribution is compiled against Hadoop 2.6 libraries.  However, you may choose a different version by following the instructions in the "Customize Spark Distribution" section of the Installation page.
 
 
 [13]: http://spark.apache.org/docs/latest/submitting-applications.html

@@ -3,100 +3,16 @@ post_title: Security
 menu_order: 40
 enterprise: 'no'
 ---
-# Mesos Security
 
-## SSL
-
-<table class="table">
-  <tr>
-    <td>
-      `security.mesos.ssl.enabled`
-    </td>
-
-    <td>
-      Set to true to enable SSL on Mesos communication (default: false).
-    </td>
-  </tr>
-</table>
-
-
-## Authentication
+This topic describes how to configure DC/OS service accounts for Spark.
 
 When running in [DC/OS strict security mode](https://docs.mesosphere.com/1.9/security/), both the dispatcher and jobs must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphere.com/1.9/security/service-auth/).
 
-Follow these instructions to authenticate in strict mode:
-
-1. Create a service account by following the instructions [here](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
-
-1. Assign Permissions
-
-    First, allow Spark to run tasks as root:
-
-    ```
-    $ curl -k -L -X PUT \
-           -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
-           "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root" \
-           -d '{"description":"Allows root to execute tasks"}' \
-           -H 'Content-Type: application/json'
-
-    $ curl -k -L -X PUT \
-         -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
-         "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/${SERVICE_ACCOUNT_NAME}/create"
-    ```
-
-    Now, you must allow Spark to register under the desired role. This is the value used for `service.role` when installing Spark (default: `*`):
-
-    ```
-    $ export ROLE=<service.role value>
-    $ curl -k -L -X PUT \
-           -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
-           "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}" \
-           -d '{"description":"Allows ${ROLE} to register as a framework with the Mesos master"}' \
-           -H 'Content-Type: application/json'
-
-    $ curl -k -L -X PUT \
-           -H "Authorization: token=$(dcos config show core.dcos_acs_token)" \
-           "$(dcos config show core.dcos_url)/acs/api/v1/acls/dcos:mesos:master:framework:role:${ROLE}/users/${SERVICE_ACCOUNT_NAME}/create"
-    ```
-
-1. Install Spark
-
-    ```
-    $ dcos package install spark --options=config.json
-    ```
-
-    Where `config.json` contains the following JSON. Replace `<principal>` with the name of your service account, and `<secret_name>` with the name of the DC/OS secret containing your service account's private key. These values were created in Step #1 above.
-
-    ```
-    {
-        "service": {
-            "principal": "<principal>",
-            "user": "nobody"
-        },
-        "security": {
-            "mesos": {
-                "authentication": {
-                    "secret_name": "<secret_name>"
-                }
-            }
-        }
-    }
-    ```
-
-1. Submit a Job
-
-    We've now installed the Spark Dispatcher, which is authenticating itself to the Mesos master. Spark jobs are also frameworks that must authenticate. The dispatcher will pass the secret along to the jobs, so all that's left to do is configure our jobs to use DC/OS authentication:
-
-    ```
-    $ PROPS="--conf spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json "
-    $ PROPS+="--conf spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee "
-    $ PROPS+="--conf spark.mesos.principal=<principal>"
-    $ dcos spark run --submit-args="${PROPS} ..."
-    ```
+Follow these instructions to [authenticate in strict mode](https://docs.mesosphere.com/service-docs/spark/spark-auth/).
 
 # Spark SSL
 
-SSL support in DC/OS Spark encrypts the following channels:
+SSL support in DC/OS Apache Spark encrypts the following channels:
 
 *   From the [DC/OS admin router][11] to the dispatcher.
 *   From the dispatcher to the drivers.
@@ -104,47 +20,20 @@ SSL support in DC/OS Spark encrypts the following channels:
 
 There are a number of configuration variables relevant to SSL setup. List them with the following command:
 
-    $ dcos package describe spark --config
+    dcos package describe spark --config
 
-There are only two required variables:
+Here are the required variables:
 
-<table class="table">
-  <tr>
-    <th>
-      Variable
-    </th>
-
-    <th>
-      Description
-    </th>
-  </tr>
-
-  <tr>
-    <td>
-      `spark.ssl.enabled`
-    </td>
-
-    <td>
-      Set to true to enable SSL (default: false).
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-      spark.ssl.keyStoreBase64
-    </td>
-
-    <td>
-      Base64 encoded blob containing a Java keystore.
-    </td>
-  </tr>
-</table>
+| Variable                   | Description                                     |
+|----------------------------|-------------------------------------------------|
+| `spark.ssl.enabled`        | Whether to enable SSL (default: `false`).       |
+| `spark.ssl.keyStoreBase64` | Base64 encoded blob containing a Java keystore. |
 
 The Java keystore (and, optionally, truststore) are created using the [Java keytool][12]. The keystore must contain one private key and its signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly trusted by Java.
 
-Both stores must be base64 encoded, e.g. by:
+Both stores must be base64 encoded, for example:
 
-    $ cat keystore | base64 /u3+7QAAAAIAAAACAAAAAgA...
+    cat keystore | base64 /u3+7QAAAAIAAAACAAAAAgA...
 
 **Note:** The base64 string of the keystore will probably be much longer than the snippet above, spanning 50 lines or so.
 
@@ -163,11 +52,11 @@ With this and the password `secret` for the keystore and the private key, your J
 
 Install Spark with your custom configuration:
 
-    $ dcos package install --options=options.json spark
+    dcos package install --options=options.json spark
 
-In addition to the described configuration, make sure to connect the DC/OS cluster only using an SSL connection, i.e. by using an `https://<dcos-url>`. Use the following command to set your DC/OS URL:
+Make sure to connect the DC/OS cluster only using an SSL connection (i.e. by using an `https://<dcos-url>`). Use the following command to set your DC/OS URL:
 
-    $ dcos config set core.dcos_url https://<dcos-url>
+    dcos config set core.dcos_url https://<dcos-url>
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html

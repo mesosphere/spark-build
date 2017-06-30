@@ -19,9 +19,9 @@ You can customize the Docker image in which Spark runs by extending the standard
 
 1. Then, build an image from your Dockerfile.
 
-        $ docker build -t username/image:tag .
-        $ docker push username/image:tag
+        docker build -t username/image:tag .
+        docker push username/image:tag
 
 1. Reference your custom Docker image with the `--docker-image` option when running a Spark job.
 
-        $ dcos spark run --docker-image=myusername/myimage:v1 --submit-args="http://external.website/mysparkapp.py 30"
+        dcos spark run --docker-image=myusername/myimage:v1 --submit-args="http://external.website/mysparkapp.py 30"

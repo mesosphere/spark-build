@@ -1,24 +1,28 @@
 ---
-post_title: Spark
-menu_order: 110
+post_title: Spark version 1.0.9-2.1.0-1
+nav_title: v1.0.9-2.1.0-1
+menu_order: 0
+post_excerpt: ""
 feature_maturity: stable
 enterprise: 'no'
 ---
 
+Welcome to the documentation for the DC/OS Apache Spark. For more information about new and changed features, see the [release notes](https://github.com/mesosphere/spark-build/releases/).
+
 Apache Spark is a fast and general-purpose cluster computing system for big data. It provides high-level APIs in Scala, Java, Python, and R, and an optimized engine that supports general computation graphs for data analysis. It also supports a rich set of higher-level tools including Spark SQL for SQL and DataFrames, MLlib for machine learning, GraphX for graph processing, and Spark Streaming for stream processing. For more information, see the [Apache Spark documentation][1].
 
-Apache DC/OS Spark consists of [Apache Spark with a few custom commits][17] along with [DC/OS-specific packaging][18].
+DC/OS Apache Spark consists of [Apache Spark with a few custom commits][17] along with [DC/OS-specific packaging][18].
 
-DC/OS Spark includes:
+DC/OS Apache Spark includes:
 
 *   [Mesos Cluster Dispatcher][2]
 *   [Spark History Server][3]
-*   DC/OS Spark CLI
+*   DC/OS Apache Spark CLI
 *   Interactive Spark shell
 
 # Benefits
 
-*   Utilization: DC/OS Spark leverages Mesos to run Spark on the same cluster as other DC/OS services
+*   Utilization: DC/OS Apache Spark leverages Mesos to run Spark on the same cluster as other DC/OS services
 *   Improved efficiency
 *   Simple Management
 *   Multi-team support
