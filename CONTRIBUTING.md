@@ -3,6 +3,8 @@ the specific git commands, and they shouldn't be followed mindlessly.
 They are meant to give an idea of how each process is carried out.
 You should first understand what the hell you're doing.
 
+
+
 # Setup repo
 ```
 # Public fork of Apache Spark.  Used for public pull requests.
@@ -117,6 +119,9 @@ git push origin --tags
 Then run the [release build][2]
 
 # Branches
+
+![Branch Model](./branches.png)
+
 ## upstream
 - `upstream/master` # upstream master
 - `upstream/branch-<version>` # upstream version branch
