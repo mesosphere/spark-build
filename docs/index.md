@@ -1,6 +1,6 @@
 ---
-post_title: Spark version 1.0.9-2.1.0-1
-nav_title: v1.0.9-2.1.0-1
+post_title: Spark version 1.1.0-2.1.1
+nav_title: v1.1.0-2.1.1
 menu_order: 0
 post_excerpt: ""
 feature_maturity: stable
