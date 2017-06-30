@@ -19,18 +19,12 @@ git fetch upstream
 # Pull Request
 
 ```
-git pull upstream
-git checkout -b upstream/master <feature-branch>
-# update origin/master
 git checkout master
-git pull upstream
-git push origin
-# push feature branch
+git pull upstream master
+git checkout -b upstream/master <feature-branch>
+# write feature
 git push origin <feature-branch>
-# create PR against origin/master
-# internal review
-# create PR against upstream/master
-# external review
+# create PR against apache/spark
 ```
 
 # Backport
@@ -116,7 +110,8 @@ git tag -a 1.0.6-2.1.0
 git push origin --tags
 ```
 
-Then run the [release build][2]
+- Run the [release build][2]
+- Write release notes in Github
 
 # Branches
 
