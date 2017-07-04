@@ -5,28 +5,47 @@ It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
 described below.
 
-## Configuring
+## Configure
 
 edit `manifest.json`.
 
-## Push a docker image
+## Build
 
-Build and push a docker image using the Spark distribution specified in `manifest.json`. This is also executed automatically via `make build`, below.
+### Package
 
+```bash
+make universe
 ```
-DOCKER_IMAGE=<name> make docker
+
+This will build a "stub" universe (i.e. singleton repo) containing a
+Spark package.  It will build the docker image referenced in the
+package using the Spark distribution specified in `manifest.json`.
+
+Prefixing with `DIST=prod` will build Spark from source using the
+slow, but production-grade `./dev/make-distribution.sh` script in the
+spark repo.
+
+Prefixing with `DIST=dev` will build Spark from source using a fast
+`sbt` compile.  This is the most common way to build a Spark package
+during development.
+
+Prefixing with `DOCKER_IMAGE=<image>` will override the default
+behavior of building and uploading a docker image to
+`mesosphere/spark-dev:<commit>`
+
+### Docker Image
+
+```bash
+make docker
 ```
 
-## Create a CLI package, docker image, and universe
+This is called when you build a Spark package, but sometimes you might
+wish to just create a docker image, such as when you want to test a
+new Spark distribution in client mode, rather than in cluster mode
+through the Dispatcher.
 
-The `DOCKER_IMAGE` value may either be a provided custom value, or may be left unset to automatically use the current git commit SHA. The created universe and CLI will be uploaded to a default S3 bucket, or may be customized as in the example below:
-
-```
-DOCKER_IMAGE=<name> \
-S3_BUCKET=<your-bucket> \
-S3_DIR_PATH=<base-path-in-bucket> \
-    make build
-```
+`make docker` supports the same `DIST` and `DOCKER_IMAGE` environment
+variables as does `make universe`.
 
 ## Test
 
@@ -34,12 +53,8 @@ You must have a local DC/OS CLI installed and configured against a
 running DC/OS cluster.
 
 ```bash
-$ cd tests
-$ virtualenv -p python3 env
-$ source env/bin/activate
-$ pip install -r requirements.txt
-$ py.test test.py
+make test
 ```
 
-The tests require several env variables.  Read the comment at the top
-of the `test.py` for a complete description.
+This command requires several environment variables.  Read the top of
+`bin/test.sh` for the full list.
