@@ -154,7 +154,7 @@ def show_help():
     return 0
 
 
-def submit_job(dispatcher, submit_args, docker_image, verbose=False):
+def submit_job(dispatcher, docker_image, args):
     """
     Run spark-submit.
 
@@ -167,8 +167,22 @@ def submit_job(dispatcher, submit_args, docker_image, verbose=False):
     :param verbose: If true, prints verbose information to stdout.
     :type verbose: boolean
     """
+
+    submit_args = args["--submit-args"]
+    verbose = args["--verbose"] if args["--verbose"] is not None else False
+    app = spark_app()
+    dcos_space = args["--dcos-space"] if args["--dcos-space"] is not None \
+        else app["id"]
+    role = app["env"]["SPARK_DISPATCHER_MESOS_ROLE"]
+
     args = ["--conf",
-            "spark.mesos.executor.docker.image={}".format(docker_image)] + \
+            "spark.mesos.executor.docker.image={}".format(docker_image),
+            "--conf",
+            "spark.mesos.driver.labels=DCOS_SPACE:{}".format(dcos_space),
+            "--conf",
+            "spark.mesos.task.labels=DCOS_SPACE:{}".format(dcos_space),
+            "--conf",
+            "spark.mesos.role={}".format(role)] + \
         submit_args.split()
 
     hdfs_url = _get_spark_hdfs_url()

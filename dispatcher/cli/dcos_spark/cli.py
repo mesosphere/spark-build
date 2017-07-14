@@ -7,6 +7,7 @@ Usage:
     dcos spark --config-schema
     dcos spark run --help
     dcos spark run --submit-args=<spark-args>
+                   [--dcos-space=<dcos_space>]
                    [--docker-image=<docker-image>]
                    [--verbose]
     dcos spark status <submissionId> [--verbose]
@@ -39,9 +40,8 @@ def run_spark_job(args):
                    spark_submit.spark_docker_image()
     return spark_submit.submit_job(
         dispatcher(),
-        args['--submit-args'],
         docker_image,
-        args['--verbose'])
+        args)
 
 
 def show_spark_submit_help():
