@@ -26,7 +26,7 @@ def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
     utils.require_spark()
-    _upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+    utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
 def teardown_module(module):
@@ -42,7 +42,7 @@ def test_jar():
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
         master_url,
         shakedown.dcos_acs_token())
-    jar_url = _upload_file(os.getenv('TEST_JAR_PATH'))
+    jar_url = utils.upload_file(os.getenv('TEST_JAR_PATH'))
     utils.run_tests(jar_url,
                     spark_job_runner_args,
                     "All tests passed",
@@ -62,9 +62,9 @@ def test_teragen():
 @pytest.mark.sanity
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
-    python_script_url = _upload_file(python_script_path)
+    python_script_url = utils.upload_file(python_script_path)
     py_file_path = os.path.join(THIS_DIR, 'jobs', 'python', 'PySparkTestInclude.py')
-    py_file_url = _upload_file(py_file_path)
+    py_file_url = utils.upload_file(py_file_path)
     utils.run_tests(python_script_url,
                     "30",
                     "Pi is roughly 3",
@@ -97,7 +97,7 @@ def test_kerberos():
 @pytest.mark.sanity
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
-    r_script_url = _upload_file(r_script_path)
+    r_script_url = utils.upload_file(r_script_path)
     utils.run_tests(r_script_url,
                '',
                "Justin")
@@ -185,17 +185,6 @@ def _run_janitor(service_name):
         svc=service_name,
         auth=shakedown.dcos_acs_token()))
 
-
-def _upload_file(file_path):
-    LOGGER.info("Uploading {} to s3://{}/{}".format(
-        file_path,
-        os.environ['S3_BUCKET'],
-        os.environ['S3_PREFIX']))
-
-    s3.upload_file(file_path)
-
-    basename = os.path.basename(file_path)
-    return s3.http_url(basename)
 
 def _scala_test_jar_url():
     return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))

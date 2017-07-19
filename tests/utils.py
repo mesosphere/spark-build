@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import requests
+import s3
 import shakedown
 import subprocess
 import urllib
@@ -111,7 +112,11 @@ def _wait_for_hdfs():
 
 
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
-    running_tasks = [t for t in shakedown.get_service_tasks(HDFS_SERVICE_NAME) \
+    return is_service_ready(HDFS_SERVICE_NAME, expected_tasks)
+
+
+def is_service_ready(service_name, expected_tasks):
+    running_tasks = [t for t in shakedown.get_service_tasks(service_name) \
                      if t['state'] == 'TASK_RUNNING']
     return len(running_tasks) >= expected_tasks
 
@@ -138,7 +143,11 @@ def _get_spark_options(options = None):
 
 
 def run_tests(app_url, app_args, expected_output, args=[]):
-    task_id = _submit_job(app_url, app_args, args)
+    task_id = submit_job(app_url, app_args, args)
+    check_job_output(task_id, expected_output)
+
+
+def check_job_output(task_id, expected_output):
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id)
     stdout = _task_log(task_id)
@@ -167,7 +176,19 @@ def create_secret(name, value):
     dcos.http.put(url, data=json.dumps(data))
 
 
-def _submit_job(app_url, app_args, args=[]):
+def upload_file(file_path):
+    LOGGER.info("Uploading {} to s3://{}/{}".format(
+        file_path,
+        os.environ['S3_BUCKET'],
+        os.environ['S3_PREFIX']))
+
+    s3.upload_file(file_path)
+
+    basename = os.path.basename(file_path)
+    return s3.http_url(basename)
+
+
+def submit_job(app_url, app_args, args=[]):
     if is_strict():
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
@@ -193,3 +214,8 @@ def _task_log(task_id, filename=None):
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
     return stdout
+
+
+def is_framework_completed(fw_name):
+    # The framework is not Active or Inactive
+    return shakedown.get_service(fw_name, True) is None
