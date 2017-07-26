@@ -38,7 +38,7 @@ RUN apt-get update && \
 RUN apt-get install -y r-base
 
 RUN cd /usr/lib/jvm && \
-    curl -O https://downloads.mesosphere.com/java/jre-8u112-linux-x64-jce-unlimited.tar.gz && \
+    curl -L -O https://downloads.mesosphere.com/java/jre-8u112-linux-x64-jce-unlimited.tar.gz && \
     tar zxf jre-8u112-linux-x64-jce-unlimited.tar.gz && \
     rm jre-8u112-linux-x64-jce-unlimited.tar.gz
 
