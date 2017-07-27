@@ -66,6 +66,7 @@ git fetch upstream --tags
 # rebase custom-master:
 git checkout custom-master
 git rebase master
+git push -f origin
 
 # create release branch:
 git checkout -b custom-branch-2.1.0 v2.1.0
@@ -74,6 +75,7 @@ git checkout -b custom-branch-2.1.0 v2.1.0
 git cherry-pick upstream/master..origin/custom-master
 git tag -a custom-2.1.0
 git push origin custom-2.1.0
+git push origin
 ```
 
 Then run the [release build][1]
