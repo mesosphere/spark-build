@@ -20,5 +20,5 @@
     ],
     "website": "https://docs.mesosphere.com/service-docs/spark/",
     "version": "2.1.0-1",
-    "minDcosReleaseVersion": "1.7"
+    "minDcosReleaseVersion": "1.8"
 }
