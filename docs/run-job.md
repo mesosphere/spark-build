@@ -66,9 +66,9 @@ To submit a job with a nonzero failover timeout:
 
     dcos spark run --submit-args="--conf spark.mesos.driver.failoverTimeout=60 --class MySampleClass http://external.website/mysparkapp.jar"
 
-Note that if you kill a job before it finishes, the framework will persist 
+**Note:** If you kill a job before it finishes, the framework will persist 
 as an `inactive` framework in Mesos for a period equal to the failover timeout. 
-You can manually teardown the framework before that period is over by hitting
+You can manually tear down the framework before that period is over by hitting
 the [Mesos teardown endpoint][18].
 
 # Versioning
