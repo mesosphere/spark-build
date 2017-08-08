@@ -107,7 +107,7 @@ def _get_hdfs_options():
 
 
 def _wait_for_hdfs():
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
+    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=25 * 60)
 
 
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
