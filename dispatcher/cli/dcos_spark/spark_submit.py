@@ -154,20 +154,80 @@ def show_help():
     return 0
 
 
+def format_kerberos_args(args):
+    def check_args():
+        if (args[constants.KERBEROS_PRINCIPAL_ARG] is None and
+                args[constants.KEYTAB_SECRET_PATH_ARG] is None):
+            return False  # No Kerberos args
+        if args[constants.KERBEROS_PRINCIPAL_ARG] is not None:
+            if args[constants.KEYTAB_SECRET_PATH_ARG] is None:
+                print("Missing {} argument for keytab "
+                      "secret. E.g. /hdfs.keytab"
+                      .format(constants.KERBEROS_PRINCIPAL_ARG),
+                      file=sys.stderr)
+                exit(1)
+            return True
+        if args[constants.KEYTAB_SECRET_PATH_ARG] is not None:
+            if args[constants.KERBEROS_PRINCIPAL_ARG] is None:
+                print("Missing {} argument for Kerberos principal, e.g. "
+                      "hdfs/name-0.hdfs.autoip.dcos.thisdcos.directory@LOCAL"
+                      .format(constants.KERBEROS_PRINCIPAL_ARG),
+                      file=sys.stderr)
+                exit(1)
+            return True
+
+    def get_secret_file_from_path(encoded):
+        if args[constants.KEYTAB_SECRET_PATH_ARG] is not None:
+            f = args[constants.KEYTAB_SECRET_PATH_ARG].split("/")[-1]
+            return f + constants.ENCODED_SUFFIX if encoded else f
+        else:
+            return None
+
+    def get_krb5_config():
+        app = spark_app()
+        if "SPARK_MESOS_KRB5_CONF_BASE64" in app["env"]:
+            krb5 = app["env"]["SPARK_MESOS_KRB5_CONF_BASE64"]
+            return ["--conf",
+                    "spark.mesos.driverEnv.KRB5_CONFIG_BASE64={}"
+                    .format(krb5)]
+        else:
+            print("WARNING: You must specify a krb5.conf that is base64 "
+                  "encoded with "
+                  "--conf spark.mesos.driverEnv.KRB5_CONFIG_BASE64",
+                  file=sys.stderr)
+            return []
+
+    add_args = check_args()
+    if add_args:
+        return [
+            "--principal",
+            "{}".format(args[constants.KERBEROS_PRINCIPAL_ARG]),
+            "--conf",
+            "spark.yarn.keytab={}".format(
+                get_secret_file_from_path(encoded=False)),
+            "--conf",
+            "spark.mesos.driver.secret.name={}".format(
+                args[constants.KEYTAB_SECRET_PATH_ARG]),
+            "--conf",
+            "spark.mesos.driver.secret.filename={}".format(
+                get_secret_file_from_path(encoded=True)),
+            "--conf",
+            "spark.mesos.containerizer=mesos"] + get_krb5_config()
+    else:
+        return []
+
+
 def submit_job(dispatcher, docker_image, args):
     """
     Run spark-submit.
 
     :param dispatcher: Spark Dispatcher URL.  Used to construct --master.
     :type dispatcher: string
-    :param args: --submit-args value from `dcos spark run`
+    :param args: command line args value from `dcos spark run`
     :type args: string
     :param docker_image: Docker image to run the driver and executors in.
     :type docker_image: string
-    :param verbose: If true, prints verbose information to stdout.
-    :type verbose: boolean
     """
-
     submit_args = args["--submit-args"]
     verbose = args["--verbose"] if args["--verbose"] is not None else False
     app = spark_app()
@@ -183,6 +243,7 @@ def submit_job(dispatcher, docker_image, args):
             "spark.mesos.task.labels=DCOS_SPACE:{}".format(dcos_space),
             "--conf",
             "spark.mesos.role={}".format(role)] + \
+        format_kerberos_args(args) + \
         submit_args.split()
 
     hdfs_url = _get_spark_hdfs_url()

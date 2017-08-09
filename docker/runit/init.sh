@@ -65,6 +65,7 @@ if [[ -f hdfs-site.xml && -f core-site.xml ]]; then
 fi
 
 # Move kerberos config file, as specified by security.kerberos.krb5conf, into place.
+# this only affects the krb5.conf file for the dispatcher
 if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
     echo "${SPARK_MESOS_KRB5_CONF_BASE64}" | base64 -d > /etc/krb5.conf
 fi

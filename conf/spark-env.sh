@@ -14,7 +14,7 @@ mkdir -p "${HADOOP_CONF_DIR}"
 
 cd $MESOS_SANDBOX
 
-MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so
+MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
 # For non-CNI, tell the Spark driver to bind to LIBPROCESS_IP
 #
@@ -29,6 +29,23 @@ fi
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
 # But this fails now due to MESOS-6391, so I'm setting it to /tmp
 MESOS_DIRECTORY=/tmp
+
+echo "spark-env: Printing environment" >&2
+env >&2
+echo "spark-env: User: $(whoami)" >&2
+
+for f in $MESOS_SANDBOX/*.base64 ; do
+    echo "decoding $f" >&2
+    secret=$(basename ${f} .base64)
+    cat ${f} | base64 -d > ${secret}
+done
+
+if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
+    echo "spark-env: Copying krb config from $KRB5_CONFIG_BASE64 to /etc/" >&2
+    echo "${KRB5_CONFIG_BASE64}" | base64 -d > /etc/krb5.conf
+else
+    echo "spark-env: No kerberos KDC config found" >&2
+fi
 
 # Options read when launching programs locally with
 # ./bin/run-example or ./bin/spark-submit

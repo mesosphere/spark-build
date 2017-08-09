@@ -18,8 +18,8 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM mesosphere/mesos-modules-private:dcos-ee-mesos-modules-1.8.5-rc2
-MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>
+FROM ubuntu:14.04
+MAINTAINER Michael Gummelt <mgummelt@mesosphere.io>, Arthur Rand <arand@mesosphere.io>
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
@@ -37,13 +37,21 @@ RUN apt-get update && \
     apt-get install -y curl
 RUN apt-get install -y r-base
 
-RUN cd /usr/lib/jvm && \
+RUN mkdir -p /opt/mesosphere/ && \
+    cd /opt/mesosphere && \
+    curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4-63e0814.tar.gz && \
+    tar zxf libmesos-bundle-1.10-1.4-63e0814.tar.gz && \
+    rm libmesos-bundle-1.10-1.4-63e0814.tar.gz
+
+RUN mkdir -p /usr/lib/jvm/ && \
+    cd /usr/lib/jvm && \
     curl -L -O https://downloads.mesosphere.com/java/jre-8u112-linux-x64-jce-unlimited.tar.gz && \
     tar zxf jre-8u112-linux-x64-jce-unlimited.tar.gz && \
     rm jre-8u112-linux-x64-jce-unlimited.tar.gz
 
 ENV JAVA_HOME /usr/lib/jvm/jre1.8.0_112
-ENV MESOS_NATIVE_JAVA_LIBRARY /usr/lib/libmesos.so
+ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
+ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib/
 ENV HADOOP_CONF_DIR /etc/hadoop
 
 RUN mkdir /etc/hadoop
