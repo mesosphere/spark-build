@@ -16,9 +16,9 @@
 set -e -x -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DISPATCHER_DIR="${DIR}/.."
-SPARK_BUILD_DIR="${DIR}/../.."
-SPARK_DIR="${DIR}/../../../spark"
+#DISPATCHER_DIR="${DIR}/.."
+SPARK_BUILD_DIR="${DIR}/.."
+SPARK_DIR="${DIR}/../../spark"
 
 # set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
@@ -55,8 +55,10 @@ fetch_commons_tools() {
     fi
 }
 
-make_cli() {
-    CLI_VERSION="${CLI_VERSION}" make --directory=cli all
+build_cli() {
+    pwd
+    ls -all ${SPARK_BUILD_DIR}/cli
+    make --directory=${SPARK_BUILD_DIR}/cli all
 }
 
 make_docker() {
@@ -70,13 +72,17 @@ upload_cli_and_stub_universe() {
     TEMPLATE_DOCKER_IMAGE=${DOCKER_IMAGE} \
         ${COMMONS_TOOLS_DIR}/ci_upload.py \
             spark \
-            ${DISPATCHER_DIR}/package/ \
-            ${DISPATCHER_DIR}/cli/dist/*.whl
+            ${SPARK_BUILD_DIR}/universe/ \
+            ${SPARK_BUILD_DIR}/cli/dcos-spark/dcos-spark-darwin \
+            ${SPARK_BUILD_DIR}/cli/dcos-spark/dcos-spark-linux \
+            ${SPARK_BUILD_DIR}/cli/dcos-spark/dcos-spark.exe \
+            ${SPARK_BUILD_DIR}/cli/python/dist/*.whl
+
 }
 
 source "${SPARK_BUILD_DIR}/bin/jenkins.sh"
 configure_env
 fetch_commons_tools
-make_cli
+build_cli
 make_docker
 upload_cli_and_stub_universe
