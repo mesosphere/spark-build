@@ -26,10 +26,9 @@ HDFS_PACKAGE_NAME='beta-hdfs'
 HDFS_SERVICE_NAME='hdfs'
 SPARK_PACKAGE_NAME='spark'
 
-# Skip HDFS tests until a version of beta-hdfs containing the fix for HDFS-461 is released.
+
 def hdfs_enabled():
-    return False
-    # return os.environ.get("HDFS_ENABLED") != "false"
+    return os.environ.get("HDFS_ENABLED") != "false"
 
 
 def is_strict():
@@ -108,7 +107,7 @@ def _get_hdfs_options():
 
 
 def _wait_for_hdfs():
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=900)
+    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=25 * 60)
 
 
 def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):

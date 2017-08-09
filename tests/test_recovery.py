@@ -25,7 +25,6 @@ def teardown_module(module):
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
 
 
-@pytest.mark.skip(reason="Waiting for upstream change, https://issues.apache.org/jira/browse/SPARK-21419")
 @pytest.mark.recovery
 def test_disconnect_from_master():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'long_running.py')
