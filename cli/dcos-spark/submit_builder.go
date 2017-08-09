@@ -300,7 +300,7 @@ func getBase64Content(path string) string {
 	return encodebuf.String()
 }
 
-func buildSubmitJson(argsStr string, dockerImage string, submitEnv map[string]string) (string, error) {
+func buildSubmitJson(argsStr string, dockerImage string, submitEnv map[string]string, dcosSpace string) (string, error) {
 	// first, import any values in the provided properties file (space separated "key val")
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
@@ -388,6 +388,21 @@ func buildSubmitJson(argsStr string, dockerImage string, submitEnv map[string]st
 	if err != nil {
 		return "", err
 	}
+
+	dispatcherId, err := getStringFromTree(responseJson, []string{"app", "id"})
+	if dcosSpace == "" {  // get the DCOS_SPACE from the marathon app
+		if err != nil {
+			return "", err
+		}
+		dcosSpace = dispatcherId
+	}
+
+	// DCOS_SPACE support
+	log.Printf("Setting DCOS_SPACE to %s", dcosSpace)
+	label := fmt.Sprintf("DCOS_SPACE:%s", dcosSpace)
+	args.properties["spark.mesos.driver.labels"] = label
+	args.properties["spark.mesos.task.labels"] = label
+
 	args.properties["spark.mesos.executor.docker.image"] = docker_image
 	hdfs_config_url, err := getStringFromTree(responseJson, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
 	if err == nil && len(hdfs_config_url) != 0 { // fail silently: it's normal for this to be unset

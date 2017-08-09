@@ -22,6 +22,7 @@ type SparkCommand struct {
 	submissionId      string
 	submitArgs        string
 	submitDockerImage string
+	submitDcosSpace   string
 	submitEnv         map[string]string
 
 	statusSkipMessage bool
@@ -32,7 +33,7 @@ type SparkCommand struct {
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	jsonPayload, err := buildSubmitJson(cmd.submitArgs, cmd.submitDockerImage, cmd.submitEnv)
+	jsonPayload, err := buildSubmitJson(cmd.submitArgs, cmd.submitDockerImage, cmd.submitEnv, cmd.submitDcosSpace)
 	if err != nil {
 		return err
 	}
@@ -148,6 +149,9 @@ func handleCommands(app *kingpin.Application) {
 	run.Flag("submit-args", fmt.Sprintf("Arguments matching what would be sent to 'spark-submit': %s",
 		sparkSubmitHelp())).Required().PlaceHolder("ARGS").StringVar(&cmd.submitArgs)
 	run.Flag("docker-image", "Docker image to run the job within").StringVar(&cmd.submitDockerImage)
+	run.Flag("dcos-space", "DCOS_SPACE to run the job with (default to Dispatcher's DCOS_SPACE)").
+		Default("").
+		StringVar(&cmd.submitDcosSpace)
 	run.Flag("env", "Environment variable(s) to pass into the Spark job.").
 		Short('E').
 		PlaceHolder("ENVKEY=ENVVAL").
