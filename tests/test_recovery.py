@@ -35,10 +35,7 @@ def test_disconnect_from_master():
                      "--conf", "spark.cores.max=1"])
 
     # Wait until executor is running
-    LOGGER.info("Waiting for executor task to be RUNNING...")
-    shakedown.wait_for(lambda: utils.is_service_ready(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    utils.wait_for_executors_running(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS)
 
     # Block the driver's connection to Mesos master
     framework_info = shakedown.get_service(LONG_RUNNING_FW_NAME)

@@ -206,6 +206,13 @@ def submit_job(app_url, app_args, args=[]):
     return match.group(1)
 
 
+def wait_for_executors_running(framework_name, num_executors):
+    LOGGER.info("Waiting for executor task to be RUNNING...")
+    shakedown.wait_for(lambda: is_service_ready(framework_name, num_executors),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+
+
 def _task_log(task_id, filename=None):
     cmd = "dcos task log --completed --lines=1000 {}".format(task_id) + \
           ("" if filename is None else " {}".format(filename))
