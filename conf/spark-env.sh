@@ -34,15 +34,22 @@ echo "spark-env: Printing environment" >&2
 env >&2
 echo "spark-env: User: $(whoami)" >&2
 
-for f in $MESOS_SANDBOX/*.base64 ; do
-    echo "decoding $f" >&2
-    secret=$(basename ${f} .base64)
-    cat ${f} | base64 -d > ${secret}
-done
+if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
+    for f in $MESOS_SANDBOX/*.base64 ; do
+        echo "decoding $f" >&2
+        secret=$(basename ${f} .base64)
+        cat ${f} | base64 -d > ${secret}
+    done
+fi
 
 if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
+    if base64 --help | grep -q GNU; then
+          BASE64_D="base64 -d" # GNU
+      else
+          BASE64_D="base64 -D" # BSD
+    fi
     echo "spark-env: Copying krb config from $KRB5_CONFIG_BASE64 to /etc/" >&2
-    echo "${KRB5_CONFIG_BASE64}" | base64 -d > /etc/krb5.conf
+    echo "${KRB5_CONFIG_BASE64}" | ${BASE64_D} > /etc/krb5.conf
 else
     echo "spark-env: No kerberos KDC config found" >&2
 fi
