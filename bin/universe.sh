@@ -15,12 +15,19 @@
 
 set -e -x -o pipefail
 
+
+echo "starting universe.sh"
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${DIR}/.."
 SPARK_DIR="${DIR}/../../spark"
 
 # set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
+    echo "configuring environment"
+    echo "starting env"
+    env
+    
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
     CLI_VERSION="${CLI_VERSION%\"}"
     CLI_VERSION="${CLI_VERSION#\"}"
