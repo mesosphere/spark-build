@@ -7,7 +7,7 @@ SPARK_BUILD_DIR=${DIR}/..
 
 function run() {
     source bin/jenkins.sh
-    make make universe
+    make universe
     export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }
