@@ -184,20 +184,6 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
-	// For Mesos Kerberos support, added in custom-patched spark:
-    /*
-	val = newSparkVal("keytab", "spark.yarn.keytab", "The full path to the file that contains the keytab for the principal. For renewing the login tickets and the delegation tokens periodically, this keytab is copied to the Mesos dispatcher and driver.")
-	val.flag(submit).StringVar(&val.s)
-	args.stringVals = append(args.stringVals, val)
-
-	val = newSparkVal("tgt", "spark.mesos.kerberos.tgt", "The full path to the ticket cache file that contains tickets for the Kerberos --principal.")
-	val.flag(submit).StringVar(&val.s)
-	args.stringVals = append(args.stringVals, val)
-
-	val = newSparkVal("principal", "spark.yarn.principal", "Principal to be used to login to KDC, while running on secure HDFS.")
-	val.flag(submit).StringVar(&val.s)
-	args.stringVals = append(args.stringVals, val)
-    */
 	submit.Arg("jar", "Application jar to be run").Required().URLVar(&args.appJar)
 	submit.Arg("args", "Application arguments").StringsVar(&args.appArgs)
 
@@ -520,35 +506,6 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			return "", err
 		}
 	}
-
-	/*principal, hasPrincipal := args.properties["spark.yarn.principal"]
-	if hasPrincipal {
-		args.properties["spark.hadoop.yarn.resourcemanager.principal"] = principal
-
-		_, hasKeytabBase64 := args.properties["spark.mesos.kerberos.keytabBase64"]
-		_, hasTgtBase64 := args.properties["spark.mesos.kerberos.tgtBase64"]
-		if !hasKeytabBase64 && !hasTgtBase64 {
-			// Read the content of the keytab file or the tgt file and serialize the content as base64 for the POST request.
-			keytab, hasKeytab := args.properties["spark.yarn.keytab"]
-			tgt, hasTgt := args.properties["spark.mesos.kerberos.tgt"]
-			if hasKeytab {
-				if hasTgt {
-					return "", errors.New("--keytab and --tgt cannot both be specified at the same time")
-				}
-				log.Printf("Using keytab %s", keytab)
-				//args.properties["spark.mesos.kerberos.keytabBase64"] = getBase64Content(keytab)
-				//delete(args.properties, "spark.yarn.keytab")
-			} else if hasTgt {
-				args.properties["spark.mesos.kerberos.tgtBase64"] = getBase64Content(tgt)
-				delete(args.properties, "spark.mesos.kerberos.tgt")
-			} else {
-				return "", errors.New("--keytab or --tgt must be specified when --principal is specified")
-			}
-
-			// Note: We omit HDFS login support: that's only supported in Client Mode.
-		}
-
-	}*/
 
 	jsonMap := map[string]interface{}{
 		"action":               "CreateSubmissionRequest",
