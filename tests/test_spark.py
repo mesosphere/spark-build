@@ -20,6 +20,8 @@ from utils import SPARK_PACKAGE_NAME, HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+SPARK_PI_FW_NAME = "Spark Pi"
+CNI_TEST_NUM_EXECUTORS = 1
 
 
 def setup_module(module):
@@ -111,6 +113,49 @@ def test_cni():
                "Pi is roughly 3",
                ["--conf", "spark.mesos.network.name=dcos",
                 "--class", "org.apache.spark.examples.SparkPi"])
+
+
+@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
+@pytest.mark.sanity
+def test_cni_labels():
+    SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
+    driver_task_id = utils.submit_job(SPARK_EXAMPLES,
+                               "3000",   # Long enough to examine the Driver's & Executor's task infos
+                               ["--conf", "spark.mesos.network.name=dcos",
+                                "--conf", "spark.mesos.network.labels=key1:val1,key2:val2",
+                                "--conf", "spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
+                                "--class", "org.apache.spark.examples.SparkPi"])
+
+    # Wait until executors are running
+    utils.wait_for_executors_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS)
+
+    # Check for network name / labels in Driver task info
+    driver_task = shakedown.get_task(driver_task_id, completed=False)
+    _check_task_network_info(driver_task)
+
+    # Check for network name / labels in Executor task info
+    executor_task = shakedown.get_service_tasks(SPARK_PI_FW_NAME)[0]
+    _check_task_network_info(executor_task)
+
+    # Check job output
+    utils.check_job_output(driver_task_id, "Pi is roughly 3")
+
+
+def _check_task_network_info(task):
+    # Expected: "network_infos":[{
+    #   "name":"dcos",
+    #   "labels":{
+    #       "labels":[
+    #           {"key":"key1","value":"val1"},
+    #           {"key":"key2","value":"val2"}]}}]
+    network_info = task['container']['network_infos'][0]
+    assert network_info['name'] == "dcos"
+    labels = network_info['labels']['labels']
+    assert len(labels) == 2
+    assert labels[0]['key'] == "key1"
+    assert labels[0]['value'] == "val1"
+    assert labels[1]['key'] == "key2"
+    assert labels[1]['value'] == "val2"
 
 
 @pytest.mark.sanity

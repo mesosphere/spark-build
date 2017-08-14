@@ -10,6 +10,7 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${BIN_DIR}/.."
 
 check_env() {
+    echo "Checking environment"
     # Check env early, before starting the cluster:
     if [ -z "$AWS_ACCESS_KEY_ID" \
             -o -z "$AWS_SECRET_ACCESS_KEY" \

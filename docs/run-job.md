@@ -54,6 +54,23 @@ To submit a Spark job inside the [DC/OS Overlay Network][16]:
 Note that DC/OS Overlay support requires the [UCR][17], rather than
 the default Docker Containerizer, so you must set `--conf spark.mesos.containerizer=mesos`.
 
+# Driver Failover Timeout
+
+The `--conf spark.mesos.driver.failoverTimeout` option specifies the amount of time 
+(in seconds) that the master will wait for the driver to reconnect, after being 
+temporarily disconnected, before it tears down the driver framework by killing 
+all its executors. The default value is zero, meaning no timeout: if the 
+driver disconnects, the master immediately tears down the framework.
+
+To submit a job with a nonzero failover timeout:
+
+    dcos spark run --submit-args="--conf spark.mesos.driver.failoverTimeout=60 --class MySampleClass http://external.website/mysparkapp.jar"
+
+**Note:** If you kill a job before it finishes, the framework will persist 
+as an `inactive` framework in Mesos for a period equal to the failover timeout. 
+You can manually tear down the framework before that period is over by hitting
+the [Mesos teardown endpoint][18].
+
 # Versioning
 
 The DC/OS Apache Spark Docker image contains OpenJDK 8 and Python 2.7.6.
@@ -68,3 +85,4 @@ The default DC/OS Apache Spark distribution is compiled against Hadoop 2.6 libra
 [15]: http://spark.apache.org/docs/latest/configuration.html#overriding-configuration-directory
 [16]: https://dcos.io/docs/overview/design/overlay/
 [17]: https://dcos.io/docs/1.9/deploying-services/containerizers/ucr/
+[18]: http://mesos.apache.org/documentation/latest/endpoints/master/teardown/

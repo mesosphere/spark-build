@@ -25,7 +25,6 @@ def teardown_module(module):
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
 
 
-@pytest.mark.skip(reason="Waiting for upstream change, https://issues.apache.org/jira/browse/SPARK-21419")
 @pytest.mark.recovery
 def test_disconnect_from_master():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'long_running.py')
@@ -36,10 +35,7 @@ def test_disconnect_from_master():
                      "--conf", "spark.cores.max=1"])
 
     # Wait until executor is running
-    LOGGER.info("Waiting for executor task to be RUNNING...")
-    shakedown.wait_for(lambda: utils.is_service_ready(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    utils.wait_for_executors_running(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS)
 
     # Block the driver's connection to Mesos master
     framework_info = shakedown.get_service(LONG_RUNNING_FW_NAME)

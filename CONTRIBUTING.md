@@ -21,7 +21,7 @@ git fetch upstream
 ```
 git checkout master
 git pull upstream master
-git checkout -b upstream/master <feature-branch>
+git checkout -b <feature-branch> upstream/master
 # write feature
 git push origin <feature-branch>
 # create PR against apache/spark
