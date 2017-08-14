@@ -16,7 +16,6 @@
 set -e -x -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#DISPATCHER_DIR="${DIR}/.."
 SPARK_BUILD_DIR="${DIR}/.."
 SPARK_DIR="${DIR}/../../spark"
 
