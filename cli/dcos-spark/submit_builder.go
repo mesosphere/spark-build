@@ -137,7 +137,7 @@ Args:
 		PlaceHolder("/mykeytab").Default("").StringVar(&args.keytabSecretPath)
 	submit.Flag("tgt-secret-path", "Path to ticket granting ticket (TGT) in secret store to be used " +
 		"in the Spark drivers").PlaceHolder("/mytgt").Default("").StringVar(&args.tgtSecretPath)
-	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers").
+	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
 
 	val := newSparkVal("supervise", "spark.driver.supervise", "If given, restarts the driver on failure.")
@@ -228,12 +228,12 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 		return nil
 	}
 	if args.tgtSecretPath != "" {  // using tgt secret
-		addArgsForFileBasedSecret(args, args.tgtSecretPath, "spark.kerberos.tgt")
+		addArgsForFileBasedSecret(args, args.tgtSecretPath, "spark.mesos.driverEnv.KRB5CCNAME")
 		return nil
 	}
 	if args.tgtSecretValue != "" {  // using secret by value
 		args.properties["spark.mesos.driver.secret.value"] = args.tgtSecretValue
-		args.properties["spark.kerberos.tgt"] = "tgt"
+		args.properties["spark.mesos.driverEnv.KRB5CCNAME"] = "tgt"
 		args.properties["spark.mesos.driver.secret.filename"] = "tgt.base64"
 		return nil
 	}
