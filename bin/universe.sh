@@ -25,6 +25,10 @@ SPARK_DIR="${DIR}/../../spark"
 # set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
     echo "configure_env: start"
+    CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
+    CLI_VERSION="${CLI_VERSION%\"}"
+    CLI_VERSION="${CLI_VERSION#\"}"
+    echo "Using CLI Version: $CLI_VERSION"
     if [ -z "$DOCKER_IMAGE" ]; then
         # determine image label based on git commit:
         if [ -n "$ghprbActualCommit" ]; then
@@ -57,7 +61,7 @@ fetch_commons_tools() {
 build_cli() {
     echo "build_cli: start"
     pwd
-    ls cli/
+    ls ${SPARK_BUILD_DIR}/cli/
     make --directory=cli all
 }
 
@@ -68,12 +72,6 @@ make_docker() {
 
 upload_cli_and_stub_universe() {
     echo "upload_cli_and_stub_universe: start"
-    SPARK_BUILD_DIR="${DIR}/.."
-    echo "spark build dir: ${SPARK_BUILD_DIR}"
-    CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
-    CLI_VERSION="${CLI_VERSION%\"}"
-    CLI_VERSION="${CLI_VERSION#\"}"
-    echo "Using CLI Version: $CLI_VERSION"
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_SPARK_DIST_URI=$(default_spark_dist) \
@@ -92,5 +90,5 @@ source "${SPARK_BUILD_DIR}/bin/jenkins.sh"
 configure_env
 fetch_commons_tools
 build_cli
-#make_docker
+make_docker
 upload_cli_and_stub_universe

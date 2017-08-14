@@ -8,6 +8,7 @@ SPARK_DIR="${DIR}/../../spark"
 
 function run() {
     source bin/jenkins.sh
+    docker_login
     build_and_test
 }
 

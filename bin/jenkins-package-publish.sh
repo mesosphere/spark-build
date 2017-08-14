@@ -36,6 +36,7 @@ source "${DIR}/jenkins.sh"
 
 pushd "${SPARK_BUILD_DIR}"
 SPARK_VERSION=$(jq -r ".spark_version" manifest.json)
+docker_login
 publish_docker_images
 make_universe
 write_properties
