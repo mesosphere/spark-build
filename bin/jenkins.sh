@@ -127,10 +127,6 @@ function docker_version() {
     echo "${SPARK_BUILD_VERSION}-hadoop-$1"
 }
 
-function docker_login {
-    docker login --email=docker@mesosphere.io --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}"
-}
-
 function set_hadoop_versions {
     HADOOP_VERSIONS=( "2.4" "2.6" "2.7" )
 }
