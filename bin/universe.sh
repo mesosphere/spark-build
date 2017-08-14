@@ -63,6 +63,8 @@ make_docker() {
 }
 
 upload_cli_and_stub_universe() {
+    SPARK_BUILD_DIR="${DIR}/.."
+    echo "spark build dir: ${SPARK_BUILD_DIR}"
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
     CLI_VERSION="${CLI_VERSION%\"}"
     CLI_VERSION="${CLI_VERSION#\"}"
