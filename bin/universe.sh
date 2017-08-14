@@ -58,7 +58,7 @@ build_cli() {
     echo "build_cli: start"
     pwd
     ls cli/
-    make --directory=${SPARK_BUILD_DIR}/cli all
+    make --directory=cli all
 }
 
 make_docker() {
@@ -92,5 +92,5 @@ source "${SPARK_BUILD_DIR}/bin/jenkins.sh"
 configure_env
 fetch_commons_tools
 build_cli
-make_docker
+#make_docker
 upload_cli_and_stub_universe
