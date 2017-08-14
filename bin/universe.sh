@@ -24,6 +24,7 @@ SPARK_DIR="${DIR}/../../spark"
 
 # set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
+    echo "configure_env: start"
     if [ -z "$DOCKER_IMAGE" ]; then
         # determine image label based on git commit:
         if [ -n "$ghprbActualCommit" ]; then
@@ -44,6 +45,7 @@ configure_env() {
 }
 
 fetch_commons_tools() {
+    echo "fetching dcos commons tools"
     if [ -z "${COMMONS_TOOLS_DIR}" ]; then
         pushd ${DIR}
         rm -rf dcos-commons-tools/ && curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
@@ -53,16 +55,19 @@ fetch_commons_tools() {
 }
 
 build_cli() {
+    echo "build_cli: start"
     pwd
-    ls -all ${SPARK_BUILD_DIR}/cli
+    ls cli/
     make --directory=${SPARK_BUILD_DIR}/cli all
 }
 
 make_docker() {
+    echo "make_docker: start"
     (cd "${SPARK_BUILD_DIR}" && DOCKER_IMAGE=${DOCKER_IMAGE} make docker)
 }
 
 upload_cli_and_stub_universe() {
+    echo "upload_cli_and_stub_universe: start"
     SPARK_BUILD_DIR="${DIR}/.."
     echo "spark build dir: ${SPARK_BUILD_DIR}"
     CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
