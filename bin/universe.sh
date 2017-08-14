@@ -24,15 +24,6 @@ SPARK_DIR="${DIR}/../../spark"
 
 # set CLI_VERSION, DOCKER_IMAGE:
 configure_env() {
-    echo "configuring environment"
-    echo "starting env"
-    env
-    
-    CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
-    CLI_VERSION="${CLI_VERSION%\"}"
-    CLI_VERSION="${CLI_VERSION#\"}"
-    echo "Using CLI Version: $CLI_VERSION"
-
     if [ -z "$DOCKER_IMAGE" ]; then
         # determine image label based on git commit:
         if [ -n "$ghprbActualCommit" ]; then
@@ -72,6 +63,10 @@ make_docker() {
 }
 
 upload_cli_and_stub_universe() {
+    CLI_VERSION=$(jq ".cli_version" "${SPARK_BUILD_DIR}/manifest.json")
+    CLI_VERSION="${CLI_VERSION%\"}"
+    CLI_VERSION="${CLI_VERSION#\"}"
+    echo "Using CLI Version: $CLI_VERSION"
     # Build/upload package using custom template parameters: TEMPLATE_X_Y_Z => {{x-y-z}}
     TEMPLATE_CLI_VERSION=${CLI_VERSION} \
     TEMPLATE_SPARK_DIST_URI=$(default_spark_dist) \
