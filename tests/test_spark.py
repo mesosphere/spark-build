@@ -66,6 +66,7 @@ def test_teragen():
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)

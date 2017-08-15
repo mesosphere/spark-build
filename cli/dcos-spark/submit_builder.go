@@ -512,9 +512,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		"appResource":          args.appJar.String(),
 		"clientSparkVersion":   "2.0.0",
 		"environmentVariables": cmd.submitEnv,
-		//"mainClass":            args.mainClass,
-		"mainClass":			"null",
-		"isR":					"true",
+		"mainClass":            args.mainClass,
 		"sparkProperties":      args.properties,
 	}
 
