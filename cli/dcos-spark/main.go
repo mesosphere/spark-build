@@ -40,12 +40,14 @@ func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseEleme
 	responseBytes, err := client.HTTPServicePostJSON(
 		fmt.Sprintf("/v1/submissions/create/%s", cmd.submissionId), jsonPayload)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to create submission with error %s", err)
+		//return err
 	}
 
 	responseJson := make(map[string]interface{})
 	err = json.Unmarshal(responseBytes, &responseJson)
 	if err != nil {
+		log.Fatalf("Failed to unmarshal json with error %s", err)
 		return err
 	}
 
@@ -53,6 +55,7 @@ func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseEleme
 	if err != nil {
 		// Failure! Print the raw message:
 		client.PrintJSONBytes(responseBytes)
+		log.Fatalf("Failed to check spark dispatcher response with error %s", err)
 		return err
 	}
 
@@ -64,10 +67,10 @@ func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseEleme
 			// Match the older Python CLI's output:
 			fmt.Printf("Run job succeeded. Submission id: %s\n", idString)
 		} else {
-			log.Printf("Failed to convert 'submissionId' field value to string: %s", responseJson)
+			log.Fatalf("Failed to convert 'submissionId' field value to string: %s", responseJson)
 		}
 	} else {
-		log.Printf("Failed to extract 'submissionId' field from JSON response: %s", responseJson)
+		log.Fatalf("Failed to extract 'submissionId' field from JSON response: %s", responseJson)
 	}
 	return nil
 }

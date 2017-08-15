@@ -22,23 +22,23 @@ LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
-
+SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 
 def setup_module(module):
+    utils._require_spark_cli()
     if utils.hdfs_enabled():
         utils.require_hdfs()
-    utils.require_spark()
-    utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
-def teardown_module(module):
-    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
-    if utils.hdfs_enabled():
-        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-        _run_janitor(HDFS_SERVICE_NAME)
+#def teardown_module(module):
+#    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
+#    if utils.hdfs_enabled():
+#        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+#        _run_janitor(HDFS_SERVICE_NAME)
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_jar():
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
@@ -50,6 +50,10 @@ def test_jar():
                     "All tests passed",
                     ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
+
+@pytest.mark.sanity
+def test_sparkPi():
+    utils.run_tests(SPARK_EXAMPLES, "1000", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
 
 @pytest.mark.sanity
 def test_teragen():
@@ -118,7 +122,6 @@ def test_cni():
 @pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 def test_cni_labels():
-    SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
     driver_task_id = utils.submit_job(SPARK_EXAMPLES,
                                "3000",   # Long enough to examine the Driver's & Executor's task infos
                                ["--conf", "spark.mesos.network.name=dcos",

@@ -122,11 +122,10 @@ Args:
 {{end}}
 `)
 
-	//args := &sparkArgs{"", "", make(map[string]string), make([]*sparkVal, 0), make([]*sparkVal, 0), new(url.URL), make([]string, 0)}
 	args := NewSparkArgs()
 
 	submit.Flag("class", "Your application's main class (for Java / Scala apps). (REQUIRED)").
-		Required().StringVar(&args.mainClass) // note: spark-submit can autodetect, but only for file://local.jar
+		StringVar(&args.mainClass) // note: spark-submit can autodetect, but only for file://local.jar
 	submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
 		PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
 	submit.Flag("conf", "Custom Spark configuration properties.").
@@ -513,7 +512,9 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		"appResource":          args.appJar.String(),
 		"clientSparkVersion":   "2.0.0",
 		"environmentVariables": cmd.submitEnv,
-		"mainClass":            args.mainClass,
+		//"mainClass":            args.mainClass,
+		"mainClass":			"null",
+		"isR":					"true",
 		"sparkProperties":      args.properties,
 	}
 
