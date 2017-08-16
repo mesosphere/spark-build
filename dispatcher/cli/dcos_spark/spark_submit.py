@@ -235,10 +235,20 @@ def submit_job(dispatcher, docker_image, args):
         else app["id"]
     role = app["env"]["SPARK_DISPATCHER_MESOS_ROLE"]
 
+    driver_labels = "spark.mesos.driver.labels=DCOS_SPACE:{space}".format(space=dcos_space)
+
+    if "SPARK_DISPATCHER_MESOS_SECRET" in app["env"].keys() and app["env"]["SPARK_DISPATCHER_MESOS_SECRET"] != "":
+        secret = app["env"]["SPARK_DISPATCHER_MESOS_SECRET"]
+        print("Using secret {}".format(secret))
+        cred_label = """,DCOS_SECRETS_DIRECTIVE:[{\"name\"\:\"%s\"\,\"type\"\:\"ENVIRONMENT\"\,\"environment\"\:{\"name\"\:\"DCOS_SERVICE_ACCOUNT_CREDENTIAL\"}}]"""
+        driver_labels += cred_label % secret
+    else:
+        print("No Mesos auth secret found")
+
     args = ["--conf",
             "spark.mesos.executor.docker.image={}".format(docker_image),
             "--conf",
-            "spark.mesos.driver.labels=DCOS_SPACE:{}".format(dcos_space),
+            "{}".format(driver_labels),
             "--conf",
             "spark.mesos.task.labels=DCOS_SPACE:{}".format(dcos_space),
             "--conf",
