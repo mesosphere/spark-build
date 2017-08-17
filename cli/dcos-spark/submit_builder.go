@@ -299,6 +299,7 @@ func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) []string {
 	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
 	// HACK: spark-submit uses '--arg val' by convention, while kingpin only supports '--arg=val'.
 	//       translate the former into the latter for kingpin to parse.
+	log.Printf("SENTINAL: got cleaned args %s", argsCleaned)
 	args := strings.Split(argsCleaned, " ")
 	argsEquals := make([]string, 0)
 	i := 0
@@ -309,8 +310,10 @@ ARGLOOP:
 			// looks like we've exited the flags entirely, and are now at the jar and/or args.
 			// any arguments without a dash at the front should've been joined to preceding keys.
 			// flush the rest and exit.
+			log.Printf("SENTINEL: EXITED have args %s", args[i])
 			for i < len(args) {
 				arg = args[i]
+				log.Printf("SENTINEL: Adding arg %s", arg)
 				argsEquals = append(argsEquals, arg)
 				i += 1
 			}
@@ -339,9 +342,11 @@ ARGLOOP:
 			i += 1
 		}
 	}
-	if config.Verbose {
-		log.Printf("Translated arguments: '%s'\n", argsEquals)
-	}
+	//if config.Verbose {
+	//	log.Printf("Translated arguments: '%s'\n", argsEquals)
+	//}
+	log.Printf("Translated arguments: '%s'\n", argsEquals)
+	log.Printf("SENTINAL: returning argsEquals %s", argsEquals)
 	return argsEquals
 }
 
@@ -420,8 +425,15 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	submit, args := sparkSubmitArgSetup()
 
+	knownFlags := make([]string, 0)
+	for _, a := range args.stringVals {
+		knownFlags = append(knownFlags, a.flagName)
+	}
+
+	log.Printf("SENTINEL: known flags : %s", knownFlags)
+
 	d, err := submit.Parse(cleanUpSubmitArgs(cmd.submitArgs, args.boolVals))
-	log.Printf("SENTINEL: command %s", d)
+	log.Printf("SENTINEL: command %s err %s", d, err)
 	if err != nil {
 		log.Fatalf("Error when parsing --submit-args: %s", err)
 	}

@@ -38,7 +38,6 @@ def setup_module(module):
 
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_jar():
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
@@ -52,6 +51,7 @@ def test_jar():
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_sparkPi():
     utils.run_tests(SPARK_EXAMPLES, "1000", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
 
@@ -102,6 +102,7 @@ def test_kerberos():
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = utils.upload_file(r_script_path)
