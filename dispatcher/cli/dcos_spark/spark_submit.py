@@ -235,10 +235,13 @@ def submit_job(dispatcher, docker_image, args):
         else app["id"]
     role = app["env"]["SPARK_DISPATCHER_MESOS_ROLE"]
 
+    driver_labels = "spark.mesos.driver.labels=DCOS_SPACE:{space}"\
+        .format(space=dcos_space)
+
     args = ["--conf",
             "spark.mesos.executor.docker.image={}".format(docker_image),
             "--conf",
-            "spark.mesos.driver.labels=DCOS_SPACE:{}".format(dcos_space),
+            "{}".format(driver_labels),
             "--conf",
             "spark.mesos.task.labels=DCOS_SPACE:{}".format(dcos_space),
             "--conf",
