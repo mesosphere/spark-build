@@ -190,6 +190,12 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
+	val = newSparkVal("py-files", "spark.submit.pyFiles", "Add .py, .zip or .egg files to " +
+		"be distributed with your application. If you depend on multiple Python files we recommend packaging them " +
+		"into a .zip or .egg.")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
+
 	submit.Arg("jar", "Application jar to be run").Required().URLVar(&args.app)
 	submit.Arg("args", "Application arguments").StringsVar(&args.appArgs)
 
@@ -414,7 +420,8 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	submit, args := sparkSubmitArgSetup()
 
-	_, err := submit.Parse(cleanUpSubmitArgs(cmd.submitArgs, args.boolVals))
+	d, err := submit.Parse(cleanUpSubmitArgs(cmd.submitArgs, args.boolVals))
+	log.Printf("SENTINEL: command %s", d)
 	if err != nil {
 		log.Fatalf("Error when parsing --submit-args: %s", err)
 	}
