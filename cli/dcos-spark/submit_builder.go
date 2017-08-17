@@ -48,8 +48,12 @@ type sparkArgs struct {
 	boolVals   			[]*sparkVal
 	stringVals 			[]*sparkVal
 
-	appJar  			*url.URL
+	app		  			*url.URL
 	appArgs 			[]string
+
+	isScala				bool
+	isPython			bool
+	isR					bool
 }
 
 func NewSparkArgs() *sparkArgs {
@@ -64,7 +68,10 @@ func NewSparkArgs() *sparkArgs {
 		make([]*sparkVal, 0),
 		make([]*sparkVal, 0),
 		new(url.URL),
-		make([]string, 0)}
+		make([]string, 0),
+		false,
+		false,
+		false}
 }
 
 /*
@@ -183,7 +190,7 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
-	submit.Arg("jar", "Application jar to be run").Required().URLVar(&args.appJar)
+	submit.Arg("jar", "Application jar to be run").Required().URLVar(&args.app)
 	submit.Arg("args", "Application arguments").StringsVar(&args.appArgs)
 
 	return submit, args
@@ -237,6 +244,48 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
+}
+
+func parseAppliationFile(args *sparkArgs) error {
+	if args.isScala || args.isPython || args.isR {  // user specified
+		if args.isScala && (args.mainClass != "") {
+			return errors.New("Can only specify main class when using a Scala or Java Spark application")
+		}
+		return nil
+	}
+
+	appString := args.app.String()
+	fs := strings.Split(appString, "/")
+	f := fs[len(fs)-1]
+
+	if strings.HasSuffix(appString, ".R") {
+		log.Printf("Parsing application as R job")
+		if args.mainClass != "" {
+			return errors.New("Cannot specify a main class for an R job")
+		}
+		args.isR = true
+		args.isPython = false
+		args.isScala = false
+		args.mainClass = f
+		return nil
+	}
+
+	if strings.HasSuffix(appString, ".py") {
+		log.Printf("Parsing application as Python job")
+		if args.mainClass != "" {
+			return errors.New("Cannot specify a main class for an python job")
+		}
+		args.isR = false
+		args.isPython = true
+		args.isScala = false
+		args.mainClass = f
+		return nil
+	}
+
+	args.isR = false
+	args.isPython = false
+	args.isScala = true
+	return nil
 }
 
 func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) []string {
@@ -389,6 +438,10 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		}
 	}
 
+	parseAppliationFile(args)
+
+	log.Printf("SENTINAL: ARGS: %s", args.appArgs)
+
 	// insert/overwrite some default properties:
 	args.properties["spark.submit.deployMode"] = "cluster"
 	if strings.EqualFold(client.OptionalCLIConfigValue("core.ssl_verify"), "false") {
@@ -405,15 +458,20 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	args.properties["spark.master"] = sparkMasterURL.String()
 
 	// copy appResource to front of 'spark.jars' data:
-	jars, ok := args.properties["spark.jars"]
-	if !ok || len(jars) == 0 {
-		args.properties["spark.jars"] = args.appJar.String()
-	} else {
-		args.properties["spark.jars"] = fmt.Sprintf("%s,%s", args.appJar.String(), jars)
+	if args.isScala {
+		jars, ok := args.properties["spark.jars"]
+		log.Printf("SENTINAL: got jars %s", jars)
+		log.Printf("SENTINAL: got appJar %s w00t", args.app.String())
+		log.Printf("SENTINAL: got properties %s", args.properties)
+		if !ok || len(jars) == 0 {
+			args.properties["spark.jars"] = args.app.String()
+		} else {
+			args.properties["spark.jars"] = fmt.Sprintf("%s,%s", args.app.String(), jars)
+		}
 	}
 
 	// if spark.app.name is missing, set it to mainClass
-	_, ok = args.properties["spark.app.name"]
+	_, ok := args.properties["spark.app.name"]
 	if !ok {
 		args.properties["spark.app.name"] = args.mainClass
 	}
@@ -509,7 +567,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	jsonMap := map[string]interface{}{
 		"action":               "CreateSubmissionRequest",
 		"appArgs":              args.appArgs,
-		"appResource":          args.appJar.String(),
+		"appResource":          args.app.String(),
 		"clientSparkVersion":   "2.0.0",
 		"environmentVariables": cmd.submitEnv,
 		"mainClass":            args.mainClass,
