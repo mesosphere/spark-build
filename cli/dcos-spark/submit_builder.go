@@ -294,7 +294,7 @@ func parseAppliationFile(args *sparkArgs) error {
 	return nil
 }
 
-func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) []string {
+func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
 	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
 	// HACK: spark-submit uses '--arg val' by convention, while kingpin only supports '--arg=val'.
@@ -302,6 +302,7 @@ func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) []string {
 	log.Printf("SENTINAL: got cleaned args %s", argsCleaned)
 	args := strings.Split(argsCleaned, " ")
 	argsEquals := make([]string, 0)
+	appFlags := make([]string, 0)
 	i := 0
 ARGLOOP:
 	for i < len(args) {
@@ -310,11 +311,16 @@ ARGLOOP:
 			// looks like we've exited the flags entirely, and are now at the jar and/or args.
 			// any arguments without a dash at the front should've been joined to preceding keys.
 			// flush the rest and exit.
-			log.Printf("SENTINEL: EXITED have args %s", args[i])
+			log.Printf("SENTINEL: EXITED at arg %s", args[i])
 			for i < len(args) {
 				arg = args[i]
-				log.Printf("SENTINEL: Adding arg %s", arg)
-				argsEquals = append(argsEquals, arg)
+				if strings.HasPrefix(arg, "-") {
+					log.Printf("adding application flag %arg", arg)
+					appFlags = append(appFlags, arg)
+				} else {
+					log.Printf("SENTINEL: Adding regular arg %s", arg)
+					argsEquals = append(argsEquals, arg)
+				}
 				i += 1
 			}
 			break
@@ -347,7 +353,7 @@ ARGLOOP:
 	//}
 	log.Printf("Translated arguments: '%s'\n", argsEquals)
 	log.Printf("SENTINAL: returning argsEquals %s", argsEquals)
-	return argsEquals
+	return argsEquals, appFlags
 }
 
 func getValsFromPropertiesFile(path string) map[string]string {
@@ -425,14 +431,14 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	submit, args := sparkSubmitArgSetup()
 
-	knownFlags := make([]string, 0)
-	for _, a := range args.stringVals {
-		knownFlags = append(knownFlags, a.flagName)
-	}
+	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
 
-	log.Printf("SENTINEL: known flags : %s", knownFlags)
+	d, err := submit.Parse(submitArgs)
 
-	d, err := submit.Parse(cleanUpSubmitArgs(cmd.submitArgs, args.boolVals))
+	args.appArgs = append(args.appArgs, appFlags...)
+
+	log.Printf("SENTINEL: App args: %s", args.appArgs)
+
 	log.Printf("SENTINEL: command %s err %s", d, err)
 	if err != nil {
 		log.Fatalf("Error when parsing --submit-args: %s", err)

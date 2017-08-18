@@ -30,11 +30,11 @@ def setup_module(module):
         utils.require_hdfs()
 
 
-#def teardown_module(module):
-#    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
-#    if utils.hdfs_enabled():
-#        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-#        _run_janitor(HDFS_SERVICE_NAME)
+def teardown_module(module):
+    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
+    if utils.hdfs_enabled():
+        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+        _run_janitor(HDFS_SERVICE_NAME)
 
 
 @pytest.mark.sanity
@@ -53,9 +53,10 @@ def test_jar():
 @pytest.mark.sanity
 @pytest.mark.runnow
 def test_sparkPi():
-    utils.run_tests(SPARK_EXAMPLES, "1000", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
+    utils.run_tests(SPARK_EXAMPLES, "100", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_teragen():
     if utils.hdfs_enabled():
         jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
@@ -66,7 +67,6 @@ def test_teragen():
 
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)
@@ -102,7 +102,6 @@ def test_kerberos():
 
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = utils.upload_file(r_script_path)
