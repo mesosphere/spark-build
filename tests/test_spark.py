@@ -51,12 +51,10 @@ def test_jar():
 
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_sparkPi():
     utils.run_tests(SPARK_EXAMPLES, "100", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_teragen():
     if utils.hdfs_enabled():
         jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
