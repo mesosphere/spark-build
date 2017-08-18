@@ -25,9 +25,10 @@ CNI_TEST_NUM_EXECUTORS = 1
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 
 def setup_module(module):
-    utils._require_spark_cli()
     if utils.hdfs_enabled():
         utils.require_hdfs()
+    utils.require_spark()
+    utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
 def teardown_module(module):
