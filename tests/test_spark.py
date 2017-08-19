@@ -46,25 +46,30 @@ def test_jar(app_name="/spark"):
         master_url,
         shakedown.dcos_acs_token())
     jar_url = utils.upload_file(os.getenv('TEST_JAR_PATH'))
-    utils.run_tests(jar_url,
-                    spark_job_runner_args,
-                    "All tests passed",
-                    app_name,
-                    ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
+    utils.run_tests(app_url=jar_url,
+                    app_args=spark_job_runner_args,
+                    expected_output="All tests passed",
+                    app_name=app_name,
+                    args=["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
 @pytest.mark.sanity
 def test_sparkPi():
-    utils.run_tests(SPARK_EXAMPLES, "100", "Pi is roughly 3", ["--class org.apache.spark.examples.SparkPi"])
+    utils.run_tests(app_url=SPARK_EXAMPLES,
+                    app_args="100",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=["--class org.apache.spark.examples.SparkPi"])
 
 @pytest.mark.sanity
 def test_teragen():
     if utils.hdfs_enabled():
         jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
-        utils.run_tests(jar_url,
-                        "1g hdfs:///terasort_in",
-                        "Number of records written",
-                        ["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
+        utils.run_tests(app_url=jar_url,
+                        app_args="1g hdfs:///terasort_in",
+                        expected_output="Number of records written",
+                        app_name="/spark",
+                        args=["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
 
 
 @pytest.mark.sanity
@@ -73,10 +78,11 @@ def test_python():
     python_script_url = utils.upload_file(python_script_path)
     py_file_path = os.path.join(THIS_DIR, 'jobs', 'python', 'PySparkTestInclude.py')
     py_file_url = utils.upload_file(py_file_path)
-    utils.run_tests(python_script_url,
-                    "30",
-                    "Pi is roughly 3",
-                    ["--py-files", py_file_url])
+    utils.run_tests(app_url=python_script_url,
+                    app_args="30",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=["--py-files", py_file_url])
 
 
 @pytest.mark.skip(reason="must be run manually against a kerberized HDFS")
@@ -93,10 +99,11 @@ def test_kerberos():
     principal = "nn/ip-10-0-2-134.us-west-2.compute.internal@LOCAL"
     keytab = "nn.ip-10-0-2-134.us-west-2.compute.internal.keytab"
     utils.run_tests(
-        "http://infinity-artifacts.s3.amazonaws.com/spark/sparkjob-assembly-1.0.jar",
-        "hdfs:///krb5.conf",
-        "number of words in",
-        ["--class", "HDFSWordCount",
+        app_url="http://infinity-artifacts.s3.amazonaws.com/spark/sparkjob-assembly-1.0.jar",
+        app_args="hdfs:///krb5.conf",
+        expected_output="number of words in",
+        app_name="/spark",
+        args=["--class", "HDFSWordCount",
          "--principal",  principal,
          "--keytab", keytab,
          "--conf", "sun.security.krb5.debug=true"])
@@ -106,19 +113,21 @@ def test_kerberos():
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = utils.upload_file(r_script_path)
-    utils.run_tests(r_script_url,
-               '',
-               "Justin")
+    utils.run_tests(app_url=r_script_url,
+                    app_args='',
+                    expected_output="Justin",
+                    app_name="/spark")
 
 
 @pytest.mark.sanity
 def test_cni():
     SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
-    utils.run_tests(SPARK_EXAMPLES,
-               "",
-               "Pi is roughly 3",
-               ["--conf", "spark.mesos.network.name=dcos",
-                "--class", "org.apache.spark.examples.SparkPi"])
+    utils.run_tests(app_url=SPARK_EXAMPLES,
+                    app_args="",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=["--conf", "spark.mesos.network.name=dcos",
+                          "--class", "org.apache.spark.examples.SparkPi"])
 
 
 @pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
@@ -179,10 +188,11 @@ def test_s3():
             "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
                 os.environ["AWS_SECRET_ACCESS_KEY"]),
             "--class", "S3Job"]
-    utils.run_tests(_scala_test_jar_url(),
-                    app_args,
-                    "",
-                    args)
+    utils.run_tests(app_url=_scala_test_jar_url(),
+                    app_args=app_args,
+                    expected_output="",
+                    app_name="/spark",
+                    args=args)
 
     assert len(list(s3.list("linecount-out"))) > 0
 
@@ -213,10 +223,11 @@ def test_secrets():
                 "--conf", "spark.mesos.driver.secret.name={}".format(secret_name),
                 "--conf", "spark.mesos.driver.secret.filename={}".format(secret_file_name),
                 "--class", "SecretsJob"]
-        utils.run_tests(_scala_test_jar_url(),
-                        secret_file_name,
-                        output,
-                        args)
+        utils.run_tests(app_url=_scala_test_jar_url(),
+                        app_args=secret_file_name,
+                        expected_output=output,
+                        app_name="/spark",
+                        args=args)
     finally:
         utils.delete_secret(secret_name)
 

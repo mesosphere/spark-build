@@ -141,7 +141,7 @@ def _get_spark_options(options = None):
     return options
 
 
-def run_tests(app_url, app_args, expected_output, app_name="/spark", args=[]):
+def run_tests(app_url, app_args, expected_output, app_name, args=[]):
     task_id = submit_job(app_url, app_args, app_name, args)
     check_job_output(task_id, expected_output)
 
