@@ -151,9 +151,11 @@ func handleCommands(app *kingpin.Application) {
 
 	run.Flag("submit-args", fmt.Sprintf("Arguments matching what would be sent to 'spark-submit': %s",
 		sparkSubmitHelp())).Required().PlaceHolder("ARGS").StringVar(&cmd.submitArgs)
+	// TODO this should be moved to submit args
 	run.Flag("docker-image", "Docker image to run the job within").
 		Default("").
 		StringVar(&cmd.submitDockerImage)
+	// TODO this should be moved to submit args
 	run.Flag("dcos-space", "DCOS_SPACE to run the job with (default to Dispatcher's DCOS_SPACE)").
 		Default("").
 		StringVar(&cmd.submitDcosSpace)

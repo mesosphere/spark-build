@@ -141,8 +141,8 @@ def _get_spark_options(options = None):
     return options
 
 
-def run_tests(app_url, app_args, expected_output, args=[]):
-    task_id = submit_job(app_url, app_args, args)
+def run_tests(app_url, app_args, expected_output, app_name="/spark", args=[]):
+    task_id = submit_job(app_url, app_args, app_name, args)
     check_job_output(task_id, expected_output)
 
 
@@ -187,14 +187,14 @@ def upload_file(file_path):
     return s3.http_url(basename)
 
 
-def submit_job(app_url, app_args, args=[]):
+def submit_job(app_url, app_args, app_name="/spark", args=[]):
     if is_strict():
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
+    cmd = 'dcos spark {app_name} --verbose run --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')

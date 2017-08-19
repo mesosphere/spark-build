@@ -146,6 +146,8 @@ Args:
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
 
+	// TODO add secrets here
+
 	val := newSparkVal("supervise", "spark.driver.supervise", "If given, restarts the driver on failure.")
 	val.flag(submit).BoolVar(&val.b)
 	args.boolVals = append(args.boolVals, val)
@@ -428,7 +430,6 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
 	// then map flags
-
 	submit, args := sparkSubmitArgSetup()
 
 	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
@@ -552,8 +553,15 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	hdfs_config_url, err := getStringFromTree(responseJson, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
 	if err == nil && len(hdfs_config_url) != 0 { // fail silently: it's normal for this to be unset
 		hdfs_config_url = strings.TrimRight(hdfs_config_url, "/")
-		args.properties["spark.mesos.uris"] = fmt.Sprintf(
-			"%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url)
+		_, ok = args.properties["spark.mesos.uris"]
+		hdfs_uris := fmt.Sprintf("%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url)
+		if !ok {
+			args.properties["spark.mesos.uris"] = hdfs_uris
+
+		} else {
+			args.properties["spark.mesos.uris"] += "," + hdfs_uris
+		}
+
 	}
 
 	// kerberos configuration (include base64-encoded copy of --keytab OR --tgt):

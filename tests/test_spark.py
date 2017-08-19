@@ -24,6 +24,7 @@ SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 
+
 def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
@@ -39,7 +40,7 @@ def teardown_module(module):
 
 
 @pytest.mark.sanity
-def test_jar():
+def test_jar(app_name="/spark"):
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
         master_url,
@@ -48,6 +49,7 @@ def test_jar():
     utils.run_tests(jar_url,
                     spark_job_runner_args,
                     "All tests passed",
+                    app_name,
                     ["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
@@ -192,15 +194,9 @@ def test_marathon_group():
     app_id = "/path/to/spark"
     options = {"service": {"name": app_id}}
     utils.require_spark(options=options, service_name=app_id)
-    dcos.config.set_val("spark.app_id", app_id)
-
-    try:
-        test_jar()
-
-        LOGGER.info("Uninstalling app_id={}".format(app_id))
-        shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
-    finally:
-        dcos.config.unset("spark.app_id")
+    test_jar(app_name=app_id)
+    LOGGER.info("Uninstalling app_id={}".format(app_id))
+    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
 @pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
