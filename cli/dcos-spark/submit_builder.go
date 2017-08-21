@@ -133,8 +133,9 @@ Args:
 
 	submit.Flag("class", "Your application's main class (for Java / Scala apps). (REQUIRED)").
 		StringVar(&args.mainClass) // note: spark-submit can autodetect, but only for file://local.jar
-	submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
-		PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
+	// TODO re-enable after testing
+	//submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
+	//	PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
 	submit.Flag("conf", "Custom Spark configuration properties.").
 		PlaceHolder("PROP=VALUE").StringMapVar(&args.properties)
 	submit.Flag("kerberos-principal", "Principal to be used to login to KDC.").
@@ -145,6 +146,10 @@ Args:
 		"in the Spark drivers").PlaceHolder("/mytgt").Default("").StringVar(&args.tgtSecretPath)
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
+
+	// TODO expose krb5 config (base64)
+
+	// TODO expose isPython and isR
 
 	// TODO add secrets here
 
@@ -216,10 +221,11 @@ func sparkSubmitHelp() string {
 
 func prepareBase64Secret(secretPath string, isEncoded bool) string {
 	ss := strings.Split(secretPath, "/")
-	s := ss[len(ss) - 1]
+	s := ss[len(ss) - 1]  // The secret file without any slashes
+	// TODO document how secret formatting works w.r.t decoding
+	// secrets with __dcos_base64__ will be decoded by mesos or spark
 	if strings.HasPrefix(s, "__dcos_base64__") || strings.HasSuffix(s, "base64") {
-		// will be decoded by mesos or spark
-		log.Printf("Turning %s into %s", s, strings.TrimPrefix(s, "__dcos_base64__"))
+		// if we have the .base64, maintain the whole thing spark-env will decode it
 		return strings.TrimPrefix(s, "__dcos_base64__")
 	}
 	if isEncoded {
@@ -301,7 +307,6 @@ func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string
 	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
 	// HACK: spark-submit uses '--arg val' by convention, while kingpin only supports '--arg=val'.
 	//       translate the former into the latter for kingpin to parse.
-	log.Printf("SENTINAL: got cleaned args %s", argsCleaned)
 	args := strings.Split(argsCleaned, " ")
 	argsEquals := make([]string, 0)
 	appFlags := make([]string, 0)
@@ -313,14 +318,11 @@ ARGLOOP:
 			// looks like we've exited the flags entirely, and are now at the jar and/or args.
 			// any arguments without a dash at the front should've been joined to preceding keys.
 			// flush the rest and exit.
-			log.Printf("SENTINEL: EXITED at arg %s", args[i])
 			for i < len(args) {
 				arg = args[i]
 				if strings.HasPrefix(arg, "-") {
-					log.Printf("adding application flag %arg", arg)
 					appFlags = append(appFlags, arg)
 				} else {
-					log.Printf("SENTINEL: Adding regular arg %s", arg)
 					argsEquals = append(argsEquals, arg)
 				}
 				i += 1
@@ -350,11 +352,11 @@ ARGLOOP:
 			i += 1
 		}
 	}
-	//if config.Verbose {
-	//	log.Printf("Translated arguments: '%s'\n", argsEquals)
-	//}
-	log.Printf("Translated arguments: '%s'\n", argsEquals)
-	log.Printf("SENTINAL: returning argsEquals %s", argsEquals)
+	if config.Verbose {
+		log.Printf("Translated spark-submit arguments: '%s'\n", argsEquals)
+		log.Printf("Translated application arguments: '%s'\n", appFlags)
+	}
+
 	return argsEquals, appFlags
 }
 
@@ -411,6 +413,15 @@ func getStringFromTree(m map[string]interface{}, path []string) (string, error) 
 	}
 }
 
+func appendToProperty(propValue, toAppend string, args *sparkArgs) {
+	_, contains := args.properties[propValue]
+	if !contains {
+		args.properties[propValue] = toAppend
+	} else {
+		args.properties[propValue] += "," + toAppend
+	}
+}
+
 func getBase64Content(path string) string {
 	log.Printf("Opening file %s", path)
 	data, err := ioutil.ReadFile(path)
@@ -430,17 +441,12 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
 	// then map flags
-	submit, args := sparkSubmitArgSetup()
-
+	submit, args := sparkSubmitArgSetup()  // setup
+	// convert and get application flags, add them to the args passed to the spark app
 	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
-
-	d, err := submit.Parse(submitArgs)
-
 	args.appArgs = append(args.appArgs, appFlags...)
+	_, err := submit.Parse(submitArgs)
 
-	log.Printf("SENTINEL: App args: %s", args.appArgs)
-
-	log.Printf("SENTINEL: command %s err %s", d, err)
 	if err != nil {
 		log.Fatalf("Error when parsing --submit-args: %s", err)
 	}
@@ -450,6 +456,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			args.properties[boolVal.propName] = "true"
 		}
 	}
+
 	for _, stringVal := range args.stringVals {
 		if len(stringVal.s) != 0 {
 			args.properties[stringVal.propName] = stringVal.s
@@ -465,8 +472,6 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	}
 
 	parseAppliationFile(args)
-
-	log.Printf("SENTINAL: ARGS: %s", args.appArgs)
 
 	// insert/overwrite some default properties:
 	args.properties["spark.submit.deployMode"] = "cluster"
@@ -486,9 +491,6 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// copy appResource to front of 'spark.jars' data:
 	if args.isScala {
 		jars, ok := args.properties["spark.jars"]
-		log.Printf("SENTINAL: got jars %s", jars)
-		log.Printf("SENTINAL: got appJar %s w00t", args.app.String())
-		log.Printf("SENTINAL: got properties %s", args.properties)
 		if !ok || len(jars) == 0 {
 			args.properties["spark.jars"] = args.app.String()
 		} else {
@@ -545,23 +547,15 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		cmd.submitDcosSpace = dispatcherId
 	}
 	log.Printf("Setting DCOS_SPACE to %s", cmd.submitDcosSpace)
-	label := fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace)
-	args.properties["spark.mesos.driver.labels"] = label
-	args.properties["spark.mesos.task.labels"] = label
+	appendToProperty("spark.mesos.driver.labels", fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace),
+		args)
 
 	// HDFS config
 	hdfs_config_url, err := getStringFromTree(responseJson, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
 	if err == nil && len(hdfs_config_url) != 0 { // fail silently: it's normal for this to be unset
 		hdfs_config_url = strings.TrimRight(hdfs_config_url, "/")
-		_, ok = args.properties["spark.mesos.uris"]
-		hdfs_uris := fmt.Sprintf("%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url)
-		if !ok {
-			args.properties["spark.mesos.uris"] = hdfs_uris
-
-		} else {
-			args.properties["spark.mesos.uris"] += "," + hdfs_uris
-		}
-
+		appendToProperty("spark.mesos.uris",
+			fmt.Sprintf("%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url), args)
 	}
 
 	// kerberos configuration (include base64-encoded copy of --keytab OR --tgt):
@@ -582,13 +576,18 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		log.Printf("Using Kerberos principal %s", args.kerberosPrincipal)
 		args.properties["spark.yarn.principal"] = args.kerberosPrincipal
 		krb5conf, err := getStringFromTree(responseJson, []string{"app", "env", "SPARK_MESOS_KRB5_CONF_BASE64"})
-		if err != nil {
+		if err != nil && krb5conf == "" {
 			log.Printf("WARNING: krb5.conf (base64 encoded) could not be extracted from the " +
 				"Dispatcher's config")
 		}
 
 		if krb5conf != "" {
-			args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
+			_, contains := args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"]
+			if !contains {
+				args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
+			} else {
+				log.Printf("Using user-specified krb5 config")
+			}
 		}
 
 		err = setupKerberosAuthArgs(args)
@@ -612,7 +611,9 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		return "", err
 	}
 
-	log.Printf("Unleashing json payload %s", jsonPayload)
+	if config.Verbose {
+		log.Printf("Spark-submit json: %s\n", jsonPayload)
+	}
 
 	return string(jsonPayload), nil
 }
