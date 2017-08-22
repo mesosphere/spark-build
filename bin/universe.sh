@@ -87,8 +87,9 @@ upload_cli_and_stub_universe() {
 }
 
 source "${SPARK_BUILD_DIR}/bin/jenkins.sh"
+export COMMONS_TOOLS_DIR=${DIR}/dcos-commons-tools/
 configure_env
-fetch_commons_tools
+#fetch_commons_tools
 build_cli
 make_docker
 upload_cli_and_stub_universe
