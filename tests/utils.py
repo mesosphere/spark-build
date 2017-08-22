@@ -117,6 +117,9 @@ def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
 def is_service_ready(service_name, expected_tasks):
     running_tasks = [t for t in shakedown.get_service_tasks(service_name) \
                      if t['state'] == 'TASK_RUNNING']
+    LOGGER.info("Waiting for {n} tasks got {m} for service {s}".format(n=expected_tasks,
+                                                                       m=len(running_tasks),
+                                                                       s=service_name))
     return len(running_tasks) >= expected_tasks
 
 
@@ -215,10 +218,11 @@ def wait_for_executors_running(framework_name, num_executors, wait_time=600):
                        ignore_exceptions=False,
                        timeout_seconds=wait_time)
 
-
-def kill_driver(driver_id):
+def kill_driver(driver_id, app_name):
     LOGGER.info("Killing {}".format(driver_id))
-    subprocess.check_output("dcos spark kill {}".format(driver_id))
+    cmd = "dcos spark --name={app_name} kill {driver_id}".format(app_name=app_name, driver_id=driver_id)
+    out = subprocess.check_output(cmd, shell=True).decode("utf-8")
+    return out
 
 
 def _task_log(task_id, filename=None):

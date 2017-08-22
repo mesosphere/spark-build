@@ -73,7 +73,6 @@ def test_teragen():
 
 
 @pytest.mark.sanity
-@pytest.mark.runnow
 def test_supervise():
     spark_drivers = shakedown.get_service_ips("spark")
     assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running, got {}".format(len(spark_drivers))
@@ -82,16 +81,17 @@ def test_supervise():
                                  app_name="/spark",
                                  args=["--supervise",
                                        "--class", "org.apache.spark.examples.streaming.HdfsWordCount",
-                                       "--conf", "spark.cores.max=4",
-                                       "--conf", "spark.executors.cores=2"])
+                                       "--conf", "spark.cores.max=1",
+                                       "--conf", "spark.executors.cores=1"])
     LOGGER.info("Started supervised driver {}".format(driver_id))
-    utils.wait_for_executors_running("org.apache.spark.examples.streaming.HdfsWordCount", 2)
+    utils.wait_for_executors_running("HdfsWordCount", 1)
     spark_drivers = shakedown.get_service_ips("spark")
     assert len(spark_drivers) == 1, "Should be 1 spark driver running got {}".format(len(spark_drivers))
-    driver_ip = spark_drivers[0]
+    driver_ip = spark_drivers.pop()
     shakedown.kill_process_on_host(hostname=driver_ip, pattern=driver_id)
-    utils.wait_for_executors_running("org.apache.spark.examples.streaming.HdfsWordCount", 2, 1200)
-    utils.kill_driver(driver_id)
+    utils.wait_for_executors_running("HdfsWordCount", 1, 1200)
+    out = utils.kill_driver(driver_id, "/spark")
+    LOGGER.info("{}".format(out))
     spark_drivers = shakedown.get_service_ips("spark")
     assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running (just killed them all)" \
                                     ", got {}".format(len(spark_drivers))
