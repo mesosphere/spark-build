@@ -8,6 +8,7 @@ set -o pipefail
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${BIN_DIR}/.."
+COMMONS_DIR=SPARK_BUILD_DIR/dcos-commons-tools/
 
 check_env() {
     echo "Checking environment"
@@ -30,7 +31,7 @@ start_cluster() {
         echo "Using existing cluster: $DCOS_URL"
     else
         echo "Launching new cluster"
-        CCM_JSON=$(CCM_AGENTS=5 ${COMMONS_DIR}/tools/launch_ccm_cluster.py)
+        CCM_JSON=$(CCM_AGENTS=5 ${COMMONS_DIR}/launch_ccm_cluster.py)
         DCOS_URL=$(echo "${CCM_JSON}" | jq .url)
         if [ $? -ne 0 -o "$DCOS_URL" = "http://" ]; then
             exit 1
