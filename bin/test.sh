@@ -41,8 +41,8 @@ start_cluster() {
 
 initialize_service_account() {
     if [ "$SECURITY" = "strict" ]; then
-        ${COMMONS_DIR}/tools/setup_permissions.sh root "*"
-        ${COMMONS_DIR}/tools/setup_permissions.sh root hdfs-role
+        ${COMMONS_DIR}/setup_permissions.sh root "*"
+        ${COMMONS_DIR}/setup_permissions.sh root hdfs-role
     fi
 }
 
@@ -54,7 +54,7 @@ run_tests() {
     SCALA_TEST_JAR_PATH=${SPARK_BUILD_DIR}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
                        CLUSTER_URL=${DCOS_URL} \
                        STUB_UNIVERSE_URL=${STUB_UNIVERSE_URL} \
-                       ${COMMONS_DIR}/tools/run_tests.py shakedown ${SPARK_BUILD_DIR}/tests ${SPARK_BUILD_DIR}/tests/requirements.txt
+                       ${COMMONS_DIR}/run_tests.py shakedown ${SPARK_BUILD_DIR}/tests ${SPARK_BUILD_DIR}/tests/requirements.txt
 }
 
 check_env
