@@ -130,7 +130,7 @@ def test_cni():
                           "--class", "org.apache.spark.examples.SparkPi"])
 
 
-@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
+#@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 def test_cni_labels():
     driver_task_id = utils.submit_job(SPARK_EXAMPLES,
@@ -209,7 +209,7 @@ def test_marathon_group():
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+#@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
     try:
