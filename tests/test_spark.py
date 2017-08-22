@@ -73,6 +73,31 @@ def test_teragen():
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
+def test_supervise():
+    spark_drivers = shakedown.get_service_ips("spark")
+    assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running, got {}".format(len(spark_drivers))
+    driver_id = utils.submit_job(app_url=SPARK_EXAMPLES,
+                                 app_args="file:///mnt/mesos/sandbox/",
+                                 app_name="/spark",
+                                 args=["--supervise, "
+                                       "--class org.apache.spark.examples.streaming.HdfsWordCount",
+                                       "--conf spark.cores.max=4",
+                                       "--conf spark.executors.cores=2"])
+    LOGGER.info("Started supervised driver {}".format(driver_id))
+    utils.wait_for_executors_running("org.apache.spark.examples.streaming.HdfsWordCount", 2)
+    spark_drivers = shakedown.get_service_ips("spark")
+    assert len(spark_drivers) == 1, "Should be 1 spark driver running got {}".format(len(spark_drivers))
+    driver_ip = spark_drivers[0]
+    shakedown.kill_process_on_host(hostname=driver_ip, pattern=driver_id)
+    utils.wait_for_executors_running("org.apache.spark.examples.streaming.HdfsWordCount", 2, 1200)
+    utils.kill_driver(driver_id)
+    spark_drivers = shakedown.get_service_ips("spark")
+    assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running (just killed them all)" \
+                                    ", got {}".format(len(spark_drivers))
+
+
+@pytest.mark.sanity
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)
@@ -210,7 +235,7 @@ def test_marathon_group():
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-#@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
     try:

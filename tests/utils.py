@@ -209,11 +209,16 @@ def submit_job(app_url, app_args, app_name="/spark", args=[]):
     return match.group(1)
 
 
-def wait_for_executors_running(framework_name, num_executors):
+def wait_for_executors_running(framework_name, num_executors, wait_time=600):
     LOGGER.info("Waiting for executor task to be RUNNING...")
     shakedown.wait_for(lambda: is_service_ready(framework_name, num_executors),
                        ignore_exceptions=False,
-                       timeout_seconds=600)
+                       timeout_seconds=wait_time)
+
+
+def kill_driver(driver_id):
+    LOGGER.info("Killing {}".format(driver_id))
+    subprocess.check_output("dcos spark kill {}".format(driver_id))
 
 
 def _task_log(task_id, filename=None):
