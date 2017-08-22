@@ -8,7 +8,7 @@ set -o pipefail
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_BUILD_DIR="${BIN_DIR}/.."
-COMMONS_DIR=SPARK_BUILD_DIR/dcos-commons-tools/
+COMMONS_DIR=${SPARK_BUILD_DIR}/dcos-commons-tools/
 
 check_env() {
     echo "Checking environment"
