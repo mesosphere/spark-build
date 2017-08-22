@@ -100,7 +100,7 @@ Unsupported flags, omitted here:
 managed by us, user cannot change:
 - deployMode:             --deploy-mode <client|cluster> (spark.submit.deployMode/DEPLOY_MODE)
 - master:                 --master mesos://host:port (spark.master/MASTER)
-python is officially unsupported in DC/OS Spark docs:
+python is officially supported in DC/OS Spark docs:
 - pyFiles:                --py-files many.zip,python.egg,files.py (spark.submit.pyFiles)
 appears to be client mode only? doesn't seem to be used in POST submit call at all:
 - proxyUser:              --proxy-user SOMENAME
@@ -260,7 +260,7 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
 }
 
-func parseAppliationFile(args *sparkArgs) error {
+func parseApplicationFile(args *sparkArgs) error {
 	if args.isScala || args.isPython || args.isR {  // user specified
 		if args.isScala && (args.mainClass != "") {
 			return errors.New("Can only specify main class when using a Scala or Java Spark application")
@@ -471,7 +471,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		}
 	}
 
-	parseAppliationFile(args)
+	parseApplicationFile(args)
 
 	// insert/overwrite some default properties:
 	args.properties["spark.submit.deployMode"] = "cluster"
