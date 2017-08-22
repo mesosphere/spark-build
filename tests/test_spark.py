@@ -235,7 +235,7 @@ def test_marathon_group():
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+#@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
     try:

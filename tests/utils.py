@@ -166,19 +166,14 @@ def check_job_output(task_id, expected_output):
 
 def delete_secret(name):
     LOGGER.info("Deleting secret name={}".format(name))
-
-    dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
-    dcos.http.delete(url)
+    cmd = "dcos security secrets delete /{}".format(name)
+    subprocess.check_output(cmd, shell=True)
 
 
 def create_secret(name, value):
     LOGGER.info("Creating secret name={}".format(name))
-
-    dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
-    data = {"path": name, "value": value}
-    dcos.http.put(url, data=json.dumps(data))
+    cmd = "dcos security secrets create /{name} -v {value}".format(name=name, value=value)
+    subprocess.check_output(cmd, shell=True)
 
 
 def upload_file(file_path):
