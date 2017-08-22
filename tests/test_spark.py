@@ -80,10 +80,10 @@ def test_supervise():
     driver_id = utils.submit_job(app_url=SPARK_EXAMPLES,
                                  app_args="file:///mnt/mesos/sandbox/",
                                  app_name="/spark",
-                                 args=["--supervise, "
-                                       "--class org.apache.spark.examples.streaming.HdfsWordCount",
-                                       "--conf spark.cores.max=4",
-                                       "--conf spark.executors.cores=2"])
+                                 args=["--supervise",
+                                       "--class", "org.apache.spark.examples.streaming.HdfsWordCount",
+                                       "--conf", "spark.cores.max=4",
+                                       "--conf", "spark.executors.cores=2"])
     LOGGER.info("Started supervised driver {}".format(driver_id))
     utils.wait_for_executors_running("org.apache.spark.examples.streaming.HdfsWordCount", 2)
     spark_drivers = shakedown.get_service_ips("spark")
