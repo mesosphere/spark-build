@@ -142,7 +142,10 @@ def _get_spark_options(options = None):
 
 
 def run_tests(app_url, app_args, expected_output, app_name, args=[]):
-    task_id = submit_job(app_url, app_args, app_name, args)
+    task_id = submit_job(app_url=app_url,
+                         app_args=app_args,
+                         app_name=app_name,
+                         args=args)
     check_job_output(task_id, expected_output)
 
 
@@ -194,7 +197,7 @@ def submit_job(app_url, app_args, app_name="/spark", args=[]):
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos spark --name={app_name} --verbose run --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
+    cmd = 'dcos spark --name={app_name}  run --verbose --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')

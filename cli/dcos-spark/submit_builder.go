@@ -538,6 +538,13 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	log.Printf("Using docker image %s for drivers", cmd.submitDockerImage)
 	args.properties["spark.mesos.executor.docker.image"] = cmd.submitDockerImage
 
+	_, contains := args.properties["spark.mesos.executor.docker.forcePullImage"]
+	if !contains {
+		log.Printf("Pulling image %s for executors, by default. To bypass set " +
+			"spark.mesos.executor.docker.forcePullImage=false", cmd.submitDockerImage)
+		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
+	}
+
 	// DCOS_SPACE
 	if cmd.submitDcosSpace == "" { // get the DCOS_SPACE from the marathon app
 		dispatcherId, err := getStringFromTree(responseJson, []string{"app", "id"})

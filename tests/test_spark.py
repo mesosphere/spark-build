@@ -133,12 +133,13 @@ def test_cni():
 #@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 def test_cni_labels():
-    driver_task_id = utils.submit_job(SPARK_EXAMPLES,
-                               "3000",   # Long enough to examine the Driver's & Executor's task infos
-                               ["--conf", "spark.mesos.network.name=dcos",
-                                "--conf", "spark.mesos.network.labels=key1:val1,key2:val2",
-                                "--conf", "spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
-                                "--class", "org.apache.spark.examples.SparkPi"])
+    driver_task_id = utils.submit_job(app_url=SPARK_EXAMPLES,
+                                      app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
+                                      app_name="/spark",
+                                      args=["--conf", "spark.mesos.network.name=dcos",
+                                            "--conf", "spark.mesos.network.labels=key1:val1,key2:val2",
+                                            "--conf", "spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
+                                            "--class", "org.apache.spark.examples.SparkPi"])
 
     # Wait until executors are running
     utils.wait_for_executors_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS)
