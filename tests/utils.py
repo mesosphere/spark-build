@@ -176,7 +176,7 @@ def delete_secret(name):
     try:
         out = subprocess.check_output(cmd, shell=True)
     except:
-        LOGGER.info("Unable to delete secret? {}".foramt(out))
+        LOGGER.info("Unable to delete secret? {}".format(out))
 
 
 def create_secret(name, value):

@@ -232,17 +232,16 @@ def test_marathon_group():
     utils.require_spark(options=options, service_name=app_id)
     test_jar(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
-    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
+    #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+#@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
+    secret_name = "secret"
+    secret_contents = "mgummelt"
     try:
-        secret_name = "secret"
-        secret_contents = "mgummelt"
         utils.create_secret(secret_name, secret_contents)
-
         secret_file_name = "secret_file"
         output = "Contents of file {}: {}".format(secret_file_name, secret_contents)
         args = ["--conf", "spark.mesos.containerizer=mesos",
