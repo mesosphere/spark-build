@@ -183,7 +183,7 @@ def delete_secret(name):
 def create_secret(name, value):
     LOGGER.info("Creating secret name={}".format(name))
     dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
+    url = dcos_url + "/secrets/v1/secret/default/{}".format(name)
     data = {"path": name, "value": value}
     dcos.http.put(url, data=json.dumps(data))
 
