@@ -241,6 +241,7 @@ def test_marathon_group():
 #@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
+    utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
     secret_file_name = "secret_file"
     output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
     args = ["--conf", "spark.mesos.containerizer=mesos",

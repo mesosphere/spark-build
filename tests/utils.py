@@ -182,8 +182,10 @@ def delete_secret(name):
 
 def create_secret(name, value):
     LOGGER.info("Creating secret name={}".format(name))
-    cmd = "dcos security secrets create /{name} -v {value}".format(name=name, value=value)
-    subprocess.check_output(cmd, shell=True)
+    dcos_url = dcos.config.get_config_val("core.dcos_url")
+    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
+    data = {"path": name, "value": value}
+    dcos.http.put(url, data=json.dumps(data))
 
 
 def upload_file(file_path):
