@@ -238,7 +238,7 @@ def test_marathon_group():
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-#@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
+@pytest.mark.skip(reason="Skip until on newer CLI so we can use dcos security ...")
 @pytest.mark.sanity
 def test_secrets():
     utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
