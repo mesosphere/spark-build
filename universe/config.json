@@ -42,11 +42,6 @@
                     "type": "string",
                     "default": "root"
                 },
-                "spark-dist-uri": {
-                    "type": "string",
-                    "description": "Spark distribution URI.  This is only used to run spark-submit on your local machine.  The DCOS Spark CLI will fetch this Spark distribution.  This variable has no effect on the Spark distribution running the dispatcher, drivers, nor executors.  If you want to customize the Spark build used in the jobs themselves, configure service.docker-image.",
-                    "default": "{{spark-dist-uri}}"
-                },
                 "docker-image": {
                     "type": "string",
                     "description": "The docker image used to run the dispatcher, drivers, and executors.  If, for example, you need a Spark built with a specific Hadoop version, set this variable to one of the images here: https://hub.docker.com/r/mesosphere/spark/tags/",
