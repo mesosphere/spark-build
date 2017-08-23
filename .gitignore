@@ -1,7 +1,6 @@
 .idea/
 .cache/
 build/
-dcos-commons-tools/
 tests/env
 tests/venv
 tests/.cache

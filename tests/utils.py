@@ -51,7 +51,7 @@ def require_spark(options={}, service_name=None):
 
 
 # This should be in shakedown (DCOS_OSS-679)
-def _require_package(pkg_name, service_name=None, options = {}):
+def _require_package(pkg_name, service_name=None, options={}):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(
         pkg_manager,
@@ -117,7 +117,16 @@ def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
 def is_service_ready(service_name, expected_tasks):
     running_tasks = [t for t in shakedown.get_service_tasks(service_name) \
                      if t['state'] == 'TASK_RUNNING']
+    LOGGER.info("Waiting for {n} tasks got {m} for service {s}".format(n=expected_tasks,
+                                                                       m=len(running_tasks),
+                                                                       s=service_name))
     return len(running_tasks) >= expected_tasks
+
+
+def no_spark_jobs(service_name):
+    driver_ips = shakedown.get_service_ips(service_name)
+    LOGGER.info("Waiting for drivers to finish or be killed, still seeing {}".format(len(driver_ips)))
+    return len(driver_ips) == 0
 
 
 def _get_spark_options(options = None):
@@ -141,8 +150,11 @@ def _get_spark_options(options = None):
     return options
 
 
-def run_tests(app_url, app_args, expected_output, args=[]):
-    task_id = submit_job(app_url, app_args, args)
+def run_tests(app_url, app_args, expected_output, app_name, args=[]):
+    task_id = submit_job(app_url=app_url,
+                         app_args=app_args,
+                         app_name=app_name,
+                         args=args)
     check_job_output(task_id, expected_output)
 
 
@@ -160,17 +172,18 @@ def check_job_output(task_id, expected_output):
 
 def delete_secret(name):
     LOGGER.info("Deleting secret name={}".format(name))
-
-    dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
-    dcos.http.delete(url)
+    cmd = "dcos security secrets delete /{}".format(name)
+    out = None
+    try:
+        out = subprocess.check_output(cmd, shell=True).decode('utf-8')
+    except:
+        LOGGER.info("Unable to delete secret? {}".format(out))
 
 
 def create_secret(name, value):
     LOGGER.info("Creating secret name={}".format(name))
-
     dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "secrets/v1/secret/default/{}".format(name)
+    url = dcos_url + "/secrets/v1/secret/default/{}".format(name)
     data = {"path": name, "value": value}
     dcos.http.put(url, data=json.dumps(data))
 
@@ -187,14 +200,14 @@ def upload_file(file_path):
     return s3.http_url(basename)
 
 
-def submit_job(app_url, app_args, args=[]):
+def submit_job(app_url, app_args, app_name="/spark", args=[]):
     if is_strict():
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
         args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos --log-level=DEBUG spark --verbose run --submit-args="{0}"'.format(submit_args)
+    cmd = 'dcos spark --name={app_name}  run --verbose --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
@@ -206,11 +219,18 @@ def submit_job(app_url, app_args, args=[]):
     return match.group(1)
 
 
-def wait_for_executors_running(framework_name, num_executors):
+def wait_for_executors_running(framework_name, num_executors, wait_time=600):
     LOGGER.info("Waiting for executor task to be RUNNING...")
     shakedown.wait_for(lambda: is_service_ready(framework_name, num_executors),
                        ignore_exceptions=False,
-                       timeout_seconds=600)
+                       timeout_seconds=wait_time)
+
+
+def kill_driver(driver_id, app_name):
+    LOGGER.info("Killing {}".format(driver_id))
+    cmd = "dcos spark --name={app_name} kill {driver_id}".format(app_name=app_name, driver_id=driver_id)
+    out = subprocess.check_output(cmd, shell=True).decode("utf-8")
+    return out
 
 
 def _task_log(task_id, filename=None):

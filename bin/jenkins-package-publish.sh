@@ -21,7 +21,7 @@ function make_universe() {
     DOCKER_BUILD=false \
                 DOCKER_IMAGE=${DOCKER_IMAGE}:${DOCKER_VERSION} \
                 SPARK_DIST_URI=$(default_spark_dist) \
-                make --directory=dispatcher universe
+                make universe
 }
 
 function write_properties() {

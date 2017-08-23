@@ -8,7 +8,7 @@ SPARK_BUILD_DIR=${DIR}/..
 function run() {
     source bin/jenkins.sh
     docker_login
-    make --directory=dispatcher universe
+    make universe
     export $(cat "${WORKSPACE}/stub-universe.properties")
     make test
 }
