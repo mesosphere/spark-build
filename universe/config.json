@@ -27,12 +27,12 @@
                     "type": "string",
                     "default": "*"
                 },
-                "principal": {
+                "service_account": {
                     "description": "The Spark Dispatcher will register with Mesos with this principal.",
                     "type": "string",
                     "default": ""
                 },
-                "secret": {
+                "service_account_secret": {
                     "description": "The Spark Dispatcher will register with mesos with this secret.",
                     "type": "string",
                     "default": ""
@@ -75,22 +75,6 @@
                             "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC.  Also used by the history server.",
                             "type": "string",
                             "default": ""
-                        }
-                    }
-                },
-                "mesos": {
-                    "description": "Mesos scheduler configuration properties.",
-                    "type": "object",
-                    "properties": {
-                        "authentication": {
-                            "description": "Mesos scheduler dcos-oauth configuration.",
-                            "type": "object",
-                            "properties": {
-                                "secret_name": {
-                                    "description": "Name of the secret used to authenticate with the Mesos Master.",
-                                    "type": "string"
-                                }
-                            }
                         }
                     }
                 },

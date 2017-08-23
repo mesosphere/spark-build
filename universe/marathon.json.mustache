@@ -19,11 +19,11 @@
         "SPARK_SSL_ENABLEDALGORITHMS": "{{security.ssl.enabledAlgorithms}}",
 {{/security.ssl.enabled}}
 
-{{#security.mesos.authentication.secret_name}}
+{{#service.service_account_secret}}
         "DCOS_SERVICE_ACCOUNT_CREDENTIAL": { "secret": "serviceCredential" },
         "MESOS_MODULES": "{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}",
         "MESOS_AUTHENTICATEE": "com_mesosphere_dcos_ClassicRPCAuthenticatee",
-{{/security.mesos.authentication.secret_name}}
+{{/service.service_account_secret}}
 
 {{#service.spark-history-server-url}}
         "SPARK_HISTORY_SERVER_URL": "{{service.spark-history-server-url}}",
@@ -33,18 +33,18 @@
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
         "SPARK_USER": "{{service.user}}",
         "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
-        "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
+        "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.service_account}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
         "SPARK_LOG_LEVEL": "{{service.log-level}}"
     },
 
-{{#security.mesos.authentication.secret_name}}
+{{#service.service_account_secret}}
     "secrets": {
         "serviceCredential": {
-            "source": "{{security.mesos.authentication.secret_name}}"
+            "source": "{{service.service_account_secret}}"
         }
     },
-{{/security.mesos.authentication.secret_name}}
+{{/service.service_account_secret}}
 
     "ports": [
         0,
