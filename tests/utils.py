@@ -51,7 +51,7 @@ def require_spark(options={}, service_name=None):
 
 
 # This should be in shakedown (DCOS_OSS-679)
-def _require_package(pkg_name, service_name=None, options = {}):
+def _require_package(pkg_name, service_name=None, options={}):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(
         pkg_manager,
@@ -173,8 +173,9 @@ def check_job_output(task_id, expected_output):
 def delete_secret(name):
     LOGGER.info("Deleting secret name={}".format(name))
     cmd = "dcos security secrets delete /{}".format(name)
+    out = None
     try:
-        out = subprocess.check_output(cmd, shell=True)
+        out = subprocess.check_output(cmd, shell=True).decode('utf-8')
     except:
         LOGGER.info("Unable to delete secret? {}".format(out))
 
@@ -221,6 +222,7 @@ def wait_for_executors_running(framework_name, num_executors, wait_time=600):
     shakedown.wait_for(lambda: is_service_ready(framework_name, num_executors),
                        ignore_exceptions=False,
                        timeout_seconds=wait_time)
+
 
 def kill_driver(driver_id, app_name):
     LOGGER.info("Killing {}".format(driver_id))
