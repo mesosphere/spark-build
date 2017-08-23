@@ -173,7 +173,10 @@ def check_job_output(task_id, expected_output):
 def delete_secret(name):
     LOGGER.info("Deleting secret name={}".format(name))
     cmd = "dcos security secrets delete /{}".format(name)
-    subprocess.check_output(cmd, shell=True)
+    try:
+        out = subprocess.check_output(cmd, shell=True)
+    except:
+        LOGGER.info("Unable to delete secret? {}".foramt(out))
 
 
 def create_secret(name, value):
