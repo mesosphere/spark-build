@@ -23,11 +23,14 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
+SECRET_NAME = "secret"
+SECRET_CONTENTS = "mgummelt"
 
 
 def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
+    utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
     utils.require_spark()
     utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
@@ -238,23 +241,17 @@ def test_marathon_group():
 #@pytest.mark.skip(reason="Skip until secrets are released in DC/OS Spark: SPARK-466")
 @pytest.mark.sanity
 def test_secrets():
-    secret_name = "secret"
-    secret_contents = "mgummelt"
-    try:
-        utils.create_secret(secret_name, secret_contents)
-        secret_file_name = "secret_file"
-        output = "Contents of file {}: {}".format(secret_file_name, secret_contents)
-        args = ["--conf", "spark.mesos.containerizer=mesos",
-                "--conf", "spark.mesos.driver.secret.name={}".format(secret_name),
-                "--conf", "spark.mesos.driver.secret.filename={}".format(secret_file_name),
-                "--class", "SecretsJob"]
-        utils.run_tests(app_url=_scala_test_jar_url(),
-                        app_args=secret_file_name,
-                        expected_output=output,
-                        app_name="/spark",
-                        args=args)
-    finally:
-        utils.delete_secret(secret_name)
+    secret_file_name = "secret_file"
+    output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
+    args = ["--conf", "spark.mesos.containerizer=mesos",
+            "--conf", "spark.mesos.driver.secret.name={}".format(SECRET_NAME),
+            "--conf", "spark.mesos.driver.secret.filename={}".format(secret_file_name),
+            "--class", "SecretsJob"]
+    utils.run_tests(app_url=_scala_test_jar_url(),
+                    app_args=secret_file_name,
+                    expected_output=output,
+                    app_name="/spark",
+                    args=args)
 
 
 def _run_janitor(service_name):
