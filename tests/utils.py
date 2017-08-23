@@ -123,6 +123,12 @@ def is_service_ready(service_name, expected_tasks):
     return len(running_tasks) >= expected_tasks
 
 
+def no_spark_jobs(service_name):
+    driver_ips = shakedown.get_service_ips(service_name)
+    LOGGER.info("Waiting for drivers to finish or be killed, still seeing {}".format(len(driver_ips)))
+    return len(driver_ips) == 0
+
+
 def _get_spark_options(options = None):
     if options is None:
         options = {}

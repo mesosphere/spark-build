@@ -92,9 +92,9 @@ def test_supervise():
     utils.wait_for_executors_running("HdfsWordCount", 1, 1200)
     out = utils.kill_driver(driver_id, "/spark")
     LOGGER.info("{}".format(out))
-    spark_drivers = shakedown.get_service_ips("spark")
-    assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running (just killed them all)" \
-                                    ", got {}".format(len(spark_drivers))
+    shakedown.wait_for(lambda: utils.no_spark_jobs("spark"),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
 
 
 @pytest.mark.sanity
