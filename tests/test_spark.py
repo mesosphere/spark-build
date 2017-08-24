@@ -7,7 +7,6 @@
 #   TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
 #   SCALA_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
-import dcos.config
 import logging
 import os
 import pytest
@@ -64,6 +63,7 @@ def test_sparkPi():
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
                     args=["--class org.apache.spark.examples.SparkPi"])
+
 
 @pytest.mark.sanity
 def test_teragen():

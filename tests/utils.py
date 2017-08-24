@@ -173,7 +173,8 @@ def check_job_output(task_id, expected_output):
 class SecretHandler():
     def __init__(self, path, value):
         self.payload = json.dumps({"value": value})
-        self.api_url = dcos.config.get_config_val("core.dcos_url") + "secrets/v1/secret/default/{}".format(path)
+        self.api_url = urllib.parse.urljoin(dcos.config.get_config_val("core.dcos_url"),
+                                            "secrets/v1/secret/default/{}".format(path))
         self.token = dcos.config.get_config_val("core.dcos_acs_token")
         self.headers = {"Content-Type": "application/json", "Authorization": "token={}".format(self.token)}
 
