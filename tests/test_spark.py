@@ -30,7 +30,6 @@ SECRET_CONTENTS = "mgummelt"
 def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
-    utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
     utils.require_spark()
     utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
