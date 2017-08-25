@@ -267,7 +267,6 @@ def test_marathon_group():
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-#@pytest.mark.skip(reason="Skip until on newer CLI so we can use dcos security ...")
 @pytest.mark.sanity
 def test_secrets():
     secrets_handler = utils.SecretHandler(SECRET_NAME, SECRET_CONTENTS)
