@@ -41,11 +41,7 @@ To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable
 `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
 
-## Setting properties with a local configuration file
-TODO
-
 ## Secrets
-
 Enterprise DC/OS provides a secrets store to enable access to sensitive data such as database passwords, private keys, and API tokens. DC/OS manages secure transportation of secret data, access control and authorization, and secure storage of secret content. The content of a secret is copied and made available within the pod.  A secret can be exposed to drivers as a file and/or as an environment variable. Secrets in Spark are specified with the following configuration properties:
 #### File-based secret
 ```bash
@@ -68,7 +64,8 @@ Multiple secrets can be injected by using a comma-seperated list:
 dcos spark run --submit-args="\
 ...
 --conf spark.mesos.driver.secret.name=/user,/password \
---conf spark.mesos.driver.secret.filename=secretuser,secretpassword\
+--conf spark.mesos.driver.secret.filename=secretuser,seretpassword \
+--conf spark.mesos.driver.secret.envkey=USER,PASSWORD \
 ...
 ```
 
