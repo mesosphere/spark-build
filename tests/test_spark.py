@@ -7,11 +7,11 @@
 #   TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
 #   SCALA_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
-import dcos.config
 import logging
 import os
 import pytest
 import s3
+import json
 import shakedown
 
 import utils
@@ -30,7 +30,6 @@ SECRET_CONTENTS = "mgummelt"
 def setup_module(module):
     if utils.hdfs_enabled():
         utils.require_hdfs()
-    utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
     utils.require_spark()
     utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
@@ -64,6 +63,7 @@ def test_sparkPi():
                     app_name="/spark",
                     args=["--class org.apache.spark.examples.SparkPi"])
 
+
 @pytest.mark.sanity
 def test_teragen():
     if utils.hdfs_enabled():
@@ -77,25 +77,54 @@ def test_teragen():
 
 @pytest.mark.sanity
 def test_supervise():
-    spark_drivers = shakedown.get_service_ips("spark")
-    assert len(spark_drivers) == 0, "Shouldn't be any spark drivers running, got {}".format(len(spark_drivers))
+    def streaming_job_registered():
+        return shakedown.get_service("HdfsWordCount") is not None
+
+    def streaming_job_is_not_running():
+        return not streaming_job_registered()
+
+    def has_running_executors():
+        f = shakedown.get_service("HdfsWordCount")
+        if f is None:
+            return False
+        else:
+            return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
+
     driver_id = utils.submit_job(app_url=SPARK_EXAMPLES,
                                  app_args="file:///mnt/mesos/sandbox/",
                                  app_name="/spark",
                                  args=["--supervise",
                                        "--class", "org.apache.spark.examples.streaming.HdfsWordCount",
-                                       "--conf", "spark.cores.max=1",
-                                       "--conf", "spark.executors.cores=1"])
+                                       "--conf", "spark.cores.max=8",
+                                       "--conf", "spark.executors.cores=4"])
     LOGGER.info("Started supervised driver {}".format(driver_id))
-    utils.wait_for_executors_running("HdfsWordCount", 1)
-    spark_drivers = shakedown.get_service_ips("spark")
-    assert len(spark_drivers) == 1, "Should be 1 spark driver running got {}".format(len(spark_drivers))
-    driver_ip = spark_drivers.pop()
-    shakedown.kill_process_on_host(hostname=driver_ip, pattern=driver_id)
-    utils.wait_for_executors_running("HdfsWordCount", 1, 1200)
+    shakedown.wait_for(lambda: streaming_job_registered(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    LOGGER.info("Job has registered")
+    shakedown.wait_for(lambda: has_running_executors(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    LOGGER.info("Job has running executors")
+
+    host = shakedown.get_service("HdfsWordCount").dict()["hostname"]
+    id = shakedown.get_service("HdfsWordCount").dict()["id"]
+    driver_regex = "spark.mesos.driver.frameworkId={}".format(id)
+    shakedown.kill_process_on_host(hostname=host, pattern=driver_regex)
+
+    shakedown.wait_for(lambda: streaming_job_registered(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    LOGGER.info("Job has re-registered")
+    shakedown.wait_for(lambda: has_running_executors(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    LOGGER.info("Job has re-started")
     out = utils.kill_driver(driver_id, "/spark")
     LOGGER.info("{}".format(out))
-    shakedown.wait_for(lambda: utils.no_spark_jobs("spark"),
+    out = json.loads(out)
+    assert out["success"], "Failed to kill spark streaming job"
+    shakedown.wait_for(lambda: streaming_job_is_not_running(),
                        ignore_exceptions=False,
                        timeout_seconds=600)
 
@@ -238,10 +267,11 @@ def test_marathon_group():
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
 
-@pytest.mark.skip(reason="Skip until on newer CLI so we can use dcos security ...")
 @pytest.mark.sanity
 def test_secrets():
-    utils.create_secret(SECRET_NAME, SECRET_CONTENTS)
+    secrets_handler = utils.SecretHandler(SECRET_NAME, SECRET_CONTENTS)
+    r = secrets_handler.create_secret()
+    assert r.ok, "Error creating secret, {}".format(r.content)
     secret_file_name = "secret_file"
     output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
     args = ["--conf", "spark.mesos.containerizer=mesos",
@@ -253,6 +283,9 @@ def test_secrets():
                     expected_output=output,
                     app_name="/spark",
                     args=args)
+    r = secrets_handler.delete_secret()
+    if not r.ok:
+        LOGGER.warn("Error when deleting secret, {}".format(r.content))
 
 
 def _run_janitor(service_name):

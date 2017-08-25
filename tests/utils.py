@@ -170,22 +170,19 @@ def check_job_output(task_id, expected_output):
         raise Exception("{} not found in stdout".format(expected_output))
 
 
-def delete_secret(name):
-    LOGGER.info("Deleting secret name={}".format(name))
-    cmd = "dcos security secrets delete /{}".format(name)
-    out = None
-    try:
-        out = subprocess.check_output(cmd, shell=True).decode('utf-8')
-    except:
-        LOGGER.info("Unable to delete secret? {}".format(out))
+class SecretHandler():
+    def __init__(self, path, value):
+        self.payload = json.dumps({"value": value})
+        self.api_url = urllib.parse.urljoin(dcos.config.get_config_val("core.dcos_url"),
+                                            "secrets/v1/secret/default/{}".format(path))
+        self.token = dcos.config.get_config_val("core.dcos_acs_token")
+        self.headers = {"Content-Type": "application/json", "Authorization": "token={}".format(self.token)}
 
+    def create_secret(self):
+        return requests.put(self.api_url, data=self.payload, headers=self.headers, verify=False)
 
-def create_secret(name, value):
-    LOGGER.info("Creating secret name={}".format(name))
-    dcos_url = dcos.config.get_config_val("core.dcos_url")
-    url = dcos_url + "/secrets/v1/secret/default/{}".format(name)
-    data = {"path": name, "value": value}
-    dcos.http.put(url, data=json.dumps(data))
+    def delete_secret(self):
+        return requests.delete(self.api_url, headers=self.headers, verify=False)
 
 
 def upload_file(file_path):
