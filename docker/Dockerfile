@@ -31,11 +31,9 @@ RUN apt-get update && \
             software-properties-common \
             runit \
             nginx \
-            krb5-user
-
-RUN apt-get update && \
-    apt-get install -y curl
-RUN apt-get install -y r-base
+            krb5-user \
+            curl \
+            r-base
 
 RUN mkdir -p /opt/mesosphere/ && \
     cd /opt/mesosphere && \

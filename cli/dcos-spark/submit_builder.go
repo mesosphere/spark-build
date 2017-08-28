@@ -21,6 +21,8 @@ import (
 var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 
+const bootstrap_uri string = "https://downloads.mesosphere.com/dcos-commons/artifacts/0.30.0/bootstrap.zip"
+
 type sparkVal struct {
 	flagName string
 	propName string
@@ -470,6 +472,9 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			args.properties[k] = v
 		}
 	}
+
+	// SPARK-516 Add bootstrap to Mesos URIs
+	appendToProperty("spark.mesos.uris", bootstrap_uri, args)
 
 	parseApplicationFile(args)
 
