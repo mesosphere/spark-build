@@ -74,7 +74,7 @@ To use one of these distributions, select your Spark distribution from [here](ht
 ```json
 {
   "service": {
-    "spark-dist-uri": "<spark-dist-uri>"
+    "spark-dist-uri": "<spark-dist-uri>",
     "docker-image": "<docker-image>"
   }
 }

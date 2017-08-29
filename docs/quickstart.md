@@ -61,27 +61,21 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Your output should resemble:
         
         ```bash
-        Spark distribution spark-2.1.1-bin-2.6 not found locally.
-        It looks like this is your first time running Spark!
-        Downloading https://downloads.mesosphere.com/spark/assets/spark-2.1.1-bin-2.6.tgz...
-        Extracting spark distribution /Users/username/.dcos/spark/dist/spark-2.1.1-bin-2.6.tgz...
-        Successfully fetched spark distribution https://downloads.mesosphere.com/spark/assets/spark-2.1.1-bin-2.6.tgz!
-        127.0.0.1 - - [16/Jun/2017 14:29:57] "POST /v1/submissions/create HTTP/1.1" 200 -
-        127.0.0.1 - - [16/Jun/2017 14:29:57] "GET /v1/submissions/status/driver-20170616212957-0001 HTTP/1.1" 200 -
-        Run job succeeded. Submission id: driver-20170616212957-0001
+        2017/08/24 15:42:07 Using docker image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for drivers
+        2017/08/24 15:42:07 Pulling image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for executors, by default. To bypass set spark.mesos.executor.docker.forcePullImage=false
+        2017/08/24 15:42:07 Setting DCOS_SPACE to /spark
+        Run job succeeded. Submission id: driver-20170824224209-0001
         ```
         
     1.  View the standard output from your job:
     
         ```bash
-        dcos task log --completed driver-20170616212957-0001
+        dcos spark log driver-20170824224209-0001
         ```
         
         Your output should resemble:
         
         ```bash
-        Registered docker executor on 10.0.2.199
-        Starting task driver-20170616212957-0001
         Pi is roughly 3.141853333333333
         ```
 
@@ -96,9 +90,11 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Your output should resemble:
         
         ```bash
-        127.0.0.1 - - [16/Jun/2017 14:39:17] "POST /v1/submissions/create HTTP/1.1" 200 -
-        127.0.0.1 - - [16/Jun/2017 14:39:17] "GET /v1/submissions/status/driver-20170616213917-0002 HTTP/1.1" 200 -
-        Run job succeeded. Submission id: driver-20170616213917-0002
+        2017/08/24 15:44:20 Parsing application as Python job
+        2017/08/24 15:44:23 Using docker image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for drivers
+        2017/08/24 15:44:23 Pulling image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for executors, by default. To bypass set spark.mesos.executor.docker.forcePullImage=false
+        2017/08/24 15:44:23 Setting DCOS_SPACE to /spark
+        Run job succeeded. Submission id: driver-20170824224423-0002
         ```
         
     1.  View the standard output from your job:
@@ -110,9 +106,7 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Your output should resemble:
         
         ```bash
-        Registered docker executor on 10.0.2.199
-        Starting task driver-20170616213917-0002
-        Pi is roughly 3.142211
+        Pi is roughly 3.142715
         ```
 
 1.  Run an R job. You can view the example source [here](https://downloads.mesosphere.com/spark/examples/dataframe.R). 
@@ -126,15 +120,17 @@ This tutorial will get you up and running in minutes with Spark. You will instal
         Your output should resemble:
         
         ```bash
-        127.0.0.1 - - [16/Jun/2017 14:39:56] "POST /v1/submissions/create HTTP/1.1" 200 -
-        127.0.0.1 - - [16/Jun/2017 14:39:56] "GET /v1/submissions/status/driver-20170616213956-0003 HTTP/1.1" 200 -
-        Run job succeeded. Submission id: driver-20170616213956-0003
+        2017/08/24 15:45:21 Parsing application as R job
+        2017/08/24 15:45:23 Using docker image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for drivers
+        2017/08/24 15:45:23 Pulling image mesosphere/spark:2.0.0-2.2.0-1-hadoop-2.6 for executors, by default. To bypass set spark.mesos.executor.docker.forcePullImage=false
+        2017/08/24 15:45:23 Setting DCOS_SPACE to /spark
+        Run job succeeded. Submission id: driver-20170824224524-0003
         ```
         
     1.  View the standard output from your job:
     
         ```bash
-        dcos task log --completed driver-20170616213956-0003
+        dcos spark log --lines_count=10 driver-20170824224524-0003
         ```
         
         Your output should resemble:
@@ -154,6 +150,6 @@ This tutorial will get you up and running in minutes with Spark. You will instal
 
 ## Next Steps
 
-- To view the status of your job, run the `dcos spark webui` command and then visit the Spark cluster dispatcher UI at `http://<dcos-url>/service/spark/` . 
+- To view the status of your job, run the `dcos spark webui` command and then visit the Spark cluster dispatcher UI at `http://<dcos-url>/service/spark/` .
 - To view the logs, the Mesos UI at `http://<your-master-ip>/mesos`.
 - To view details about your Spark job, run the `dcos task log --completed <submissionId>` command.

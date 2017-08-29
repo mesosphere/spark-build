@@ -28,7 +28,7 @@ DC/OS Apache Spark includes:
 *   Multi-team support
 *   Interactive analytics through notebooks
 *   UI integration
-*   Security
+*   Security, including file- and environment-based secrets
 
 # Features
 

@@ -26,6 +26,8 @@ Notes:
 
 # Fine-grained mode
 
+**Note** Fine-grained mode has been deprecated and does not have all of the features of coarse-grained mode.
+
 In "fine-grained" mode, each Spark **task** is represented by a single Mesos task. When a Spark task finishes, the resources represented by its Mesos task are relinquished. Fine-grained mode enables finer-grained resource allocation at the cost of task startup latency.
 
 *   **Executor memory**: `spark.executor.memory`
@@ -50,7 +52,7 @@ The following is a description of the most common Spark on Mesos scheduling prop
 <td>Described above.</td>
 </tr>
 
- <tr>
+<tr>
 <td>spark.executor.memory</td>
 <td>1g</td>
 <td>Executor memory allocation.</td>

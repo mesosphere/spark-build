@@ -76,16 +76,22 @@ Keytabs are valid infinitely, while tickets can expire. Especially for long-runn
 
 Submit the job with the keytab:
 
-    dcos spark run --kerberos-principal=user@REALM --keytab-secret-path=<secret_path> \
-    --submit-args=" ... "
+    dcos spark run --submit-args="\
+    --kerberos-principal user@REALM \
+    --keytab-secret-path /__dcos_base64__hdfs-keytab \
+    --conf ... --class MySparkJob <url> <args>"
 
 ### TGT Authentication
 
 Submit the job with the ticket:
 ```$bash
-    dcos spark run --kerberos-principal user@REALM --submit-args="--tgt <ticket-file-path> ..."
+    dcos spark run --submit-args="\
+    --kerberos-principal hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL \
+    --tgt-secret-path /__dcos_base64__tgt 
+    --conf ... --class MySparkJob <url> <args>"
 ```
 
-**Note:** These credentials are security-critical. We highly recommended configuring SSL encryption between the Spark components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
+**Note:** These credentials are security-critical. The DC/OS Secret Store requires you to base64 encode binary secrets (such as the Kerberos keytab) before adding them. If they are uploaded with the `__dcos_base64__` prefix, they are automatically decoded when the secret is made available to your Spark job. If the secret name **doesn't** have this prefix, the keytab will be decoded and written to a file in the sandbox. This leaves the secret exposed and is not recommended. We also highly recommended configuring SSL encryption between the Spark components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
+
 
 [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
