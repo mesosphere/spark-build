@@ -91,7 +91,7 @@ Submit the job with the ticket:
     --conf ... --class MySparkJob <url> <args>"
 ```
 
-**Note:** These credentials are security-critical. The DC/OS Secret Store requires you to base64 encode binary secrets (such as the Kerberos keytab) before adding them. If they are uploaded with the `__dcos_base64__` prefix then they are automatically decoded when the secret is made available to your Spark job. If the secret name **doesn't** have this prefix, than the keytab will be decoded and written to a file in the sandbox. This leaves the secret exposed and is not recommended. We also highly recommended configuring SSL encryption between the Spark components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
+**Note:** These credentials are security-critical. The DC/OS Secret Store requires you to base64 encode binary secrets (such as the Kerberos keytab) before adding them. If they are uploaded with the `__dcos_base64__` prefix, they are automatically decoded when the secret is made available to your Spark job. If the secret name **doesn't** have this prefix, the keytab will be decoded and written to a file in the sandbox. This leaves the secret exposed and is not recommended. We also highly recommended configuring SSL encryption between the Spark components when accessing Kerberos-secured HDFS clusters. See the Security section for information on how to do this.
 
 
 [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
