@@ -59,7 +59,7 @@ dcos spark run --submit-args="\
 --conf spark.mesos.driver.secret.envkey=SECRETKEY \
 ...
 ```
-Multiple secrets can be injected by using a comma-seperated list:
+Multiple secrets can be injected by using a comma-separated list:
 ```bash
 dcos spark run --submit-args="\
 ...
@@ -69,7 +69,7 @@ dcos spark run --submit-args="\
 ...
 ```
 
-**Note:** Secrets are available only in Enterprise DC/OS 1.0 onwards. [Learn more about the secrets store](https://docs.mesosphere.com/1.9/security/secrets/).
+**Note:** Secrets are available only in Enterprise DC/OS 1.9 onwards. [Learn more about the secrets store](https://docs.mesosphere.com/1.9/security/secrets/).
 
 ### Authorization for Secrets
 
@@ -96,7 +96,7 @@ The path of a secret defines which service IDs can have access to it. You can th
 
 ### Binary Secrets
 
-When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be Base64-encoded as specified in RFC 4648. 
+When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648. 
 
 You can use standard `base64` command line utility. Take a look at the following example that is using BSD `base64` command.
 ``` 
@@ -108,7 +108,7 @@ $  base64 -i krb5.keytab -o kerb5.keytab.base64-encoded
 $  base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded 
 ```
 
-Give the secret basename prefixed with `__dcos_base64__`. For example  `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
+Give the secret basename prefixed with `__dcos_base64__`. For example, `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
 
 ``` 
 $  dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
