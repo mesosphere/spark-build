@@ -7,7 +7,7 @@
 {{#security.kerberos.krb5conf}}
         "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
 {{/security.kerberos.krb5conf}}
-
+        "NO_BOOTSTRAP": "true",
 {{#security.ssl.enabled}}
         "SPARK_SSL_ENABLED": "{{security.ssl.enabled}}",
         "SPARK_SSL_KEYSTOREBASE64": "{{security.ssl.keyStoreBase64}}",
