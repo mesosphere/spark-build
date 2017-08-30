@@ -41,6 +41,18 @@ To set Spark properties with a configuration file, create a
 `spark-defaults.conf` file and set the environment variable
 `SPARK_CONF_DIR` to the containing directory. [Learn more][15].
 
+## Using a properties file
+
+To reuse spark properties without cluttering the command line the CLI supports passing a path to a local file containing Spark properties. Such a file is whitespace separated properties and values, for example
+```text
+spark.mesos.containerizer   mesos
+spark.executors.cores       4
+spark.eventLog.enabled      true
+spark.eventLog.dir          hdfs:///history
+```
+will set the containerizer to `mesos`, the executor cores to `4` and enable the history server. This file is parsed locally so it will not be available to your driver applications. 
+
+
 ## Secrets
 Enterprise DC/OS provides a secrets store to enable access to sensitive data such as database passwords, private keys, and API tokens. DC/OS manages secure transportation of secret data, access control and authorization, and secure storage of secret content. The content of a secret is copied and made available within the pod.  A secret can be exposed to drivers as a file and/or as an environment variable. Secrets in Spark are specified with the following configuration properties:
 #### File-based secret

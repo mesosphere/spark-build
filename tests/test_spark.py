@@ -269,14 +269,13 @@ def test_marathon_group():
 
 @pytest.mark.sanity
 def test_secrets():
+    properties_file_path = os.path.join(THIS_DIR, "resources", "secrets-opts.txt")
     secrets_handler = utils.SecretHandler(SECRET_NAME, SECRET_CONTENTS)
     r = secrets_handler.create_secret()
     assert r.ok, "Error creating secret, {}".format(r.content)
     secret_file_name = "secret_file"
     output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
-    args = ["--conf", "spark.mesos.containerizer=mesos",
-            "--conf", "spark.mesos.driver.secret.name={}".format(SECRET_NAME),
-            "--conf", "spark.mesos.driver.secret.filename={}".format(secret_file_name),
+    args = ["--properties-file", properties_file_path,
             "--class", "SecretsJob"]
     utils.run_tests(app_url=_scala_test_jar_url(),
                     app_args=secret_file_name,

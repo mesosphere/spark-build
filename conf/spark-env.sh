@@ -18,11 +18,10 @@ MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
 # Unless explicitly directed, use bootstrap (defined on L55 of Dockerfile) to lookup the IP of the driver agent
 # this should be LIBPROCESS_IP iff the driver is on the host network, $(hostname) when it's not (e.g. CNI).
-BOOTSTRAP=${MESOS_SANDBOX}/bootstrap
 if [ -z ${NO_BOOTSTRAP} ]; then
     if [ -f ${BOOTSTRAP} ]; then
         echo "Using bootstrap to set SPARK_LOCAL_IP" >&2
-        SPARK_LOCAL_IP=$(/mnt/mesos/sandbox/bootstrap --get-task-ip)
+        SPARK_LOCAL_IP=$($BOOTSTRAP --get-task-ip)
         echo "SPARK_LOCAL_IP = ${SPARK_LOCAL_IP}" >&2
     else
         echo "ERROR: Unable to find bootstrap here: ${BOOTSTRAP}, exiting." >&2
@@ -43,8 +42,6 @@ export LIBPROCESS_SSL_KEY_FILE=/mnt/mesos/sandbox/.ssl/scheduler.key
 export MESOS_MODULES="{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}"
 export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
-echo "spark-env: Environment" >&2
-env >&2
 echo "spark-env: User: $(whoami)" >&2
 
 if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then

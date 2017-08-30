@@ -33,13 +33,17 @@ RUN apt-get update && \
             nginx \
             krb5-user \
             curl \
+            unzip \
             r-base
 
 RUN mkdir -p /opt/mesosphere/ && \
     cd /opt/mesosphere && \
     curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4-63e0814.tar.gz && \
     tar zxf libmesos-bundle-1.10-1.4-63e0814.tar.gz && \
-    rm libmesos-bundle-1.10-1.4-63e0814.tar.gz
+    rm libmesos-bundle-1.10-1.4-63e0814.tar.gz && \
+    curl -L -O https://downloads.mesosphere.com/dcos-commons/artifacts/0.30.0/bootstrap.zip && \
+    unzip bootstrap.zip && \
+    rm bootstrap.zip
 
 RUN mkdir -p /usr/lib/jvm/ && \
     cd /usr/lib/jvm && \
@@ -47,6 +51,7 @@ RUN mkdir -p /usr/lib/jvm/ && \
     tar zxf jre-8u112-linux-x64-jce-unlimited.tar.gz && \
     rm jre-8u112-linux-x64-jce-unlimited.tar.gz
 
+ENV BOOTSTRAP /opt/mesosphere/bootstrap
 ENV JAVA_HOME /usr/lib/jvm/jre1.8.0_112
 ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
 ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib/

@@ -21,8 +21,6 @@ import (
 var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 
-const bootstrap_uri string = "https://downloads.mesosphere.com/dcos-commons/artifacts/0.30.0/bootstrap.zip"
-
 type sparkVal struct {
 	flagName string
 	propName string
@@ -135,9 +133,8 @@ Args:
 
 	submit.Flag("class", "Your application's main class (for Java / Scala apps). (REQUIRED)").
 		StringVar(&args.mainClass) // note: spark-submit can autodetect, but only for file://local.jar
-	// TODO re-enable after testing
-	//submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
-	//	PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
+	submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
+		PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
 	submit.Flag("conf", "Custom Spark configuration properties.").
 		PlaceHolder("PROP=VALUE").StringMapVar(&args.properties)
 	submit.Flag("kerberos-principal", "Principal to be used to login to KDC.").
@@ -152,8 +149,6 @@ Args:
 	// TODO expose krb5 config (base64)
 
 	// TODO expose isPython and isR
-
-	// TODO add secrets here
 
 	val := newSparkVal("supervise", "spark.driver.supervise", "If given, restarts the driver on failure.")
 	val.flag(submit).BoolVar(&val.b)
@@ -387,7 +382,9 @@ func getValsFromPropertiesFile(path string) map[string]string {
 		if len(result) == 0 {
 			continue
 		}
-		vals[result[1]] = result[2]
+		prop := strings.TrimSpace(result[1])
+		val := strings.TrimSpace(result[2])
+		vals[prop] = val
 	}
 	return vals
 }
@@ -473,9 +470,6 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		}
 	}
 
-	// SPARK-516 Add bootstrap to Mesos URIs
-	appendToProperty("spark.mesos.uris", bootstrap_uri, args)
-
 	parseApplicationFile(args)
 
 	// insert/overwrite some default properties:
@@ -533,20 +527,24 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	}
 
 	// driver image
-	if cmd.submitDockerImage == "" {
-		dispatcher_image, err := getStringFromTree(responseJson, []string{"app", "container", "docker", "image"})
-		if err != nil {
-			return "", err
+	_, contains := args.properties["spark.mesos.executor.docker.image"]
+	if !contains {
+		if cmd.submitDockerImage == "" {
+			dispatcher_image, err := getStringFromTree(responseJson, []string{"app", "container", "docker", "image"})
+			if err != nil {
+				return "", err
+			}
+			args.properties["spark.mesos.executor.docker.image"] = dispatcher_image
+		} else {
+			args.properties["spark.mesos.executor.docker.image"] = cmd.submitDockerImage
 		}
-		cmd.submitDockerImage = dispatcher_image
 	}
-	log.Printf("Using docker image %s for drivers", cmd.submitDockerImage)
-	args.properties["spark.mesos.executor.docker.image"] = cmd.submitDockerImage
+	log.Printf("Using %s as the image for the driver", args.properties["spark.mesos.executor.docker.image"])
 
-	_, contains := args.properties["spark.mesos.executor.docker.forcePullImage"]
+	_, contains = args.properties["spark.mesos.executor.docker.forcePullImage"]
 	if !contains {
 		log.Printf("Pulling image %s for executors, by default. To bypass set " +
-			"spark.mesos.executor.docker.forcePullImage=false", cmd.submitDockerImage)
+			"spark.mesos.executor.docker.forcePullImage=false", args.properties["spark.mesos.executor.docker.image"])
 		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
 	}
 
