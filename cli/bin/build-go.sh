@@ -29,6 +29,9 @@ print_file() {
 # go (static binaries containing the CLI itself)
 cd $EXE_NAME/
 
+# add vendored dependencies
+export GOPATH=$(pwd)/vendor:$GOPATH
+
 # this may be omitted in 1.6+, left here for compatibility with 1.5:
 export GO15VENDOREXPERIMENT=1
 
