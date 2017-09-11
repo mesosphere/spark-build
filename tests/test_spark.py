@@ -28,18 +28,17 @@ SECRET_CONTENTS = "mgummelt"
 
 
 def setup_module(module):
-    utils._require_spark_cli()
-    #if utils.hdfs_enabled():
-    #    utils.require_hdfs()
-    #utils.require_spark()
-    #utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+    if utils.hdfs_enabled():
+        utils.require_hdfs()
+    utils.require_spark()
+    utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
-#def teardown_module(module):
-#    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
-#    if utils.hdfs_enabled():
-#        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-#        _run_janitor(HDFS_SERVICE_NAME)
+def teardown_module(module):
+    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
+    if utils.hdfs_enabled():
+        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+        _run_janitor(HDFS_SERVICE_NAME)
 
 
 @pytest.mark.sanity
