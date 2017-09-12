@@ -146,9 +146,8 @@ Args:
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
 
-	// TODO expose krb5 config (base64)
-
-	// TODO expose isPython and isR
+	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
+	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
 
 	val := newSparkVal("supervise", "spark.driver.supervise", "If given, restarts the driver on failure.")
 	val.flag(submit).BoolVar(&val.b)
@@ -258,18 +257,14 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 }
 
 func parseApplicationFile(args *sparkArgs) error {
-	if args.isScala || args.isPython || args.isR {  // user specified
-		if args.isScala && (args.mainClass != "") {
-			return errors.New("Can only specify main class when using a Scala or Java Spark application")
-		}
-		return nil
-	}
-
 	appString := args.app.String()
 	fs := strings.Split(appString, "/")
 	f := fs[len(fs)-1]
 
-	if strings.HasSuffix(appString, ".R") {
+	if strings.HasSuffix(appString, ".R") || args.isR {
+		if args.mainClass != "" {
+			return errors.New("Can only specify main class when using a Scala or Java Spark application")
+		}
 		log.Printf("Parsing application as R job")
 		if args.mainClass != "" {
 			return errors.New("Cannot specify a main class for an R job")
@@ -281,7 +276,10 @@ func parseApplicationFile(args *sparkArgs) error {
 		return nil
 	}
 
-	if strings.HasSuffix(appString, ".py") {
+	if strings.HasSuffix(appString, ".py") || args.isPython {
+		if args.mainClass != "" {
+			return errors.New("Can only specify main class when using a Scala or Java Spark application")
+		}
 		log.Printf("Parsing application as Python job")
 		if args.mainClass != "" {
 			return errors.New("Cannot specify a main class for an python job")
