@@ -8,14 +8,13 @@ enterprise: 'no'
     to a location visible to the cluster (e.g., HTTP, S3, or HDFS). [Learn more][13].
 
 1.  Run the job.
+    Include all configuration flags before the jar url and the args for your spark job after the jar url. Generally following the template `dcos spark run --submit-args="<flags> URL [args]` where `<flags>` can be things like `--conf spark.cores.max=16` and `--class my.aprk.App`, `URL` is the location of the application, and `[args]` are any arguments for the application.
+        
+        dcos spark run --submit-args=--class MySampleClass http://external.website/mysparkapp.jar"
 
-        dcos spark run --submit-args=`--class MySampleClass http://external.website/mysparkapp.jar 30`
-
-        dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py 30"
+        dcos spark run --submit-args="--py-files mydependency.py http://external.website/mysparkapp.py"
 
         dcos spark run --submit-args="http://external.website/mysparkapp.R"
-
-    You can submit arbitrary pass-through options to this script via the `--submit-args` options.
 
 	If your job runs successfully, you will get a message with the job’s submission ID:
 

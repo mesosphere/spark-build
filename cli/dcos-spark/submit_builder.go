@@ -315,12 +315,24 @@ ARGLOOP:
 			// flush the rest and exit.
 			for i < len(args) {
 				arg = args[i]
+				// if we have a --flag going to the application we need to take the arg (flag) and the value ONLY
+				// if it's not of the format --flag=val which scopt allows
 				if strings.HasPrefix(arg, "-") {
 					appFlags = append(appFlags, arg)
+					if strings.Contains(arg, "=") || (i + 1) >= len(args) {
+						i += 1
+					} else {
+						// if there's a value with this flag, add it
+						if !strings.HasPrefix(args[i + 1], "-") {
+							appFlags = append(appFlags, args[i + 1])
+							i += 1
+						}
+						i += 1
+					}
 				} else {
 					argsEquals = append(argsEquals, arg)
+					i += 1
 				}
-				i += 1
 			}
 			break
 		}

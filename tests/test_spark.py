@@ -231,11 +231,12 @@ def _check_task_network_info(task):
 
 
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_s3():
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
     s3.upload_file(linecount_path)
 
-    app_args = "{} {}".format(
+    app_args = "--readUrl {} --writeUrl {}".format(
         s3.s3n_url('linecount.txt'),
         s3.s3n_url("linecount-out"))
 
@@ -248,11 +249,41 @@ def test_s3():
             "--class", "S3Job"]
     utils.run_tests(app_url=_scala_test_jar_url(),
                     app_args=app_args,
-                    expected_output="",
+                    expected_output="Read 3 lines",
                     app_name="/spark",
                     args=args)
 
     assert len(list(s3.list("linecount-out"))) > 0
+
+    app_args = "--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt'))
+
+    args = ["--conf",
+            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
+                os.environ["AWS_ACCESS_KEY_ID"]),
+            "--conf",
+            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
+                os.environ["AWS_SECRET_ACCESS_KEY"]),
+            "--class", "S3Job"]
+    utils.run_tests(app_url=_scala_test_jar_url(),
+                    app_args=app_args,
+                    expected_output="Read 3 lines",
+                    app_name="/spark",
+                    args=args)
+
+    app_args = "--countOnly --readUrl {}".format(s3.s3n_url('linecount.txt'))
+
+    args = ["--conf",
+            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
+                os.environ["AWS_ACCESS_KEY_ID"]),
+            "--conf",
+            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
+                os.environ["AWS_SECRET_ACCESS_KEY"]),
+            "--class", "S3Job"]
+    utils.run_tests(app_url=_scala_test_jar_url(),
+                    app_args=app_args,
+                    expected_output="Read 3 lines",
+                    app_name="/spark",
+                    args=args)
 
 
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
