@@ -22,7 +22,7 @@ def _init_logging():
 _init_logging()
 LOGGER = logging.getLogger(__name__)
 DEFAULT_HDFS_TASK_COUNT=10
-HDFS_PACKAGE_NAME='beta-hdfs'
+HDFS_PACKAGE_NAME='hdfs'
 HDFS_SERVICE_NAME='hdfs'
 SPARK_PACKAGE_NAME='spark'
 
