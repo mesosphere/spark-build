@@ -6,6 +6,15 @@ feature_maturity: ""
 enterprise: 'no'
 ---
 
+## Version 2.0.1-2.2.0-1
+
+### Improvements
+- Exposed isR and isPython spark run args
+
+### Bug fixes
+- Allowed for application args to have arguments without equals sign
+- Fixed docs link in Universe package description
+
 ## Version 2.0.0-2.2.0-1
 
 ### Improvements
@@ -34,12 +43,3 @@ dispatcher use `dcos spark --name <dispatcher_app_id>`.
 ## Version 1.0.9-2.1.0-1 
 
 - The history server has been removed from the "spark" package, and put into a dedicated "spark-history" package.
-
-## Version 2.0.1-2.2.0-1
-
-### Improvements
-- Exposed isR and isPython spark run args
-
-### Bug fixes
-- Allowed for application args to have arguments without equals sign
-- Fixed docs link in Universe package description
