@@ -19,7 +19,7 @@ To configure `hdfs.config-url` to be a URL that serves your `hdfs-site.xml` and 
 
 For more information, see [Inheriting Hadoop Cluster Configuration][8].
 
-For DC/OS HDFS, these configuration files are served at `http://<hdfs.framework-name>.marathon.mesos:<port>/v1/connection`, where `<hdfs.framework-name>` is a configuration variable set in the HDFS package, and `<port>` is the port of its marathon app.
+For DC/OS HDFS, these configuration files are served at `http://<hdfs.framework-name>.marathon.mesos:<port>/v1/endpoints`, where `<hdfs.framework-name>` is a configuration variable set in the HDFS package, and `<port>` is the port of its marathon app.
 
 # HDFS Kerberos
 
