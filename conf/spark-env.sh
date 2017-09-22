@@ -44,6 +44,12 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
+if base64 --help | grep -q GNU; then
+      BASE64_D="base64 -d" # GNU
+  else
+      BASE64_D="base64 -D" # BSD
+fi
+
 if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
     for f in $MESOS_SANDBOX/*.base64 ; do
         echo "decoding $f" >&2
@@ -53,16 +59,27 @@ if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
 fi
 
 if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
-    if base64 --help | grep -q GNU; then
-          BASE64_D="base64 -d" # GNU
-      else
-          BASE64_D="base64 -D" # BSD
-    fi
     echo "spark-env: Copying krb config from $KRB5_CONFIG_BASE64 to /etc/" >&2
     echo "${KRB5_CONFIG_BASE64}" | ${BASE64_D} > /etc/krb5.conf
 else
     echo "spark-env: No kerberos KDC config found" >&2
 fi
+
+if [[ -n "${KEYSTORE_BASE64}" ]]; then
+    echo "spark-env: Copying keystore to SANDBOX" >&2
+    echo "${KEYSTORE_BASE64}" | ${BASE64_D} > ${MESOS_SANDBOX}/server.jks
+else
+    echo "spark-env: No keystore envvar found" >&2
+fi
+
+if [[ -n "${TRUSTSTORE_BASE64}" ]]; then
+    echo "spark-env: Copying truststore config to SANDBOX" >&2
+    echo "${TRUSTSTORE_BASE64}" | ${BASE64_D} > ${MESOS_SANDBOX}/trust.jks
+else
+    echo "spark-env: No truststore envvar found" >&2
+fi
+
+
 
 # Options read when launching programs locally with
 # ./bin/run-example or ./bin/spark-submit
