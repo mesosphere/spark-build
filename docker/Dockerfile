@@ -72,11 +72,14 @@ RUN ln -s /bin/grep /usr/bin/grep
 
 RUN ln -s /var/lib/runit/service/spark /etc/service/spark
 RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
+RUN mkdir -p /etc/hadoop
 
 ADD dist /opt/spark/dist
 
 # Commenting these for now, because we're running Spark as root in strict mode
 RUN chmod -R ugo+rw /etc/nginx
+RUN chmod -R ugo+rw /etc/krb5.conf
+RUN chmod -R ugo+rw /etc/hadoop
 RUN chmod -R ugo+rw /etc/service
 RUN chmod -R ugo+rw /var/lib/
 RUN chmod -R ugo+rw /var/run/
