@@ -75,7 +75,7 @@ RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
 ADD dist /opt/spark/dist
 
-# Commenting these for now, because we're running Spark as root in strict mode
+# required to run as nobody
 RUN chmod -R ugo+rw /etc/nginx
 RUN chmod -R ugo+rw /etc/krb5.conf
 RUN chmod -R ugo+rw /etc/hadoop
