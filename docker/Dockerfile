@@ -72,7 +72,6 @@ RUN ln -s /bin/grep /usr/bin/grep
 
 RUN ln -s /var/lib/runit/service/spark /etc/service/spark
 RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
-RUN mkdir -p /etc/hadoop
 
 ADD dist /opt/spark/dist
 
