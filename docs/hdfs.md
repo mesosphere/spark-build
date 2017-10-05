@@ -21,6 +21,16 @@ For more information, see [Inheriting Hadoop Cluster Configuration][8].
 
 For DC/OS HDFS, these configuration files are served at `http://<hdfs.framework-name>.marathon.mesos:<port>/v1/endpoints`, where `<hdfs.framework-name>` is a configuration variable set in the HDFS package, and `<port>` is the port of its marathon app.
 
+### Spark Checkpointing
+
+In order to use spark with checkpointing make sure you follow the instructions [here](https://spark.apache.org/docs/latest/streaming-programming-guide.html#checkpointing) and use an hdfs directory as the checkpointing directory. For example:
+```
+val checkpointDirectory = "hdfs://hdfs/checkpoint"
+val ssc = ...
+ssc.checkpoint(checkpointDirectory)
+```
+That hdfs directory will be automatically created on hdfs and spark streaming app will work from checkpointed data even in the presence of application restarts/failures.
+
 # HDFS Kerberos
 
 You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters from Spark on Mesos.
@@ -87,7 +97,7 @@ Submit the job with the ticket:
 ```$bash
     dcos spark run --submit-args="\
     --kerberos-principal hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL \
-    --tgt-secret-path /__dcos_base64__tgt 
+    --tgt-secret-path /__dcos_base64__tgt \
     --conf ... --class MySparkJob <url> <args>"
 ```
 
