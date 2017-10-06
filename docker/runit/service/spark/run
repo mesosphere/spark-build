@@ -4,6 +4,8 @@ set -x
 
 exec 2>&1
 
+SPARK_DIST_PATH=/opt/spark/dist
+
 function export_daemon_opts() {
     export SPARK_DAEMON_JAVA_OPTS=""
     if [ "${DCOS_SERVICE_NAME}" != "spark" ]; then
@@ -26,12 +28,12 @@ function export_daemon_opts() {
 
 function set_log_level() {
     sed "s,<LOG_LEVEL>,${SPARK_LOG_LEVEL}," \
-        /opt/spark/dist/conf/log4j.properties.template >/opt/spark/dist/conf/log4j.properties
+        ${SPARK_DIST_PATH}/conf/log4j.properties.template >${SPARK_DIST_PATH}/conf/log4j.properties
 }
 
 function add_if_non_empty() {
 	if [ -n "$2" ]; then
-		echo "$1=$2" >> /opt/spark/dist/conf/mesos-cluster-dispatcher.properties
+		echo "$1=$2" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
 	fi
 }
 
@@ -53,6 +55,7 @@ function configure_properties() {
     add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
     add_if_non_empty spark.ssl.protocol "${SPARK_SSL_PROTOCOL}"
     add_if_non_empty spark.ssl.enabledAlgorithms "${SPARK_SSL_ENABLEDALGORITHMS}"
+    echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
 }
 
 
@@ -62,7 +65,7 @@ export_daemon_opts
 configure_properties
 ZK="master.mesos:2181"
 
-exec /opt/spark/dist/bin/spark-class \
+exec ${SPARK_DIST_PATH}/bin/spark-class \
     org.apache.spark.deploy.mesos.MesosClusterDispatcher \
     --port "${DISPATCHER_PORT}" \
     --webui-port "${DISPATCHER_UI_PORT}" \
@@ -70,4 +73,4 @@ exec /opt/spark/dist/bin/spark-class \
     --zk "${ZK}" \
     --host "${HOST}" \
     --name "${DCOS_SERVICE_NAME}" \
-    --properties-file "/opt/spark/dist/conf/mesos-cluster-dispatcher.properties"
+    --properties-file "${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties"
