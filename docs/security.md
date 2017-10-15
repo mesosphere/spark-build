@@ -22,7 +22,6 @@ There are a number of configuration variables relevant to SSL setup. The require
 | Variable                         | Description                                     |
 |----------------------------------|-------------------------------------------------|
 | `spark.ssl.enabled`              | Whether to enable SSL (default: `false`).       |
-| `spark.ssl.keyStoreBase64`       | Base64 encoded blob containing a Java keystore. |
 | `spark.ssl.enabledAlgorithms`    | Allowed cyphers                                 |
 | `spark.ssl.keyPassword`          | The password for the private key                |
 | `spark.ssl.keyStore`             | must be server.jks                              |
@@ -44,14 +43,17 @@ cat keystore.base64
 
 **Note:** The base64 string of the keystore will probably be much longer than the snippet above, spanning 50 lines or so.
 
-Add the stores to your secrets in the DC/OS Secret store, for example if your base64 encoded keystores and truststores are server.jks.base64 and trust.jks.base64, respectively then do the following: 
+Add the stores to your secrets in the DC/OS secret store. For example, if your base64-encoded keystores 
+and truststores are server.jks.base64 and trust.jks.base64, respectively, then use the following 
+commands to add them to the secret store: 
 
 ```bash
 dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
 dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
 ```
 
-In this case you're adding two secrets `/truststore` and `/keystore` that you will need to pass to the Spark Driver and Executors. You will need to add the following configurations to your `dcos spark run ` command:
+In this case, you are adding two secrets `/truststore` and `/keystore` that you will need to pass to the Spark Driver and Executors. 
+You must add the following configurations to your `dcos spark run ` command:
 
 ```bash
 
@@ -73,9 +75,13 @@ dcos spark run --verbose --submit-args="\
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
 
-Importantly the `spark.mesos.driver.labels` and `spark.mesos.task.labels` must be set as shown. If you upload your secret with another path (e.g. not `/keystore` and `/truststore`) then change the `name` in the value accordingly. Lastly, `spark.mesos.task.labels` must have the `DCOS_SPACE:<dcos_space>` label as well, to have access to the secret. See the [Secrets Documentation about SPACES][13] for more details about Spaces, but usually you want `/spark` as shown.
+**Note:** The `spark.mesos.driver.labels` and `spark.mesos.task.labels` must be set as shown. If you 
+upload your secret with another path (e.g. not `/keystore` and `/truststore`) then change the `name` in 
+the value accordingly. Lastly, `spark.mesos.task.labels` must have the `DCOS_SPACE:<dcos_space>` 
+label in order to access the secret. See the [Secrets Documentation about spaces][13] for 
+more details about spaces. Usually, you will want to set the space label to `/spark`, as shown.
 
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
- [13]: https://docs.mesosphere.com/service-docs/spark/v2.0.1-2.2.0-1/run-job/
+ [13]: https://docs.mesosphere.com/1.10/security/#spaces
