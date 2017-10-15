@@ -75,7 +75,7 @@ dcos spark run --verbose --submit-args="\
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
 
-**Note:** The `spark.mesos.driver.labels` and `spark.mesos.task.labels` must be set as shown. If you 
+**Note:** If you 
 upload your secret with another path (e.g. not `/keystore` and `/truststore`) then change the `name` in 
 the value accordingly. Lastly, `spark.mesos.task.labels` must have the `DCOS_SPACE:<dcos_space>` 
 label in order to access the secret. See the [Secrets Documentation about spaces][13] for 
