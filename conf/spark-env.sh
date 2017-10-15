@@ -44,12 +44,6 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
-if base64 --help | grep -q GNU; then
-      BASE64_D="base64 -d" # GNU
-  else
-      BASE64_D="base64 -D" # BSD
-fi
-
 if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
     for f in $MESOS_SANDBOX/*.base64 ; do
         echo "decoding $f" >&2
@@ -59,6 +53,11 @@ if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
 fi
 
 if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
+    if base64 --help | grep -q GNU; then
+          BASE64_D="base64 -d" # GNU
+      else
+          BASE64_D="base64 -D" # BSD
+    fi
     echo "spark-env: Copying krb config from $KRB5_CONFIG_BASE64 to /etc/" >&2
     echo "${KRB5_CONFIG_BASE64}" | ${BASE64_D} > /etc/krb5.conf
 else

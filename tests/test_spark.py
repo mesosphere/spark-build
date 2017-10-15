@@ -286,5 +286,52 @@ def test_cli_multiple_spaces():
                           " --class  ", "org.apache.spark.examples.SparkPi"])
 
 
+# Skip DC/OS < 1.10, because it doesn't have support for file-based secrets.
+@pytest.mark.skip("Enable when SPARK-22131 is merged and released in DC/OS Spark")
+@pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
+@pytest.mark.sanity
+@pytest.mark.tls
+def test_driver_executor_tls():
+    '''
+    Put keystore and truststore as secrets in DC/OS secret store.
+    Run SparkPi job with TLS enabled, referencing those secrets.
+    '''
+    shakedown.run_dcos_command('package install --cli dcos-enterprise-cli --yes')
+    resources_folder = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'resources'
+    )
+    keystore_file = 'server.jks'
+    truststore_file = 'trust.jks'
+    keystore_path = os.path.join(resources_folder, '{}.base64'.format(keystore_file))
+    truststore_path = os.path.join(resources_folder, '{}.base64'.format(truststore_file))
+    keystore_secret = '__dcos_base64__keystore'
+    truststore_secret = '__dcos_base64__truststore'
+    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(keystore_secret, keystore_path))
+    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(truststore_secret, truststore_path))
+    password = 'changeit'
+    # In addition to the standard Spark SSL settings, we have to specify how the
+    # driver and executor tasks can read the keystore and truststore as file-based secrets.
+    utils.run_tests(app_url=SPARK_EXAMPLES,
+                    app_args="30",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=["--class", "org.apache.spark.examples.SparkPi",
+                          "--conf", "spark.mesos.containerizer=mesos",
+                          "--conf", "spark.ssl.enabled=true",
+                          "--conf", "spark.ssl.enabledAlgorithms=TLS_RSA_WITH_AES_128_CBC_SHA256",
+                          "--conf", "spark.ssl.keyPassword={}".format(password),
+                          "--conf", "spark.ssl.keyStore={}".format(keystore_file),
+                          "--conf", "spark.ssl.keyStorePassword={}".format(password),
+                          "--conf", "spark.ssl.protocol=TLS",
+                          "--conf", "spark.ssl.trustStore={}".format(truststore_file),
+                          "--conf", "spark.ssl.trustStorePassword={}".format(password),
+                          "--conf", "spark.mesos.driver.secret.names={},{}".format(keystore_secret, truststore_secret),
+                          "--conf", "spark.mesos.driver.secret.filenames={},{}".format(keystore_file, truststore_file),
+                          "--conf", "spark.mesos.executor.secret.names={},{}".format(keystore_secret, truststore_secret),
+                          "--conf", "spark.mesos.executor.secret.filenames={},{}".format(keystore_file, truststore_file),
+                          "--conf", "spark.mesos.task.labels=DCOS_SPACE:/spark"
+                          ])
+
+
 def _scala_test_jar_url():
     return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
