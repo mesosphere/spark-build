@@ -38,7 +38,12 @@ def is_strict():
 def require_hdfs():
     LOGGER.info("Ensuring HDFS is installed.")
 
-    _require_package(HDFS_PACKAGE_NAME, _get_hdfs_options())
+    _require_package(
+        HDFS_PACKAGE_NAME,
+        _get_hdfs_options(),
+        # Remove after HDFS-483 is fixed
+        package_version='2.0.1-2.6.0-cdh5.11.0'
+    )
     _wait_for_hdfs()
 
 
@@ -51,7 +56,7 @@ def require_spark(options={}, service_name=None):
 
 
 # This should be in shakedown (DCOS_OSS-679)
-def _require_package(pkg_name, service_name=None, options={}):
+def _require_package(pkg_name, service_name=None, options={}, package_version=None):
     pkg_manager = dcos.package.get_package_manager()
     installed_pkgs = dcos.package.installed_packages(
         pkg_manager,
@@ -71,7 +76,8 @@ def _require_package(pkg_name, service_name=None, options={}):
         shakedown.install_package(
             pkg_name,
             options_json=options,
-            wait_for_completion=True)
+            wait_for_completion=True,
+            package_version=package_version)
 
 
 def _wait_for_spark(service_name=None):
