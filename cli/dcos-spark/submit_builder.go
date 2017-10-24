@@ -20,6 +20,7 @@ import (
 
 var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
+var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 
 type sparkVal struct {
 	flagName string
@@ -298,8 +299,11 @@ func parseApplicationFile(args *sparkArgs) error {
 }
 
 func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
+
+  // collapse two or more spaces to one.
+	argsCompacted := collapseSpacesPattern.ReplaceAllString(argsStr, " ")
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
-	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
+	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsCompacted, " "))
 	// HACK: spark-submit uses '--arg val' by convention, while kingpin only supports '--arg=val'.
 	//       translate the former into the latter for kingpin to parse.
 	args := strings.Split(argsCleaned, " ")
