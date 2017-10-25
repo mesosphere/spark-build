@@ -318,6 +318,17 @@ def test_secrets():
         LOGGER.warn("Error when deleting secret, {}".format(r.content))
 
 
+@pytest.mark.sanity
+@pytest.mark.multspaces
+def test_cli_multiple_spaces():
+    utils.run_tests(app_url=SPARK_EXAMPLES,
+                    app_args="30",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=["--conf ", "spark.cores.max=2",
+                          " --class  ", "org.apache.spark.examples.SparkPi"])
+
+
 def _run_janitor(service_name):
     janitor_cmd = (
         'docker run mesosphere/janitor /janitor.py '
