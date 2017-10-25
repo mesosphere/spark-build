@@ -79,8 +79,7 @@ class CITester(object):
             self._github_updater.update('pending', 'Setting up CLI')
             self._configure_cli_sandbox()  # adds to os.environ
             cli_filepath = self._download_cli_to_sandbox()
-            self._configure_cli(self._dcos_url)
-            dcos_login.DCOSLogin(self._dcos_url).login()
+            dcos_login.login()
             # check for any preexisting universes and remove them -- the cluster requires no duplicate uris
             if stub_universes:
                 logger.info('Checking for duplicate stub universes')

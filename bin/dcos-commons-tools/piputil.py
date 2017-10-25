@@ -66,9 +66,8 @@ def create_requirementsfile(filename, req_text=None):
     if not req_text:
         req_text = ('''
 requests==2.10.0
-dcoscli==0.4.16
-dcos==0.4.16
-dcos-shakedown==1.4.4
+git+https://github.com/dcos/dcos-cli.git@f07ef6c7ce6015ea37f490bb9d1ad4b672a53b53
+dcos-shakedown==1.4.5
 ''')
     with open(filename, 'w') as reqfile:
         reqfile.write(req_text)
