@@ -325,7 +325,8 @@ def test_cli_multiple_spaces():
                     app_args="30",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
-                    args_str="--conf  spark.cores.max=2  --class   org.apache.spark.examples.SparkPi")
+                    args=["--conf ", "spark.cores.max=2",
+                          " --class  ", "org.apache.spark.examples.SparkPi"])
 
 
 def _run_janitor(service_name):
