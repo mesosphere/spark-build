@@ -1,7 +1,7 @@
 ---
 post_title: Version Policy
 menu_order: 125
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 

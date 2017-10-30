@@ -1,7 +1,7 @@
 ---
 post_title: Upgrade
 menu_order: 50
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 

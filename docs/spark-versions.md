@@ -1,6 +1,6 @@
 ---
 post_title: Spark Distributions
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 

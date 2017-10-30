@@ -1,7 +1,7 @@
 ---
 post_title: Install and Customize
 menu_order: 0
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 
