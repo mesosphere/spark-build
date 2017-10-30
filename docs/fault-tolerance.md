@@ -1,7 +1,7 @@
 ---
 post_title: Fault Tolerance
 menu_order: 100
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 

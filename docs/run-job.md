@@ -1,7 +1,7 @@
 ---
 post_title: Run a Spark Job
 menu_order: 80
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 1.  Before submitting your job, upload the artifact (e.g., jar file)

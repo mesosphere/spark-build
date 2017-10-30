@@ -1,7 +1,7 @@
 ---
 post_title: Spark Quickstart
 menu_order: 10
-feature_maturity: stable
+feature_maturity: ""
 enterprise: 'no'
 ---
 
