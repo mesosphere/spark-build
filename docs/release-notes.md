@@ -6,6 +6,20 @@ feature_maturity: ""
 enterprise: 'no'
 ---
 
+## Version 2.1.0-2.2.0-1
+
+### Improvements
+- Changed image to run as user `nobody` instead of `root` by default. (https://github.com/mesosphere/spark-build/pull/189)
+
+### Bug fixes
+- Configuration to allow custom Dispatcher docker image. (https://github.com/mesosphere/spark-build/pull/179)
+- CLI breaks with multiple spaces in submit args. (https://github.com/mesosphere/spark-build/pull/193)
+
+### Documentation
+- Updated HDFS endpoint in hdfs doc page.
+- Added checkpointing instructions. (https://github.com/mesosphere/spark-build/pull/181)
+- Updated custom docker image support policy. (https://github.com/mesosphere/spark-build/pull/200)
+
 ## Version 2.0.1-2.2.0-1
 
 ### Improvements
