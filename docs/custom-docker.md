@@ -5,10 +5,7 @@ feature_maturity: stable
 enterprise: 'no'
 ---
 
-**Note:** Customizing the Spark image Mesosphere provides is supported. However, customizations
-have the potential to adversely affect the integration between Spark and DC/OS. In situations
-where Mesosphere support suspects a customization may be adversely impacting Spark with
-DC/OS, Mesosphere support may request that the customer reproduce the issue with an unmodified
+**Note:** Customizing the Spark image Mesosphere provides is supported. However, customizations have the potential to adversely affect the integration between Spark and DC/OS. In situations where Mesosphere support suspects a customization may be adversely impacting Spark with DC/OS, Mesosphere support may request that the customer reproduce the issue with an unmodified
 Spark image.
 
 You can customize the Docker image in which Spark runs by extending the standard Spark Docker image. In this way, you can install your own libraries, such as a custom Python library.
