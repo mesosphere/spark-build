@@ -2,7 +2,7 @@
     "type": "object",
     "properties": {
         "service": {
-            "description": "DCOS Spark configuration properties",
+            "description": "DC/OS Spark configuration properties",
             "type": "object",
             "properties": {
                 "name": {
@@ -127,7 +127,7 @@
             "properties": {
                 "config-url": {
                     "type": "string",
-                    "description": "Base URL that serves HDFS config files (hdfs-site.xml, core-site.xml).  If not set, DCOS Spark will use its default configuration and read from DCOS HDFS."
+                    "description": "Base URL that serves HDFS config files (hdfs-site.xml, core-site.xml).  If not set, DC/OS Spark will use its default configuration and read from DC/OS HDFS."
                 }
             }
         }
