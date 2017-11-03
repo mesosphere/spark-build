@@ -52,34 +52,28 @@ dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.b
 dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
 ```
 
-In this case, you are adding two secrets `/truststore` and `/keystore` that you will need to pass to the Spark Driver and Executors. 
-You must add the following configurations to your `dcos spark run ` command:
+In this case, you are adding two secrets `/truststore` and `/keystore`. 
+You must add the following configurations to your `dcos spark run ` command.
+The ones in parentheses are optional.:
 
 ```bash
 
 dcos spark run --verbose --submit-args="\
---conf spark.mesos.containerizer=mesos \  # use mesos containerizer
+--tls-keystore-secret-path=<path/to/keystore, e.g. /keystore> \
+(—tls-truststore-secret-path=<path/to/truststore, e.g. /truststore> \)
 --conf spark.ssl.enabled=true \
---conf spark.ssl.enabledAlgorithms=TLS_RSA_WITH_AES_128_CBC_SHA256 \
---conf spark.ssl.keyPassword=<key password> \
---conf spark.ssl.keyStore=server.jks \  # This MUST be set this way
---conf spark.ssl.keyStorePassword=<keystore access password> \
---conf spark.ssl.protocol=TLS \
---conf spark.ssl.trustStore=trust.jks \  # this MUST be set this way
---conf spark.ssl.trustStorePassword=<truststore password> \
---conf spark.mesos.driver.secret.names=__dcos_base64__keystore,__dcos_base64__truststore \
---conf spark.mesos.driver.secret.filenames=server.jks,trust.jks \
---conf spark.mesos.executor.secret.names=__dcos_base64__keystore,__dcos_base64__truststore \
---conf spark.mesos.executor.secret.filenames=server.jks,trust.jks \
---conf spark.mesos.task.labels=DCOS_SPACE:/spark \
+(—conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
+--conf spark.ssl.protocol=<protocol, e.g., TLS, TLSv1.1, or SSLv3> \
+--conf spark.ssl.keyPassword=<password to private key in keystore> \
+--conf spark.ssl.keyStorePassword=<password to keystore> \
+--conf spark.ssl.trustStorePassword=<password to truststore> \
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
 
-**Note:** If you 
-upload your secret with another path (e.g. not `/keystore` and `/truststore`) then change the `name` in 
-the value accordingly. Lastly, `spark.mesos.task.labels` must have the `DCOS_SPACE:<dcos_space>` 
-label in order to access the secret. See the [Secrets Documentation about spaces][13] for 
-more details about spaces. Usually, you will want to set the space label to `/spark`, as shown.
+**Note:** If you have specified a space for your secrets other than the default value,
+`/spark`, then you must set `spark.mesos.task.labels=DCOS_SPACE:<dcos_space>`
+in the command above in order to access the secrets.
+See the [Secrets Documentation about spaces][13] for more details about spaces.
 
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
