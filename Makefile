@@ -121,7 +121,7 @@ $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
         $(CLI_DIST_DIR)/dcos-spark-darwin \
         $(CLI_DIST_DIR)/dcos-spark-linux \
         $(CLI_DIST_DIR)/dcos-spark.exe \
-        $(CLI_DIST_DIR)/*.whl; \
+        $(CLI_DIST_DIR)/*.whl;
 
 DCOS_TEST_JAR_PATH := $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
 $(DCOS_TEST_JAR_PATH):
