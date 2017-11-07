@@ -16,7 +16,7 @@ edit `manifest.json`.
 make docker-build
 ```
 This will setup a docker image that can be used to build the spark
-distribution, the stub univserse, and run the integration test.
+distribution, the stub universe, and run the integration tests.
 
 This image will not be invoked by any tests explicitly and is not
 required. Rather, it provides a consistent and portable environment for
@@ -53,7 +53,7 @@ most common way to build a Spark package during development.
 
 
 ### Package
-The above distribution needs to be bundled into a docker image and paried with
+The above distribution needs to be bundled into a Docker image and paried with
 a CLI in order to complete the package.
 
 ```bash
@@ -65,11 +65,11 @@ Triggers the build for the binary go CLI
 make docker-login
 make docker-dist
 ```
-This command will build and push the docker image that will be used by
+This command will build and push the Docker image that will be used by
 the package template. Use `DOCKER_DIST_IMAGE` override to set an alternative
 dockerhub repo. Addtionally, the tag for this container will be the git SHA
 unless overridden with `GIT_COMMIT`. Note: the login is a separate command
-to allow using the current docker user session without providing parameters
+to allow using the current Docker user session without providing parameters
 
 ```bash
 make stub-universe-url
@@ -95,13 +95,6 @@ This command will setup a virtual environment that will contain the CLI and
 other requirements for running the pytest integration suite
 
 ```bash
-make cluster_info.json
-```
-This command will make a cluster that can be used for integration testing.
-Alternatively, if `CLUSTER_URL` is already set in the environment, this step
-will do nothing, and the cluster pointed to will be used.
-
-```bash
 make test
 ```
 This command will run a complete build and then run the integration test suite.
@@ -116,9 +109,9 @@ make cluster_info.json
 make test-cluster
 ```
 Note: these steps can all be individually triggered to allow specifying
-parameters like dist type and docker image repo
+parameters like dist type and Docker image repo
 
-Note: the `make docker-dist` step will use docker build and the current build
+Note: the `make docker-dist` step will use Docker build and the current build
 image does not support docker-in-docker so if you are building from within
 the included docker-build image, then the `make docker-dist` step must be done
 outside the container
