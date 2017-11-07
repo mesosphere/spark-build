@@ -162,7 +162,7 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	sbt clean compile test
 	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(MESOS_SPARK_TEST_JAR_PATH)
 
-PYTEST_ARGS := -vv
+PYTEST_ARGS := -s -vv -m sanity
 test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
 	source $(ROOT_DIR)/test-env/bin/activate
 	if [ -z $(CLUSTER_URL) ]; then \
