@@ -108,6 +108,8 @@ $(CLI_DIST_DIR):
 	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark.exe $@/
 	mv $(ROOT_DIR)/cli/python/dist/*.whl $@/
 
+cli: $(CLI_DIST_DIR)
+
 UNIVERSE_URL_PATH := stub-universe-url
 $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
 	UNIVERSE_URL_PATH=$(UNIVERSE_URL_PATH) \
@@ -217,4 +219,4 @@ ssh_user: core
 endef
 
 
-.PHONY: clean clean-dist clean-cluster manifest-dist dev-dist prod-dist docker-login test
+.PHONY: clean clean-dist clean-cluster cli manifest-dist dev-dist prod-dist docker-login test
