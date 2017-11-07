@@ -123,11 +123,11 @@ $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
         $(CLI_DIST_DIR)/dcos-spark.exe \
         $(CLI_DIST_DIR)/*.whl;
 
-DCOS_TEST_JAR_PATH := $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
-$(DCOS_TEST_JAR_PATH):
+DCOS_SPARK_TEST_JAR_PATH := $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
+$(DCOS_SPARK_TEST_JAR_PATH):
 	cd tests/jobs/scala
 	sbt assembly
-	cp $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar $(DCOS_TEST_JAR_PATH)
+	cp $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_PATH)
 
 test-env:
 	python3 -m venv test-env
@@ -163,7 +163,7 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(MESOS_SPARK_TEST_JAR_PATH)
 
 PYTEST_ARGS := -vv
-test: test-env $(DCOS_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
+test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
 	source $(ROOT_DIR)/test-env/bin/activate
 	if [ -z $(CLUSTER_URL) ]; then \
 	    if [ `cat cluster_info.json | jq .key_helper` == 'true' ]; then \
@@ -180,7 +180,7 @@ test: test-env $(DCOS_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL
         $(TOOLS_DIR)/setup_permissions.sh root hdfs-role; \
     fi; \
 	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
-	SCALA_TEST_JAR_PATH=$(DCOS_TEST_JAR_PATH) \
+	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
 	  S3_BUCKET=$(S3_BUCKET) \
 	  S3_PREFIX=$(S3_PREFIX) \
@@ -189,7 +189,7 @@ test: test-env $(DCOS_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL
 clean: clean-dist clean-cluster
 	rm -rf test-env
 	rm -rf $(CLI_DIST_DIR)
-	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "docker-build" "docker-dist" ; do \
+	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "docker-build" "docker-dist" ; do \
 		[ ! -e $$f ] || rm $$f; \
 	done; \
 
