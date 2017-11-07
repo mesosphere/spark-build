@@ -154,16 +154,16 @@ clean-cluster:
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
 
-SPARK_TEST_JAR_PATH := $(ROOT_DIR)/mesos-spark-integration-tests-assembly-0.1.0.jar
-$(SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
+MESOS_SPARK_TEST_JAR_PATH := $(ROOT_DIR)/mesos-spark-integration-tests-assembly-0.1.0.jar
+$(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	cd $(ROOT_DIR)/mesos-spark-integration-tests/test-runner
 	sbt assembly
 	cd ..
 	sbt clean compile test
-	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(SPARK_TEST_JAR_PATH)
+	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(MESOS_SPARK_TEST_JAR_PATH)
 
 PYTEST_ARGS := -vv
-test: test-env $(DCOS_TEST_JAR_PATH) $(SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
+test: test-env $(DCOS_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
 	source $(ROOT_DIR)/test-env/bin/activate
 	if [ -z $(CLUSTER_URL) ]; then \
 	    if [ `cat cluster_info.json | jq .key_helper` == 'true' ]; then \
@@ -181,7 +181,7 @@ test: test-env $(DCOS_TEST_JAR_PATH) $(SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH)
     fi; \
 	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
 	SCALA_TEST_JAR_PATH=$(DCOS_TEST_JAR_PATH) \
-	  TEST_JAR_PATH=$(SPARK_TEST_JAR_PATH) \
+	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
 	  S3_BUCKET=$(S3_BUCKET) \
 	  S3_PREFIX=$(S3_PREFIX) \
 	  py.test $(PYTEST_ARGS) $(ROOT_DIR)/tests
@@ -189,7 +189,7 @@ test: test-env $(DCOS_TEST_JAR_PATH) $(SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH)
 clean: clean-dist clean-cluster
 	rm -rf test-env
 	rm -rf $(CLI_DIST_DIR)
-	for f in  "$(SPARK_TEST_JAR_PATH)" "$(DCOS_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "docker-build" "docker-dist" ; do \
+	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "docker-build" "docker-dist" ; do \
 		[ ! -e $$f ] || rm $$f; \
 	done; \
 
