@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Prevent jenkins from immediately killing the script when a step fails, allowing us to notify github:
 set +e

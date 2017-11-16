@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #script to publish the tools dir to s3 for use in other jobs
 
