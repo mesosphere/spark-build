@@ -44,11 +44,11 @@ def hdfs_with_kerberos():
             "data-2-node",
         ]
         principals = []
-        for instance_primary in itertools.product(instances, primaries):
+        for (instance, primary) in itertools.product(instances, primaries):
             principals.append(
                 "{primary}/{instance}.{fqdn}@{REALM}".format(
-                    primary=instance_primary[1],
-                    instance=instance_primary[0],
+                    primary=primary,
+                    instance=instance,
                     fqdn=fqdn,
                     REALM=sdk_auth.REALM
                 )
