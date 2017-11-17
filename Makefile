@@ -180,7 +180,6 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
         $(TOOLS_DIR)/setup_permissions.sh root hdfs-role; \
     fi; \
 	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
-	dcos package repo add --index=0 hdfs-aws https://universe-converter.mesosphere.com/transform\?url\=https://infinity-artifacts.s3.amazonaws.com/beta-hdfs/20171114-113058-4QOGHmRCbNVsmSeE/stub-universe-beta-hdfs.json
 	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
 	  S3_BUCKET=$(S3_BUCKET) \

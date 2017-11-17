@@ -22,9 +22,7 @@ def _init_logging():
 
 _init_logging()
 LOGGER = logging.getLogger(__name__)
-DEFAULT_HDFS_TASK_COUNT=10
-HDFS_PACKAGE_NAME='hdfs'
-HDFS_SERVICE_NAME='hdfs'
+HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
 SPARK_PACKAGE_NAME='spark'
 
 
@@ -34,16 +32,6 @@ def hdfs_enabled():
 
 def is_strict():
     return os.environ.get('SECURITY') == 'strict'
-
-
-def require_hdfs():
-    LOGGER.info("Ensuring HDFS is installed.")
-
-    _require_package(
-        HDFS_PACKAGE_NAME,
-        options=_get_hdfs_options()
-    )
-    _wait_for_hdfs()
 
 
 def require_spark(options=None, service_name=None, use_hdfs=False):
@@ -101,24 +89,6 @@ def _require_spark_cli():
             SPARK_PACKAGE_NAME))
 
 
-def _get_hdfs_options():
-    if is_strict():
-        options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
-    else:
-        options = {"service": {}}
-
-    options["service"]["beta-optin"] = True
-    return options
-
-
-def _wait_for_hdfs():
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=25 * 60)
-
-
-def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
-    return is_service_ready(HDFS_SERVICE_NAME, expected_tasks)
-
-
 def is_service_ready(service_name, expected_tasks):
     running_tasks = [t for t in shakedown.get_service_tasks(service_name) \
                      if t['state'] == 'TASK_RUNNING']
@@ -143,7 +113,7 @@ def _get_spark_options(options, use_hdfs):
         options["hdfs"]["config-url"] = "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
         options["security"] = options.get("security", {})
         options["security"]["kerberos"] = options["security"].get("kerberos", {})
-        options["security"]["kerberos"]["krb5conf"] = "W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo="
+        options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
 
     if is_strict():
         options["service"] = options.get("service", {})
