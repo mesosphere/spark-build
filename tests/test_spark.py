@@ -10,12 +10,11 @@
 import logging
 import os
 import pytest
-import s3
 import json
 import shakedown
 
-import utils
-from utils import SPARK_PACKAGE_NAME, HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME
+from tests import s3
+from tests import utils
 
 
 LOGGER = logging.getLogger(__name__)
@@ -28,17 +27,12 @@ SECRET_CONTENTS = "mgummelt"
 
 
 def setup_module(module):
-    if utils.hdfs_enabled():
-        utils.require_hdfs()
     utils.require_spark()
     utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
 
 
 def teardown_module(module):
-    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
-    if utils.hdfs_enabled():
-        shakedown.uninstall_package_and_wait(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-        _run_janitor(HDFS_SERVICE_NAME)
+    utils.teardown_spark()
 
 
 @pytest.mark.sanity
@@ -62,17 +56,6 @@ def test_sparkPi():
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
                     args=["--class org.apache.spark.examples.SparkPi"])
-
-
-@pytest.mark.sanity
-def test_teragen():
-    if utils.hdfs_enabled():
-        jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
-        utils.run_tests(app_url=jar_url,
-                        app_args="1g hdfs:///terasort_in",
-                        expected_output="Number of records written",
-                        app_name="/spark",
-                        args=["--class", "com.github.ehiggs.spark.terasort.TeraGen"])
 
 
 @pytest.mark.sanity
@@ -140,30 +123,6 @@ def test_python():
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
                     args=["--py-files", py_file_url])
-
-
-@pytest.mark.skip(reason="must be run manually against a kerberized HDFS")
-def test_kerberos():
-    '''This test must be run manually against a kerberized HDFS cluster.
-    Instructions for setting one up are here:
-    https://docs.google.com/document/d/1lqlEIs98j1VsAyoEYnhYoaNmYylcoaBAwHpD29yKjU4.
-    You must set 'principal' and 'keytab' to the appropriate values,
-    and change 'krb5.conf' to the name of some text file you've
-    written to HDFS.
-
-    '''
-
-    principal = "nn/ip-10-0-2-134.us-west-2.compute.internal@LOCAL"
-    keytab = "nn.ip-10-0-2-134.us-west-2.compute.internal.keytab"
-    utils.run_tests(
-        app_url="http://infinity-artifacts.s3.amazonaws.com/spark/sparkjob-assembly-1.0.jar",
-        app_args="hdfs:///krb5.conf",
-        expected_output="number of words in",
-        app_name="/spark",
-        args=["--class", "HDFSWordCount",
-         "--principal",  principal,
-         "--keytab", keytab,
-         "--conf", "sun.security.krb5.debug=true"])
 
 
 @pytest.mark.sanity
@@ -327,15 +286,6 @@ def test_cli_multiple_spaces():
                     app_name="/spark",
                     args=["--conf ", "spark.cores.max=2",
                           " --class  ", "org.apache.spark.examples.SparkPi"])
-
-
-def _run_janitor(service_name):
-    janitor_cmd = (
-        'docker run mesosphere/janitor /janitor.py '
-        '-r {svc}-role -p {svc}-principal -z dcos-service-{svc} --auth_token={auth}')
-    shakedown.run_command_on_master(janitor_cmd.format(
-        svc=service_name,
-        auth=shakedown.dcos_acs_token()))
 
 
 def _scala_test_jar_url():

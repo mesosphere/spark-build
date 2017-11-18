@@ -5,8 +5,7 @@ import re
 import shakedown
 import time
 
-import utils
-from utils import SPARK_PACKAGE_NAME
+from tests import utils
 
 
 LOGGER = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
+    utils.teardown_spark()
 
 
 @pytest.mark.recovery

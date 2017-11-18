@@ -6,19 +6,21 @@ import logging
 import pytest
 import shakedown
 
-import utils
+from tests import utils
 
 
 LOGGER = logging.getLogger(__name__)
 SOAK_SPARK_APP_NAME='/spark'
-TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.0-jar-with-dependencies_2.11.jar'
+TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
+KERBEROS_ARGS = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL",
+                 "--keytab-secret-path", "/__dcos_base64___keytab"]
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
-               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
+               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)] + KERBEROS_ARGS
 
 
 def setup_module(module):
-    utils.require_spark()
+    utils.require_spark(use_hdfs=True)
 
 
 @pytest.mark.soak

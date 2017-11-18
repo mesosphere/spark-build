@@ -7,10 +7,11 @@ import logging
 import os
 import re
 import requests
-import s3
 import shakedown
 import subprocess
 import urllib
+
+from tests import s3
 
 
 def _init_logging():
@@ -21,9 +22,7 @@ def _init_logging():
 
 _init_logging()
 LOGGER = logging.getLogger(__name__)
-DEFAULT_HDFS_TASK_COUNT=10
-HDFS_PACKAGE_NAME='hdfs'
-HDFS_SERVICE_NAME='hdfs'
+HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
 SPARK_PACKAGE_NAME='spark'
 
 
@@ -35,22 +34,10 @@ def is_strict():
     return os.environ.get('SECURITY') == 'strict'
 
 
-def require_hdfs():
-    LOGGER.info("Ensuring HDFS is installed.")
-
-    _require_package(
-        HDFS_PACKAGE_NAME,
-        _get_hdfs_options(),
-        # Remove after HDFS-483 is fixed
-        package_version='2.0.1-2.6.0-cdh5.11.0'
-    )
-    _wait_for_hdfs()
-
-
-def require_spark(options={}, service_name=None):
+def require_spark(options=None, service_name=None, use_hdfs=False):
     LOGGER.info("Ensuring Spark is installed.")
 
-    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options))
+    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs))
     _wait_for_spark(service_name)
     _require_spark_cli()
 
@@ -98,26 +85,8 @@ def _require_spark_cli():
         LOGGER.info("Spark CLI already installed.")
     else:
         LOGGER.info("Installing Spark CLI.")
-        shakedown.run_dcos_command('package install --cli {}'.format(
+        shakedown.run_dcos_command('package install --cli {} --yes'.format(
             SPARK_PACKAGE_NAME))
-
-
-def _get_hdfs_options():
-    if is_strict():
-        options = {'service': {'principal': 'service-acct', 'secret_name': 'secret'}}
-    else:
-        options = {"service": {}}
-
-    options["service"]["beta-optin"] = True
-    return options
-
-
-def _wait_for_hdfs():
-    shakedown.wait_for(_is_hdfs_ready, ignore_exceptions=False, timeout_seconds=25 * 60)
-
-
-def _is_hdfs_ready(expected_tasks = DEFAULT_HDFS_TASK_COUNT):
-    return is_service_ready(HDFS_SERVICE_NAME, expected_tasks)
 
 
 def is_service_ready(service_name, expected_tasks):
@@ -135,13 +104,16 @@ def no_spark_jobs(service_name):
     return len(driver_ips) == 0
 
 
-def _get_spark_options(options = None):
+def _get_spark_options(options, use_hdfs):
     if options is None:
         options = {}
 
-    if hdfs_enabled():
+    if use_hdfs:
         options["hdfs"] = options.get("hdfs", {})
         options["hdfs"]["config-url"] = "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
+        options["security"] = options.get("security", {})
+        options["security"]["kerberos"] = options["security"].get("kerberos", {})
+        options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
 
     if is_strict():
         options["service"] = options.get("service", {})
@@ -151,7 +123,6 @@ def _get_spark_options(options = None):
         options["security"]["mesos"] = options["security"].get("mesos", {})
         options["security"]["mesos"]["authentication"] = options["security"]["mesos"].get("authentication", {})
         options["security"]["mesos"]["authentication"]["secret_name"] = "secret"
-
 
     return options
 
@@ -248,3 +219,15 @@ def _task_log(task_id, filename=None):
 def is_framework_completed(fw_name):
     # The framework is not Active or Inactive
     return shakedown.get_service(fw_name, True) is None
+
+
+def _run_janitor():
+    janitor_cmd = (
+        'docker run mesosphere/janitor /janitor.py '
+        '-r spark-role -p spark-principal -z spark_mesos_dispatcher --auth_token={auth}')
+    shakedown.run_command_on_master(janitor_cmd.format(
+        auth=shakedown.dcos_acs_token()))
+
+def teardown_spark():
+    shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
+    _run_janitor()
