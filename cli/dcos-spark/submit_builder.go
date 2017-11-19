@@ -233,9 +233,9 @@ func prepareBase64Secret(secretPath string, isEncoded bool) string {
 }
 
 func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
-	args.properties["spark.mesos.driver.secret.name"] = secretPath
+	args.properties["spark.mesos.driver.secret.names"] = secretPath
 	args.properties[property] = prepareBase64Secret(secretPath, false)
-	args.properties["spark.mesos.driver.secret.filename"] = prepareBase64Secret(secretPath, true)
+	args.properties["spark.mesos.driver.secret.filenames"] = prepareBase64Secret(secretPath, true)
 }
 
 func setupKerberosAuthArgs(args *sparkArgs) error {
@@ -249,9 +249,9 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 		return nil
 	}
 	if args.tgtSecretValue != "" {  // using secret by value
-		args.properties["spark.mesos.driver.secret.value"] = args.tgtSecretValue
+		args.properties["spark.mesos.driver.secret.values"] = args.tgtSecretValue
 		args.properties["spark.mesos.driverEnv.KRB5CCNAME"] = "tgt"
-		args.properties["spark.mesos.driver.secret.filename"] = "tgt.base64"
+		args.properties["spark.mesos.driver.secret.filenames"] = "tgt.base64"
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
