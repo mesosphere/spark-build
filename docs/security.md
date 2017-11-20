@@ -59,14 +59,12 @@ The ones in parentheses are optional.:
 ```bash
 
 dcos spark run --verbose --submit-args="\
---tls-keystore-secret-path=<path/to/keystore, e.g. /keystore> \
-(—tls-truststore-secret-path=<path/to/truststore, e.g. /truststore> \)
---conf spark.ssl.enabled=true \
+--keystore-secret-path=<path/to/keystore, e.g. /keystore> \
+(—-truststore-secret-path=<path/to/truststore, e.g. /truststore> \)
 (—conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
---conf spark.ssl.protocol=<protocol, e.g., TLS, TLSv1.1, or SSLv3> \
 --conf spark.ssl.keyPassword=<password to private key in keystore> \
 --conf spark.ssl.keyStorePassword=<password to keystore> \
---conf spark.ssl.trustStorePassword=<password to truststore> \
+(--conf spark.ssl.trustStorePassword=<password to truststore> \)
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
 
