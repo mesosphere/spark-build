@@ -150,9 +150,11 @@ Args:
 		"in the Spark drivers").PlaceHolder("/mytgt").Default("").StringVar(&args.tgtSecretPath)
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
-	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL").
+	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL. " +
+			"Make sure to set --conf spark.ssl.keyPassword and --conf spark.ssl.keyStorePassword as well.").
 		PlaceHolder("__dcos_base64__keystore").Default("").StringVar(&args.keystoreSecretPath)
-	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL").
+	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL. " +
+			"Make sure to set --conf spark.ssl.trustStorePassword as well.").
 		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
 
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
@@ -664,14 +666,17 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	if args.keystoreSecretPath != "" {
 		// Make sure passwords are set
 		if _, ok := args.properties["spark.ssl.keyPassword"]; !ok {
-			return "", errors.New("Need to provide key password with keystore")
+			return "", errors.New("Need to provide key password with keystore: " +
+				"--conf spark.ssl.keyPassword=<password>")
 		}
 		if _, ok := args.properties["spark.ssl.keyStorePassword"]; !ok {
-			return "", errors.New("Need to provide keystore password with keystore")
+			return "", errors.New("Need to provide keystore password with keystore: " +
+				"--conf spark.ssl.keyStorePassword=<password>")
 		}
 		if args.truststoreSecretPath != "" {
 			if _, ok := args.properties["spark.ssl.trustStorePassword"]; !ok {
-				return "", errors.New("Need to provide truststore password with truststore")
+				return "", errors.New("Need to provide truststore password with truststore: " +
+					"--conf spark.ssl.trustStorePassword=<password>")
 			}
 		}
 

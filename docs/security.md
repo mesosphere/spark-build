@@ -17,21 +17,19 @@ SSL support in DC/OS Apache Spark encrypts the following channels:
 *   From the [DC/OS admin router][11] to the dispatcher.
 *   From the drivers to their executors.
 
-There are a number of configuration variables relevant to SSL setup. The required configuration settings are:
+There are a number of Spark configuration variables relevant to SSL setup. The configuration settings are:
 
-| Variable                         | Description                                     |
-|----------------------------------|-------------------------------------------------|
-| `spark.ssl.enabled`              | Whether to enable SSL (default: `false`).       |
-| `spark.ssl.enabledAlgorithms`    | Allowed cyphers                                 |
-| `spark.ssl.keyPassword`          | The password for the private key                |
-| `spark.ssl.keyStore`             | must be server.jks                              |
-| `spark.ssl.keyStorePassword`     | The password used to access the keystore        |
-| `spark.ssl.protocol`             |  Protocol (e.g. TLS)                            |
-| `spark.ssl.trustStore`           | must be trust.jks                               |
-| `spark.ssl.trustStorePassword`   | The password used to access the truststore      |
+| Variable                         | Description                                     | Default Value |
+|----------------------------------|-------------------------------------------------|---------------|
+| `spark.ssl.enabledAlgorithms`    | Allowed cyphers                                 | JVM defaults  |
+| `spark.ssl.keyPassword`          | The password for the private key                | None          |
+| `spark.ssl.keyStorePassword`     | The password used to access the keystore        | None          |
+| `spark.ssl.protocol`             | Protocol                                        | TLS           |
+| `spark.ssl.trustStorePassword`   | The password used to access the truststore      | None          |
 
 
-The Java keystore (and, optionally, truststore) are created using the [Java keytool][12]. The keystore must contain one private key and its signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly trusted by Java.
+In addition, a Java keystore (and, optionally, truststore) must be provided.
+These are created using the [Java keytool][12]. The keystore must contain one private key and its signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly trusted by Java.
 
 Both stores must be base64 encoded without newlines, for example:
 
@@ -48,20 +46,19 @@ and truststores are server.jks.base64 and trust.jks.base64, respectively, then u
 commands to add them to the secret store: 
 
 ```bash
-dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
 dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
+dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
 ```
 
-In this case, you are adding two secrets `/truststore` and `/keystore`. 
 You must add the following configurations to your `dcos spark run ` command.
-The ones in parentheses are optional.:
+The ones in parentheses are optional:
 
 ```bash
 
 dcos spark run --verbose --submit-args="\
---keystore-secret-path=<path/to/keystore, e.g. /keystore> \
-(—-truststore-secret-path=<path/to/truststore, e.g. /truststore> \)
-(—conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
+--keystore-secret-path=<path/to/keystore, e.g. __dcos_base64__keystore> \
+(—-truststore-secret-path=<path/to/truststore, e.g. __dcos_base64__truststore> \)
+(—-conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
 --conf spark.ssl.keyPassword=<password to private key in keystore> \
 --conf spark.ssl.keyStorePassword=<password to keystore> \
 (--conf spark.ssl.trustStorePassword=<password to truststore> \)
