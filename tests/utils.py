@@ -30,8 +30,24 @@ def hdfs_enabled():
     return os.environ.get("HDFS_ENABLED") != "false"
 
 
+def kafka_enabled():
+    return os.environ.get("KAFKA_ENABLED") != "false"
+
+
 def is_strict():
     return os.environ.get('SECURITY') == 'strict'
+
+
+def streaming_job_launched(job_name):
+    return shakedown.get_service(job_name) is not None
+
+
+def streaming_job_running(job_name):
+    f = shakedown.get_service(job_name)
+    if f is None:
+        return False
+    else:
+        return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
 
 
 def require_spark(options=None, service_name=None, use_hdfs=False):
@@ -231,3 +247,7 @@ def _run_janitor():
 def teardown_spark():
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
     _run_janitor()
+
+
+def _scala_test_jar_url():
+    return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))

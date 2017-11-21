@@ -21,6 +21,13 @@ def s3n_url(filename):
         filename)
 
 
+def s3_http_url(filename):
+    return "http://{bucket}.s3.amazonaws.com/{prefix}/{file}".format(
+        bucket=os.environ["S3_BUCKET"],
+        prefix=os.environ["S3_PREFIX"],
+        file=filename)
+
+
 def upload_file(file_path):
     bucket = _get_bucket()
     basename = os.path.basename(file_path)
