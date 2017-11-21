@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/mesosphere/dcos-commons/cli/client"
 	"github.com/mesosphere/dcos-commons/cli/config"
 	"gopkg.in/alecthomas/kingpin.v3-unstable"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -33,6 +31,7 @@ type sparkVal struct {
 func (f *sparkVal) flag(section *kingpin.Application) *kingpin.Clause {
 	return section.Flag(f.flagName, fmt.Sprintf("%s (%s)", f.desc, f.propName))
 }
+
 func newSparkVal(flagName, propName, desc string) *sparkVal {
 	return &sparkVal{flagName, propName, desc, "", false}
 }
@@ -174,6 +173,10 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
+	val = newSparkVal("executor-java-options", "spark.executor.extraJavaOptions", "Extra Java options to pass to the executors.")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
+
 	val = newSparkVal("driver-library-path", "spark.driver.extraLibraryPath", "Extra library path entries to pass to the driver.")
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
@@ -300,7 +303,7 @@ func parseApplicationFile(args *sparkArgs) error {
 
 func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 
-  // collapse two or more spaces to one.
+    // collapse two or more spaces to one.
 	argsCompacted := collapseSpacesPattern.ReplaceAllString(argsStr, " ")
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
 	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsCompacted, " "))
@@ -310,6 +313,7 @@ func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string
 	argsEquals := make([]string, 0)
 	appFlags := make([]string, 0)
 	i := 0
+	inQuotes := false
 ARGLOOP:
 	for i < len(args) {
 		arg := args[i]
@@ -340,11 +344,16 @@ ARGLOOP:
 			}
 			break
 		}
+		// Parse Spark configuration:
 		// join this arg to the next arg if...:
 		// 1. we're not at the last arg in the array
 		// 2. we start with "--"
 		// 3. we don't already contain "=" (already joined)
 		// 4. we aren't a boolean value (no val to join)
+
+
+		// if this is a configuration flag like --conf or --driver-driver-options that doesn't have a
+		// '=' for assignment.
 		if i < len(args)-1 && strings.HasPrefix(arg, "--") && !strings.Contains(arg, "=") {
 			// check for boolean:
 			for _, boolVal := range boolVals {
@@ -354,12 +363,36 @@ ARGLOOP:
 					continue ARGLOOP
 				}
 			}
-			// merge this --key against the following val to get --key=val
-			argsEquals = append(argsEquals, arg+"="+args[i+1])
+
+			// if this is the beginning of a string of args e.g. '-Djava.option=setting -Djava.paramter=nonsense'
+			// we want to remove the leading single quote. Also remove internal quotes when the arg == --conf or some
+			// other named configuration
+			// e.g.: next = spark.driver.extraJavaOptions='-Djava.something=somethingelse
+			// arg =  --conf
+			arg = strings.TrimPrefix(arg, "'")
+			next := args[i + 1]
+			if strings.HasPrefix(next, "'") {  // e.g. --driver-java-options '-Djava.config=setting... <-- next
+				inQuotes = true
+			}
+			next = strings.Replace(next, "'", "", -1)  // remove internal quotes
+			argsEquals = append(argsEquals, arg + "=" + next)
 			i += 2
+		} else if strings.HasSuffix(arg, "'") {  // attach the final arg to the string of args without the quote
+			inQuotes = false  // has suffix means we're out of the quotes
+			arg = strings.TrimSuffix(arg, "'")
+			argsEquals[len(argsEquals) - 1] = argsEquals[len(argsEquals) - 1] + " " + arg
+			i += 1
 		} else {
-			// already joined or at the end, pass through:
-			argsEquals = append(argsEquals, arg)
+			cleanedArg := strings.Replace(arg, "'", "", -1)
+			if inQuotes { // join this arg to the last one because it's all in quotes
+				argsEquals[len(argsEquals) - 1] = argsEquals[len(argsEquals) - 1] + " " + cleanedArg
+			} else {
+				if strings.Contains(arg, "'") {  // e.g. --driver-java-options='-Djava.firstConfig=firstSetting
+					inQuotes = true
+				}
+				// already joined or at the end, pass through
+				argsEquals = append(argsEquals, cleanedArg)
+			}
 			i += 1
 		}
 	}
@@ -433,20 +466,6 @@ func appendToProperty(propValue, toAppend string, args *sparkArgs) {
 	} else {
 		args.properties[propValue] += "," + toAppend
 	}
-}
-
-func getBase64Content(path string) string {
-	log.Printf("Opening file %s", path)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var encodebuf bytes.Buffer
-	encoder := base64.NewEncoder(base64.StdEncoding, &encodebuf)
-	encoder.Write(data)
-	encoder.Close() // must be called before returning string to ensure flush
-	return encodebuf.String()
 }
 
 func buildSubmitJson(cmd *SparkCommand) (string, error) {
