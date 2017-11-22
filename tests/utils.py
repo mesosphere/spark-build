@@ -163,21 +163,6 @@ def check_job_output(task_id, expected_output):
         raise Exception("{} not found in stdout".format(expected_output))
 
 
-class SecretHandler():
-    def __init__(self, path, value):
-        self.payload = json.dumps({"value": value})
-        self.api_url = urllib.parse.urljoin(dcos.config.get_config_val("core.dcos_url"),
-                                            "secrets/v1/secret/default/{}".format(path))
-        self.token = dcos.config.get_config_val("core.dcos_acs_token")
-        self.headers = {"Content-Type": "application/json", "Authorization": "token={}".format(self.token)}
-
-    def create_secret(self):
-        return requests.put(self.api_url, data=self.payload, headers=self.headers, verify=False)
-
-    def delete_secret(self):
-        return requests.delete(self.api_url, headers=self.headers, verify=False)
-
-
 def upload_file(file_path):
     LOGGER.info("Uploading {} to s3://{}/{}".format(
         file_path,

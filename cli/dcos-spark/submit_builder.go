@@ -43,6 +43,11 @@ type sparkArgs struct {
 	keytabSecretPath	string
 	tgtSecretPath		string
 	tgtSecretValue		string
+	keystoreSecretPath	string
+	keystorePassword	string
+	privateKeyPassword	string
+	truststoreSecretPath	string
+	truststorePassword	string
 	propertiesFile    	string
 	properties        	map[string]string
 
@@ -59,6 +64,11 @@ type sparkArgs struct {
 
 func NewSparkArgs() *sparkArgs {
 	return &sparkArgs{
+		"",
+		"",
+		"",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -140,12 +150,24 @@ Args:
 		PlaceHolder("PROP=VALUE").StringMapVar(&args.properties)
 	submit.Flag("kerberos-principal", "Principal to be used to login to KDC.").
 		PlaceHolder("user@REALM").Default("").StringVar(&args.kerberosPrincipal)
-	submit.Flag("keytab-secret-path", "path to Keytab in secret store to be used in the Spark drivers").
+	submit.Flag("keytab-secret-path", "Path to Keytab in secret store to be used in the Spark drivers").
 		PlaceHolder("/mykeytab").Default("").StringVar(&args.keytabSecretPath)
 	submit.Flag("tgt-secret-path", "Path to ticket granting ticket (TGT) in secret store to be used " +
 		"in the Spark drivers").PlaceHolder("/mytgt").Default("").StringVar(&args.tgtSecretPath)
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
+	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL. " +
+			"Make sure to set --keystore-password and --private-key-password as well.").
+		PlaceHolder("__dcos_base64__keystore").Default("").StringVar(&args.keystoreSecretPath)
+	submit.Flag("keystore-password", "A password to the keystore.").
+		Default("").StringVar(&args.keystorePassword)
+	submit.Flag("private-key-password", "A password to the private key in the keystore.").
+		Default("").StringVar(&args.privateKeyPassword)
+	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL. " +
+			"Make sure to set --truststore-password as well.").
+		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
+	submit.Flag("truststore-password", "A password to the truststore.").
+		Default("").StringVar(&args.truststorePassword)
 
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
 	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
@@ -255,6 +277,52 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
+}
+
+func setupTLSArgs(args *sparkArgs) {
+	args.properties["spark.mesos.containerizer"] = "mesos"
+	args.properties["spark.ssl.enabled"] = "true"
+
+	// Keystore and truststore
+	const keyStoreFileName  = "server.jks"
+	const trustStoreFileName  = "trust.jks"
+	args.properties["spark.ssl.keyStore"] = keyStoreFileName
+	if args.truststoreSecretPath != "" {
+		args.properties["spark.ssl.trustStore"] = trustStoreFileName
+	}
+
+	// Secret paths, filenames, and place holder envvars
+	paths := []string{args.keystoreSecretPath}
+	filenames := []string{keyStoreFileName}
+	envkeys := []string{"DCOS_SPARK_KEYSTORE"}
+	if args.truststoreSecretPath != "" {
+		paths = append(paths, args.truststoreSecretPath)
+		filenames = append(filenames, trustStoreFileName)
+		envkeys = append(envkeys, "DCOS_SPARK_TRUSTSTORE")
+	}
+	joinedPaths := strings.Join(paths, ",")
+	joinedFilenames := strings.Join(filenames, ",")
+	joinedEnvkeys := strings.Join(envkeys, ",")
+
+	taskTypes :=[]string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.names", taskType), joinedPaths, args)
+		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.filenames", taskType), joinedFilenames, args)
+		appendToPropertyIfSet(fmt.Sprintf("spark.mesos.%s.secret.envkeys", taskType), joinedEnvkeys, args)
+	}
+
+	// Passwords
+	args.properties["spark.ssl.keyStorePassword"] = args.keystorePassword
+	args.properties["spark.ssl.keyPassword"] = args.privateKeyPassword
+
+	if args.truststoreSecretPath != "" {
+		args.properties["spark.ssl.trustStorePassword"] = args.truststorePassword
+	}
+
+	// Protocol
+	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
+		args.properties["spark.ssl.protocol"] = "TLS"
+	}
 }
 
 func parseApplicationFile(args *sparkArgs) error {
@@ -435,6 +503,13 @@ func appendToProperty(propValue, toAppend string, args *sparkArgs) {
 	}
 }
 
+func appendToPropertyIfSet(propValue, toAppend string, args *sparkArgs) {
+	_, contains := args.properties[propValue]
+	if contains {
+		args.properties[propValue] += "," + toAppend
+	}
+}
+
 func getBase64Content(path string) string {
 	log.Printf("Opening file %s", path)
 	data, err := ioutil.ReadFile(path)
@@ -573,6 +648,8 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	log.Printf("Setting DCOS_SPACE to %s", cmd.submitDcosSpace)
 	appendToProperty("spark.mesos.driver.labels", fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace),
 		args)
+	appendToProperty("spark.mesos.task.labels", fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace),
+		args)
 
 	// HDFS config
 	hdfs_config_url, err := getStringFromTree(responseJson, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
@@ -618,6 +695,22 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	}
+
+	// TLS configuration
+	if args.keystoreSecretPath != "" {
+		// Make sure passwords are set
+		if args.keystorePassword == "" || args.privateKeyPassword == "" {
+			return "", errors.New("Need to provide keystore password and key password with keystore")
+		}
+
+		if args.truststoreSecretPath != "" {
+			if args.truststorePassword == "" {
+				return "", errors.New("Need to provide truststore password with truststore")
+			}
+		}
+
+		setupTLSArgs(args)
 	}
 
 	jsonMap := map[string]interface{}{

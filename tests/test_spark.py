@@ -13,6 +13,8 @@ import pytest
 import json
 import shakedown
 
+import sdk_utils
+
 from tests import s3
 from tests import utils
 
@@ -29,6 +31,7 @@ SECRET_CONTENTS = "mgummelt"
 def setup_module(module):
     utils.require_spark()
     utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+    shakedown.run_dcos_command('package install --cli dcos-enterprise-cli --yes')
 
 
 def teardown_module(module):
@@ -257,23 +260,26 @@ def test_marathon_group():
 
 
 @pytest.mark.sanity
+@pytest.mark.secrets
 def test_secrets():
     properties_file_path = os.path.join(THIS_DIR, "resources", "secrets-opts.txt")
-    secrets_handler = utils.SecretHandler(SECRET_NAME, SECRET_CONTENTS)
-    r = secrets_handler.create_secret()
-    assert r.ok, "Error creating secret, {}".format(r.content)
+    # Create secret
+    shakedown.run_dcos_command('security secrets create /{} --value {}'.format(SECRET_NAME, SECRET_CONTENTS))
+
     secret_file_name = "secret_file"
     output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
     args = ["--properties-file", properties_file_path,
             "--class", "SecretsJob"]
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
-                    app_args=secret_file_name,
-                    expected_output=output,
-                    app_name="/spark",
-                    args=args)
-    r = secrets_handler.delete_secret()
-    if not r.ok:
-        LOGGER.warn("Error when deleting secret, {}".format(r.content))
+    try:
+        utils.run_tests(app_url=utils._scala_test_jar_url(),
+                        app_args=secret_file_name,
+                        expected_output=output,
+                        app_name="/spark",
+                        args=args)
+
+    finally:
+        # Delete secret
+        shakedown.run_dcos_command('security secrets delete /{}'.format(SECRET_NAME))
 
 
 @pytest.mark.sanity
@@ -284,6 +290,53 @@ def test_cli_multiple_spaces():
                     app_name="/spark",
                     args=["--conf ", "spark.cores.max=2",
                           " --class  ", "org.apache.spark.examples.SparkPi"])
+
+
+# Skip DC/OS < 1.10, because it doesn't have support for file-based secrets.
+@pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
+@sdk_utils.dcos_ee_only
+@pytest.mark.sanity
+def test_driver_executor_tls():
+    '''
+    Put keystore and truststore as secrets in DC/OS secret store.
+    Run SparkPi job with TLS enabled, referencing those secrets.
+    Make sure other secrets still show up.
+    '''
+    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_secret.py')
+    python_script_url = utils.upload_file(python_script_path)
+    resources_folder = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'resources'
+    )
+    keystore_file = 'server.jks'
+    truststore_file = 'trust.jks'
+    keystore_path = os.path.join(resources_folder, '{}.base64'.format(keystore_file))
+    truststore_path = os.path.join(resources_folder, '{}.base64'.format(truststore_file))
+    keystore_secret = '__dcos_base64__keystore'
+    truststore_secret = '__dcos_base64__truststore'
+    my_secret = 'mysecret'
+    my_secret_content = 'secretcontent'
+    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(keystore_secret, keystore_path))
+    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(truststore_secret, truststore_path))
+    shakedown.run_dcos_command('security secrets create /{} --value {}'.format(my_secret, my_secret_content))
+    password = 'changeit'
+    try:
+        utils.run_tests(app_url=python_script_url,
+                        app_args="30 {} {}".format(my_secret, my_secret_content),
+                        expected_output="Pi is roughly 3",
+                        app_name="/spark",
+                        args=["--keystore-secret-path", keystore_secret,
+                              "--truststore-secret-path", truststore_secret,
+                              "--private-key-password", format(password),
+                              "--keystore-password", format(password),
+                              "--truststore-password", format(password),
+                              "--conf", "spark.mesos.driver.secret.names={}".format(my_secret),
+                              "--conf", "spark.mesos.driver.secret.filenames={}".format(my_secret),
+                              "--conf", "spark.mesos.driver.secret.envkeys={}".format(my_secret),
+                              ])
+    finally:
+        shakedown.run_dcos_command('security secrets delete /{}'.format(keystore_secret))
+        shakedown.run_dcos_command('security secrets delete /{}'.format(truststore_secret))
+        shakedown.run_dcos_command('security secrets delete /{}'.format(my_secret))
 
 
 def _scala_test_jar_url():
