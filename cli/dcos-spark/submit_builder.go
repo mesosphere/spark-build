@@ -279,17 +279,25 @@ func setupTLSArgs(args *sparkArgs) {
 		args.properties["spark.ssl.trustStore"] = trustStoreFileName
 	}
 
-	// Secret paths and filenames
+	// Secret paths, filenames, and place holder envvars
 	paths := []string{args.keystoreSecretPath}
 	filenames := []string{keyStoreFileName}
+	envkeys := []string{"DCOS_SPARK_KEYSTORE"}
 	if args.truststoreSecretPath != "" {
 		paths = append(paths, args.truststoreSecretPath)
 		filenames = append(filenames, trustStoreFileName)
+		envkeys = append(envkeys, "DCOS_SPARK_TRUSTSTORE")
 	}
-	args.properties["spark.mesos.driver.secret.names"] = strings.Join(paths, ",")
-	args.properties["spark.mesos.executor.secret.names"] = strings.Join(paths, ",")
-	args.properties["spark.mesos.driver.secret.filenames"] = strings.Join(filenames, ",")
-	args.properties["spark.mesos.executor.secret.filenames"] = strings.Join(filenames, ",")
+	joinedPaths := strings.Join(paths, ",")
+	joinedFilenames := strings.Join(filenames, ",")
+	joinedEnvkeys := strings.Join(envkeys, ",")
+
+	taskTypes :=[]string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.names", taskType), joinedPaths, args)
+		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.filenames", taskType), joinedFilenames, args)
+		appendToPropertyIfSet(fmt.Sprintf("spark.mesos.%s.secret.envkeys", taskType), joinedEnvkeys, args)
+	}
 
 	// Protocol
 	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
@@ -471,6 +479,13 @@ func appendToProperty(propValue, toAppend string, args *sparkArgs) {
 	if !contains {
 		args.properties[propValue] = toAppend
 	} else {
+		args.properties[propValue] += "," + toAppend
+	}
+}
+
+func appendToPropertyIfSet(propValue, toAppend string, args *sparkArgs) {
+	_, contains := args.properties[propValue]
+	if contains {
 		args.properties[propValue] += "," + toAppend
 	}
 }

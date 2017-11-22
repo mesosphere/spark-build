@@ -70,6 +70,10 @@ dcos spark run --verbose --submit-args="\
 in the command above in order to access the secrets.
 See the [Secrets Documentation about spaces][13] for more details about spaces.
 
+**Note:** If you specify environment-based secrets with `spark.mesos.[driver|executor].secret.envkeys`,
+the keystore and truststore secrets will also show up as environment-based secrets,
+due to the way secrets are implemented. You can ignore these extra environment variables.
+
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
