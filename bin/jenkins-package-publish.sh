@@ -39,6 +39,7 @@ SPARK_BUILD_DIR=${DIR}/..
 SPARK_BUILD_VERSION=${GIT_BRANCH#origin/tags/}
 
 pushd "${SPARK_BUILD_DIR}"
+make docker-login
 publish_docker_images
 make_universe
 write_properties
