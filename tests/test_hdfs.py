@@ -25,7 +25,7 @@ def hdfs_with_kerberos():
         log.warning('Temporarily using HDFS stub universe until kerberos is released')
         sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
             'hdfs-aws',
-            'https://universe-converter.mesosphere.com/transform\?url\=https://infinity-artifacts.s3.amazonaws.com/beta-hdfs/20171114-113058-4QOGHmRCbNVsmSeE/stub-universe-beta-hdfs.json')
+            'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-kafka/20171122-111649-IS0bqbN6pR4Jibu2/stub-universe-beta-kafka.json')
         )
 
         primaries = ["hdfs", "HTTP"]
