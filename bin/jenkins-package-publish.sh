@@ -24,9 +24,10 @@ function publish_docker_images() {
 
 function make_universe() {
     DOCKER_VERSION=$(docker_version $(default_hadoop_version))
+    echo ${DOCKER_DIST_IMAGE}:${DOCKER_VERSION} > docker-dist
 
     make manifest-dist # use default manifest spark
-    make stub-universe-url -e DOCKER_IMAGE=${DOCKER_DIST_IMAGE}:${DOCKER_VERSION}
+    make stub-universe-url
 }
 
 function write_properties() {
