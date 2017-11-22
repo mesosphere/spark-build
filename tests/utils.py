@@ -23,7 +23,7 @@ def _init_logging():
 _init_logging()
 LOGGER = logging.getLogger(__name__)
 HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
-SPARK_PACKAGE_NAME='spark'
+SPARK_PACKAGE_NAME=os.getenv('SPARK_PACKAGE_NAME', 'spark')
 
 
 def hdfs_enabled():
