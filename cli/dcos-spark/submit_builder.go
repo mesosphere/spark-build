@@ -44,7 +44,10 @@ type sparkArgs struct {
 	tgtSecretPath		string
 	tgtSecretValue		string
 	keystoreSecretPath	string
+	keystorePassword	string
+	privateKeyPassword	string
 	truststoreSecretPath	string
+	truststorePassword	string
 	propertiesFile    	string
 	properties        	map[string]string
 
@@ -61,6 +64,9 @@ type sparkArgs struct {
 
 func NewSparkArgs() *sparkArgs {
 	return &sparkArgs{
+		"",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -151,11 +157,17 @@ Args:
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
 	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL. " +
-			"Make sure to set --conf spark.ssl.keyPassword and --conf spark.ssl.keyStorePassword as well.").
+			"Make sure to set --keystore-password and --private-key-password as well.").
 		PlaceHolder("__dcos_base64__keystore").Default("").StringVar(&args.keystoreSecretPath)
+	submit.Flag("keystore-password", "A password to the keystore.").
+		Default("").StringVar(&args.keystorePassword)
+	submit.Flag("private-key-password", "A password to the private key in the keystore.").
+		Default("").StringVar(&args.privateKeyPassword)
 	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL. " +
-			"Make sure to set --conf spark.ssl.trustStorePassword as well.").
+			"Make sure to set --truststore-password as well.").
 		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
+	submit.Flag("truststore-password", "A password to the truststore.").
+		Default("").StringVar(&args.truststorePassword)
 
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
 	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
@@ -680,18 +692,18 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// TLS configuration
 	if args.keystoreSecretPath != "" {
 		// Make sure passwords are set
-		if _, ok := args.properties["spark.ssl.keyPassword"]; !ok {
-			return "", errors.New("Need to provide key password with keystore: " +
-				"--conf spark.ssl.keyPassword=<password>")
+		if args.keystorePassword == "" || args.privateKeyPassword == "" {
+			return "", errors.New("Need to provide keystore password and key password with keystore")
+		} else {
+			args.properties["spark.ssl.keyStorePassword"] = args.keystorePassword
+			args.properties["spark.ssl.keyPassword"] = args.privateKeyPassword
 		}
-		if _, ok := args.properties["spark.ssl.keyStorePassword"]; !ok {
-			return "", errors.New("Need to provide keystore password with keystore: " +
-				"--conf spark.ssl.keyStorePassword=<password>")
-		}
+
 		if args.truststoreSecretPath != "" {
-			if _, ok := args.properties["spark.ssl.trustStorePassword"]; !ok {
-				return "", errors.New("Need to provide truststore password with truststore: " +
-					"--conf spark.ssl.trustStorePassword=<password>")
+			if args.truststorePassword == "" {
+				return "", errors.New("Need to provide truststore password with truststore")
+			} else {
+				args.properties["spark.ssl.trustStorePassword"] = args.truststorePassword
 			}
 		}
 
