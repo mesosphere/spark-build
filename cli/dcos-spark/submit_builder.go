@@ -311,6 +311,14 @@ func setupTLSArgs(args *sparkArgs) {
 		appendToPropertyIfSet(fmt.Sprintf("spark.mesos.%s.secret.envkeys", taskType), joinedEnvkeys, args)
 	}
 
+	// Passwords
+	args.properties["spark.ssl.keyStorePassword"] = args.keystorePassword
+	args.properties["spark.ssl.keyPassword"] = args.privateKeyPassword
+
+	if args.truststoreSecretPath != "" {
+		args.properties["spark.ssl.trustStorePassword"] = args.truststorePassword
+	}
+
 	// Protocol
 	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
 		args.properties["spark.ssl.protocol"] = "TLS"
@@ -694,16 +702,11 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		// Make sure passwords are set
 		if args.keystorePassword == "" || args.privateKeyPassword == "" {
 			return "", errors.New("Need to provide keystore password and key password with keystore")
-		} else {
-			args.properties["spark.ssl.keyStorePassword"] = args.keystorePassword
-			args.properties["spark.ssl.keyPassword"] = args.privateKeyPassword
 		}
 
 		if args.truststoreSecretPath != "" {
 			if args.truststorePassword == "" {
 				return "", errors.New("Need to provide truststore password with truststore")
-			} else {
-				args.properties["spark.ssl.trustStorePassword"] = args.truststorePassword
 			}
 		}
 

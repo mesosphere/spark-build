@@ -13,6 +13,8 @@ import pytest
 import json
 import shakedown
 
+import sdk_utils
+
 from tests import s3
 from tests import utils
 
@@ -292,6 +294,7 @@ def test_cli_multiple_spaces():
 
 # Skip DC/OS < 1.10, because it doesn't have support for file-based secrets.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_driver_executor_tls():
     '''
