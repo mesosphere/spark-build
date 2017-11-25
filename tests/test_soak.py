@@ -13,10 +13,13 @@ LOGGER = logging.getLogger(__name__)
 SOAK_SPARK_APP_NAME='/spark'
 TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
+HDFS_KERBEROS_ENABLED=os.getenv('HDFS_KERBEROS_ENABLED', 'true')
 KERBEROS_ARGS = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL",
                  "--keytab-secret-path", "/__dcos_base64___keytab"]
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
-               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)] + KERBEROS_ARGS
+               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
+if HDFS_KERBEROS_ENABLED != 'false':
+    COMMON_ARGS += KERBEROS_ARGS
 
 
 def setup_module(module):
