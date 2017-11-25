@@ -115,7 +115,7 @@ UNIVERSE_URL_PATH ?= stub-universe-url
 $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
 	UNIVERSE_URL_PATH=$(UNIVERSE_URL_PATH) \
 	TEMPLATE_CLI_VERSION=$(CLI_VERSION) \
-	TEMPLATE_DOCKER_IMAGE=mesosphere/spark:beta-2.1.1-2.2.0-2-hadoop-2.6 \
+	TEMPLATE_DOCKER_IMAGE=`cat docker-dist` \
 		$(TOOLS_DIR)/publish_aws.py \
 		spark \
         $(ROOT_DIR)/universe/ \
