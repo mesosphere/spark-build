@@ -182,7 +182,10 @@ def submit_job(app_url, app_args, app_name="/spark", args=[]):
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos spark --name={app_name}  run --verbose --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
+    cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
+        pkg_name=SPARK_PACKAGE_NAME,
+        app_name=app_name,
+        args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
