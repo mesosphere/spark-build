@@ -7,6 +7,10 @@ function docker_version() {
     echo "${SPARK_BUILD_VERSION}-hadoop-$1"
 }
 
+function default_hadoop_version {
+    jq -r ".default_spark_dist.hadoop_version" "${SPARK_BUILD_DIR}/manifest.json"
+}
+
 function publish_docker_images() {
     local NUM_SPARK_DIST=$(jq ".spark_dist | length" manifest.json)
     local NUM_SPARK_DIST=$(expr ${NUM_SPARK_DIST} - 1)
@@ -24,10 +28,9 @@ function publish_docker_images() {
 
 function make_universe() {
     DOCKER_VERSION=$(docker_version $(default_hadoop_version))
-    echo ${DOCKER_DIST_IMAGE}:${DOCKER_VERSION} > docker-dist
 
     make manifest-dist # use default manifest spark
-    make stub-universe-url
+    make stub-universe-url -e DOCKER_DIST_IMAGE=${DOCKER_DIST_IMAGE}:${DOCKER_VERSION}
 }
 
 function write_properties() {
