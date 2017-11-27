@@ -64,7 +64,10 @@ def _run_teravalidate():
 
 
 def _delete_hdfs_terasort_files():
-    job_name = 'hdfs-delete-terasort-files'
+    if HDFS_KERBEROS_ENABLED != 'false':
+        job_name = 'hdfs-kerberos-delete-terasort-files'
+    else:
+        job_name = 'hdfs-delete-terasort-files'
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_name))
     metronome_client = dcos.metronome.create_client()
     if not _job_exists(metronome_client, job_name):
