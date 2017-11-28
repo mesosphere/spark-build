@@ -21,7 +21,6 @@ LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
-SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 SECRET_NAME = "secret"
 SECRET_CONTENTS = "mgummelt"
 
@@ -51,7 +50,7 @@ def test_jar(app_name="/spark"):
 
 @pytest.mark.sanity
 def test_sparkPi():
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="100",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
@@ -73,7 +72,7 @@ def test_supervise():
         else:
             return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
 
-    driver_id = utils.submit_job(app_url=SPARK_EXAMPLES,
+    driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="file:///mnt/mesos/sandbox/",
                                  app_name="/spark",
                                  args=["--supervise",
@@ -137,8 +136,7 @@ def test_r():
 
 @pytest.mark.sanity
 def test_cni():
-    SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
@@ -149,7 +147,7 @@ def test_cni():
 #@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 def test_cni_labels():
-    driver_task_id = utils.submit_job(app_url=SPARK_EXAMPLES,
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
                                       app_name="/spark",
                                       args=["--conf", "spark.mesos.network.name=dcos",
@@ -278,7 +276,7 @@ def test_secrets():
 
 @pytest.mark.sanity
 def test_cli_multiple_spaces():
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="30",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
