@@ -23,7 +23,7 @@ def _init_logging():
 _init_logging()
 LOGGER = logging.getLogger(__name__)
 HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
-SPARK_PACKAGE_NAME='spark'
+SPARK_PACKAGE_NAME=os.getenv('SPARK_PACKAGE_NAME', 'spark')
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 
 def hdfs_enabled():
@@ -163,21 +163,6 @@ def check_job_output(task_id, expected_output):
         raise Exception("{} not found in stdout".format(expected_output))
 
 
-class SecretHandler():
-    def __init__(self, path, value):
-        self.payload = json.dumps({"value": value})
-        self.api_url = urllib.parse.urljoin(dcos.config.get_config_val("core.dcos_url"),
-                                            "secrets/v1/secret/default/{}".format(path))
-        self.token = dcos.config.get_config_val("core.dcos_acs_token")
-        self.headers = {"Content-Type": "application/json", "Authorization": "token={}".format(self.token)}
-
-    def create_secret(self):
-        return requests.put(self.api_url, data=self.payload, headers=self.headers, verify=False)
-
-    def delete_secret(self):
-        return requests.delete(self.api_url, headers=self.headers, verify=False)
-
-
 def upload_file(file_path):
     LOGGER.info("Uploading {} to s3://{}/{}".format(
         file_path,
@@ -197,7 +182,10 @@ def submit_job(app_url, app_args, app_name="/spark", args=[]):
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos spark --name={app_name}  run --verbose --submit-args="{args}"'.format(app_name=app_name, args=submit_args)
+    cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
+        pkg_name=SPARK_PACKAGE_NAME,
+        app_name=app_name,
+        args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
     stdout = subprocess.check_output(cmd, shell=True).decode('utf-8')
