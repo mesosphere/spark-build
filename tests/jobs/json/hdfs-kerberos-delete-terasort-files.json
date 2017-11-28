@@ -8,10 +8,6 @@
     "disk": 0,
     "cmd": "/bin/bash && cd $MESOS_SANDBOX && python3 dcos-cli-auth.py --username=$DCOS_UID --password=$DCOS_PASSWORD && dcos task exec hdfsclient kinit -k -t hdfs.keytab hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL && dcos task exec hdfsclient bin/hdfs dfs -rm -r -f /terasort_in /terasort_out",
     "user": "root",
-    "env": {
-      "DCOS_UID": "dcos-dev",
-      "DCOS_PASSWORD": "dogfoodinit"
-    },
     "placement": {
       "constraints": []
     },
