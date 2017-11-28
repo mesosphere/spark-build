@@ -3,7 +3,6 @@ import os
 import pytest
 import json
 import shakedown
-import subprocess
 
 from tests import s3, utils
 
@@ -23,7 +22,7 @@ KERBERIZED_KAFKA = True
 KAFKA_KRB5="W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKCltyZW" \
            "FsbXNdCiAgTE9DQUwgPSB7CiAgICBrZGMgPSBrZGMubWFyYXRob24u" \
            "YXV0b2lwLmRjb3MudGhpc2Rjb3MuZGlyZWN0b3J5OjI1MDAKICB9Cg=="
-# Currently using stub-universe so it's beta-kafka, for the last time
+# Currently using stub-universe so it's beta-kafka
 KAFKA_PACKAGE_NAME = "beta-kafka"
 KAFKA_SERVICE_NAME = "secure-kafka" if KERBERIZED_KAFKA else "kafka"
 
