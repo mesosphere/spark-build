@@ -131,6 +131,7 @@ def test_terasort_suite():
 
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
+@pytest.mark.runnow
 def test_supervise():
     def streaming_job_registered():
         return shakedown.get_service("HdfsWordCount") is not None
@@ -147,13 +148,16 @@ def test_supervise():
 
     JOB_SERVICE_NAME = "RecoverableNetworkWordCount"
 
+    kerberos_args = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL",
+                     "--keytab-secret-path", "/__dcos_base64___keytab"]
+
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="10.0.0.1 9090 hdfs:///netcheck hdfs:///outfile",
                                  app_name="/spark",
                                  args=["--supervise",
                                        "--class", "org.apache.spark.examples.streaming.RecoverableNetworkWordCount",
                                        "--conf", "spark.cores.max=8",
-                                       "--conf", "spark.executors.cores=4"])
+                                       "--conf", "spark.executors.cores=4"] + kerberos_args)
     log.info("Started supervised driver {}".format(driver_id))
     shakedown.wait_for(lambda: streaming_job_registered(),
                        ignore_exceptions=False,

@@ -244,6 +244,7 @@ def _run_janitor():
     shakedown.run_command_on_master(janitor_cmd.format(
         auth=shakedown.dcos_acs_token()))
 
+
 def teardown_spark():
     shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME)
     _run_janitor()
