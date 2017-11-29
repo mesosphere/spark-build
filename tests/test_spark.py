@@ -61,60 +61,6 @@ def test_sparkPi():
 
 
 @pytest.mark.sanity
-def test_supervise():
-    def streaming_job_registered():
-        return shakedown.get_service("HdfsWordCount") is not None
-
-    def streaming_job_is_not_running():
-        return not streaming_job_registered()
-
-    def has_running_executors():
-        f = shakedown.get_service("HdfsWordCount")
-        if f is None:
-            return False
-        else:
-            return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
-
-    driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                 app_args="file:///mnt/mesos/sandbox/",
-                                 app_name="/spark",
-                                 args=["--supervise",
-                                       "--class", "org.apache.spark.examples.streaming.HdfsWordCount",
-                                       "--conf", "spark.cores.max=8",
-                                       "--conf", "spark.executors.cores=4"])
-    LOGGER.info("Started supervised driver {}".format(driver_id))
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has running executors")
-
-    host = shakedown.get_service("HdfsWordCount").dict()["hostname"]
-    id = shakedown.get_service("HdfsWordCount").dict()["id"]
-    driver_regex = "spark.mesos.driver.frameworkId={}".format(id)
-    shakedown.kill_process_on_host(hostname=host, pattern=driver_regex)
-
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has re-registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has re-started")
-    out = utils.kill_driver(driver_id, "/spark")
-    LOGGER.info("{}".format(out))
-    out = json.loads(out)
-    assert out["success"], "Failed to kill spark streaming job"
-    shakedown.wait_for(lambda: streaming_job_is_not_running(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-
-
-@pytest.mark.sanity
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)
