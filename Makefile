@@ -135,6 +135,7 @@ test-env:
 	source test-env/bin/activate
 	pip3 install -r tests/requirements.txt
 
+CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
 cluster-url:
 	$(eval export DCOS_LAUNCH_CONFIG_BODY)
 	@if [ -z $(CLUSTER_URL) ]; then \
@@ -209,7 +210,7 @@ define DCOS_LAUNCH_CONFIG_BODY
 ---
 launch_config_version: 1
 deployment_name: dcos-ci-test-spark-build-$(shell cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 10 | head -n 1)
-template_url: https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
+template_url: $(CF_TEMPLATE_URL)
 provider: aws
 key_helper: true
 template_parameters:
