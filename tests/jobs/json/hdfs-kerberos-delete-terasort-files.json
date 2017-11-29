@@ -1,0 +1,32 @@
+{
+  "id": "hdfs-kerberos-delete-terasort-files",
+  "description": "Job that deletes Terasort files from Kerberized HDFS",
+  "labels": {},
+  "run": {
+    "cpus": 0.1,
+    "mem": 512,
+    "disk": 0,
+    "cmd": "/bin/bash && cd $MESOS_SANDBOX && python3 dcos-cli-auth.py --username=$DCOS_UID --password=$DCOS_PASSWORD && dcos task exec hdfsclient kinit -k -t hdfs.keytab hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL && dcos task exec hdfsclient bin/hdfs dfs -rm -r -f /terasort_in /terasort_out",
+    "user": "root",
+    "placement": {
+      "constraints": []
+    },
+    "artifacts": [
+      {
+        "uri": "https://s3.amazonaws.com/soak-clusters/artifacts/soak110/dcos-cli-auth.py",
+        "extract": true,
+        "executable": false,
+        "cache": false
+      }
+    ],
+    "maxLaunchDelay": 3600,
+    "docker": {
+      "image": "mesosphere/dcos-commons:soak"
+    },
+    "volumes": [],
+    "restart": {
+      "policy": "NEVER"
+    }
+  },
+  "schedules": []
+}
