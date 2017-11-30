@@ -33,7 +33,7 @@ def kerberized_kafka():
         LOGGER.warning('Temporarily using Kafka stub universe until kerberos is released')
         sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
         'kafka-aws',
-        'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/beta-kafka/20171116-095256-ui8c625WXxUN6abI/stub-universe-beta-kafka.json'))
+        'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-kafka/20171122-111649-IS0bqbN6pR4Jibu2/stub-universe-beta-kafka.json'))
 
         fqdn = "{service_name}.{host_suffix}".format(service_name=KAFKA_SERVICE_NAME,
                                                      host_suffix=sdk_hosts.AUTOIP_HOST_SUFFIX)
