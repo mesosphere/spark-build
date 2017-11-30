@@ -23,8 +23,8 @@ KAFKA_KRB5="W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKCltyZW" \
            "FsbXNdCiAgTE9DQUwgPSB7CiAgICBrZGMgPSBrZGMubWFyYXRob24u" \
            "YXV0b2lwLmRjb3MudGhpc2Rjb3MuZGlyZWN0b3J5OjI1MDAKICB9Cg=="
 # Currently using stub-universe so it's beta-kafka
-KAFKA_PACKAGE_NAME = "beta-kafka"
-KAFKA_SERVICE_NAME = "secure-kafka" if KERBERIZED_KAFKA else "kafka"
+KAFKA_PACKAGE_NAME = os.getenv("KAFKA_PACKAGE_NAME", "beta-kafka")
+KAFKA_SERVICE_NAME = os.getenv("KAFKA_SERVICE_NAME", ("secure-kafka" if KERBERIZED_KAFKA else "kafka"))
 
 
 @pytest.fixture(scope='module')
@@ -98,22 +98,15 @@ def setup_spark(kerberized_kafka):
 @pytest.mark.sanity
 @pytest.mark.skipif(not utils.kafka_enabled(), reason='KAFKA_ENABLED is false')
 def test_spark_and_kafka():
-    def producer_launched():
-        return utils.streaming_job_launched(PRODUCER_SERVICE_NAME)
-
-    def producer_started():
-        return utils.streaming_job_running(PRODUCER_SERVICE_NAME)
-
-    def kafka_broker_dns():
-        cmd = "{package_name} --name={service_name} endpoints broker".format(
-            package_name=KAFKA_PACKAGE_NAME, service_name=KAFKA_SERVICE_NAME)
-        rt, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
-        assert rt == 0, "Failed to get broker endpoints"
-        return json.loads(stdout)["dns"][0]
-
     kerberos_flag = "true" if KERBERIZED_KAFKA else "false"  # flag for using kerberized kafka given to app
     stop_count = "48"  # some reasonable number
-    broker_dns = kafka_broker_dns()
+    test_pipeline(kerberos_flag=kerberos_flag, jar_uri=utils._scala_test_jar_url(), stop_count=stop_count)
+
+
+def test_pipeline(kerberos_flag, stop_count, jar_uri, jaas_uri=None):
+    stop_count = str(stop_count)
+    kerberized = True if kerberos_flag == "true" else False
+    broker_dns = _kafka_broker_dns()
     topic = "top1"
 
     big_file, big_file_url = "/mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
@@ -122,10 +115,13 @@ def test_spark_and_kafka():
     producer_args = " ".join([broker_dns, big_file, topic, kerberos_flag])
 
     uris = "spark.mesos.uris=http://norvig.com/big.txt"
-    if KERBERIZED_KAFKA:
+
+    if kerberized and jaas_uri is None:
         jaas_path = os.path.join(THIS_DIR, "resources", "spark-kafka-client-jaas.conf")
         s3.upload_file(jaas_path)
-        jaas_uri = s3.s3_http_url("spark-kafka-client-jaas.conf")
+        _uri = s3.s3_http_url("spark-kafka-client-jaas.conf")
+        uris += ",{}".format(_uri)
+    else:
         uris += ",{}".format(jaas_uri)
 
     common_args = [
@@ -152,26 +148,26 @@ def test_spark_and_kafka():
     producer_config = ["--conf", "spark.cores.max=2", "--conf", "spark.executor.cores=2",
                        "--class", "KafkaFeeder"] + common_args
 
-    if KERBERIZED_KAFKA:
+    if kerberized:
         producer_config += kerberos_args
 
-    producer_id = utils.submit_job(app_url=utils._scala_test_jar_url(),
+    producer_id = utils.submit_job(app_url=jar_uri,
                                    app_args=producer_args,
                                    app_name="/spark",
                                    args=producer_config)
 
-    shakedown.wait_for(lambda: producer_launched(), ignore_exceptions=False, timeout_seconds=600)
+    shakedown.wait_for(lambda: _producer_launched(), ignore_exceptions=False, timeout_seconds=600)
     shakedown.wait_for(lambda: utils.is_service_ready(KAFKA_SERVICE_NAME, 1),
                        ignore_exceptions=False, timeout_seconds=600)
 
     consumer_config = ["--conf", "spark.cores.max=4", "--class", "KafkaConsumer"] + common_args
 
-    if KERBERIZED_KAFKA:
+    if kerberized:
         consumer_config += kerberos_args
 
     consumer_args = " ".join([broker_dns, topic, stop_count, kerberos_flag])
 
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
+    utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
                     app_name="/spark",
@@ -179,3 +175,18 @@ def test_spark_and_kafka():
 
     utils.kill_driver(producer_id, "/spark")
 
+
+def _producer_launched():
+    return utils.streaming_job_launched(PRODUCER_SERVICE_NAME)
+
+
+def _producer_started():
+    return utils.streaming_job_running(PRODUCER_SERVICE_NAME)
+
+
+def _kafka_broker_dns():
+    cmd = "{package_name} --name={service_name} endpoints broker".format(
+        package_name=KAFKA_PACKAGE_NAME, service_name=KAFKA_SERVICE_NAME)
+    rt, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
+    assert rt == 0, "Failed to get broker endpoints"
+    return json.loads(stdout)["dns"][0]
