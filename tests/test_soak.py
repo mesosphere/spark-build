@@ -6,8 +6,10 @@ import logging
 import pytest
 import shakedown
 
-from tests import utils
+import sdk_cmd
 
+from tests import utils
+from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
 
 LOGGER = logging.getLogger(__name__)
 SOAK_SPARK_SERVICE_NAME = os.getenv('SOAK_SPARK_SERVICE_NAME', '/spark')
@@ -18,6 +20,10 @@ KERBEROS_ARGS = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.this
                  "--keytab-secret-path", "/__dcos_base64___keytab"]
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
                "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
+
+KAFKA_JAAS_URI = "https://s3-us-west-2.amazonaws.com/infinity-artifacts/soak/spark/spark-kafka-client-jaas.conf"
+JAR_URI = "https://s3-us-west-2.amazonaws.com/infinity-artifacts/soak/spark/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar"
+
 if HDFS_KERBEROS_ENABLED != 'false':
     COMMON_ARGS += KERBEROS_ARGS
 DCOS_UID = os.getenv('DCOS_UID')
@@ -35,6 +41,17 @@ def test_terasort():
         _run_teragen()
         _run_terasort()
         _run_teravalidate()
+
+
+@pytest.mark.soak
+def test_spark_kafka_interservice():
+    if utils.kafka_enabled():
+        rc, stdout, stderr = sdk_cmd.run_raw_cli("package install {} --yes --cli".format(KAFKA_PACKAGE_NAME))
+        if rc != 0:
+            LOGGER.warn("Got return code {rc} when trying to install {package} cli\nstdout:{out}\n{err}"
+                        .format(rc=rc, package=KAFKA_PACKAGE_NAME, out=stdout, err=stderr))
+        stop_count = os.getenv("STOP_COUNT", "1000")
+        test_pipeline(kerberos_flag="true", stop_count=stop_count, jar_uri=JAR_URI, jaas_uri=KAFKA_JAAS_URI)
 
 
 def _run_teragen():
