@@ -89,7 +89,6 @@ object KafkaConsumer {
   }
 }
 
-
 object KafkaFeeder {
   class SmartySource(words: Array[String], sentenceLength: Int, ratePerSec: Int)
     extends Receiver[String](StorageLevel.MEMORY_AND_DISK_2) {
