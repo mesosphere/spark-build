@@ -23,7 +23,6 @@ LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
-SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
 SECRET_NAME = "secret"
 SECRET_CONTENTS = "mgummelt"
 
@@ -54,65 +53,11 @@ def test_jar(app_name="/spark"):
 
 @pytest.mark.sanity
 def test_sparkPi():
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="100",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
                     args=["--class org.apache.spark.examples.SparkPi"])
-
-
-@pytest.mark.sanity
-def test_supervise():
-    def streaming_job_registered():
-        return shakedown.get_service("HdfsWordCount") is not None
-
-    def streaming_job_is_not_running():
-        return not streaming_job_registered()
-
-    def has_running_executors():
-        f = shakedown.get_service("HdfsWordCount")
-        if f is None:
-            return False
-        else:
-            return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
-
-    driver_id = utils.submit_job(app_url=SPARK_EXAMPLES,
-                                 app_args="file:///mnt/mesos/sandbox/",
-                                 app_name="/spark",
-                                 args=["--supervise",
-                                       "--class", "org.apache.spark.examples.streaming.HdfsWordCount",
-                                       "--conf", "spark.cores.max=8",
-                                       "--conf", "spark.executors.cores=4"])
-    LOGGER.info("Started supervised driver {}".format(driver_id))
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has running executors")
-
-    host = shakedown.get_service("HdfsWordCount").dict()["hostname"]
-    id = shakedown.get_service("HdfsWordCount").dict()["id"]
-    driver_regex = "spark.mesos.driver.frameworkId={}".format(id)
-    shakedown.kill_process_on_host(hostname=host, pattern=driver_regex)
-
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has re-registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
-    LOGGER.info("Job has re-started")
-    out = utils.kill_driver(driver_id, "/spark")
-    LOGGER.info("{}".format(out))
-    out = json.loads(out)
-    assert out["success"], "Failed to kill spark streaming job"
-    shakedown.wait_for(lambda: streaming_job_is_not_running(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
 
 
 @pytest.mark.sanity
@@ -140,8 +85,7 @@ def test_r():
 
 @pytest.mark.sanity
 def test_cni():
-    SPARK_EXAMPLES="http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
@@ -152,7 +96,7 @@ def test_cni():
 #@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 def test_cni_labels():
-    driver_task_id = utils.submit_job(app_url=SPARK_EXAMPLES,
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
                                       app_name="/spark",
                                       args=["--conf", "spark.mesos.network.name=dcos",
@@ -284,7 +228,7 @@ def test_secrets():
 
 @pytest.mark.sanity
 def test_cli_multiple_spaces():
-    utils.run_tests(app_url=SPARK_EXAMPLES,
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="30",
                     expected_output="Pi is roughly 3",
                     app_name="/spark",

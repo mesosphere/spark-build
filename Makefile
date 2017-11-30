@@ -71,7 +71,7 @@ prod-dist: $(SPARK_DIR)
 		else \
 			MESOS_PROFILE=""; \
 		fi; \
-		./dev/make-distribution.sh --tgz "$${MESOS_PROFILE}" "-Phadoop-$(HADOOP_VERSION)" -Psparkr -Phive -Phive-thriftserver -DskipTests; \
+		./dev/make-distribution.sh --tgz "$${MESOS_PROFILE}" "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests; \
 	fi; \
 	mkdir -p $(DIST_DIR)
 	cp spark-*.tgz $(DIST_DIR)

@@ -1,6 +1,9 @@
 import itertools
 import logging
 import pytest
+import json
+
+import shakedown
 
 import sdk_auth
 import sdk_cmd
@@ -125,3 +128,65 @@ def test_terasort_suite():
                     expected_output="partitions are properly sorted",
                     app_name="/spark",
                     args=teravalidate_args)
+
+
+@pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
+@pytest.mark.sanity
+def test_supervise():
+    def streaming_job_registered():
+        return shakedown.get_service(JOB_SERVICE_NAME) is not None
+
+    def streaming_job_is_not_running():
+        return not streaming_job_registered()
+
+    def has_running_executors():
+        f = shakedown.get_service(JOB_SERVICE_NAME)
+        if f is None:
+            return False
+        else:
+            return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
+
+    JOB_SERVICE_NAME = "RecoverableNetworkWordCount"
+
+    kerberos_args = ["--kerberos-principal", "hdfs@LOCAL",
+                     "--keytab-secret-path", "/__dcos_base64___keytab"]
+
+    job_args = ["--supervise",
+                "--class", "org.apache.spark.examples.streaming.RecoverableNetworkWordCount",
+                "--conf", "spark.cores.max=8",
+                "--conf", "spark.executors.cores=4"]
+
+    driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                 app_args="10.0.0.1 9090 hdfs:///netcheck hdfs:///outfile",
+                                 app_name="/spark",
+                                 args=(kerberos_args + job_args))
+    log.info("Started supervised driver {}".format(driver_id))
+    shakedown.wait_for(lambda: streaming_job_registered(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    log.info("Job has registered")
+    shakedown.wait_for(lambda: has_running_executors(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    log.info("Job has running executors")
+
+    host = shakedown.get_service(JOB_SERVICE_NAME).dict()["hostname"]
+    id = shakedown.get_service(JOB_SERVICE_NAME).dict()["id"]
+    driver_regex = "spark.mesos.driver.frameworkId={}".format(id)
+    shakedown.kill_process_on_host(hostname=host, pattern=driver_regex)
+
+    shakedown.wait_for(lambda: streaming_job_registered(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    log.info("Job has re-registered")
+    shakedown.wait_for(lambda: has_running_executors(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
+    log.info("Job has re-started")
+    out = utils.kill_driver(driver_id, "/spark")
+    log.info("{}".format(out))
+    out = json.loads(out)
+    assert out["success"], "Failed to kill spark streaming job"
+    shakedown.wait_for(lambda: streaming_job_is_not_running(),
+                       ignore_exceptions=False,
+                       timeout_seconds=600)
