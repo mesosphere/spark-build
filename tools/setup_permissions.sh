@@ -57,29 +57,18 @@ function grant_task_execution() {
     curl -k -L -X PUT \
          -H "Authorization: token=${ACS_TOKEN}" \
          "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:${LINUX_USER}/users/${SERVICE_ACCOUNT_NAME}/create"
+}
 
-    # In order for the Spark Dispatcher to register with Mesos as
-    # root, we must launch the dispatcher task as root.  The other
-    # frameworks are launched as nobody, but then register as
-    # service.user, which defaults to root
-    echo "Authorizing dcos_marathon to execute Mesos tasks as root"
+function grant_drivers_task_execution() {
+    echo "Authorizing Spark drivers to execute Mesos tasks"
     curl -k -L -X PUT \
          -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:user:root" \
-         -d '{"description":"Execute Mesos tasks as user=root"}' \
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:app_id:%252Fspark" \
+         -d '{"description":"Spark drivers can execute Mesos tasks"}' \
          -H 'Content-Type: application/json'
     curl -k -L -X PUT \
          -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/dcos_marathon/create"
-    # XXX see above
-    curl -k -L -X PUT \
-         -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:root" \
-         -d '{"description":"Execute Mesos tasks as user=root"}' \
-         -H 'Content-Type: application/json'
-    curl -k -L -X PUT \
-         -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:root/users/dcos_marathon/create"
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:app_id:%252Fspark/users/${SERVICE_ACCOUNT_NAME}/create"
 }
 
 function grant_resources {
@@ -129,6 +118,7 @@ function grant_volumes {
 echo "Granting permissions to ${SERVICE_ACCOUNT_NAME}..."
 grant_registration
 grant_task_execution
+grant_drivers_task_execution
 grant_resources
 grant_volumes
 echo "Permission setup completed for ${SERVICE_ACCOUNT_NAME}"

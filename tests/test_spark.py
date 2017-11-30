@@ -28,14 +28,15 @@ SECRET_NAME = "secret"
 SECRET_CONTENTS = "mgummelt"
 
 
-def setup_module(module):
-    utils.require_spark()
-    utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
-    shakedown.run_dcos_command('package install --cli dcos-enterprise-cli --yes')
-
-
-def teardown_module(module):
-    utils.teardown_spark()
+@pytest.fixture(scope='module', autouse=True)
+def setup_spark():
+    try:
+        utils.require_spark()
+        utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+        shakedown.run_dcos_command('package install --cli dcos-enterprise-cli --yes')
+        yield
+    finally:
+        utils.teardown_spark()
 
 
 @pytest.mark.sanity

@@ -133,12 +133,8 @@ def _get_spark_options(options, use_hdfs):
 
     if is_strict():
         options["service"] = options.get("service", {})
-        options["service"]["principal"] = "service-acct"
-
-        options["security"] = options.get("security", {})
-        options["security"]["mesos"] = options["security"].get("mesos", {})
-        options["security"]["mesos"]["authentication"] = options["security"]["mesos"].get("authentication", {})
-        options["security"]["mesos"]["authentication"]["secret_name"] = "secret"
+        options["service"]["service_account"] = "service-acct"
+        options["service"]["service_account_secret"] = "secret"
 
     return options
 
@@ -177,8 +173,7 @@ def upload_file(file_path):
 
 def submit_job(app_url, app_args, app_name="/spark", args=[]):
     if is_strict():
-        args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
-        args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
+        args += ["--conf", 'spark.mesos.containerizer=mesos']
         args += ["--conf", 'spark.mesos.principal=service-acct']
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
