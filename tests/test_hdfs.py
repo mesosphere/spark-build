@@ -9,6 +9,7 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_security
 
 from tests import utils
 
@@ -22,7 +23,14 @@ HDFS_SERVICE_NAME='hdfs'
 
 
 @pytest.fixture(scope='module')
-def hdfs_with_kerberos():
+def configure_security():
+    sdk_security.security_session('hdfs')
+    utils.spark_security_session()
+    yield
+
+
+@pytest.fixture(scope='module')
+def hdfs_with_kerberos(configure_security):
     try:
         # To do: remove the following as soon as HDFS with kerberos is released
         log.warning('Temporarily using HDFS stub universe until kerberos is released')

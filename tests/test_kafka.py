@@ -10,6 +10,7 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_security
 
 
 LOGGER = logging.getLogger(__name__)
@@ -28,7 +29,14 @@ KAFKA_SERVICE_NAME = os.getenv("KAFKA_SERVICE_NAME", ("secure-kafka" if KERBERIZ
 
 
 @pytest.fixture(scope='module')
-def kerberized_kafka():
+def configure_security():
+    sdk_security.security_session('kafka')
+    utils.spark_security_session()
+    yield
+
+
+@pytest.fixture(scope='module')
+def kerberized_kafka(configure_security):
     try:
         LOGGER.warning('Temporarily using Kafka stub universe until kerberos is released')
         sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(

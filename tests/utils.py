@@ -11,6 +11,8 @@ import shakedown
 import subprocess
 import urllib
 
+import sdk_security
+
 from tests import s3
 
 
@@ -236,3 +238,51 @@ def teardown_spark():
 
 def _scala_test_jar_url():
     return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
+
+
+def spark_security_session():
+    '''
+    Spark strict mode setup is slightly different from dcos-commons, so can't use sdk_security::security_session.
+    '''
+    user = 'nobody'
+    role = '*'
+    service_account = 'service-acct'
+
+    def grant_driver_permission(service_account_name):
+        dcosurl, headers = sdk_security.get_dcos_credentials()
+        sdk_security.grant(
+            dcosurl,
+            headers,
+            service_account_name,
+            "dcos:mesos:master:task:app_id:%252Fspark",
+            "Spark drivers may execute Mesos tasks"
+        )
+
+    def setup_security():
+        LOGGER.info('Setting up strict-mode security for Spark')
+        sdk_security.create_service_account(service_account_name='service-acct', service_account_secret='secret')
+        sdk_security.grant_permissions(
+            linux_user=user,
+            role_name=role,
+            service_account_name=service_account
+        )
+        grant_driver_permission(service_account)
+        LOGGER.info('Finished setting up strict-mode security for Spark')
+
+    def cleanup_security():
+        LOGGER.info('Cleaning up strict-mode security for Spark')
+        sdk_security.revoke_permissions(
+            linux_user=user,
+            role_name=role,
+            service_account_name=service_account
+        )
+        sdk_security.delete_service_account('service-acct', 'secret')
+        LOGGER.info('Finished cleaning up strict-mode security for Spark')
+
+    try:
+        if is_strict():
+            setup_security()
+        yield
+    finally:
+        if is_strict():
+            cleanup_security()

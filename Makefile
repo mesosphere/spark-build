@@ -177,10 +177,6 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
 	fi; \
 	export CLUSTER_URL=`cat cluster-url`
 	$(TOOLS_DIR)/./dcos_login.py
-	if [ "$(SECURITY)" = "strict" ]; then \
-        $(TOOLS_DIR)/setup_permissions.sh nobody "*"; \
-        $(TOOLS_DIR)/setup_permissions.sh nobody hdfs-role; \
-    fi; \
 	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
 	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
