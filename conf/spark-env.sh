@@ -52,14 +52,22 @@ if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
     done
 fi
 
+if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
+    KRB5CONF=${SPARK_MESOS_KRB5_CONF_BASE64}
+fi
+
 if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
+    KRB5CONF=${KRB5_CONFIG_BASE64}
+fi
+
+if [[ -n "${KRB5CONF}" ]]; then
     if base64 --help | grep -q GNU; then
           BASE64_D="base64 -d" # GNU
       else
           BASE64_D="base64 -D" # BSD
     fi
-    echo "spark-env: Copying krb config from $KRB5_CONFIG_BASE64 to /etc/" >&2
-    echo "${KRB5_CONFIG_BASE64}" | ${BASE64_D} > /etc/krb5.conf
+    echo "spark-env: Copying krb config from $KRB5CONF to /etc/" >&2
+    echo "${KRB5CONF}" | ${BASE64_D} > /etc/krb5.conf
 else
     echo "spark-env: No kerberos KDC config found" >&2
 fi
