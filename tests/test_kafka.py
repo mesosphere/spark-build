@@ -29,14 +29,12 @@ KAFKA_SERVICE_NAME = os.getenv("KAFKA_SERVICE_NAME", ("secure-kafka" if KERBERIZ
 
 
 @pytest.fixture(scope='module')
-def configure_security():
-    sdk_security.security_session('kafka')
-    utils.spark_security_session()
-    yield
+def configure_security_kafka():
+    yield from sdk_security.security_session(KAFKA_SERVICE_NAME)
 
 
 @pytest.fixture(scope='module')
-def kerberized_kafka(configure_security):
+def kerberized_kafka(configure_security_kafka):
     try:
         LOGGER.warning('Temporarily using Kafka stub universe until kerberos is released')
         sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
@@ -91,8 +89,13 @@ def kerberized_kafka(configure_security):
             kerberos_env.cleanup()
 
 
+@pytest.fixture(scope='module')
+def configure_security_spark():
+    yield from utils.spark_security_session()
+
+
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(kerberized_kafka):
+def setup_spark(kerberized_kafka, configure_security_spark):
     try:
         # need to do this here also in case this test is run first
         # and the jar hasn't been updated

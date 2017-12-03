@@ -23,14 +23,12 @@ HDFS_SERVICE_NAME='hdfs'
 
 
 @pytest.fixture(scope='module')
-def configure_security():
-    sdk_security.security_session('hdfs')
-    utils.spark_security_session()
-    yield
+def configure_security_hdfs():
+    yield from sdk_security.security_session(HDFS_SERVICE_NAME)
 
 
 @pytest.fixture(scope='module')
-def hdfs_with_kerberos(configure_security):
+def hdfs_with_kerberos(configure_security_hdfs):
     try:
         # To do: remove the following as soon as HDFS with kerberos is released
         log.warning('Temporarily using HDFS stub universe until kerberos is released')
@@ -100,8 +98,13 @@ def hdfs_with_kerberos(configure_security):
             kerberos_env.cleanup()
 
 
+@pytest.fixture(scope='module')
+def configure_security_spark():
+    yield from utils.spark_security_session()
+
+
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(hdfs_with_kerberos):
+def setup_spark(hdfs_with_kerberos, configure_security_spark):
     try:
         utils.require_spark(use_hdfs=True)
         yield

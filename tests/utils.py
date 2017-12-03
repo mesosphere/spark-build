@@ -16,6 +16,10 @@ import sdk_security
 from tests import s3
 
 
+SPARK_SERVICE_ACCOUNT = "spark-service-acct"
+SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
+
+
 def _init_logging():
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('dcos').setLevel(logging.WARNING)
@@ -135,8 +139,8 @@ def _get_spark_options(options, use_hdfs):
 
     if is_strict():
         options["service"] = options.get("service", {})
-        options["service"]["service_account"] = "service-acct"
-        options["service"]["service_account_secret"] = "secret"
+        options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
+        options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
 
     return options
 
@@ -176,7 +180,7 @@ def upload_file(file_path):
 def submit_job(app_url, app_args, app_name="/spark", args=[]):
     if is_strict():
         args += ["--conf", 'spark.mesos.containerizer=mesos']
-        args += ["--conf", 'spark.mesos.principal=service-acct']
+        args += ["--conf", 'spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)]
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
     cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
@@ -246,7 +250,8 @@ def spark_security_session():
     '''
     user = 'nobody'
     role = '*'
-    service_account = 'service-acct'
+    service_account = SPARK_SERVICE_ACCOUNT
+    secret = SPARK_SERVICE_ACCOUNT_SECRET
 
     def grant_driver_permission(service_account_name):
         dcosurl, headers = sdk_security.get_dcos_credentials()
@@ -260,7 +265,7 @@ def spark_security_session():
 
     def setup_security():
         LOGGER.info('Setting up strict-mode security for Spark')
-        sdk_security.create_service_account(service_account_name='service-acct', service_account_secret='secret')
+        sdk_security.create_service_account(service_account_name=service_account, service_account_secret=secret)
         sdk_security.grant_permissions(
             linux_user=user,
             role_name=role,
@@ -276,7 +281,7 @@ def spark_security_session():
             role_name=role,
             service_account_name=service_account
         )
-        sdk_security.delete_service_account('service-acct', 'secret')
+        sdk_security.delete_service_account(service_account, secret)
         LOGGER.info('Finished cleaning up strict-mode security for Spark')
 
     try:
