@@ -100,10 +100,14 @@ def setup_spark(kerberized_kafka):
 def test_spark_and_kafka():
     kerberos_flag = "true" if KERBERIZED_KAFKA else "false"  # flag for using kerberized kafka given to app
     stop_count = "48"  # some reasonable number
-    test_pipeline(kerberos_flag=kerberos_flag, jar_uri=utils._scala_test_jar_url(), stop_count=stop_count)
+    test_pipeline(
+        kerberos_flag=kerberos_flag,
+        jar_uri=utils._scala_test_jar_url(),
+        keytab_secret="__dcos_base64___keytab",
+        stop_count=stop_count)
 
 
-def test_pipeline(kerberos_flag, stop_count, jar_uri, jaas_uri=None):
+def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=None):
     stop_count = str(stop_count)
     kerberized = True if kerberos_flag == "true" else False
     broker_dns = _kafka_broker_dns()
@@ -132,9 +136,9 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, jaas_uri=None):
     ]
 
     kerberos_args = [
-        "--conf", "spark.mesos.driver.secret.names=__dcos_base64___keytab",
+        "--conf", "spark.mesos.driver.secret.names={}".format(keytab_secret),
         "--conf", "spark.mesos.driver.secret.filenames=kafka-client.keytab",
-        "--conf", "spark.mesos.executor.secret.names=__dcos_base64___keytab",
+        "--conf", "spark.mesos.executor.secret.names={}".format(keytab_secret),
         "--conf", "spark.mesos.executor.secret.filenames=kafka-client.keytab",
         "--conf", "spark.mesos.task.labels=DCOS_SPACE:/spark",
         "--conf", "spark.executorEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
