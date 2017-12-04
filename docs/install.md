@@ -130,5 +130,30 @@ Alternatively, you can specify a Spark instance directly from the CLI. For examp
 dcos config set spark.app_id spark-dev
 ```
 
+# Zones
+
+Placement constraints can be applied to zones by referring to the `@zone` key. For example, one could spread pods across a minimum of 3 different zones by specifying the constraint `@zone:GROUP_BY:3`.
+ 
+<!--
+When the region awareness feature is enabled (currently in beta), the `@region` key can also be referenced for defining placement constraints. Any placement constraints that do not reference the `@region` key are constrained to the local region.
+-->
+## Example
+
+Suppose we have a Mesos cluster with zones `a`,`b`,`c`.
+
+### Balanced Placement for a Single Region
+
+```
+{
+   ...
+  "instances": 6,
+  "constraints": [
+    ["@zone", "GROUP_BY", "3"]
+  ]
+}
+```
+
+- Instances will all be evenly divided between zones `a`,`b`,`c`.
+
  [7]: #custom
  [16]: https://github.com/mesosphere/dcos-vagrant
