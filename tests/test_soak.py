@@ -12,7 +12,8 @@ from tests import utils
 from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
 
 LOGGER = logging.getLogger(__name__)
-SOAK_SPARK_SERVICE_NAME = os.getenv('SOAK_SPARK_SERVICE_NAME', '/spark')
+SOAK_SPARK_SERVICE_NAME = os.getenv('SOAK_SPARK_SERVICE_NAME', 'spark')
+SOAK_SPARK_APP_NAME = "/" + SOAK_SPARK_SERVICE_NAME
 TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
 SOAK_HDFS_SERVICE_NAME = os.getenv('SOAK_HDFS_SERVICE_NAME', 'hdfs')
@@ -36,7 +37,7 @@ DCOS_PASSWORD = os.getenv('DCOS_PASSWORD')
 
 
 def setup_module(module):
-    utils.require_spark(service_name=SOAK_SPARK_SERVICE_NAME, use_hdfs=True)
+    utils.require_spark(service_name=SOAK_SPARK_APP_NAME, use_hdfs=True)
 
 
 @pytest.mark.soak
@@ -70,7 +71,7 @@ def _run_teragen():
     utils.run_tests(app_url=jar_url,
                     app_args="{} hdfs:///terasort_in".format(input_size),
                     expected_output="Number of records written",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraGen"] + COMMON_ARGS))
 
 
@@ -79,7 +80,7 @@ def _run_terasort():
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_in hdfs:///terasort_out",
                     expected_output="",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + COMMON_ARGS))
 
 
@@ -88,7 +89,7 @@ def _run_teravalidate():
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_out hdfs:///terasort_validate",
                     expected_output="partitions are properly sorted",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + COMMON_ARGS))
 
 
