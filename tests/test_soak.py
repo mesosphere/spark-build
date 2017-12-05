@@ -21,7 +21,8 @@ HDFS_KERBEROS_ENABLED=os.getenv('HDFS_KERBEROS_ENABLED', 'true')
 HDFS_KEYTAB_SECRET=os.getenv('HDFS_KEYTAB_SECRET', '__dcos_base64__hdfs_keytab')
 KERBEROS_ARGS = ["--kerberos-principal",
                  "hdfs/name-0-node.{}.autoip.dcos.thisdcos.directory@LOCAL".format(SOAK_HDFS_SERVICE_NAME),
-                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET)]
+                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
+                 "--conf", "spark.mesos.driverEnv.SPARK_USER=root"] # run as root on soak (centos)
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
                "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
 
