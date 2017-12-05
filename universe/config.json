@@ -55,6 +55,11 @@
                 "spark-history-server-url": {
                     "type": "string",
                     "description": "URL of The Spark History Server (e.g. http://<dcos_url>/service/spark-history"
+                },
+                "UCR_containerizer": {
+                    "type": "boolean",
+                    "description": "Launch the Dispatcher using the Universal Container Runtime (UCR)",
+                    "default": false
                 }
             }
         },
