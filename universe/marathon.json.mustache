@@ -3,6 +3,7 @@
     "cpus": {{service.cpus}},
     "mem": {{service.mem}},
     "cmd": "/sbin/init.sh",
+    "user": "{{service.user}}",
     "env": {
 {{#security.kerberos.krb5conf}}
         "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
@@ -28,7 +29,8 @@
 {{#service.spark-history-server-url}}
         "SPARK_HISTORY_SERVER_URL": "{{service.spark-history-server-url}}",
 {{/service.spark-history-server-url}}
-
+        "JAVA_HOME": "/usr/lib/jvm/jre1.8.0_131",
+        "LD_LIBRARY_PATH": "/opt/mesosphere/lib:/opt/mesosphere/libmesos-bundle/lib:/usr/lib",
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
         "SPARK_USER": "{{service.user}}",
@@ -46,49 +48,92 @@
     },
 {{/service.service_account_secret}}
 
-    "ports": [
-        0,
-        0,
-        0
-    ],
-    "container": {
-        "type": "DOCKER",
-        "docker": {
-{{#service.docker-image}}
-            "image": "{{service.docker-image}}",
-{{/service.docker-image}}
-{{^service.docker-image}}
-            "image": "{{resource.assets.container.docker.spark_docker}}",
-{{/service.docker-image}}
-            "network": "HOST",
-{{#service.user}}
-            "parameters": [
-               {
-                 "key": "user",
-                 "value": "{{service.user}}"
-               }
-            ],
-{{/service.user}}
-            "forcePullImage": true
+    "portDefinitions": [
+        {
+            "port": 0,
+            "protocol": "tcp",
+            "name": "dispatcher",
+            "labels": {
+                "VIP_0": "spark-dispatcher:7077"
+            }
+        },
+        {
+            "port": 0,
+            "protocol": "tcp",
+            "name": "dispatcher-ui",
+            "labels": {
+                "VIP_1": "spark-dispatcher:4040"
+            }
+        },
+        {
+            "port": 0,
+            "protocol": "tcp",
+            "name": "dispatcher-proxy",
+            "labels": {
+                "VIP_2": "spark-dispatcher:80"
+            }
         }
+    ],
+
+{{#service.UCR_containerizer}}
+    "container": {
+    "type": "MESOS",
+    "docker": {
+    {{#service.docker-image}}
+        "image": "{{service.docker-image}}",
+    {{/service.docker-image}}
+    {{^service.docker-image}}
+        "image": "{{resource.assets.container.docker.spark_docker}}",
+    {{/service.docker-image}}
+    "forcePullImage": true
+    }
     },
+{{/service.UCR_containerizer}}
+{{^service.UCR_containerizer}}
+    "container": {
+    "type": "DOCKER",
+    "docker": {
+    {{#service.docker-image}}
+        "image": "{{service.docker-image}}",
+    {{/service.docker-image}}
+    {{^service.docker-image}}
+        "image": "{{resource.assets.container.docker.spark_docker}}",
+    {{/service.docker-image}}
+    "network": "HOST",
+    {{#service.user}}
+        "parameters": [
+        {
+        "key": "user",
+        "value": "{{service.user}}"
+        }
+        ],
+    {{/service.user}}
+    "forcePullImage": true
+    }
+    },
+{{/service.UCR_containerizer}}
+
     "healthChecks": [
         {
-{{#security.ssl.enabled}}
-            "protocol": "COMMAND",
-            "command": { "value": "curl -f -k https://$HOST:$PORT2/" },
-{{/security.ssl.enabled}}
-{{^security.ssl.enabled}}
-            "path": "/",
             "portIndex": 2,
-            "protocol": "HTTP",
-{{/security.ssl.enabled}}
+            "protocol": "MESOS_HTTP",
+            "path": "/",
             "gracePeriodSeconds": 5,
             "intervalSeconds": 60,
             "timeoutSeconds": 10,
             "maxConsecutiveFailures": 3
         }
     ],
+
+    "upgradeStrategy": {
+        "minimumHealthCapacity": 0,
+        "maximumOverCapacity": 0
+    },
+
+    "unreachableStrategy": {
+        "expungeAfterSeconds": 0,
+        "inactiveAfterSeconds": 0
+    },
     "labels": {
 {{#hdfs.config-url}}
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
