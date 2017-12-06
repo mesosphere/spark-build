@@ -4,7 +4,6 @@ import json
 import os
 import logging
 import pytest
-import re
 import shakedown
 
 import sdk_cmd
@@ -20,7 +19,8 @@ TERASORT_MAX_CORES=6
 SOAK_HDFS_SERVICE_NAME = os.getenv('SOAK_HDFS_SERVICE_NAME', 'hdfs')
 HDFS_KERBEROS_ENABLED=os.getenv('HDFS_KERBEROS_ENABLED', 'true')
 HDFS_KEYTAB_SECRET=os.getenv('HDFS_KEYTAB_SECRET', '__dcos_base64__hdfs_keytab')
-HDFS_PRINCIPAL="hdfs/name-0-node.{}.autoip.dcos.thisdcos.directory@LOCAL".format(SOAK_HDFS_SERVICE_NAME.strip('/'))
+HDFS_PRINCIPAL="hdfs/name-0-node.{}.autoip.dcos.thisdcos.directory@LOCAL".format(
+    SOAK_HDFS_SERVICE_NAME.replace("/", ""))
 KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
                  "--conf", "spark.mesos.driverEnv.SPARK_USER=root"] # run as root on soak (centos)
@@ -122,7 +122,7 @@ def _add_job(metronome_client, job_name):
     with open(job_path) as job_file:
         job = json.load(job_file)
     job["run"] = job.get("run", {})
-    job["run"]["cmd"] = re.sub("{principal}", HDFS_PRINCIPAL, job["run"]["cmd"])
+    job["run"]["cmd"] = job["run"]["cmd"].replace("{principal}", HDFS_PRINCIPAL)
     job["run"]["env"] = job["run"].get("env", {})
     job["run"]["env"]["DCOS_UID"] = DCOS_UID
     job["run"]["env"]["DCOS_PASSWORD"] = DCOS_PASSWORD
