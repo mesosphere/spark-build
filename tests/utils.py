@@ -206,7 +206,8 @@ def wait_for_executors_running(framework_name, num_executors, wait_time=600):
 
 def kill_driver(driver_id, app_name):
     LOGGER.info("Killing {}".format(driver_id))
-    cmd = "dcos spark --name={app_name} kill {driver_id}".format(app_name=app_name, driver_id=driver_id)
+    cmd = "dcos {spark_package} --name={app_name} kill {driver_id}"\
+        .format(spark_package=SPARK_PACKAGE_NAME, app_name=app_name, driver_id=driver_id)
     out = subprocess.check_output(cmd, shell=True).decode("utf-8")
     return out
 
