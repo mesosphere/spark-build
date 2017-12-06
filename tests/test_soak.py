@@ -12,13 +12,18 @@ from tests import utils
 from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
 
 LOGGER = logging.getLogger(__name__)
-SOAK_SPARK_SERVICE_NAME = os.getenv('SOAK_SPARK_SERVICE_NAME', '/spark')
+SOAK_SPARK_SERVICE_NAME = os.getenv('SOAK_SPARK_SERVICE_NAME', 'spark')
+SOAK_SPARK_APP_NAME = "/" + SOAK_SPARK_SERVICE_NAME
 TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
+SOAK_HDFS_SERVICE_NAME = os.getenv('SOAK_HDFS_SERVICE_NAME', 'hdfs')
 HDFS_KERBEROS_ENABLED=os.getenv('HDFS_KERBEROS_ENABLED', 'true')
 HDFS_KEYTAB_SECRET=os.getenv('HDFS_KEYTAB_SECRET', '__dcos_base64__hdfs_keytab')
-KERBEROS_ARGS = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL",
-                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET)]
+HDFS_PRINCIPAL="hdfs/name-0-node.{}.autoip.dcos.thisdcos.directory@LOCAL".format(
+    SOAK_HDFS_SERVICE_NAME.replace("/", ""))
+KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,
+                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
+                 "--conf", "spark.mesos.driverEnv.SPARK_USER=root"] # run as root on soak (centos)
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
                "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
 
@@ -34,7 +39,7 @@ DCOS_PASSWORD = os.getenv('DCOS_PASSWORD')
 
 
 def setup_module(module):
-    utils.require_spark(service_name=SOAK_SPARK_SERVICE_NAME, use_hdfs=True)
+    utils.require_spark(service_name=SOAK_SPARK_APP_NAME, use_hdfs=True)
 
 
 @pytest.mark.soak
@@ -68,7 +73,7 @@ def _run_teragen():
     utils.run_tests(app_url=jar_url,
                     app_args="{} hdfs:///terasort_in".format(input_size),
                     expected_output="Number of records written",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraGen"] + COMMON_ARGS))
 
 
@@ -77,7 +82,7 @@ def _run_terasort():
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_in hdfs:///terasort_out",
                     expected_output="",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + COMMON_ARGS))
 
 
@@ -86,7 +91,7 @@ def _run_teravalidate():
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_out hdfs:///terasort_validate",
                     expected_output="partitions are properly sorted",
-                    app_name=SOAK_SPARK_SERVICE_NAME,
+                    app_name=SOAK_SPARK_APP_NAME,
                     args=(["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + COMMON_ARGS))
 
 
@@ -117,6 +122,7 @@ def _add_job(metronome_client, job_name):
     with open(job_path) as job_file:
         job = json.load(job_file)
     job["run"] = job.get("run", {})
+    job["run"]["cmd"] = job["run"]["cmd"].replace("{principal}", HDFS_PRINCIPAL)
     job["run"]["env"] = job["run"].get("env", {})
     job["run"]["env"]["DCOS_UID"] = DCOS_UID
     job["run"]["env"]["DCOS_PASSWORD"] = DCOS_PASSWORD
