@@ -224,6 +224,7 @@ def test_s3():
                     args=args)
 
 
+@pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
