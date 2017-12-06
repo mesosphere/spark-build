@@ -121,8 +121,8 @@ def _add_job(metronome_client, job_name):
     job_path = os.path.join(jobs_folder, '{}.json'.format(job_name))
     with open(job_path) as job_file:
         job = json.load(job_file)
-    job["cmd"] = re.sub("{principal}", HDFS_PRINCIPAL, job["cmd"])
     job["run"] = job.get("run", {})
+    job["run"]["cmd"] = re.sub("{principal}", HDFS_PRINCIPAL, job["cmd"])
     job["run"]["env"] = job["run"].get("env", {})
     job["run"]["env"]["DCOS_UID"] = DCOS_UID
     job["run"]["env"]["DCOS_PASSWORD"] = DCOS_PASSWORD
