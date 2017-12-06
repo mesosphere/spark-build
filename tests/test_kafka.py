@@ -113,7 +113,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     broker_dns = _kafka_broker_dns()
     topic = "top1"
 
-    big_file, big_file_url = "/mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
+    big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
 
     # arguments to the application
     producer_args = " ".join([broker_dns, big_file, topic, kerberos_flag])
