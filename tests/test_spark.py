@@ -221,7 +221,7 @@ def test_s3():
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
 def test_marathon_group():
-    app_id = "/path/to/spark"
+    app_id = utils.FOLDERED_SPARK_APP_NAME
     options = {"service": {"name": app_id}}
     utils.require_spark(options=options, service_name=app_id)
     test_jar(app_name=app_id)

@@ -18,6 +18,8 @@ from tests import s3
 SPARK_SERVICE_ACCOUNT = "spark-service-acct"
 SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
 SPARK_APP_NAME = "/spark"
+FOLDERED_SPARK_APP_NAME = "/path/to" + SPARK_APP_NAME
+JOB_WAIT_TIMEOUT_SEC = 1800
 
 
 def _init_logging():
@@ -155,7 +157,7 @@ def run_tests(app_url, app_args, expected_output, app_name=SPARK_APP_NAME, args=
 
 def check_job_output(task_id, expected_output):
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
-    shakedown.wait_for_task_completion(task_id)
+    shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SEC)
     stdout = _task_log(task_id)
 
     if expected_output not in stdout:
@@ -274,6 +276,7 @@ def spark_security_session():
             service_account_name=service_account
         )
         grant_driver_permission(service_account, SPARK_APP_NAME)
+        grant_driver_permission(service_account, FOLDERED_SPARK_APP_NAME)
         LOGGER.info('Finished setting up strict-mode security for Spark')
 
     def cleanup_security():
