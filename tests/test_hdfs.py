@@ -123,21 +123,18 @@ def test_terasort_suite():
     utils.run_tests(app_url=jar_url,
                     app_args="1g hdfs:///terasort_in",
                     expected_output="Number of records written",
-                    app_name="/spark",
                     args=teragen_args)
 
     terasort_args = ["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + kerberos_args
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_in hdfs:///terasort_out",
                     expected_output="",
-                    app_name="/spark",
                     args=terasort_args)
 
     teravalidate_args = ["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + kerberos_args
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_out hdfs:///terasort_validate",
                     expected_output="partitions are properly sorted",
-                    app_name="/spark",
                     args=teravalidate_args)
 
 
@@ -169,7 +166,7 @@ def test_supervise():
 
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="10.0.0.1 9090 hdfs:///netcheck hdfs:///outfile",
-                                 app_name="/spark",
+                                 app_name=utils.SPARK_APP_NAME,
                                  args=(kerberos_args + job_args))
     log.info("Started supervised driver {}".format(driver_id))
     shakedown.wait_for(lambda: streaming_job_registered(),
@@ -194,7 +191,7 @@ def test_supervise():
                        ignore_exceptions=False,
                        timeout_seconds=600)
     log.info("Job has re-started")
-    out = utils.kill_driver(driver_id, "/spark")
+    out = utils.kill_driver(driver_id, utils.SPARK_APP_NAME)
     log.info("{}".format(out))
     out = json.loads(out)
     assert out["success"], "Failed to kill spark streaming job"

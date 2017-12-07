@@ -151,7 +151,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
         "--conf", "spark.mesos.driver.secret.filenames=kafka-client.keytab",
         "--conf", "spark.mesos.executor.secret.names={}".format(keytab_secret),
         "--conf", "spark.mesos.executor.secret.filenames=kafka-client.keytab",
-        "--conf", "spark.mesos.task.labels=DCOS_SPACE:/spark",
+        "--conf", "spark.mesos.task.labels=DCOS_SPACE:{}".format(utils.SPARK_APP_NAME),
         "--conf", "spark.executorEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.mesos.driverEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.driver.extraJavaOptions=-Djava.security.auth.login.config="
@@ -168,7 +168,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
 
     producer_id = utils.submit_job(app_url=jar_uri,
                                    app_args=producer_args,
-                                   app_name="/spark",
+                                   app_name=utils.SPARK_APP_NAME,
                                    args=producer_config)
 
     shakedown.wait_for(lambda: _producer_launched(), ignore_exceptions=False, timeout_seconds=600)
@@ -185,10 +185,10 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
-                    app_name="/spark",
+                    app_name=utils.SPARK_APP_NAME,
                     args=consumer_config)
 
-    utils.kill_driver(producer_id, "/spark")
+    utils.kill_driver(producer_id, utils.SPARK_APP_NAME)
 
 
 def _producer_launched():

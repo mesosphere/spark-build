@@ -46,7 +46,7 @@ def setup_spark(configure_security):
 
 @pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 @pytest.mark.sanity
-def test_jar(app_name="/spark"):
+def test_jar(app_name=utils.SPARK_APP_NAME):
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
         master_url,
@@ -89,7 +89,6 @@ def test_sparkPi():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="100",
                     expected_output="Pi is roughly 3",
-                    app_name="/spark",
                     args=["--class org.apache.spark.examples.SparkPi"])
 
 
@@ -102,7 +101,6 @@ def test_python():
     utils.run_tests(app_url=python_script_url,
                     app_args="30",
                     expected_output="Pi is roughly 3",
-                    app_name="/spark",
                     args=["--py-files", py_file_url])
 
 
@@ -112,8 +110,7 @@ def test_r():
     r_script_url = utils.upload_file(r_script_path)
     utils.run_tests(app_url=r_script_url,
                     app_args='',
-                    expected_output="Justin",
-                    app_name="/spark")
+                    expected_output="Justin")
 
 
 @pytest.mark.sanity
@@ -121,7 +118,6 @@ def test_cni():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="",
                     expected_output="Pi is roughly 3",
-                    app_name="/spark",
                     args=["--conf", "spark.mesos.network.name=dcos",
                           "--class", "org.apache.spark.examples.SparkPi"])
 
@@ -131,7 +127,6 @@ def test_cni():
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
-                                      app_name="/spark",
                                       args=["--conf", "spark.mesos.network.name=dcos",
                                             "--conf", "spark.mesos.network.labels=key1:val1,key2:val2",
                                             "--conf", "spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
@@ -188,7 +183,6 @@ def test_s3():
     utils.run_tests(app_url=utils._scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
-                    app_name="/spark",
                     args=args)
 
     assert len(list(s3.list("linecount-out"))) > 0
@@ -205,7 +199,6 @@ def test_s3():
     utils.run_tests(app_url=utils._scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
-                    app_name="/spark",
                     args=args)
 
     app_args = "--countOnly --readUrl {}".format(s3.s3n_url('linecount.txt'))
@@ -220,7 +213,6 @@ def test_s3():
     utils.run_tests(app_url=utils._scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
-                    app_name="/spark",
                     args=args)
 
 
@@ -252,7 +244,6 @@ def test_secrets():
         utils.run_tests(app_url=utils._scala_test_jar_url(),
                         app_args=secret_file_name,
                         expected_output=output,
-                        app_name="/spark",
                         args=args)
 
     finally:
@@ -265,7 +256,6 @@ def test_cli_multiple_spaces():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="30",
                     expected_output="Pi is roughly 3",
-                    app_name="/spark",
                     args=["--conf ", "spark.cores.max=2",
                           " --class  ", "org.apache.spark.examples.SparkPi"])
 
@@ -301,7 +291,6 @@ def test_driver_executor_tls():
         utils.run_tests(app_url=python_script_url,
                         app_args="30 {} {}".format(my_secret, my_secret_content),
                         expected_output="Pi is roughly 3",
-                        app_name="/spark",
                         args=["--keystore-secret-path", keystore_secret,
                               "--truststore-secret-path", truststore_secret,
                               "--private-key-password", format(password),

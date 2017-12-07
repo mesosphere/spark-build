@@ -59,18 +59,6 @@ function grant_task_execution() {
          "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:${LINUX_USER}/users/${SERVICE_ACCOUNT_NAME}/create"
 }
 
-function grant_drivers_task_execution() {
-    echo "Authorizing Spark drivers to execute Mesos tasks"
-    curl -k -L -X PUT \
-         -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:app_id:%252Fspark" \
-         -d '{"description":"Spark drivers can execute Mesos tasks"}' \
-         -H 'Content-Type: application/json'
-    curl -k -L -X PUT \
-         -H "Authorization: token=${ACS_TOKEN}" \
-         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:app_id:%252Fspark/users/${SERVICE_ACCOUNT_NAME}/create"
-}
-
 function grant_resources {
     echo "Authorizing ${SERVICE_ACCOUNT_NAME} to reserve Mesos resources with role=${ROLE}"
     curl -k -L -X PUT \
@@ -118,7 +106,6 @@ function grant_volumes {
 echo "Granting permissions to ${SERVICE_ACCOUNT_NAME}..."
 grant_registration
 grant_task_execution
-grant_drivers_task_execution
 grant_resources
 grant_volumes
 echo "Permission setup completed for ${SERVICE_ACCOUNT_NAME}"
