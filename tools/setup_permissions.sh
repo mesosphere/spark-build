@@ -57,6 +57,29 @@ function grant_task_execution() {
     curl -k -L -X PUT \
          -H "Authorization: token=${ACS_TOKEN}" \
          "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:${LINUX_USER}/users/${SERVICE_ACCOUNT_NAME}/create"
+
+    # In order for the Spark Dispatcher to register with Mesos as
+    # root, we must launch the dispatcher task as root.  The other
+    # frameworks are launched as nobody, but then register as
+    # service.user, which defaults to root
+    echo "Authorizing dcos_marathon to execute Mesos tasks as root"
+    curl -k -L -X PUT \
+         -H "Authorization: token=${ACS_TOKEN}" \
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:user:root" \
+         -d '{"description":"Execute Mesos tasks as user=root"}' \
+         -H 'Content-Type: application/json'
+    curl -k -L -X PUT \
+         -H "Authorization: token=${ACS_TOKEN}" \
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:master:task:user:root/users/dcos_marathon/create"
+    # XXX see above
+    curl -k -L -X PUT \
+         -H "Authorization: token=${ACS_TOKEN}" \
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:root" \
+         -d '{"description":"Execute Mesos tasks as user=root"}' \
+         -H 'Content-Type: application/json'
+    curl -k -L -X PUT \
+         -H "Authorization: token=${ACS_TOKEN}" \
+         "${DCOS_URL}/acs/api/v1/acls/dcos:mesos:agent:task:user:root/users/dcos_marathon/create"
 }
 
 function grant_resources {
