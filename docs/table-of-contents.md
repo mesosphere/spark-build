@@ -14,6 +14,8 @@
 - [Interactive Spark Shell](spark-shell.md)
 - [Fault Tolerance](fault-tolerance.md)
 - [Job Scheduling](job-scheduling.md)
+- [Kerberos](kerberos.md)
+- [Usage Examples](usage-examples.md)
 - [Troubleshooting](troubleshooting.md)
 - [Spark Versions](spark-versions.md)
 - [Version Policy](version-policy.md)

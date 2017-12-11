@@ -1,6 +1,6 @@
 ---
 post_title: Troubleshooting
-menu_order: 120
+menu_order: 125
 enterprise: 'no'
 ---
 
