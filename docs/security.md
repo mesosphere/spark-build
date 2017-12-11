@@ -15,7 +15,7 @@ Follow these instructions to [authenticate in strict mode](https://docs.mesosphe
 SSL support in DC/OS Apache Spark encrypts the following channels:
 
 *   From the [DC/OS admin router][11] to the dispatcher.
-*   From the drivers to their executors.
+*   Files served from the drivers to their executors.
 
 To enable SSL, a Java keystore (and, optionally, truststore) must be provided, along
 with their passwords. The first three settings below are **required** during job

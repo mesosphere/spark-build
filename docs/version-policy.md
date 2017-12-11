@@ -1,6 +1,6 @@
 ---
 post_title: Version Policy
-menu_order: 125
+menu_order: 130
 feature_maturity: ""
 enterprise: 'no'
 ---
