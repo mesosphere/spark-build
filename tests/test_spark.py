@@ -85,10 +85,11 @@ def test_rpc_auth():
 
 
 @pytest.mark.sanity
-def test_sparkPi():
+def test_sparkPi(app_name=utils.SPARK_APP_NAME):
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="100",
                     expected_output="Pi is roughly 3",
+                    app_name=app_name,
                     args=["--class org.apache.spark.examples.SparkPi"])
 
 
@@ -216,7 +217,6 @@ def test_s3():
                     args=args)
 
 
-@pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
@@ -224,7 +224,7 @@ def test_marathon_group():
     app_id = utils.FOLDERED_SPARK_APP_NAME
     options = {"service": {"name": app_id}}
     utils.require_spark(options=options, service_name=app_id)
-    test_jar(app_name=app_id)
+    test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 

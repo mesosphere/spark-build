@@ -18,6 +18,7 @@ from tests import s3
 SPARK_SERVICE_ACCOUNT = "spark-service-acct"
 SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
 SPARK_APP_NAME = "/spark"
+SPARK_USER = "nobody"
 FOLDERED_SPARK_APP_NAME = "/path/to" + SPARK_APP_NAME
 JOB_WAIT_TIMEOUT_SEC = 1800
 
@@ -179,9 +180,9 @@ def upload_file(file_path):
     return s3.http_url(basename)
 
 
-def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[]):
+def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[], spark_user=SPARK_USER):
     if is_strict():
-        args += ["--conf", 'spark.mesos.containerizer=mesos']
+        args += ["--conf", 'spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)]
         args += ["--conf", 'spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)]
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
@@ -249,16 +250,21 @@ def _scala_test_jar_url():
 def spark_security_session():
     '''
     Spark strict mode setup is slightly different from dcos-commons, so can't use sdk_security::security_session.
+    Differences:
+    (1) the role is "*", (2) the driver itself is a framework and needs permission to execute tasks.
     '''
-    user = 'nobody'
+    user = SPARK_USER
     role = '*'
     service_account = SPARK_SERVICE_ACCOUNT
     secret = SPARK_SERVICE_ACCOUNT_SECRET
 
     def grant_driver_permission(service_account_name, app_id):
         dcosurl, headers = sdk_security.get_dcos_credentials()
-        app_id_encoded = urllib.parse.quote(app_id, safe='')
-        app_id_encoded = urllib.parse.quote(app_id_encoded, safe='')  # double-encoded (why?)
+        # double-encoded (why?)
+        app_id_encoded = urllib.parse.quote(
+            urllib.parse.quote(app_id, safe=''),
+            safe=''
+        )
         sdk_security.grant(
             dcosurl,
             headers,
