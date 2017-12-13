@@ -44,6 +44,17 @@
         }
     },
 {{/security.kerberos.keytab}}
+    "healthChecks": [
+        {
+            "portIndex": 0,
+            "protocol": "MESOS_HTTP",
+            "path": "/",
+            "gracePeriodSeconds": 5,
+            "intervalSeconds": 60,
+            "timeoutSeconds": 10,
+            "maxConsecutiveFailures": 3
+        }
+    ],
     "labels": {
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "DCOS_SERVICE_PORT_INDEX": "0",

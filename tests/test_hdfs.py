@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 import pytest
 import json
 
@@ -9,7 +10,9 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_marathon
 import sdk_security
+import sdk_tasks
 
 from tests import utils
 
@@ -103,8 +106,49 @@ def configure_security_spark():
     yield from utils.spark_security_session()
 
 
+@pytest.fixture(scope='module')
+def history_server(hdfs_with_kerberos):
+    try:
+        keytab = "__dcos_base64___keytab"
+        principal = "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL"
+
+        # install hdfsclient, create directory for history data
+        app_def_path = "{current_dir}/resources/{client_id}".format(
+            current_dir=os.path.dirname(os.path.realpath(__file__)),
+            client_id="hdfsclient.json"
+        )
+        with open(app_def_path) as f:
+            hdfsclient_app_def = json.load(f)
+        sdk_marathon.install_app(hdfsclient_app_def)
+        client_task_id = hdfsclient_app_def["id"]
+        sdk_auth.kinit(client_task_id, keytab=keytab, principal=principal)
+        _, stdout, _ = sdk_tasks.task_exec(client_task_id, "bin/hdfs dfs mkdir /history")
+        # assert stdout?
+
+        # install history server
+        shakedown.install_package(
+            package_name="spark-history",
+            options_json={
+                "service": {"hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                    .format(HDFS_SERVICE_NAME)},
+                "security": {
+                    "kerberos": {
+                        "krb5conf": utils.HDFS_KRB5_CONF,
+                        "principal": principal,
+                        "keytab": keytab
+                    }
+                }
+            },
+            wait_for_completion=True
+        )
+        yield
+
+    finally:
+        pass
+
+
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(hdfs_with_kerberos, configure_security_spark):
+def setup_spark(hdfs_with_kerberos, history_server, configure_security_spark):
     try:
         utils.require_spark(use_hdfs=True)
         yield
@@ -198,3 +242,9 @@ def test_supervise():
     shakedown.wait_for(lambda: streaming_job_is_not_running(),
                        ignore_exceptions=False,
                        timeout_seconds=600)
+
+
+@pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
+@pytest.mark.sanity
+def test_history():
+    pass
