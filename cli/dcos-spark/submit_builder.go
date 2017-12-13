@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/mesosphere/dcos-commons/cli/client"
 	"github.com/mesosphere/dcos-commons/cli/config"
 	"gopkg.in/alecthomas/kingpin.v3-unstable"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -21,6 +19,10 @@ import (
 var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+
+const SECRET_REFERENCE_TEMPLATE = "spark.mesos.%s.secret.names"
+const SECRET_FILENAME_TEMPLATE = "spark.mesos.%s.secret.filenames"
+const SECRET_ENVKEY_TEMPLATE = "spark.mesos.%s.secret.envkeys"
 
 type sparkVal struct {
 	flagName string
@@ -241,8 +243,7 @@ func sparkSubmitHelp() string {
 func prepareBase64Secret(secretPath string, isEncoded bool) string {
 	ss := strings.Split(secretPath, "/")
 	s := ss[len(ss) - 1]  // The secret file without any slashes
-	// TODO document how secret formatting works w.r.t decoding
-	// secrets with __dcos_base64__ will be decoded by mesos or spark
+	// secrets with __dcos_base64__ will be decoded by Mesos
 	if strings.HasPrefix(s, "__dcos_base64__") || strings.HasSuffix(s, "base64") {
 		// if we have the .base64, maintain the whole thing spark-env will decode it
 		return strings.TrimPrefix(s, "__dcos_base64__")
@@ -255,9 +256,11 @@ func prepareBase64Secret(secretPath string, isEncoded bool) string {
 }
 
 func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
-	args.properties["spark.mesos.driver.secret.names"] = secretPath
+	secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, "driver")
+	secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver")
+	appendToProperty(secretRefProp, secretPath, args)
+	appendToProperty(secretFileProp, prepareBase64Secret(secretPath, true), args)
 	args.properties[property] = prepareBase64Secret(secretPath, false)
-	args.properties["spark.mesos.driver.secret.filenames"] = prepareBase64Secret(secretPath, true)
 }
 
 func setupKerberosAuthArgs(args *sparkArgs) error {
@@ -271,9 +274,9 @@ func setupKerberosAuthArgs(args *sparkArgs) error {
 		return nil
 	}
 	if args.tgtSecretValue != "" {  // using secret by value
-		args.properties["spark.mesos.driver.secret.values"] = args.tgtSecretValue
+		appendToProperty("spark.mesos.driver.secret.values", args.tgtSecretValue, args)
 		args.properties["spark.mesos.driverEnv.KRB5CCNAME"] = "tgt"
-		args.properties["spark.mesos.driver.secret.filenames"] = "tgt.base64"
+		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver"), "tgt.base64", args)
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
@@ -306,9 +309,9 @@ func setupTLSArgs(args *sparkArgs) {
 
 	taskTypes :=[]string{"driver", "executor"}
 	for _, taskType := range taskTypes {
-		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.names", taskType), joinedPaths, args)
-		appendToProperty(fmt.Sprintf("spark.mesos.%s.secret.filenames", taskType), joinedFilenames, args)
-		appendToPropertyIfSet(fmt.Sprintf("spark.mesos.%s.secret.envkeys", taskType), joinedEnvkeys, args)
+		appendToProperty(fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType), joinedPaths, args)
+		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType), joinedFilenames, args)
+		appendToPropertyIfSet(fmt.Sprintf(SECRET_ENVKEY_TEMPLATE, taskType), joinedEnvkeys, args)
 	}
 
 	// Passwords
@@ -508,20 +511,6 @@ func appendToPropertyIfSet(propValue, toAppend string, args *sparkArgs) {
 	if contains {
 		args.properties[propValue] += "," + toAppend
 	}
-}
-
-func getBase64Content(path string) string {
-	log.Printf("Opening file %s", path)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var encodebuf bytes.Buffer
-	encoder := base64.NewEncoder(base64.StdEncoding, &encodebuf)
-	encoder.Write(data)
-	encoder.Close() // must be called before returning string to ensure flush
-	return encodebuf.String()
 }
 
 func buildSubmitJson(cmd *SparkCommand) (string, error) {
