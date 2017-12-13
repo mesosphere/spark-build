@@ -14,6 +14,7 @@ import json
 import shakedown
 
 import sdk_utils
+import sdk_cmd
 
 from tests import s3
 from tests import utils
@@ -49,6 +50,31 @@ def test_jar(app_name="/spark"):
                     expected_output="All tests passed",
                     app_name=app_name,
                     args=["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
+
+
+@pytest.mark.sanity
+def test_rpc_auth():
+    secret_name = "sparkauth"
+
+    rc, stdout, stderr = sdk_cmd.run_raw_cli("spark secret /{}".format(secret_name))
+    assert rc == 0, "Failed to generate Spark auth secret, stderr {err} stdout {out}".format(err=stderr, out=stdout)
+
+    args = ["--conf", "spark.mesos.containerizer=mesos",
+            "--conf", "spark.authenticate=true",
+            "--conf", "spark.authenticate.secret=sparkauthsecret.secret",
+            "--conf", "spark.authenticate.enableSaslEncryption=true",
+            "--conf", "spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret",
+            "--conf", "spark.mesos.driver.secret.names={}".format(secret_name),
+            "--conf", "spark.mesos.driver.secret.filenames=sparkauthsecret.secret",
+            "--conf", "spark.mesos.executor.secret.names={}".format(secret_name),
+            "--conf", "spark.mesos.executor.secret.filenames=sparkauthsecret.secret",
+            "--class", "org.apache.spark.examples.SparkPi"]
+
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
+                    app_args="100",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=args)
 
 
 @pytest.mark.sanity

@@ -86,7 +86,34 @@ See the [Secrets Documentation about spaces][13] for more details about spaces.
 the keystore and truststore secrets will also show up as environment-based secrets,
 due to the way secrets are implemented. You can ignore these extra environment variables.
 
+# Spark SASL (RPC endpoint authentication)
+Spark uses Simple Authentication Security Layer (SASL) to authenticate Executors with the Driver and for encrypting messages sent between components. This functionality relies on a shared secret between all components you expect to communicate with each other. A secret can be generated with the DC/OS Spark CLI 
+```bash
+dcos spark secret <secret_path>
+# for example
+dcos spark secret /sparkAuthSecret
+```
+This will generate a random secret and upload it to the DC/OS secrets store [14] at the designated path. To use this secret for RPC authentication add the following configutations to your CLI command:
+```bash
+dcos spark run --submit-args="\
+...
+--conf spark.mesos.containerizer=mesos \  # Mesos UCR is required for secrets
+--conf spark.authenticate=true \  # tell Spark to use authentication
+--conf spark.authenticate.enableSaslEncryption=true \  # tell Spark to encrypt with Sasl
+--conf spark.authenticate.secret=sparkauthsecret.secret \  # name of file-based secret for Driver, you may change the name
+--conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \  # name of file-based secret for the Executors
+--conf spark.mesos.driver.secret.names=<secret_path> \   # secret path generated in the previous step, for Driver
+--conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \  # tell Mesos to put the secret in this file in the Driver
+--conf spark.mesos.executor.secret.names=<secret_path> \  # secret path generated in previous step for Executor
+--conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \  # tell Mesos to put the secret in this File for the Executors
+...
+"
+
+```
+
+
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
  [13]: https://docs.mesosphere.com/1.10/security/#spaces
+ [14]: https://docs.mesosphere.com/latest/security/secrets/
