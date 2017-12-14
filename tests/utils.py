@@ -59,10 +59,10 @@ def streaming_job_running(job_name):
         return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
 
 
-def require_spark(options=None, service_name=None, use_hdfs=False):
+def require_spark(options=None, service_name=None, use_hdfs=False, use_history=False):
     LOGGER.info("Ensuring Spark is installed.")
 
-    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs))
+    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs, use_history))
     _wait_for_spark(service_name)
     _require_spark_cli()
 
@@ -129,7 +129,7 @@ def no_spark_jobs(service_name):
     return len(driver_ips) == 0
 
 
-def _get_spark_options(options, use_hdfs):
+def _get_spark_options(options, use_hdfs, use_history):
     if options is None:
         options = {}
 
@@ -139,6 +139,12 @@ def _get_spark_options(options, use_hdfs):
         options["security"] = options.get("security", {})
         options["security"]["kerberos"] = options["security"].get("kerberos", {})
         options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
+
+    if use_history:
+        dcos_url = dcos.config.get_config_val("core.dcos_url")
+        history_url = urllib.parse.urljoin(dcos_url, "/service/spark-history")
+        options["service"] = options.get("service", {})
+        options["service"]["spark-history-server-url"] = history_url
 
     if is_strict():
         options["service"] = options.get("service", {})

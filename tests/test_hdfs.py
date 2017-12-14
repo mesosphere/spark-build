@@ -33,72 +33,75 @@ def configure_security_hdfs():
 @pytest.fixture(scope='module')
 def hdfs_with_kerberos(configure_security_hdfs):
     try:
-        # To do: remove the following as soon as HDFS with kerberos is released
-        log.warning('Temporarily using HDFS stub universe until kerberos is released')
-        sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
-            'hdfs-aws',
-            'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-hdfs/20171122-112028-Vl2QaSERix2q6Dhk/stub-universe-beta-hdfs.json')
-        )
-
-        primaries = ["hdfs", "HTTP"]
-        fqdn = "{service_name}.{host_suffix}".format(
-            service_name=HDFS_SERVICE_NAME, host_suffix=sdk_hosts.AUTOIP_HOST_SUFFIX)
-        instances = [
-            "name-0-node",
-            "name-0-zkfc",
-            "name-1-node",
-            "name-1-zkfc",
-            "journal-0-node",
-            "journal-1-node",
-            "journal-2-node",
-            "data-0-node",
-            "data-1-node",
-            "data-2-node",
-        ]
-        principals = []
-        for (instance, primary) in itertools.product(instances, primaries):
-            principals.append(
-                "{primary}/{instance}.{fqdn}@{REALM}".format(
-                    primary=primary,
-                    instance=instance,
-                    fqdn=fqdn,
-                    REALM=sdk_auth.REALM
-                )
+        yield
+        if False:
+            # To do: remove the following as soon as HDFS with kerberos is released
+            log.warning('Temporarily using HDFS stub universe until kerberos is released')
+            sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
+                'hdfs-aws',
+                'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-hdfs/20171122-112028-Vl2QaSERix2q6Dhk/stub-universe-beta-hdfs.json')
             )
-        principals.append(GENERIC_HDFS_USER_PRINCIPAL)
 
-        kerberos_env = sdk_auth.KerberosEnvironment()
-        kerberos_env.add_principals(principals)
-        kerberos_env.finalize()
-        service_kerberos_options = {
-            "service": {
-                "kerberos": {
-                    "enabled": True,
-                    "kdc_host_name": kerberos_env.get_host(),
-                    "kdc_host_port": kerberos_env.get_port(),
-                    "keytab_secret": kerberos_env.get_keytab_path(),
-                    "primary": primaries[0],
-                    "primary_http": primaries[1],
-                    "realm": sdk_auth.REALM
+            primaries = ["hdfs", "HTTP"]
+            fqdn = "{service_name}.{host_suffix}".format(
+                service_name=HDFS_SERVICE_NAME, host_suffix=sdk_hosts.AUTOIP_HOST_SUFFIX)
+            instances = [
+                "name-0-node",
+                "name-0-zkfc",
+                "name-1-node",
+                "name-1-zkfc",
+                "journal-0-node",
+                "journal-1-node",
+                "journal-2-node",
+                "data-0-node",
+                "data-1-node",
+                "data-2-node",
+            ]
+            principals = []
+            for (instance, primary) in itertools.product(instances, primaries):
+                principals.append(
+                    "{primary}/{instance}.{fqdn}@{REALM}".format(
+                        primary=primary,
+                        instance=instance,
+                        fqdn=fqdn,
+                        REALM=sdk_auth.REALM
+                    )
+                )
+            principals.append(GENERIC_HDFS_USER_PRINCIPAL)
+
+            kerberos_env = sdk_auth.KerberosEnvironment()
+            kerberos_env.add_principals(principals)
+            kerberos_env.finalize()
+            service_kerberos_options = {
+                "service": {
+                    "kerberos": {
+                        "enabled": True,
+                        "kdc_host_name": kerberos_env.get_host(),
+                        "kdc_host_port": kerberos_env.get_port(),
+                        "keytab_secret": kerberos_env.get_keytab_path(),
+                        "primary": primaries[0],
+                        "primary_http": primaries[1],
+                        "realm": sdk_auth.REALM
+                    }
                 }
             }
-        }
 
-        sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-        sdk_install.install(
-            HDFS_PACKAGE_NAME,
-            HDFS_SERVICE_NAME,
-            DEFAULT_HDFS_TASK_COUNT,
-            additional_options=service_kerberos_options,
-            timeout_seconds=30*60)
+            sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+            sdk_install.install(
+                HDFS_PACKAGE_NAME,
+                HDFS_SERVICE_NAME,
+                DEFAULT_HDFS_TASK_COUNT,
+                additional_options=service_kerberos_options,
+                timeout_seconds=30*60)
 
-        yield kerberos_env
+            yield kerberos_env
 
     finally:
-        sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-        sdk_cmd.run_cli('package repo remove hdfs-aws')
-        if kerberos_env:
-            kerberos_env.cleanup()
+        #sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
+        #sdk_cmd.run_cli('package repo remove hdfs-aws')
+        #if kerberos_env:
+        #    kerberos_env.cleanup()
+        pass
 
 
 @pytest.fixture(scope='module')
@@ -107,7 +110,7 @@ def configure_security_spark():
 
 
 @pytest.fixture(scope='module')
-def history_server(hdfs_with_kerberos):
+def history_server(hdfs_with_kerberos, configure_universe):
     try:
         keytab = "__dcos_base64___keytab"
         principal = "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL"
@@ -121,11 +124,11 @@ def history_server(hdfs_with_kerberos):
             hdfsclient_app_def = json.load(f)
         sdk_marathon.install_app(hdfsclient_app_def)
         client_task_id = hdfsclient_app_def["id"]
-        sdk_auth.kinit(client_task_id, keytab=keytab, principal=principal)
-        _, stdout, _ = sdk_tasks.task_exec(client_task_id, "bin/hdfs dfs mkdir /history")
+        sdk_auth.kinit(client_task_id, keytab="hdfs.keytab", principal=principal)
+        _, stdout, _ = sdk_tasks.task_exec(client_task_id, "bin/hdfs dfs -mkdir /history")
         # assert stdout?
 
-        # install history server
+        # install history server, wait for it to become healthy
         shakedown.install_package(
             package_name="spark-history",
             options_json={
@@ -144,13 +147,15 @@ def history_server(hdfs_with_kerberos):
         yield
 
     finally:
+        sdk_marathon.destroy_app("spark-history")
+        sdk_marathon.destroy_app(client_task_id)
         pass
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(hdfs_with_kerberos, history_server, configure_security_spark):
+def setup_spark(hdfs_with_kerberos, history_server, configure_security_spark, configure_universe):
     try:
-        utils.require_spark(use_hdfs=True)
+        utils.require_spark(use_hdfs=True, use_history=True)
         yield
     finally:
         utils.teardown_spark()
@@ -247,4 +252,13 @@ def test_supervise():
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_history():
-    pass
+    job_args = ["--class", "org.apache.spark.examples.SparkPi",
+                "--conf", "spark.eventLog.enabled=true",
+                "--conf", "spark.eventLog.dir=hdfs://hdfs/history"]
+    kerberos_args = ["--kerberos-principal", "hdfs@LOCAL",
+                     "--keytab-secret-path", "/__dcos_base64___keytab"]
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
+                    app_args="100",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=(job_args + kerberos_args))

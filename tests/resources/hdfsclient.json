@@ -18,7 +18,7 @@
   },
   "secrets": {
     "hdfs_keytab": {
-      "source": "__dcos_base64__hdfs_keytab"
+      "source": "__dcos_base64___keytab"
     }
   },
   "networks": [
@@ -31,6 +31,6 @@
     "KDC_ADDRESS": "kdc.marathon.autoip.dcos.thisdcos.directory:2500",
     "JAVA_HOME": "/usr/lib/jvm/default-java",
     "KRB5_CONFIG": "/etc/krb5.conf",
-    "HDFS_SERVICE_NAME": "data-serviceshdfs-kerberos"
+    "HDFS_SERVICE_NAME": "hdfs"
   }
 }
