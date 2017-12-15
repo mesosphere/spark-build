@@ -123,4 +123,4 @@ Finally, you'll likely need to tell Spark to use the JAAS file:
         --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/<jaas_file>
 
 
-It is important that the filename is the same for the driver and executor keytab file (`<keytab_file_name>` above) and that this file is properly addressed in your JAAS file. For a worked example of a Spark consumer from secure Kafka see the [advanced examples][https://docs.mesosphere.com/service-docs/spark/2.1.1-2.2.0-2/usage-examples/]
+It is important that the filename is the same for the driver and executor keytab file (`<keytab_file_name>` above) and that this file is properly addressed in your JAAS file. For a worked example of a Spark consumer from secure Kafka see the [advanced examples][https://docs.mesosphere.com/services/spark/2.1.1-2.2.0-2/usage-examples/]
