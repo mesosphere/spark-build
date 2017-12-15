@@ -26,7 +26,7 @@ HDFS_PACKAGE_NAME='beta-hdfs'
 HDFS_SERVICE_NAME='hdfs'
 KERBEROS_ARGS = ["--kerberos-principal", GENERIC_HDFS_USER_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(KEYTAB_SECRET_PATH)]
-HDFS_CLIENT_ID="hdfsclient"
+HDFS_CLIENT_ID = "hdfsclient"
 
 
 @pytest.fixture(scope='module')

@@ -95,7 +95,7 @@ def configure_security_spark():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(kerberized_kafka, configure_security_spark):
+def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
     try:
         # need to do this here also in case this test is run first
         # and the jar hasn't been updated
