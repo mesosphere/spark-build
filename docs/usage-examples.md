@@ -25,7 +25,7 @@ Visit the Spark cluster dispatcher at `http://<dcos-url>/service/spark/` to view
 
 ## Advanced
 
-*   Run an Spark Streaming job with Kafka: Examples of Spark Streaming applications that connect to a secure Kafka cluster can be found at [spark-build][https://github.com/mesosphere/spark-build/blob/beta-2.1.1-2.2.0-2/tests/jobs/scala/src/main/scala/KafkaJobs.scala]. As mentioned in the [kerberos][https://docs.mesosphere.com/service-docs/spark/2.1.0-2.2.0-2/kerberos/] section, Spark requires a JAAS file, the `krb5.conf`, and the keytab. An example of the JAAS file is: 
+*   Run an Spark Streaming job with Kafka: Examples of Spark Streaming applications that connect to a secure Kafka cluster can be found at [spark-build][https://github.com/mesosphere/spark-build/blob/beta-2.1.1-2.2.0-2/tests/jobs/scala/src/main/scala/KafkaJobs.scala]. As mentioned in the [kerberos][https://docs.mesosphere.com/services/spark/2.1.0-2.2.0-2/kerberos/] section, Spark requires a JAAS file, the `krb5.conf`, and the keytab. An example of the JAAS file is: 
         
         KafkaClient {
             com.sun.security.auth.module.Krb5LoginModule required

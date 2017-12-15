@@ -35,4 +35,4 @@ That hdfs directory will be automatically created on hdfs and spark streaming ap
 
 
 [8]: http://spark.apache.org/docs/latest/configuration.html#inheriting-hadoop-cluster-configuration
-[9]: https://docs.mesosphere.com/service-docs/spark/2.1.0-2.2.0-1/limitations/
+[9]: https://docs.mesosphere.com/services/spark/2.1.0-2.2.0-1/limitations/
