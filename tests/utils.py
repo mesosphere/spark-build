@@ -2,16 +2,25 @@ import dcos.config
 import dcos.http
 import dcos.package
 
-import json
 import logging
 import os
 import re
-import requests
 import shakedown
 import subprocess
 import urllib
+import urllib.parse
+
+import sdk_security
 
 from tests import s3
+
+
+SPARK_SERVICE_ACCOUNT = "spark-service-acct"
+SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
+SPARK_APP_NAME = "/spark"
+SPARK_USER = "nobody"
+FOLDERED_SPARK_APP_NAME = "/path/to" + SPARK_APP_NAME
+JOB_WAIT_TIMEOUT_SEC = 1800
 
 
 def _init_logging():
@@ -86,12 +95,12 @@ def _require_package(pkg_name, service_name=None, options={}, package_version=No
 def _wait_for_spark(service_name=None):
     def pred():
         dcos_url = dcos.config.get_config_val("core.dcos_url")
-        path = "/service{}".format(service_name) if service_name else "service/spark"
+        path = "/service{}".format(service_name) if service_name else "service{}".format(SPARK_APP_NAME)
         spark_url = urllib.parse.urljoin(dcos_url, path)
         status_code = dcos.http.get(spark_url).status_code
         return status_code == 200
 
-    shakedown.wait_for(pred)
+    shakedown.wait_for(pred, timeout_seconds=300)
 
 
 def _require_spark_cli():
@@ -133,17 +142,13 @@ def _get_spark_options(options, use_hdfs):
 
     if is_strict():
         options["service"] = options.get("service", {})
-        options["service"]["principal"] = "service-acct"
-
-        options["security"] = options.get("security", {})
-        options["security"]["mesos"] = options["security"].get("mesos", {})
-        options["security"]["mesos"]["authentication"] = options["security"]["mesos"].get("authentication", {})
-        options["security"]["mesos"]["authentication"]["secret_name"] = "secret"
+        options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
+        options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
 
     return options
 
 
-def run_tests(app_url, app_args, expected_output, app_name, args=[]):
+def run_tests(app_url, app_args, expected_output, app_name=SPARK_APP_NAME, args=[]):
     task_id = submit_job(app_url=app_url,
                          app_args=app_args,
                          app_name=app_name,
@@ -153,7 +158,7 @@ def run_tests(app_url, app_args, expected_output, app_name, args=[]):
 
 def check_job_output(task_id, expected_output):
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
-    shakedown.wait_for_task_completion(task_id)
+    shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SEC)
     stdout = _task_log(task_id)
 
     if expected_output not in stdout:
@@ -175,11 +180,10 @@ def upload_file(file_path):
     return s3.http_url(basename)
 
 
-def submit_job(app_url, app_args, app_name="/spark", args=[]):
+def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[], spark_user=SPARK_USER):
     if is_strict():
-        args += ["--conf", 'spark.mesos.driverEnv.MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json']
-        args += ["--conf", 'spark.mesos.driverEnv.MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee']
-        args += ["--conf", 'spark.mesos.principal=service-acct']
+        args += ["--conf", 'spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)]
+        args += ["--conf", 'spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)]
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
     submit_args = ' '.join([args_str, app_url, app_args])
     cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
@@ -241,3 +245,60 @@ def teardown_spark():
 
 def _scala_test_jar_url():
     return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
+
+
+def spark_security_session():
+    '''
+    Spark strict mode setup is slightly different from dcos-commons, so can't use sdk_security::security_session.
+    Differences:
+    (1) the role is "*", (2) the driver itself is a framework and needs permission to execute tasks.
+    '''
+    user = SPARK_USER
+    role = '*'
+    service_account = SPARK_SERVICE_ACCOUNT
+    secret = SPARK_SERVICE_ACCOUNT_SECRET
+
+    def grant_driver_permission(service_account_name, app_id):
+        dcosurl, headers = sdk_security.get_dcos_credentials()
+        # double-encoded (why?)
+        app_id_encoded = urllib.parse.quote(
+            urllib.parse.quote(app_id, safe=''),
+            safe=''
+        )
+        sdk_security.grant(
+            dcosurl,
+            headers,
+            service_account_name,
+            "dcos:mesos:master:task:app_id:{}".format(app_id_encoded),
+            "Spark drivers may execute Mesos tasks"
+        )
+
+    def setup_security():
+        LOGGER.info('Setting up strict-mode security for Spark')
+        sdk_security.create_service_account(service_account_name=service_account, service_account_secret=secret)
+        sdk_security.grant_permissions(
+            linux_user=user,
+            role_name=role,
+            service_account_name=service_account
+        )
+        grant_driver_permission(service_account, SPARK_APP_NAME)
+        grant_driver_permission(service_account, FOLDERED_SPARK_APP_NAME)
+        LOGGER.info('Finished setting up strict-mode security for Spark')
+
+    def cleanup_security():
+        LOGGER.info('Cleaning up strict-mode security for Spark')
+        sdk_security.revoke_permissions(
+            linux_user=user,
+            role_name=role,
+            service_account_name=service_account
+        )
+        sdk_security.delete_service_account(service_account, secret)
+        LOGGER.info('Finished cleaning up strict-mode security for Spark')
+
+    try:
+        if is_strict():
+            setup_security()
+        yield
+    finally:
+        if is_strict():
+            cleanup_security()

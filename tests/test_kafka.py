@@ -10,6 +10,7 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_security
 
 
 LOGGER = logging.getLogger(__name__)
@@ -28,7 +29,12 @@ KAFKA_SERVICE_NAME = os.getenv("KAFKA_SERVICE_NAME", ("secure-kafka" if KERBERIZ
 
 
 @pytest.fixture(scope='module')
-def kerberized_kafka():
+def configure_security_kafka():
+    yield from sdk_security.security_session(KAFKA_SERVICE_NAME)
+
+
+@pytest.fixture(scope='module')
+def kerberized_kafka(configure_security_kafka):
     try:
         LOGGER.warning('Temporarily using Kafka stub universe until kerberos is released')
         sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
@@ -83,8 +89,13 @@ def kerberized_kafka():
             kerberos_env.cleanup()
 
 
+@pytest.fixture(scope='module')
+def configure_security_spark():
+    yield from utils.spark_security_session()
+
+
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(kerberized_kafka):
+def setup_spark(kerberized_kafka, configure_security_spark):
     try:
         # need to do this here also in case this test is run first
         # and the jar hasn't been updated
@@ -140,7 +151,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
         "--conf", "spark.mesos.driver.secret.filenames=kafka-client.keytab",
         "--conf", "spark.mesos.executor.secret.names={}".format(keytab_secret),
         "--conf", "spark.mesos.executor.secret.filenames=kafka-client.keytab",
-        "--conf", "spark.mesos.task.labels=DCOS_SPACE:/spark",
+        "--conf", "spark.mesos.task.labels=DCOS_SPACE:{}".format(utils.SPARK_APP_NAME),
         "--conf", "spark.executorEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.mesos.driverEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.driver.extraJavaOptions=-Djava.security.auth.login.config="
@@ -157,7 +168,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
 
     producer_id = utils.submit_job(app_url=jar_uri,
                                    app_args=producer_args,
-                                   app_name="/spark",
+                                   app_name=utils.SPARK_APP_NAME,
                                    args=producer_config)
 
     shakedown.wait_for(lambda: _producer_launched(), ignore_exceptions=False, timeout_seconds=600)
@@ -174,10 +185,10 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
-                    app_name="/spark",
+                    app_name=utils.SPARK_APP_NAME,
                     args=consumer_config)
 
-    utils.kill_driver(producer_id, "/spark")
+    utils.kill_driver(producer_id, utils.SPARK_APP_NAME)
 
 
 def _producer_launched():
