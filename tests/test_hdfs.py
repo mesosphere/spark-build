@@ -9,6 +9,7 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_security
 
 from tests import utils
 
@@ -22,7 +23,12 @@ HDFS_SERVICE_NAME='hdfs'
 
 
 @pytest.fixture(scope='module')
-def hdfs_with_kerberos():
+def configure_security_hdfs():
+    yield from sdk_security.security_session(HDFS_SERVICE_NAME)
+
+
+@pytest.fixture(scope='module')
+def hdfs_with_kerberos(configure_security_hdfs):
     try:
         # To do: remove the following as soon as HDFS with kerberos is released
         log.warning('Temporarily using HDFS stub universe until kerberos is released')
@@ -92,8 +98,13 @@ def hdfs_with_kerberos():
             kerberos_env.cleanup()
 
 
+@pytest.fixture(scope='module')
+def configure_security_spark():
+    yield from utils.spark_security_session()
+
+
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(hdfs_with_kerberos):
+def setup_spark(hdfs_with_kerberos, configure_security_spark):
     try:
         utils.require_spark(use_hdfs=True)
         yield
@@ -112,21 +123,18 @@ def test_terasort_suite():
     utils.run_tests(app_url=jar_url,
                     app_args="1g hdfs:///terasort_in",
                     expected_output="Number of records written",
-                    app_name="/spark",
                     args=teragen_args)
 
     terasort_args = ["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + kerberos_args
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_in hdfs:///terasort_out",
                     expected_output="",
-                    app_name="/spark",
                     args=terasort_args)
 
     teravalidate_args = ["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + kerberos_args
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_out hdfs:///terasort_validate",
                     expected_output="partitions are properly sorted",
-                    app_name="/spark",
                     args=teravalidate_args)
 
 
@@ -158,7 +166,7 @@ def test_supervise():
 
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="10.0.0.1 9090 hdfs:///netcheck hdfs:///outfile",
-                                 app_name="/spark",
+                                 app_name=utils.SPARK_APP_NAME,
                                  args=(kerberos_args + job_args))
     log.info("Started supervised driver {}".format(driver_id))
     shakedown.wait_for(lambda: streaming_job_registered(),
@@ -183,7 +191,7 @@ def test_supervise():
                        ignore_exceptions=False,
                        timeout_seconds=600)
     log.info("Job has re-started")
-    out = utils.kill_driver(driver_id, "/spark")
+    out = utils.kill_driver(driver_id, utils.SPARK_APP_NAME)
     log.info("{}".format(out))
     out = json.loads(out)
     assert out["success"], "Failed to kill spark streaming job"

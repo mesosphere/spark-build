@@ -135,6 +135,7 @@ test-env:
 	source test-env/bin/activate
 	pip3 install -r tests/requirements.txt
 
+CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
 cluster-url:
 	$(eval export DCOS_LAUNCH_CONFIG_BODY)
 	@if [ -z $(CLUSTER_URL) ]; then \
@@ -176,10 +177,6 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
 	fi; \
 	export CLUSTER_URL=`cat cluster-url`
 	$(TOOLS_DIR)/./dcos_login.py
-	if [ "$(SECURITY)" = "strict" ]; then \
-        $(TOOLS_DIR)/setup_permissions.sh root "*"; \
-        $(TOOLS_DIR)/setup_permissions.sh root hdfs-role; \
-    fi; \
 	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
 	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
@@ -209,7 +206,7 @@ define DCOS_LAUNCH_CONFIG_BODY
 ---
 launch_config_version: 1
 deployment_name: dcos-ci-test-spark-build-$(shell cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 10 | head -n 1)
-template_url: https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
+template_url: $(CF_TEMPLATE_URL)
 provider: aws
 key_helper: true
 template_parameters:
