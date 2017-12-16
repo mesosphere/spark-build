@@ -185,8 +185,8 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
 	    fi; \
 	fi; \
 	export CLUSTER_URL=`cat cluster-url`
-	$(TOOLS_DIR)/./dcos_login.py
-    export STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)`
+	$(TOOLS_DIR)/./dcos_login.py; \
+    export STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)`; \
 	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
 	  S3_BUCKET=$(S3_BUCKET) \

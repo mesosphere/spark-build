@@ -1,7 +1,7 @@
 {
   "id": "hdfsclient",
   "mem": 1024,
-  "user": "root",
+  "user": "nobody",
   "container": {
     "type": "MESOS",
     "docker": {

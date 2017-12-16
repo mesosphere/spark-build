@@ -8,6 +8,7 @@
 {{#security.kerberos.principal}}
     "cmd": "SPARK_HISTORY_OPTS=\"-Dspark.history.ui.port=${PORT0} ${SPARK_HISTORY_OPTS} ${SPARK_HISTORY_KERBEROS_OPTS}\" ./bin/spark-class org.apache.spark.deploy.history.HistoryServer",
 {{/security.kerberos.principal}}
+    "user": "{{service.user}}",
     "env": {
 {{#security.kerberos.krb5conf}}
         "KRB5_CONFIG_BASE64": "{{security.kerberos.krb5conf}}",
