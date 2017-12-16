@@ -20,7 +20,7 @@ from tests import utils
 log = logging.getLogger(__name__)
 DEFAULT_HDFS_TASK_COUNT=10
 GENERIC_HDFS_USER_PRINCIPAL = "hdfs@{realm}".format(realm=sdk_auth.REALM)
-KEYTAB_SECRET_PATH = "__dcos_base64___keytab"
+KEYTAB_SECRET_PATH = os.getenv("KEYTAB_SECRET_PATH", "__dcos_base64___keytab")
 # To do: change when no longer using HDFS stub universe
 HDFS_PACKAGE_NAME='beta-hdfs'
 HDFS_SERVICE_NAME='hdfs'
