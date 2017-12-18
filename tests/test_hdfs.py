@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 import pytest
 import json
 
@@ -9,7 +10,9 @@ import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_marathon
 import sdk_security
+import sdk_tasks
 
 from tests import utils
 
@@ -17,9 +20,13 @@ from tests import utils
 log = logging.getLogger(__name__)
 DEFAULT_HDFS_TASK_COUNT=10
 GENERIC_HDFS_USER_PRINCIPAL = "hdfs@{realm}".format(realm=sdk_auth.REALM)
+KEYTAB_SECRET_PATH = os.getenv("KEYTAB_SECRET_PATH", "__dcos_base64___keytab")
 # To do: change when no longer using HDFS stub universe
 HDFS_PACKAGE_NAME='beta-hdfs'
 HDFS_SERVICE_NAME='hdfs'
+KERBEROS_ARGS = ["--kerberos-principal", GENERIC_HDFS_USER_PRINCIPAL,
+                 "--keytab-secret-path", "/{}".format(KEYTAB_SECRET_PATH)]
+HDFS_CLIENT_ID = "hdfsclient"
 
 
 @pytest.fixture(scope='module')
@@ -103,10 +110,54 @@ def configure_security_spark():
     yield from utils.spark_security_session()
 
 
-@pytest.fixture(scope='module', autouse=True)
-def setup_spark(hdfs_with_kerberos, configure_security_spark):
+@pytest.fixture(scope='module')
+def setup_hdfs_client(hdfs_with_kerberos):
     try:
-        utils.require_spark(use_hdfs=True)
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        app_def_path = "{}/resources/hdfsclient.json".format(curr_dir)
+        with open(app_def_path) as f:
+            hdfsclient_app_def = json.load(f)
+        hdfsclient_app_def["id"] = HDFS_CLIENT_ID
+        hdfsclient_app_def["secrets"]["hdfs_keytab"]["source"] = KEYTAB_SECRET_PATH
+        sdk_marathon.install_app(hdfsclient_app_def)
+
+        sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
+        yield
+
+    finally:
+        sdk_marathon.destroy_app(HDFS_CLIENT_ID)
+
+
+@pytest.fixture(scope='module')
+def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_universe):
+    try:
+        sdk_tasks.task_exec(HDFS_CLIENT_ID, "bin/hdfs dfs -mkdir /history")
+
+        shakedown.install_package(
+            package_name=utils.HISTORY_PACKAGE_NAME,
+            options_json={
+                "service": {"hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                    .format(HDFS_SERVICE_NAME)},
+                "security": {
+                    "kerberos": {
+                        "krb5conf": utils.HDFS_KRB5_CONF,
+                        "principal": GENERIC_HDFS_USER_PRINCIPAL,
+                        "keytab": KEYTAB_SECRET_PATH
+                    }
+                }
+            },
+            wait_for_completion=True  # wait for it to become healthy
+        )
+        yield
+
+    finally:
+        sdk_marathon.destroy_app(utils.HISTORY_SERVICE_NAME)
+
+
+@pytest.fixture(scope='module', autouse=True)
+def setup_spark(hdfs_with_kerberos, setup_history_server, configure_security_spark, configure_universe):
+    try:
+        utils.require_spark(use_hdfs=True, use_history=True)
         yield
     finally:
         utils.teardown_spark()
@@ -116,22 +167,20 @@ def setup_spark(hdfs_with_kerberos, configure_security_spark):
 @pytest.mark.sanity
 def test_terasort_suite():
     jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
-    kerberos_args = ["--kerberos-principal", "hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL",
-                     "--keytab-secret-path", "/__dcos_base64___keytab"]
 
-    teragen_args=["--class", "com.github.ehiggs.spark.terasort.TeraGen"] + kerberos_args
+    teragen_args=["--class", "com.github.ehiggs.spark.terasort.TeraGen"] + KERBEROS_ARGS
     utils.run_tests(app_url=jar_url,
                     app_args="1g hdfs:///terasort_in",
                     expected_output="Number of records written",
                     args=teragen_args)
 
-    terasort_args = ["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + kerberos_args
+    terasort_args = ["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + KERBEROS_ARGS
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_in hdfs:///terasort_out",
                     expected_output="",
                     args=terasort_args)
 
-    teravalidate_args = ["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + kerberos_args
+    teravalidate_args = ["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + KERBEROS_ARGS
     utils.run_tests(app_url=jar_url,
                     app_args="hdfs:///terasort_out hdfs:///terasort_validate",
                     expected_output="partitions are properly sorted",
@@ -156,9 +205,6 @@ def test_supervise():
 
     JOB_SERVICE_NAME = "RecoverableNetworkWordCount"
 
-    kerberos_args = ["--kerberos-principal", "hdfs@LOCAL",
-                     "--keytab-secret-path", "/__dcos_base64___keytab"]
-
     job_args = ["--supervise",
                 "--class", "org.apache.spark.examples.streaming.RecoverableNetworkWordCount",
                 "--conf", "spark.cores.max=8",
@@ -167,7 +213,7 @@ def test_supervise():
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="10.0.0.1 9090 hdfs:///netcheck hdfs:///outfile",
                                  app_name=utils.SPARK_APP_NAME,
-                                 args=(kerberos_args + job_args))
+                                 args=(KERBEROS_ARGS + job_args))
     log.info("Started supervised driver {}".format(driver_id))
     shakedown.wait_for(lambda: streaming_job_registered(),
                        ignore_exceptions=False,
@@ -198,3 +244,16 @@ def test_supervise():
     shakedown.wait_for(lambda: streaming_job_is_not_running(),
                        ignore_exceptions=False,
                        timeout_seconds=600)
+
+
+@pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
+@pytest.mark.sanity
+def test_history():
+    job_args = ["--class", "org.apache.spark.examples.SparkPi",
+                "--conf", "spark.eventLog.enabled=true",
+                "--conf", "spark.eventLog.dir=hdfs://hdfs/history"]
+    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
+                    app_args="100",
+                    expected_output="Pi is roughly 3",
+                    app_name="/spark",
+                    args=(job_args + KERBEROS_ARGS))

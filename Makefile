@@ -112,6 +112,7 @@ $(CLI_DIST_DIR):
 cli: $(CLI_DIST_DIR)
 
 UNIVERSE_URL_PATH ?= stub-universe-url
+HISTORY_URL_PATH := $(UNIVERSE_URL_PATH).history
 $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
 	UNIVERSE_URL_PATH=$(UNIVERSE_URL_PATH) \
 	TEMPLATE_CLI_VERSION=$(CLI_VERSION) \
@@ -122,7 +123,15 @@ $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
         $(CLI_DIST_DIR)/dcos-spark-darwin \
         $(CLI_DIST_DIR)/dcos-spark-linux \
         $(CLI_DIST_DIR)/dcos-spark.exe \
-        $(CLI_DIST_DIR)/*.whl;
+        $(CLI_DIST_DIR)/*.whl; \
+    UNIVERSE_URL_PATH=$(HISTORY_URL_PATH) \
+    TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
+        $(TOOLS_DIR)/publish_aws.py \
+        spark-history \
+        $(ROOT_DIR)/history/package/; \
+    cat $(HISTORY_URL_PATH) >> $(UNIVERSE_URL_PATH);
+
+stub-universe: $(UNIVERSE_URL_PATH)
 
 DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
 $(DCOS_SPARK_TEST_JAR_PATH):
@@ -176,8 +185,8 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
 	    fi; \
 	fi; \
 	export CLUSTER_URL=`cat cluster-url`
-	$(TOOLS_DIR)/./dcos_login.py
-	dcos package repo add --index=0 spark-aws `cat stub-universe-url`
+	$(TOOLS_DIR)/./dcos_login.py; \
+    export STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)`; \
 	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
 	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
 	  S3_BUCKET=$(S3_BUCKET) \
@@ -187,7 +196,7 @@ test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVER
 clean: clean-dist clean-cluster
 	rm -rf test-env
 	rm -rf $(CLI_DIST_DIR)
-	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "docker-build" "docker-dist" ; do \
+	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "$(HISTORY_URL_PATH)" "docker-build" "docker-dist" ; do \
 		[ ! -e $$f ] || rm $$f; \
 	done; \
 

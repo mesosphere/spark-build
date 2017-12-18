@@ -4,6 +4,7 @@ set -e -x -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 HISTORY_DIR="${DIR}/.."
+TOOLS_DIR="${DIR}/../../tools"
 
 function check_env {
     if [ -z "${DOCKER_IMAGE}" ]; then
@@ -15,7 +16,7 @@ function check_env {
 
 function make_universe {
     TEMPLATE_DEFAULT_DOCKER_IMAGE=${DOCKER_IMAGE} \
-                                 ${COMMONS_DIR}/tools/ci_upload.py \
+                                 ${TOOLS_DIR}/publish_aws.py \
                                  spark-history \
                                  ${HISTORY_DIR}/package
 }

@@ -34,7 +34,7 @@ def configure_security():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(configure_security):
+def setup_spark(configure_security, configure_universe):
     try:
         utils.require_spark()
         utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])

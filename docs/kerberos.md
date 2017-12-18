@@ -52,19 +52,20 @@ Spark (and all Kerberos-enabed) components need a valid `krb5.conf` file. You ca
         
 1.  Make sure your keytab is accessible from the DC/OS [Secret Store][https://docs.mesosphere.com/latest/security/secrets/].
 
-1. If you've enabled the history server via `history-server.enabled`, you must also configure the principal and keytab for the history server.  **WARNING**: The keytab contains secrets, in the current history server package the keytab is not stored securely. See [Limitations][9]
+1. If you are using the history server, you must also configure the `krb5.conf`, principal, and keytab
+   for the history server.
 
-    Base64 encode your keytab:
-
-        cat spark.keytab | base64
-
-    And add the following to your configuration file:
+   Add the Kerberos configurations to your spark-history JSON configuration file:
 
          {
-            "history-server": {
+            "service": {
+                "hdfs-config-url": "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
+            },
+            "security": {
                 "kerberos": {
-                  "principal": "spark@REALM",
-                  "keytab": "<base64 encoding>"
+                  "krb5conf": "<base64_encoding>",
+                  "principal": "<Kerberos principal>",  # e.g. spark@REALM
+                  "keytab": "<keytab secret path>"      # e.g. __dcos_base64__hdfs_keytab
                 }
             }
          }
@@ -87,7 +88,7 @@ Submit the job with the keytab:
 Submit the job with the ticket:
 
     dcos spark run --submit-args="\
-    --kerberos-principal hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL \
+    --kerberos-principal user@REALM \
     --tgt-secret-path /__dcos_base64__tgt \
     --conf ... --class MySparkJob <url> <args>"
 
