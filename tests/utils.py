@@ -34,8 +34,8 @@ LOGGER = logging.getLogger(__name__)
 HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
 SPARK_PACKAGE_NAME=os.getenv('SPARK_PACKAGE_NAME', 'spark')
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
-HISTORY_PACKAGE_NAME = "spark-history"
-HISTORY_SERVICE_NAME = "spark-history"
+HISTORY_PACKAGE_NAME = os.getenv("HISTORY_PACKAGE_NAME", "spark-history")
+HISTORY_SERVICE_NAME = os.getenv("HISTORY_SERVICE_NAME", "spark-history")
 
 
 def hdfs_enabled():
