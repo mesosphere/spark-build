@@ -107,6 +107,7 @@ def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 @pytest.mark.skipif(not utils.kafka_enabled(), reason='KAFKA_ENABLED is false')
 def test_spark_and_kafka():
     kerberos_flag = "true" if KERBERIZED_KAFKA else "false"  # flag for using kerberized kafka given to app

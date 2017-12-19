@@ -46,6 +46,7 @@ def setup_spark(configure_security, configure_universe):
 
 @pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_jar(app_name=utils.SPARK_APP_NAME):
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
@@ -60,6 +61,7 @@ def test_jar(app_name=utils.SPARK_APP_NAME):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_rpc_auth():
     secret_name = "sparkauth"
 
@@ -95,6 +97,7 @@ def test_sparkPi(app_name=utils.SPARK_APP_NAME):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)
@@ -107,6 +110,7 @@ def test_python():
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = utils.upload_file(r_script_path)
@@ -126,6 +130,7 @@ def test_cni():
 
 #@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
@@ -167,6 +172,7 @@ def _check_task_network_info(task):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_s3():
     def make_credential_secret(envvar, secret_path):
         rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create {p} -v {e}"
@@ -235,6 +241,7 @@ def test_s3():
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_marathon_group():
     app_id = utils.FOLDERED_SPARK_APP_NAME
     options = {"service": {"name": app_id}}
@@ -242,6 +249,7 @@ def test_marathon_group():
     test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
+
 
 
 @pytest.mark.sanity
@@ -257,6 +265,7 @@ def test_cli_multiple_spaces():
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_driver_executor_tls():
     '''
     Put keystore and truststore as secrets in DC/OS secret store.
