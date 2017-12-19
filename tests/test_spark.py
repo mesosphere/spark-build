@@ -168,6 +168,20 @@ def _check_task_network_info(task):
 
 @pytest.mark.sanity
 def test_s3():
+    def make_credential_secret(envvar, secret_path):
+        rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create {p} -v {e}"
+                                                 .format(p=secret_path, e=os.environ[envvar]))
+        assert rc == 0, "Failed to create secret {secret} from envvar {envvar}, stderr: {err}, stdout: {out}".format(
+            secret=secret_path, envvar=envvar, err=stderr, out=stdout)
+
+    LOGGER.info("Creating AWS secrets")
+
+    aws_access_key_secret_path = "aws_access_key_id"
+    aws_secret_access_key_path = "aws_secret_access_key"
+
+    make_credential_secret(envvar="AWS_ACCESS_KEY_ID", secret_path="/{}".format(aws_access_key_secret_path))
+    make_credential_secret(envvar="AWS_SECRET_ACCESS_KEY", secret_path="/{}".format(aws_secret_access_key_path))
+
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
     s3.upload_file(linecount_path)
 
@@ -175,12 +189,12 @@ def test_s3():
         s3.s3n_url('linecount.txt'),
         s3.s3n_url("linecount-out"))
 
-    args = ["--conf",
-            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
-                os.environ["AWS_ACCESS_KEY_ID"]),
+    args = ["--conf", "spark.mesos.containerizer=mesos",
             "--conf",
-            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
-                os.environ["AWS_SECRET_ACCESS_KEY"]),
+            "spark.mesos.driver.secret.names=/{key},/{secret}".format(
+                key=aws_access_key_secret_path, secret=aws_secret_access_key_path),
+            "--conf",
+            "spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
             "--class", "S3Job"]
     utils.run_tests(app_url=utils._scala_test_jar_url(),
                     app_args=app_args,
@@ -228,28 +242,6 @@ def test_marathon_group():
     test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
-
-
-@pytest.mark.sanity
-@pytest.mark.secrets
-def test_secrets():
-    properties_file_path = os.path.join(THIS_DIR, "resources", "secrets-opts.txt")
-    # Create secret
-    shakedown.run_dcos_command('security secrets create /{} --value {}'.format(SECRET_NAME, SECRET_CONTENTS))
-
-    secret_file_name = "secret_file"
-    output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
-    args = ["--properties-file", properties_file_path,
-            "--class", "SecretsJob"]
-    try:
-        utils.run_tests(app_url=utils._scala_test_jar_url(),
-                        app_args=secret_file_name,
-                        expected_output=output,
-                        args=args)
-
-    finally:
-        # Delete secret
-        shakedown.run_dcos_command('security secrets delete /{}'.format(SECRET_NAME))
 
 
 @pytest.mark.sanity
