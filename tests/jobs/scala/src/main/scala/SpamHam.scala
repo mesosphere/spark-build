@@ -25,6 +25,27 @@ import org.apache.spark.util.{DoubleAccumulator, LongAccumulator}
   * where 'spam' or 'ham' is the label and the following message contains the features we would like to
   * classify with our model. The dataset we use to train the model can be downloaded at the UC-Irvine
   * ML Repository (https://archive.ics.uci.edu/ml/datasets/sms+spam+collection)
+  *
+  * Usage:
+  * {SPARK} {ARGS} {PATH_TO_ASSEMBLY} [training_data] [train-test_split] [output_path]
+  * where {SPARK} is either `dcos spark run` or `./bin/spark-submit`
+  * {ARGS} are the configuration arguments to Spark (e.g. `--conf spark.cores.max=8` and Kerberos args for
+  * saving to HDFS)
+  * {PATH_TO_ASSEMBLY} is the location of the snapshot jar containing this application
+  * [training_data] needs to be accessible to the driver, we recommend using the
+  * `--conf spark.mesos.uris=[URI]` configuration to download the file to the driver's sandbox, see above
+  * for the required format.
+  *
+  * Example:
+  * dcos spark run --submit-args="{ARGS} --class SpamHamModelFactory \
+  * http://path-to-bucket/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+  * file:///mnt/mesos/sandbox/SMSSpamCollection.txt 0.8 hdfs:///nb_model"
+  *
+  * Notes:
+  * To save to HDFS, this application requires the hdfs-site.xml and core-site.xml configuration files
+  * to be present in the HADOOP_CONF_DIR directory (`/etc/hadoop` by default). We also assume that {ARGS}
+  * contains `--conf spark.mesos.uris=http://path/to/SMSSPamCollection.txt`
+  *
   */
 object SpamHamModelFactory {
   def main(args: Array[String]): Unit = {
@@ -83,10 +104,30 @@ object SpamHamModelFactory {
 /**
   * Application that will send spam and ham messages to a kafka topic. Sends them in the same format
   * as we trained our model so that we can use the same pipeline.
+  *
+  * Usage:
+  * {SPARK} {ARGS} {PATH_TO_ASSEMBLY} [path_to_labeled_data] [topic] [brokers] [kerberos [true/false]]
+  * where {SPARK} is either `dcos spark run` or `./bin/spark-submit`
+  * {ARGS} are the configuration arguments to Spark (e.g. `--conf spark.cores.max=8` and Kerberos args)
+  * {PATH_TO_ASSEMBLY} is the location of the snapshot jar containing this application
+  * [path_to_labeled_data] needs to be accessible to the driver, we recommend using the
+  * `--conf spark.mesos.uris=[URI]` configuration to download the file to the driver's sandbox,
+  * see above [[SpamHamModelFactory]] for the required format.
+  *
+  * Example:
+  * dcos spark run --submit-args="{ARGS} --class Spammer \
+  * http://path-to-bucket/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+  * file:///mnt/mesos/sandbox/SMSSpamCollection.txt top1 \
+  * kafka-0-broker.kafka.autoip.dcos.thisdcos.directory:1025 false"
+  *
+  * Notes:
+  * This application assumes that that {ARGS} contains
+  * `--conf spark.mesos.uris=http://path/to/SMSSPamCollection.txt`
+  *
   */
 object Spammer {
   def main(args: Array[String]): Unit = {
-    if (args.length != 3) {
+    if (args.length != 4) {
       throw new IllegalArgumentException("USAGE: <path_to_labeled_data> <topic> <brokers> <Kerberos true/false>")
     }
 
@@ -172,6 +213,18 @@ object Spammer {
 /**
   * Application that will use a pre-trained model (loaded from S3 or HDFS) and classify messages on the fly
   * by subscribing to a Kafka topic and classifying the messages that are published to that topic.
+  *
+  * Usage:
+  * {SPARK} {ARGS} {PATH_TO_ASSEMBLY} [topic] [brokers] [modelUri [hdfs:// or s3n://]] [kerberos [true/false]]
+  * where {SPARK} is either `dcos spark run` or `./bin/spark-submit`
+  * {ARGS} are the configuration arguments to Spark (e.g. `--conf spark.cores.max=8` and Kerberos args)
+  * {PATH_TO_ASSEMBLY} is the location of the snapshot jar containing this application
+  *
+  * Example:
+  * dcos spark run --submit-args="{ARGS} --class SpamHamStreamingClassifier \
+  * http://path-to-bucket/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
+  * top1 kafka-0-broker.kafka.autoip.dcos.thisdcos.directory:1025 hdfs:///nb_model false"
+  *
   */
 object SpamHamStreamingClassifier {
   def main(args: Array[String]): Unit = {
@@ -232,7 +285,6 @@ object SpamHamStreamingClassifier {
     ssc.awaitTermination()
   }
 }
-
 
 object CorrectAccumulator {
   @volatile private var instance: DoubleAccumulator = null

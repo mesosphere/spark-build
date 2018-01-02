@@ -1,7 +1,7 @@
 # Spark Examples and Test Jobs
 This folder contains jobs that Mesosphere uses to exercise Spark functionality and integration with other data services (e.g. HDFS and Kafka). They can also serve as examples of how to setup various more acvanced functionality, for example the Kafka pipeine in `KafkaJobs.scala` and `SpamHam.scala`. 
 
-The individual source files contain documentation on their use. 
+The individual source files contain documentation on their use.
 
 ## Building
 To build the Scala-based application(s): 
