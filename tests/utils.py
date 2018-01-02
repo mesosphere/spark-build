@@ -34,6 +34,9 @@ LOGGER = logging.getLogger(__name__)
 HDFS_KRB5_CONF='W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKZG5zX2xvb2t1cF9yZWFsbSA9IHRydWUKZG5zX2xvb2t1cF9rZGMgPSB0cnVlCnVkcF9wcmVmZXJlbmNlX2xpbWl0ID0gMQoKW3JlYWxtc10KICBMT0NBTCA9IHsKICAgIGtkYyA9IGtkYy5tYXJhdGhvbi5tZXNvczoyNTAwCiAgfQoKW2RvbWFpbl9yZWFsbV0KICAuaGRmcy5kY29zID0gTE9DQUwKICBoZGZzLmRjb3MgPSBMT0NBTAo='
 SPARK_PACKAGE_NAME=os.getenv('SPARK_PACKAGE_NAME', 'spark')
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
+HISTORY_PACKAGE_NAME = os.getenv("HISTORY_PACKAGE_NAME", "spark-history")
+HISTORY_SERVICE_NAME = os.getenv("HISTORY_SERVICE_NAME", "spark-history")
+
 
 def hdfs_enabled():
     return os.environ.get("HDFS_ENABLED") != "false"
@@ -59,10 +62,10 @@ def streaming_job_running(job_name):
         return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
 
 
-def require_spark(options=None, service_name=None, use_hdfs=False):
+def require_spark(options=None, service_name=None, use_hdfs=False, use_history=False):
     LOGGER.info("Ensuring Spark is installed.")
 
-    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs))
+    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs, use_history))
     _wait_for_spark(service_name)
     _require_spark_cli()
 
@@ -129,7 +132,7 @@ def no_spark_jobs(service_name):
     return len(driver_ips) == 0
 
 
-def _get_spark_options(options, use_hdfs):
+def _get_spark_options(options, use_hdfs, use_history):
     if options is None:
         options = {}
 
@@ -139,6 +142,12 @@ def _get_spark_options(options, use_hdfs):
         options["security"] = options.get("security", {})
         options["security"]["kerberos"] = options["security"].get("kerberos", {})
         options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
+
+    if use_history:
+        dcos_url = dcos.config.get_config_val("core.dcos_url")
+        history_url = urllib.parse.urljoin(dcos_url, "/service/{}".format(HISTORY_SERVICE_NAME))
+        options["service"] = options.get("service", {})
+        options["service"]["spark-history-server-url"] = history_url
 
     if is_strict():
         options["service"] = options.get("service", {})

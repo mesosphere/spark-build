@@ -34,7 +34,7 @@ def configure_security():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(configure_security):
+def setup_spark(configure_security, configure_universe):
     try:
         utils.require_spark()
         utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
@@ -46,6 +46,7 @@ def setup_spark(configure_security):
 
 @pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_jar(app_name=utils.SPARK_APP_NAME):
     master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
@@ -60,6 +61,7 @@ def test_jar(app_name=utils.SPARK_APP_NAME):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_rpc_auth():
     secret_name = "sparkauth"
 
@@ -94,6 +96,7 @@ def test_sparkPi(app_name=utils.SPARK_APP_NAME):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_python():
     python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'pi_with_include.py')
     python_script_url = utils.upload_file(python_script_path)
@@ -106,6 +109,7 @@ def test_python():
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_r():
     r_script_path = os.path.join(THIS_DIR, 'jobs', 'R', 'dataframe.R')
     r_script_url = utils.upload_file(r_script_path)
@@ -125,6 +129,7 @@ def test_cni():
 
 #@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
@@ -166,7 +171,22 @@ def _check_task_network_info(task):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_s3():
+    def make_credential_secret(envvar, secret_path):
+        rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create {p} -v {e}"
+                                                 .format(p=secret_path, e=os.environ[envvar]))
+        assert rc == 0, "Failed to create secret {secret} from envvar {envvar}, stderr: {err}, stdout: {out}".format(
+            secret=secret_path, envvar=envvar, err=stderr, out=stdout)
+
+    LOGGER.info("Creating AWS secrets")
+
+    aws_access_key_secret_path = "aws_access_key_id"
+    aws_secret_access_key_path = "aws_secret_access_key"
+
+    make_credential_secret(envvar="AWS_ACCESS_KEY_ID", secret_path="/{}".format(aws_access_key_secret_path))
+    make_credential_secret(envvar="AWS_SECRET_ACCESS_KEY", secret_path="/{}".format(aws_secret_access_key_path))
+
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
     s3.upload_file(linecount_path)
 
@@ -174,12 +194,12 @@ def test_s3():
         s3.s3n_url('linecount.txt'),
         s3.s3n_url("linecount-out"))
 
-    args = ["--conf",
-            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
-                os.environ["AWS_ACCESS_KEY_ID"]),
+    args = ["--conf", "spark.mesos.containerizer=mesos",
             "--conf",
-            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
-                os.environ["AWS_SECRET_ACCESS_KEY"]),
+            "spark.mesos.driver.secret.names=/{key},/{secret}".format(
+                key=aws_access_key_secret_path, secret=aws_secret_access_key_path),
+            "--conf",
+            "spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
             "--class", "S3Job"]
     utils.run_tests(app_url=utils._scala_test_jar_url(),
                     app_args=app_args,
@@ -220,6 +240,7 @@ def test_s3():
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_marathon_group():
     app_id = utils.FOLDERED_SPARK_APP_NAME
     options = {"service": {"name": app_id}}
@@ -228,27 +249,6 @@ def test_marathon_group():
     LOGGER.info("Uninstalling app_id={}".format(app_id))
     #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
 
-
-@pytest.mark.sanity
-@pytest.mark.secrets
-def test_secrets():
-    properties_file_path = os.path.join(THIS_DIR, "resources", "secrets-opts.txt")
-    # Create secret
-    shakedown.run_dcos_command('security secrets create /{} --value {}'.format(SECRET_NAME, SECRET_CONTENTS))
-
-    secret_file_name = "secret_file"
-    output = "Contents of file {}: {}".format(secret_file_name, SECRET_CONTENTS)
-    args = ["--properties-file", properties_file_path,
-            "--class", "SecretsJob"]
-    try:
-        utils.run_tests(app_url=utils._scala_test_jar_url(),
-                        app_args=secret_file_name,
-                        expected_output=output,
-                        args=args)
-
-    finally:
-        # Delete secret
-        shakedown.run_dcos_command('security secrets delete /{}'.format(SECRET_NAME))
 
 
 @pytest.mark.sanity
@@ -264,6 +264,7 @@ def test_cli_multiple_spaces():
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
+@pytest.mark.smoke
 def test_driver_executor_tls():
     '''
     Put keystore and truststore as secrets in DC/OS secret store.
