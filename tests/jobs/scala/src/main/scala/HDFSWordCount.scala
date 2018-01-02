@@ -6,6 +6,6 @@ object HDFSWordCount {
     val sc = new SparkContext(conf)
     val file = args(0)
     val rdd = sc.textFile(file)
-    print(s"number of words in ${file}: ${rdd.count()}")
+    print(s"number of lines in ${file}: ${rdd.count()}")
   }
 }
