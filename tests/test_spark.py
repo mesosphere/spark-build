@@ -63,7 +63,8 @@ def test_jar(app_name=utils.SPARK_APP_NAME):
 def test_rpc_auth():
     secret_name = "sparkauth"
 
-    rc, stdout, stderr = sdk_cmd.run_raw_cli("spark secret /{}".format(secret_name))
+    rc, stdout, stderr = sdk_cmd.run_raw_cli("{pkg} secret /{secret}".format(
+        pkg=utils.SPARK_PACKAGE_NAME, secret=secret_name))
     assert rc == 0, "Failed to generate Spark auth secret, stderr {err} stdout {out}".format(err=stderr, out=stdout)
 
     args = ["--conf", "spark.mesos.containerizer=mesos",
