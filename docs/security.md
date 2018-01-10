@@ -113,7 +113,7 @@ See the [Secrets Documentation about spaces][13] for more details about spaces.
 the keystore and truststore secrets will also show up as environment-based secrets,
 due to the way secrets are implemented. You can ignore these extra environment variables.
 
-# Spark SASL (RPC endpoint authentication)
+# Spark SASL (Executor authentication, and BlockTransferService encryption)
 Spark uses Simple Authentication Security Layer (SASL) to authenticate Executors with the Driver and for encrypting messages sent between components. This functionality relies on a shared secret between all components you expect to communicate with each other. A secret can be generated with the DC/OS Spark CLI 
 ```bash
 dcos spark secret <secret_path>
