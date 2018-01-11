@@ -80,15 +80,7 @@ The TeraSort suite has 3 steps, generating the data, sorting the data, and valid
     --private-key-password=changeit \
     --truststore-secret-path=__dcos_base64__truststore \
     --truststore-password=changeit \
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=spark-auth-secret \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --executor-auth-secret=spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraGen https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar 1g hdfs:///terasort_in_secure"
     ```
@@ -102,15 +94,7 @@ The TeraSort suite has 3 steps, generating the data, sorting the data, and valid
     --private-key-password=changeit \
     --truststore-secret-path=__dcos_base64__truststore \
     --truststore-password=changeit \
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=spark-auth-secret \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --executor-auth-secret=spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraSort https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_in_secure hdfs:///terasort_out_secure"
     ```
@@ -125,15 +109,7 @@ The TeraSort suite has 3 steps, generating the data, sorting the data, and valid
     --private-key-password=changeit \
     --truststore-secret-path=__dcos_base64__truststore \
     --truststore-password=changeit \
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=spark-auth-secret \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --executor-auth-secret=spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraValidate https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_out_secure hdfs:///terasort_validate_secure"
     ```

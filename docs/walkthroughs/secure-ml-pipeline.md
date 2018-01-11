@@ -87,7 +87,7 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
 
 ## Run the example
 1.  We need to upload the training data to S3, we use the file `SMSSpamCollection.txt` that can be found in the [resources]() of the test repo. This artifact needs to be publicly available to your cluster, we will refer to this artifact as `http://SMS_DATA.txt`.
-1.  Build the example jar by following the instructions in the [README](). Upload that to S3 so that it can be publicly accessible, we will refer to this artifact as `http://SPAM_HAM.jar` 
+1.  Build the example jar by following the instructions in the [README](). Upload that to S3 so that it can be publicly accessible, we will refer to this artifact as `http://DCOS_EXAMPLES.jar` 
 1.  Run the model training step, notice here we only use HDFS:
     ```bash
     dcos spark run --submit-args="\
@@ -98,18 +98,10 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
     --private-key-password=changeit \
     --truststore-secret-path=__dcos_base64__truststore \
     --truststore-password=changeit \
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=spark-auth-secret \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --executor-auth-secret=spark-auth-secret \
     --conf spark.cores.max=8 \
-    --conf spark.mesos.uris=https://s3-us-west-2.amazonaws.com/arand-sandbox-mesosphere/SMSSpamCollection.txt \
-    --class SpamHamModelFactory https://s3-us-west-2.amazonaws.com/arand-sandbox-mesosphere/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt 0.8 hdfs:///nb_model"
+    --conf spark.mesos.uris=http://SMS_DATA.txt \
+    --class SpamHamModelFactory http://DCOS_EXAMPLES.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt 0.8 hdfs:///nb_model"
     ```
 1.  Setup the Spammer, this small job will just push messages to the topic:
     ```bash
@@ -121,20 +113,38 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
     --private-key-password=changeit \
     --truststore-secret-path=__dcos_base64__truststore \
     --truststore-password=changeit \
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=spark-auth-secret \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --executor-auth-secret=spark-auth-secret \
     --conf spark.cores.max=2 \
     --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
     --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
     --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
-    --class Spammer http://SPAM_HAM.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt top1 <broker>:<port> true"
+    --class Spammer http://DCOS_EXAMPLES.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt top1 <broker>:<port> true"
+    ```
+    *Note* If you are running DC/OS Kafka, you can get the `broker` and `port` from running 
+    ```bash
+    dcos <kafka_service> --name=<service_name> endpoints broker
+    ```
+    Likely this will be something like:
+    ```bash
+    dcos kafka --name=secure-kafka endpoints broker
     ```
     
+1.  Run the classifier, this will load the model you built and saved to HDFS and use it to classify the messages from the `Spammer`:
+    ```bash
+    dcos spark run --submit-args="\
+    --kerberos-principal=client@LOCAL \
+    --keytab-secret-path=/__dcos_base64___keytab \
+    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-password=changeit \
+    --private-key-password=changeit \
+    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-password=changeit \
+    --executor-auth-secret=/spark-auth-secret \
+    --conf spark.cores.max=4 \
+    --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
+    --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/generic_keytab.jaas \
+    --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/generic_keytab.jaas \
+    --class SpamHamStreamingClassifier http://DCOS_EXAMPLES.jar top1 <broker>:<port> hdfs:///nb_model true"
 
+    ```   
+    You can look at the `stdout` for this job and see a running average classification accuracy for your spam detector. Before you ask, we appreciate that it is "against the rules" to do your training and the exact same data. So for extra credit, make a new `Spammer` that scrambles the words in each category! Remember, the Naive Bayes classifier doesnt take contextual information into account so you should see something closer to reality. Or make an API for the classifier, hook it up to the Twitter API!

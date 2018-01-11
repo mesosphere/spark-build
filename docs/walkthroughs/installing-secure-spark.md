@@ -87,14 +87,8 @@ Spark has two communication channels used amongst its components, a TLS-secured 
 1.  To enable add the following configurations:
     ```bash
     dcos spark run --submit-args="\
-    --conf spark.mesos.containerizer=mesos \
-    --conf spark.authenticate=true \
-    --conf spark.authenticate.enableSaslEncryption=true \
-    --conf spark.authenticate.secret=sparkauthsecret.secret \
-    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
-    --conf spark.mesos.driver.secret.names=<secret_path> \
-    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
-    --conf spark.mesos.executor.secret.names=<secret_path> \
-    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret"
+    ...
+    --executor-auth-secret=spark-auth-secret
+    ..."
     ```
 

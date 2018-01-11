@@ -124,15 +124,7 @@ This will generate a random secret and upload it to the DC/OS secrets store [14]
 ```bash
 dcos spark run --submit-args="\
 ...
---conf spark.mesos.containerizer=mesos \  # Mesos UCR is required for secrets
---conf spark.authenticate=true \  # tell Spark to use authentication
---conf spark.authenticate.enableSaslEncryption=true \  # tell Spark to encrypt with Sasl
---conf spark.authenticate.secret=sparkauthsecret.secret \  # name of file-based secret for Driver, you may change the name
---conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \  # name of file-based secret for the Executors
---conf spark.mesos.driver.secret.names=<secret_path> \   # secret path generated in the previous step, for Driver
---conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \  # tell Mesos to put the secret in this file in the Driver
---conf spark.mesos.executor.secret.names=<secret_path> \  # secret path generated in previous step for Executor
---conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \  # tell Mesos to put the secret in this File for the Executors
+--executor-auth-secret=/sparkAuthSecret
 ...
 "
 
