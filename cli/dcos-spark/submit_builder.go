@@ -678,7 +678,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			_, contains := args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"]
 			if !contains {
 				args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
-				args.properties["spark.mesos.executorEnv.KRB5_CONFIG_BASE64"] = krb5conf
+				args.properties["spark.executorEnv.KRB5_CONFIG_BASE64"] = krb5conf
 			} else {
 				log.Printf("Using user-specified krb5 config")
 			}
