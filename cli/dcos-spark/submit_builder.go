@@ -256,10 +256,13 @@ func prepareBase64Secret(secretPath string, isEncoded bool) string {
 }
 
 func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
-	secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, "driver")
-	secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver")
-	appendToProperty(secretRefProp, secretPath, args)
-	appendToProperty(secretFileProp, prepareBase64Secret(secretPath, true), args)
+	taskTypes := []string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
+		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
+		appendToProperty(secretRefProp, secretPath, args)
+		appendToProperty(secretFileProp, prepareBase64Secret(secretPath, true), args)
+	}
 	args.properties[property] = prepareBase64Secret(secretPath, false)
 }
 
@@ -307,7 +310,7 @@ func setupTLSArgs(args *sparkArgs) {
 	joinedFilenames := strings.Join(filenames, ",")
 	joinedEnvkeys := strings.Join(envkeys, ",")
 
-	taskTypes :=[]string{"driver", "executor"}
+	taskTypes := []string{"driver", "executor"}
 	for _, taskType := range taskTypes {
 		appendToProperty(fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType), joinedPaths, args)
 		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType), joinedFilenames, args)
@@ -675,6 +678,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			_, contains := args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"]
 			if !contains {
 				args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
+				args.properties["spark.mesos.executorEnv.KRB5_CONFIG_BASE64"] = krb5conf
 			} else {
 				log.Printf("Using user-specified krb5 config")
 			}
