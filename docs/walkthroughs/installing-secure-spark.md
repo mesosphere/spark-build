@@ -5,29 +5,14 @@
     *   The HDFS configuration files can be aquired from the HDFS scheduler API `http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints` 
     *   Similar to the `keytab` file above we will base64 encode the `krb5.conf` file and add it to the installation config.json. An example `krb5.conf` is:
         ```
-        [logging]
-         default = STDERR
-         kdc = STDERR
-         admin_server = STDERR
-        
         [libdefaults]
-         default_realm = LOCAL
-         dns_lookup_realm = false
-         dns_lookup_kdc = false
-         ticket_lifetime = 24h
-         renew_lifetime = 7d
-         forwardable = true
+        default_realm = LOCAL
         
         [realms]
           LOCAL = {
             kdc = kdc.marathon.autoip.dcos.thisdcos.directory:2500
           }
-        
-        [domain_realm]
-          .secure-kafka.autoip.dcos.thisdcos.directory = LOCAL
-          secure-kafka.autoip.dcos.thisdcos.directory = LOCAL
-          .hdfs.dcos = LOCAL
-          hdfs.dcos = LOCAL
+          
         ```
     *   base64 encode your `krb5.conf` as above.
     

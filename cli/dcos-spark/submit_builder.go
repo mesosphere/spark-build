@@ -40,32 +40,34 @@ func newSparkVal(flagName, propName, desc string) *sparkVal {
 }
 
 type sparkArgs struct {
-	mainClass 			string
-	kerberosPrincipal 	string
-	keytabSecretPath	string
-	tgtSecretPath		string
-	tgtSecretValue		string
-	keystoreSecretPath	string
-	keystorePassword	string
-	privateKeyPassword	string
+	mainClass 				string
+	kerberosPrincipal 		string
+	keytabSecretPath		string
+	tgtSecretPath			string
+	tgtSecretValue			string
+	keystoreSecretPath		string
+	keystorePassword		string
+	privateKeyPassword		string
 	truststoreSecretPath	string
-	truststorePassword	string
-	propertiesFile    	string
-	properties        	map[string]string
+	truststorePassword		string
+	saslSecret				string
+	propertiesFile    		string
+	properties        		map[string]string
 
-	boolVals   			[]*sparkVal
-	stringVals 			[]*sparkVal
+	boolVals   				[]*sparkVal
+	stringVals 				[]*sparkVal
 
-	app		  			*url.URL
-	appArgs 			[]string
+	app		  				*url.URL
+	appArgs 				[]string
 
-	isScala				bool
-	isPython			bool
-	isR					bool
+	isScala					bool
+	isPython				bool
+	isR						bool
 }
 
 func NewSparkArgs() *sparkArgs {
 	return &sparkArgs{
+		"",
 		"",
 		"",
 		"",
@@ -170,7 +172,8 @@ Args:
 		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
 	submit.Flag("truststore-password", "A password to the truststore.").
 		Default("").StringVar(&args.truststorePassword)
-
+	submit.Flag("executor-auth-secret", "Path to secret 'cookie' to use for Executor authentication " +
+		"block transfer encryption. Make one with dcos spark secret").Default("").StringVar(&args.saslSecret)
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
 	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
 
@@ -328,6 +331,21 @@ func setupTLSArgs(args *sparkArgs) {
 	// Protocol
 	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
 		args.properties["spark.ssl.protocol"] = "TLS"
+	}
+}
+
+func setupSaslProperties(secretPath string, args *sparkArgs) {
+	args.properties["spark.mesos.containerizer"] = "mesos"
+	args.properties["spark.authenticate"] = "true"
+	args.properties["spark.authenticate.enableSaslEncryption"] = "true"
+	args.properties["spark.authenticate.secret"] = "spark_shared_secret"
+	args.properties["spark.executorEnv._SPARK_AUTH_SECRET"] = "spark_shared_secret"
+	taskTypes := []string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
+		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
+		appendToProperty(secretRefProp, secretPath, args)
+		appendToProperty(secretFileProp, secretPath, args)
 	}
 }
 
@@ -704,6 +722,11 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		}
 
 		setupTLSArgs(args)
+	}
+
+	// RPC and SASL
+	if args.saslSecret != "" {
+		setupSaslProperties(args.saslSecret, args)
 	}
 
 	jsonMap := map[string]interface{}{

@@ -113,6 +113,28 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
     ```
 1.  Setup the Spammer, this small job will just push messages to the topic:
     ```bash
-    
+    dcos spark run --submit-args="\
+    --kerberos-principal=client@LOCAL \
+    --keytab-secret-path=/__dcos_base64___keytab \
+    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-password=changeit \
+    --private-key-password=changeit \
+    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-password=changeit \
+    --conf spark.mesos.containerizer=mesos \
+    --conf spark.authenticate=true \
+    --conf spark.authenticate.enableSaslEncryption=true \
+    --conf spark.authenticate.secret=sparkauthsecret.secret \
+    --conf spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret \
+    --conf spark.mesos.driver.secret.names=/spark-auth-secret \
+    --conf spark.mesos.driver.secret.filenames=sparkauthsecret.secret \
+    --conf spark.mesos.executor.secret.names=spark-auth-secret \
+    --conf spark.mesos.executor.secret.filenames=sparkauthsecret.secret \
+    --conf spark.cores.max=2 \
+    --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
+    --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
+    --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
+    --class Spammer http://SPAM_HAM.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt top1 <broker>:<port> true"
     ```
+    
 
