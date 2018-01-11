@@ -1,8 +1,10 @@
 ---
-post_title: Kerberos
-nav_title: Kerberos
-menu_order: 120
-enterprise: 'no'
+layout: layout.pug
+excerpt:
+title: Kerberos
+navigationTitle: Kerberos
+menuWeight: 120
+
 ---
 
 

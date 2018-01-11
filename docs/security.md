@@ -1,7 +1,10 @@
 ---
-post_title: Security
-menu_order: 40
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Security
+menuWeight: 40
+
 ---
 
 This topic describes how to configure DC/OS service accounts for Spark.

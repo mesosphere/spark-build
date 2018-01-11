@@ -1,8 +1,10 @@
 ---
-post_title: Integration with HDFS
-nav_title: HDFS
-menu_order: 20
-enterprise: 'no'
+layout: layout.pug
+excerpt:
+title: Integration with HDFS
+navigationTitle: HDFS
+menuWeight: 20
+
 ---
 
 
