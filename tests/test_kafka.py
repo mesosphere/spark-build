@@ -95,7 +95,7 @@ def configure_security_spark():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(kerberized_kafka, configure_security_spark):
+def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
     try:
         # need to do this here also in case this test is run first
         # and the jar hasn't been updated
@@ -107,6 +107,7 @@ def setup_spark(kerberized_kafka, configure_security_spark):
 
 
 @pytest.mark.sanity
+@pytest.mark.smoke
 @pytest.mark.skipif(not utils.kafka_enabled(), reason='KAFKA_ENABLED is false')
 def test_spark_and_kafka():
     kerberos_flag = "true" if KERBERIZED_KAFKA else "false"  # flag for using kerberized kafka given to app

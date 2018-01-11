@@ -30,7 +30,7 @@
                 "user": {
                     "description": "OS user",
                     "type": "string",
-                    "default": "root"
+                    "default": "nobody"
                 },
                 "docker-image": {
                     "description": "Docker image to run in.  See https://hub.docker.com/r/mesosphere/spark/tags/ for options.",
@@ -63,6 +63,33 @@
                 }
             },
             "required": ["hdfs-config-url"]
+        },
+        "security": {
+            "description": "Security configuration properties",
+            "type": "object",
+            "properties": {
+                "kerberos": {
+                    "description": "Kerberos configuration.",
+                    "type": "object",
+                    "properties": {
+                        "krb5conf": {
+                            "description": "Base64 encoded krb5.conf file to access your KDC.",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "principal": {
+                            "description": "Kerberos principal.",
+                            "default": "",
+                            "type": "string"
+                        },
+                        "keytab": {
+                            "description": "Keytab path in the secret store.",
+                            "default": "",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "required": ["service"]
