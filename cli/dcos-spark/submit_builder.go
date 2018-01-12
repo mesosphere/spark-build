@@ -530,13 +530,19 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	for _, boolVal := range args.boolVals {
 		if boolVal.b {
-			args.properties[boolVal.propName] = "true"
+			_, contains := args.properties[boolVal.propName]
+			if !contains {
+				args.properties[boolVal.propName] = "true"
+			}
 		}
 	}
 
 	for _, stringVal := range args.stringVals {
 		if len(stringVal.s) != 0 {
-			args.properties[stringVal.propName] = stringVal.s
+			_, contains := args.properties[stringVal.propName]
+			if !contains {
+				args.properties[stringVal.propName] = stringVal.s
+			}
 		}
 	}
 
