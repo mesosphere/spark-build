@@ -141,9 +141,8 @@ object Spammer {
     val ssc = new StreamingContext(spark.sparkContext, Seconds(2))
 
     val allMessages = spark.sparkContext.textFile(labeledMessages)
-
-    val spam = allMessages.filter(_.startsWith("spam")).collect
-    val ham = allMessages.filter(_.startsWith("ham")).collect
+    val spamCounts = cullWordCounts(allMessages, "spam")
+    val hamCounts = cullWordCounts(allMessages, "ham")
 
     // Kafka properties are slightly different for the producer than for the consumer (above)
     val props = new util.HashMap[String, Object]()
@@ -160,7 +159,7 @@ object Spammer {
     }
 
     // The kafka producer requires a Java HashMap
-    val stream = ssc.receiverStream(new SpammySource(spam, ham, 10, 1))
+    val stream = ssc.receiverStream(new MessageSource(spamCounts.collect, hamCounts.collect, 15, 1))
 
     stream.foreachRDD { rdd =>
       println(s"Number of events: ${rdd.count()}")
@@ -178,8 +177,20 @@ object Spammer {
     ssc.awaitTermination()
   }
 
-  class SpammySource(spam: Array[String], ham: Array[String], sentenceLength: Int, ratePerSec: Int)
-    extends Receiver[String](StorageLevel.MEMORY_AND_DISK_2) {
+  def cullWordCounts(lines: RDD[String], label: String): RDD[(String, Int)] = {
+    lines.filter(_.startsWith(label))
+      .map(_.split("\t"))
+      .map(l => l.tail.mkString(" "))
+      .flatMap(_.split(" "))
+      .map(w => (w, 1))
+      .reduceByKey(_ + _)
+  }
+
+  class MessageSource(
+      spamCounts: Array[(String, Int)],
+      hamCounts: Array[(String, Int)],
+      sentenceLength: Int,
+      ratePerSec: Int) extends Receiver[String](StorageLevel.MEMORY_AND_DISK_2) {
 
     def onStart(): Unit = {
       // Start the thread that receives data over a connection
@@ -195,15 +206,16 @@ object Spammer {
       // is designed to stop by itself isStopped() returns false
     }
 
-    /** Create a socket connection and receive data until receiver is stopped */
     private def receive(): Unit = {
-      while(!isStopped()) {
+      while (!isStopped()) {
         val p = Random.nextDouble()
-        if (p > 0.5) {
-          store(Random.shuffle(spam.toList).take(sentenceLength).mkString(" "))
+        val (label, sampled): (String, Seq[String]) = if (p > 0.5) {
+          ("spam", SpamHamUtils.weightedSample(spamCounts, sentenceLength))
         } else {
-          store(Random.shuffle(ham.toList).take(sentenceLength).mkString(" "))
+          ("ham", SpamHamUtils.weightedSample(hamCounts, sentenceLength))
         }
+        val message: String = s"$label\t${sampled.mkString(" ")}"
+        store(message)
         Thread.sleep((1000.toDouble / ratePerSec).toLong)
       }
     }
@@ -339,6 +351,29 @@ object SpamHamUtils {
     val accuracy = evaluator.evaluate(predictions)
     println("Test set accuracy = " + accuracy)
     accuracy
+  }
+
+  /**
+    * Randomly Sample from an array weighted by how frequently the element occurs
+    */
+  def weightedSample(wordCounts: Array[(String, Int)], sampleCount: Int): Seq[String] = {
+    def selectInternal(acc: Int): String = {
+      val shuffled = Random.shuffle[(String, Int), Seq](wordCounts)
+      var _r = acc
+      for ((w, c) <- shuffled) {
+        _r -= c
+        if (_r <= 0) {
+          return w
+        }
+      }
+      ""
+    }
+
+    val totalWeight = wordCounts.foldLeft(0)((ac, t) => ac + t._2)
+    (0 until sampleCount).map { i =>
+      val r = Random.nextInt(totalWeight)
+      selectInternal(r)
+    }
   }
 }
 

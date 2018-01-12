@@ -147,4 +147,4 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
     --class SpamHamStreamingClassifier http://DCOS_EXAMPLES.jar top1 <broker>:<port> hdfs:///nb_model true"
 
     ```   
-    You can look at the `stdout` for this job and see a running average classification accuracy for your spam detector. Before you ask, we appreciate that it is "against the rules" to do your training and the exact same data. So for extra credit, make a new `Spammer` that scrambles the words in each category! Remember, the Naive Bayes classifier doesnt take contextual information into account so you should see something closer to reality. Or make an API for the classifier, hook it up to the Twitter API!
+    You can look at the `stdout` for this job and see a running average classification accuracy for your spam detector. 
