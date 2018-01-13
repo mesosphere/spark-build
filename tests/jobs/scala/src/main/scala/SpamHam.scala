@@ -144,7 +144,7 @@ object Spammer {
     val spamCounts = cullWordCounts(allMessages, "spam")
     val hamCounts = cullWordCounts(allMessages, "ham")
 
-    // Kafka properties are slightly different for the producer than for the consumer (above)
+    // The kafka producer requires a Java HashMap
     val props = new util.HashMap[String, Object]()
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers)
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
@@ -158,7 +158,6 @@ object Spammer {
       props.put("sasl.mechanism", "GSSAPI")
     }
 
-    // The kafka producer requires a Java HashMap
     val stream = ssc.receiverStream(new MessageSource(spamCounts.collect, hamCounts.collect, 15, 1))
 
     stream.foreachRDD { rdd =>
