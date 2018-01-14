@@ -12,13 +12,13 @@ Follow these instructions to [authenticate in strict mode](https://docs.mesosphe
 
 # Using Mesos Secrets
 
-DC/OS Enterprise allows users to add secret files to the DC/OS secret store then include use them for authentication and authorization with various services in Spark. For example, we use this functionality to pass the Kerberos Keytab. Details about how to use Secrets can be found at [official documentation](https://docs.mesosphere.com/latest/security/ent/secrets/). Once the secret has been added, you can pass them to Spark with the `spark.mesos.<task-name>.secret.names` and `spark.mesos.<task-name>.secret.<filenames|envkeys>` confguration parameters where `<task-name>` is either `driver` or `executor`. Specifying `filenames` or `envkeys` will materialize the secret as either a file-based secret or an environment variable. These configuration parameters take comma-separated lists that are "zipped" together to make the final secret file or environment variable. We recommend using file-based secrets whenever possible as they are more secure than environment variables.
+DC/OS Enterprise allows users to add privileged information in the form of a file to the DC/OS secret store. These files can be referenced in Spark jobs and used for authentication and authorization with various services external services (e.g. HDFS). For example, we use this functionality to pass the Kerberos Keytab. Details about how to use Secrets can be found at [official documentation](https://docs.mesosphere.com/latest/security/ent/secrets/). Once the secret has been added, you can pass them to Spark with the `spark.mesos.<task-name>.secret.names` and `spark.mesos.<task-name>.secret.<filenames|envkeys>` confguration parameters where `<task-name>` is either `driver` or `executor`. Specifying `filenames` or `envkeys` will materialize the secret as either a file-based secret or an environment variable. These configuration parameters take comma-separated lists that are "zipped" together to make the final secret file or environment variable. We recommend using file-based secrets whenever possible as they are more secure than environment variables.
  
 For example to use a secret named `my-secret-file` as a file in the driver _and_ the executors add these configuration parameters:
 ```
---conf spark.mesos.driver.secret.names=/my-secret-file
+--conf spark.mesos.driver.secret.names=my-secret-file
 --conf spark.mesos.driver.secret.filenames=target-secret-file
---conf spark.mesos.executor.secret.names=/my-secret-file
+--conf spark.mesos.executor.secret.names=my-secret-file
 --conf spark.mesos.executor.secret.filenames=target-secret-file
 ```
 this will put the contents of the secret `my-secret-file` in a secure RAM-FS mounted secret file named `target-secret-file` in the driver and executors sandboxes. If you want to use a secret as an environment variable (e.g. AWS credentials) you change the configurations to be the following: 
@@ -26,7 +26,7 @@ this will put the contents of the secret `my-secret-file` in a secure RAM-FS mou
 --conf spark.mesos.driver.secret.names=/my-aws-secret,/my-aws-key
 --conf spark.mesos.driver.secret.envkeys=AWS_SECRET_ACCESS_KEY,AWS_ACCESS_KEY_ID
 ```
-This assumes that your secret access key is stored in a secret names `my-aws-secret` and your secret key in `my-aws-key`.
+This assumes that your secret access key is stored in a secret named `my-aws-secret` and your secret key in `my-aws-key`.
 
 ### Limitations
 When using a combination of environment and file-based secrets there needs to be an equal number of sinks and secret sources (i.e. files and environment variables). For example
@@ -35,7 +35,7 @@ When using a combination of environment and file-based secrets there needs to be
 --conf spark.mesos.driver.secret.filenames=target-secret-file,placeholder-file
 --conf spark.mesos.driver.secret.envkeys=PLACEHOLDER,SECRET_ENVVAR
 ```
-will place the content of `my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file as well as the content of `my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary secrets (tagged with `__dcos_base64__`, for example) the environment variable will still be empty because environment variables cannot be assined to binary values.
+will place the content of `my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file as well as the content of `my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary secrets (tagged with `__dcos_base64__`, for example) the environment variable will still be empty because environment variables cannot be assigned to binary values.
 
 # Spark SSL
 

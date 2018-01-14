@@ -3,7 +3,7 @@
 ## Sample configuration for Spark with Kerberos HDFS
 1.  Configuring Spark to use a Kerberos-secured HDFS services requires two additional install-time parameters: the location of the HDFS configuration files `hdfs-site.xml` and `core-site.xml` and the `krb5.conf` file. 
     *   The HDFS configuration files can be aquired from the HDFS scheduler API `http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints` 
-    *   Similar to the `keytab` file above we will base64 encode the `krb5.conf` file and add it to the installation config.json. An example `krb5.conf` is:
+    *   We will base64 encode the `krb5.conf` file and add it to the installation config.json. An example `krb5.conf` is:
         ```
         [libdefaults]
         default_realm = LOCAL
@@ -14,7 +14,7 @@
           }
           
         ```
-    *   base64 encode your `krb5.conf` as above.
+    *   base64 encode your `krb5.conf` (`base64 -w 0 {krb5.conf}`).
     
 1.  Install Spark (`dcos package install spark --yes --options=kerberos-hdfs-options.json`) with at least the following options:
     ```json
@@ -24,7 +24,7 @@
       },
       "security": {
           "kerberos": {
-              "krb5conf": "<base64_encoded_krb5.conf>"
+              "krb5conf": "<base64_encoded_krb5.conf>"  // just cut and paste it here, can be done form the UI also
         }
       }
     }
@@ -60,12 +60,13 @@ Spark has two communication channels used amongst its components, a TLS-secured 
 1.  Now base64 encode these two artifacts and upload them to the secret store.
     ```bash
     # encoding
-    base64 server.jks > server.jks.base64
-    base64 trust.jks > trust.jks.base64
+    base64 -w 0 server.jks > server.jks.base64
+    base64 -w 0 trust.jks > trust.jks.base64
     # uploading
     dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
     dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
     ```
+    *Note* that your version of `base64` may need a different flag (other than `-w 0`) to disable line wrapping, we use the coreutils version.
     
 1.  To enable TLS in a Spark job add the following configuration:
     ```bash

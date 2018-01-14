@@ -83,12 +83,12 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
         principal="client@LOCAL";
     }; 
     ```
-    This is also available in the [resources]() of the test repo. Add these contents to a local file and copy it to S3 and make it publicly accessible. For the reminder of the tutorial we'll reference this location as `http://JAAS_ARTIFACT.conf` 
+    This is also available in the [resources](https://github.com/mesosphere/spark-build/tree/master/tests/resources) of the test repo. Add these contents to a local file and copy it to S3 and make it publicly accessible. For the remainder of the tutorial we'll reference this location as `http://JAAS_ARTIFACT.conf` 
 
 ## Run the example
-_All of the code for this example is in SpamHam.scala in the [resources]() folder of this repo_
-1.  We need to upload the training data to S3, we use the file `SMSSpamCollection.txt` that can be found in the [resources]() of the test repo. This artifact needs to be publicly available to your cluster, we will refer to this artifact as `http://SMS_DATA.txt`.
-1.  Build the example jar by following the instructions in the [README](). Upload that to S3 so that it can be publicly accessible, we will refer to this artifact as `http://DCOS_EXAMPLES.jar` 
+_All of the code for this example is in SpamHam.scala in the [resources](https://github.com/mesosphere/spark-build/tree/master/tests/resources) folder of this repo_
+1.  We need to upload the training data to S3, we use the file `SMSSpamCollection.txt` that can be found in the [resources](https://github.com/mesosphere/spark-build/tree/master/tests/resources) of the test repo. This artifact needs to be publicly available to your cluster, we will refer to this artifact as `http://SMS_DATA.txt`.
+1.  Build the example jar by following the instructions in the [README](https://github.com/mesosphere/spark-build/tree/ar-hdfs-kafka-pipeline/tests/jobs). Upload that to S3 so that it can be publicly accessible, we will refer to this artifact as `http://DCOS_EXAMPLES.jar` 
 1.  Run the model training step, notice here we only use HDFS:
     ```bash
     dcos spark run --submit-args="\

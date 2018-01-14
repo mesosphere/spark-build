@@ -12,7 +12,7 @@ Spark can use [Kerberos](https://en.wikipedia.org/wiki/Kerberos_(protocol)) to a
 ## Setting up secure HDFS
 The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store directly. To use binary secrets in DC/OS 1.10 and 1.11 the binary file must be base64 encoded and the resultant string will be uploaded with the prefix: `__dcos_base64__<secretname>`, this tells DC/OS to decode the file before placing it in the Sandbox.
 
-1.  Establishing correct principals for HDFS, assuming you're using the HDFS from the DC/OS Universe. **Note** Requires DC/OS EE for file-based secrets. Add the following principals to the KDC (Obviously it is recommended to use a script or other automation to establish these principals):
+1.  Establishing correct principals for HDFS (assumes you're using the HDFS from the DC/OS Universe and installed with service name `hdfs`). **Note** Requires DC/OS EE for file-based secrets. Add the following principals to the KDC (Obviously it is recommended to use a script or other automation to establish these principals):
     ```bash
     hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL
     HTTP/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL
@@ -41,7 +41,7 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
 1.  Download the `keytab` file to a local directory.
 1.  Base64 encode the file with `base64 -w 0 {source} > {destination}` (we recommend using `base64` from GNU coreutils, if the version on your machine is different the `-w` flag may need to be replaced with the appropriate flag to disable wrapping.
 1.  Install the DC/OS Enterprise CLI with the command line: `dcos package install --yes dcos-enterprise-cli`   
-1.  Upload the base64 encoded file to the secret store: `dcos security secrets create __dcos_base64__keytab --value-file {destination}`.
+1.  Upload the base64 encoded file to the secret store: `dcos security secrets create /__dcos_base64__keytab --value-file {destination}`.
     *   Notice we have uploaded the secret to the root (will be `/__dcos_base64__keytab`)
 1.  You're now ready to install HDFS. This can be done using the UI (DC/OS Catalog) or through the CLI as demonstrated here. First make an options.json containing at least:
     ```json

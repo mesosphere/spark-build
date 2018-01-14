@@ -9,6 +9,6 @@ To build the Scala-based application(s):
 cd scala
 sbt assembly
 ```
-This will produce a `SNAPSHOT` jar within the `target/scala-2.XX` directory that can be run locally or uploaded to a cluster-accessible distributed file system to run on a DC/OS cluster. 
+This will produce a `SNAPSHOT` jar within the `target/scala-2.XX` directory that can be run locally or uploaded to a cluster-accessible file system to run on a DC/OS cluster. 
 
 The Python and R example jobs are scripts and do not need to be built. 
