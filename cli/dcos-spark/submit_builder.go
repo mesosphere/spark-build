@@ -341,7 +341,7 @@ func setupSaslProperties(secretPath string, args *sparkArgs) {
 		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
 		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
 		appendToProperty(secretRefProp, secretPath, args)
-		appendToProperty(secretFileProp, secretPath, args)
+		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
 	}
 }
 

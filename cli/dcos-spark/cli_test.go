@@ -16,6 +16,7 @@ const mainClass = "org.apache.spark.examples.SparkPi"
 const principal = "client@local"
 const keytab_prefixed = "__dcos_base64__keytab"
 const keytab = "keytab"
+const sparkAuthSecret = "spark-auth-secret"
 
 // test spaces
 func TestCleanUpSubmitArgs(t *testing.T) {
@@ -91,7 +92,6 @@ func TestPayloadSimple(t *testing.T) {
 		t.Errorf("mainClass should be %s got %s", mainClass, m["mainClass"])
 	}
 
-	//v := reflect.ValueOf(m["sparkProperties"])
 	stringProps := map[string]string{
 		"spark.driver.cores": driverCores,
 		"spark.cores.max": maxCores,
@@ -176,4 +176,50 @@ func checkSecret(secretPath, secretFile string, t *testing.T) {
 func TestPayloadWithSecret(t *testing.T) {
 	checkSecret(keytab, keytab, t)
 	checkSecret(keytab_prefixed, keytab, t)
+}
+
+func TestSaslSecret(t *testing.T) {
+	inputArgs := fmt.Sprintf(
+		"--executor-auth-secret /%s " +
+			"--class %s "+
+			"%s --input1 value1 --input2 value2", sparkAuthSecret, mainClass, appJar)
+
+	cmd := SparkCommand{
+		"subId",
+		inputArgs,
+		image,
+		space,
+		make(map[string]string),
+		"",
+		false,
+		false,
+		0,
+		"",
+	}
+	payload, err := buildSubmitJson(&cmd)
+
+	m := make(map[string]interface{})
+
+	json.Unmarshal([]byte(payload), &m)
+
+	if err != nil {
+		t.Errorf("%s", err.Error())
+	}
+
+	stringProps := map[string]string{
+		"spark.authenticate": "true",
+		"spark.mesos.containerizer": "mesos",
+		"spark.authenticate.enableSaslEncryption": "true",
+		"spark.authenticate.secret": "spark_shared_secret",
+		"spark.executorEnv._SPARK_AUTH_SECRET": "spark_shared_secret",
+		"spark.mesos.driver.secret.filenames": sparkAuthSecret,
+		"spark.mesos.driver.secret.names": fmt.Sprintf("/%s", sparkAuthSecret),
+	}
+
+	v, ok := m["sparkProperties"].(map[string]interface{})
+	if !ok {
+		t.Errorf("%s", ok)
+	}
+
+	checkProps(v, stringProps, t)
 }
