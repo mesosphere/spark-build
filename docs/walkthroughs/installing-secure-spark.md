@@ -1,12 +1,12 @@
 # Installing and Running Spark with TLS and SASL
 
 ## Sample configuration for Spark with Kerberos HDFS
-1.  Configuring Spark to use a Kerberos-secured HDFS services requires two additional install-time parameters: the location of the HDFS configuration files `hdfs-site.xml` and `core-site.xml` and the `krb5.conf` file. 
-    *   The HDFS configuration files can be aquired from the HDFS scheduler API `http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints` 
-    *   We will base64 encode the `krb5.conf` file and add it to the installation config.json. An example `krb5.conf` is:
-        ```
-        [libdefaults]
-        default_realm = LOCAL
+1.  Configuring Spark to use a Kerberos-secured HDFS services requires two additional install-time parameters: the
+    location of the HDFS configuration files (`hdfs-site.xml`, `core-site.xml`) and the `krb5.conf` file. 
+    *   The HDFS configuration files can be aquired from the HDFS scheduler API
+        `http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints` 
+    *   We will base64 encode the `krb5.conf` file and add it to the installation config.json. An example `krb5.conf`
+        is: ``` [libdefaults] default_realm = LOCAL
         
         [realms]
           LOCAL = {
@@ -16,7 +16,8 @@
         ```
     *   base64 encode your `krb5.conf` (`base64 -w 0 {krb5.conf}`).
     
-1.  Install Spark (`dcos package install spark --yes --options=kerberos-hdfs-options.json`) with at least the following options:
+1.  Install Spark (`dcos package install spark --yes --options=kerberos-hdfs-options.json`) with at least the following
+    options:
     ```json
     {
       "hdfs": {
@@ -30,11 +31,18 @@
     }
     ```
 
-## Spark Communication Security and Authentication *Note* Requires DC/OS EE for file-based secrets.
-Spark has two communication channels used amongst its components, a TLS-secured HTTP server so Executors (workers) can retrieve files from the Driver (the container running the Spark Context) and a SASL-secured RPC channel for sending data and communication between the Driver and Executors. This section describes how to set up the TLS artifacts and how to reference them when launching a Spark job from the command-line.
+## Spark Communication Security and Authentication *Note* Requires DC/OS EE for file-based secrets.  
+
+Spark has two communication channels used amongst its components:
+    *   a TLS-secured HTTP server so Executors (workers) can retrieve files from the Driver (the container running the
+        Spark Context) and, 
+    *   a SASL-secured RPC channel for sending data and communication between the Driver and Executors. This section
+        describes how to set up the TLS artifacts and how to reference them when launching a Spark job from the
+        command-line.
 
 ### Setup Spark TLS Artifacts
-1.  Setup the artifacts locally using the Java `keyool` utility. Go on your local workstation run the following to generate the artifacts:
+1.  Setup the artifacts locally using the Java `keytool` utility. On your local workstation run the following to
+    generate the artifacts:
     ```bash
     # server key
     keytool -keystore server.jks -alias localhost -validity 365 -genkey
@@ -55,7 +63,9 @@ Spark has two communication channels used amongst its components, a TLS-secured 
     keytool -keystore server.jks -alias CARoot -import -file ca.crt
     keytool -keystore server.jks -alias localhost -import -file server.crt
     ```
-    When prompted use the password `changeit` the rest of the settings can be left to their defaults. This will generate a few files but the ones you need are `server.jks` and `trust.jks`, confirm these are in you local working directory.
+    When prompted use the password `changeit` the rest of the settings can be left to their defaults. This will generate
+    a few files but the ones you need are `server.jks` and `trust.jks`, confirm these are in you local working
+    directory.
     
 1.  Now base64 encode these two artifacts and upload them to the secret store.
     ```bash
@@ -66,7 +76,8 @@ Spark has two communication channels used amongst its components, a TLS-secured 
     dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
     dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
     ```
-    *Note* that your version of `base64` may need a different flag (other than `-w 0`) to disable line wrapping, we use the coreutils version.
+    *Note* that your version of `base64` may need a different flag (other than `-w 0`) to disable line wrapping, we use
+    the coreutils version.
     
 1.  To enable TLS in a Spark job add the following configuration:
     ```bash
@@ -85,7 +96,7 @@ Spark has two communication channels used amongst its components, a TLS-secured 
     ```
     `spark-auth-secret` you may choose a different name and/or path for the secret, but we provide a concrete example here.
     
-1.  To enable add the following configurations:
+1.  To enable executor authentication add the following configurations:
     ```bash
     dcos spark run --submit-args="\
     ...

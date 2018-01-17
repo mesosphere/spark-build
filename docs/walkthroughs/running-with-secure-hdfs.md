@@ -1,18 +1,25 @@
 # Fully secure HDFS and Spark with Kerberos, SASL, and TLS. 
-This walkthrough will show how to run a version of the [TeraSort Benchmark](https://github.com/ehiggs/spark-terasort) with Spark in a fully secure deployment and Kerberos-secured HDFS as the storage backend. Specifically the following:
+This walkthrough will show how to run a version of the [TeraSort Benchmark](https://github.com/ehiggs/spark-terasort)
+with Spark in a fully secure deployment and Kerberos-secured HDFS as the storage backend. Specifically, we will
+demonstrate the following the following:
 1.  Use a Kerberos-secured HDFS with Spark.
 1.  Use TLS to secure the file-serving channels of your Spark jobs.
 1.  Use SASL for authentication of Spark Executors and encryption of the BlockTransferService
 
-Spark can use [Kerberos](https://en.wikipedia.org/wiki/Kerberos_(protocol)) to authenticate and provide SASL with HDFS running on DC/OS. To start this walkthrough we assume that you have the following:
+Spark can use [Kerberos](https://en.wikipedia.org/wiki/Kerberos_(protocol)) to authenticate and provide SASL with HDFS
+running on DC/OS. To start this walkthrough we assume that you have the following:
 1.  DC/OS Cluster with 5 agents with >= 4 cores/agent.
 1.  A running KDC that you can add principals to. 
 1.  A way to download/acquire the `keytab` from the KDC to your local workstation.
 
 ## Setting up secure HDFS
-The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store directly. To use binary secrets in DC/OS 1.10 and 1.11 the binary file must be base64 encoded and the resultant string will be uploaded with the prefix: `__dcos_base64__<secretname>`, this tells DC/OS to decode the file before placing it in the Sandbox.
+The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store directly. To use binary secrets in
+DC/OS 1.10 and 1.11 the binary file must be base64 encoded and the resultant string will be uploaded with the prefix:
+`__dcos_base64__<secretname>`, this tells DC/OS to decode the file before placing it in the Sandbox.
 
-1.  Establishing correct principals for HDFS (assumes you're using the HDFS from the DC/OS Universe and installed with service name `hdfs`). **Note** Requires DC/OS EE for file-based secrets. Add the following principals to the KDC (Obviously it is recommended to use a script or other automation to establish these principals):
+1.  Establish correct principals for HDFS (assumes you're using the HDFS from the DC/OS Universe and installed with
+    service name `hdfs`). **Note** Requires DC/OS EE for file-based secrets. Add the following principals to the KDC
+    (It is recommended to use a script or other automation to establish these principals):
     ```bash
     hdfs/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL
     HTTP/name-0-node.hdfs.autoip.dcos.thisdcos.directory@LOCAL
@@ -39,11 +46,15 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
     client@LOCAL
     ```
 1.  Download the `keytab` file to a local directory.
-1.  Base64 encode the file with `base64 -w 0 {source} > {destination}` (we recommend using `base64` from GNU coreutils, if the version on your machine is different the `-w` flag may need to be replaced with the appropriate flag to disable wrapping.
+1.  Base64 encode the file with `base64 -w 0 {source} > {destination}` (we recommend using `base64` from GNU coreutils.
+    If the version on your machine is different the `-w` flag may need to be replaced with the appropriate flag to
+    disable wrapping.
 1.  Install the DC/OS Enterprise CLI with the command line: `dcos package install --yes dcos-enterprise-cli`   
-1.  Upload the base64 encoded file to the secret store: `dcos security secrets create /__dcos_base64__keytab --value-file {destination}`.
+1.  Upload the base64 encoded file to the secret store: `dcos security secrets create /__dcos_base64__keytab
+    --value-file {destination}`.
     *   Notice we have uploaded the secret to the root (will be `/__dcos_base64__keytab`)
-1.  You're now ready to install HDFS. This can be done using the UI (DC/OS Catalog) or through the CLI as demonstrated here. First make an options.json containing at least:
+1.  You're now ready to install HDFS. This can be done using the UI (DC/OS Catalog) or through the CLI as demonstrated
+    here. First make an `options.json` containing at least:
     ```json
     {
       "service": {
@@ -68,7 +79,7 @@ The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store
 1.  Install Spark including HDFS settings, using the instructions in [installing-secure-spark.md]()
 
 ## Running TeraSort
-The TeraSort suite has 3 steps, generating the data, sorting the data, and validating the results. We provide a pre-built Spark job (https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar) for testing purposes.
+The TeraSort suite has 3 steps: generating the data, sorting the data, and validating the results. We provide a pre-built Spark job (https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar) for testing purposes.
 
 1.  Run the `TeraGen` step:
     ```bash

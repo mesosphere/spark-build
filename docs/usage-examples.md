@@ -54,4 +54,4 @@ Visit the Spark cluster dispatcher at `http://<dcos-url>/service/spark/` to view
 
 
 
-*Note* There are additional walkthroughs available in the `docs/walkthroughs/` directory of Mesosphere's `spark-build` [repo](https://github.com/mesosphere/spark-build)
+*Note* There are additional walkthroughs available in the `docs/walkthroughs/` directory of Mesosphere's `spark-build` [repo](https://github.com/mesosphere/spark-build/docs/walkthroughs/)
