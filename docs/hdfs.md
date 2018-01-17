@@ -1,8 +1,10 @@
 ---
-post_title: Configure Spark for HDFS
-nav_title: HDFS
-menu_order: 20
-enterprise: 'no'
+layout: layout.pug
+excerpt:
+title: Integration with HDFS and S3
+navigationTitle: HDFS
+menuWeight: 20
+
 ---
 
 You can configure Spark for a specific HDFS cluster.

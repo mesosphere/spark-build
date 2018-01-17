@@ -1,8 +1,11 @@
 ---
-post_title: Limitations
-menu_order: 130
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Limitations
+menuWeight: 135
+featureMaturity:
+
 ---
 
 *   Mesosphere does not provide support for Spark app development, such as writing a Python app to process data from Kafka or writing Scala code to process data from HDFS.

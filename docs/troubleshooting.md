@@ -1,7 +1,10 @@
 ---
-post_title: Troubleshooting
-menu_order: 120
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Troubleshooting
+menuWeight: 125
+
 ---
 
 # Dispatcher
