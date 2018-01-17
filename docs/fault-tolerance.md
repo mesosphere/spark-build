@@ -1,8 +1,11 @@
 ---
-post_title: Fault Tolerance
-menu_order: 100
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Fault Tolerance
+menuWeight: 100
+featureMaturity:
+
 ---
 
 Failures such as host, network, JVM, or application failures can affect the behavior of three types of Spark components:

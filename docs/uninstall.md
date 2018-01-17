@@ -1,8 +1,11 @@
 ---
-post_title: Uninstall
-menu_order: 60
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Uninstall
+menuWeight: 60
+featureMaturity:
+
 ---
 
     dcos package uninstall --app-id=<app-id> spark

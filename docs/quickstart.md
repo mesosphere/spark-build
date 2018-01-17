@@ -1,8 +1,11 @@
 ---
-post_title: Spark Quickstart
-menu_order: 10
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Spark Quickstart
+menuWeight: 10
+featureMaturity:
+
 ---
 
 This tutorial will get you up and running in minutes with Spark. You will install the DC/OS Apache Spark service.
