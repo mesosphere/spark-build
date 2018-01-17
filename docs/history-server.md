@@ -1,7 +1,10 @@
 ---
-post_title: History Server
-menu_order: 30
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: History Server
+menuWeight: 30
+
 ---
 
 DC/OS Apache Spark includes The [Spark History Server][3]. Because the history server requires HDFS, you must explicitly enable it.

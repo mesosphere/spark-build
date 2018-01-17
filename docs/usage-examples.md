@@ -1,8 +1,11 @@
 ---
-post_title: Usage Example 
-menu_order: 10
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Usage Example 
+menuWeight: 10
+featureMaturity:
+
 ---
 
 1.  Perform a default installation by following the instructions in the Install and Customize section of this topic.
