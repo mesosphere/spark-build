@@ -1,4 +1,3 @@
-import scala.collection.mutable
 import scala.util.Random
 import java.util
 
@@ -11,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession, _}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 import org.apache.spark.streaming.receiver.Receiver
-import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.SparkContext
@@ -253,7 +252,7 @@ object SpamHamStreamingClassifier {
     val Array(topic, brokers, modelUri, kerberized) = args
     val model = PipelineModel.load(modelUri)
 
-    val props = mutable.Map[String, Object](
+    val basicProps = Map[String, Object](
       "bootstrap.servers" -> brokers,
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
@@ -262,14 +261,16 @@ object SpamHamStreamingClassifier {
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
 
-    if (kerberized == "true") {
-      val kerbProps = Map[String, Object](
-        "sasl.kerberos.service.name" -> "kafka",
-        "security.protocol" -> "SASL_PLAINTEXT",
-        "sasl.mechanism" -> "GSSAPI"
-      )
+    val kerbProps = Map[String, Object](
+      "sasl.kerberos.service.name" -> "kafka",
+      "security.protocol" -> "SASL_PLAINTEXT",
+      "sasl.mechanism" -> "GSSAPI"
+    )
 
-      props ++= kerbProps
+    val props = if (kerberized == "true") {
+      basicProps ++ kerbProps
+    } else {
+      basicProps
     }
 
     val messages = KafkaUtils.createDirectStream[String, String](
@@ -278,8 +279,7 @@ object SpamHamStreamingClassifier {
       ConsumerStrategies.Subscribe[String, String](Array(topic), props))
 
     val lines = messages.map(_.value)
-    lines.foreachRDD {
-      (rdd: RDD[String], _: Time) =>
+    lines.foreachRDD { rdd: RDD[String] =>
         val raw = spark.createDataFrame(SpamHamUtils.lineToRow(rdd), SpamHamUtils.SMSSchema)
         val predictions = model.transform(raw)
         val correct = CorrectAccumulator.getInstance(rdd.sparkContext)
