@@ -40,32 +40,34 @@ func newSparkVal(flagName, propName, desc string) *sparkVal {
 }
 
 type sparkArgs struct {
-	mainClass 			string
-	kerberosPrincipal 	string
-	keytabSecretPath	string
-	tgtSecretPath		string
-	tgtSecretValue		string
-	keystoreSecretPath	string
-	keystorePassword	string
-	privateKeyPassword	string
-	truststoreSecretPath	string
-	truststorePassword	string
-	propertiesFile    	string
-	properties        	map[string]string
+	mainClass            string
+	kerberosPrincipal    string
+	keytabSecretPath     string
+	tgtSecretPath        string
+	tgtSecretValue       string
+	keystoreSecretPath   string
+	keystorePassword     string
+	privateKeyPassword   string
+	truststoreSecretPath string
+	truststorePassword   string
+	saslSecret           string
+	propertiesFile       string
+	properties           map[string]string
 
-	boolVals   			[]*sparkVal
-	stringVals 			[]*sparkVal
+	boolVals   []*sparkVal
+	stringVals []*sparkVal
 
-	app		  			*url.URL
-	appArgs 			[]string
+	app     *url.URL
+	appArgs []string
 
-	isScala				bool
-	isPython			bool
-	isR					bool
+	isScala  bool
+	isPython bool
+	isR      bool
 }
 
 func NewSparkArgs() *sparkArgs {
 	return &sparkArgs{
+		"",
 		"",
 		"",
 		"",
@@ -154,23 +156,24 @@ Args:
 		PlaceHolder("user@REALM").Default("").StringVar(&args.kerberosPrincipal)
 	submit.Flag("keytab-secret-path", "Path to Keytab in secret store to be used in the Spark drivers").
 		PlaceHolder("/mykeytab").Default("").StringVar(&args.keytabSecretPath)
-	submit.Flag("tgt-secret-path", "Path to ticket granting ticket (TGT) in secret store to be used " +
+	submit.Flag("tgt-secret-path", "Path to ticket granting ticket (TGT) in secret store to be used "+
 		"in the Spark drivers").PlaceHolder("/mytgt").Default("").StringVar(&args.tgtSecretPath)
 	submit.Flag("tgt-secret-value", "Value of TGT to be used in the drivers, must be base64 encoded").
 		Default("").StringVar(&args.tgtSecretValue)
-	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL. " +
-			"Make sure to set --keystore-password and --private-key-password as well.").
+	submit.Flag("keystore-secret-path", "Path to keystore in secret store for TLS/SSL. "+
+		"Make sure to set --keystore-password and --private-key-password as well.").
 		PlaceHolder("__dcos_base64__keystore").Default("").StringVar(&args.keystoreSecretPath)
 	submit.Flag("keystore-password", "A password to the keystore.").
 		Default("").StringVar(&args.keystorePassword)
 	submit.Flag("private-key-password", "A password to the private key in the keystore.").
 		Default("").StringVar(&args.privateKeyPassword)
-	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL. " +
-			"Make sure to set --truststore-password as well.").
+	submit.Flag("truststore-secret-path", "Path to truststore in secret store for TLS/SSL. "+
+		"Make sure to set --truststore-password as well.").
 		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
 	submit.Flag("truststore-password", "A password to the truststore.").
 		Default("").StringVar(&args.truststorePassword)
-
+	submit.Flag("executor-auth-secret", "Path to secret 'cookie' to use for Executor authentication "+
+		"block transfer encryption. Make one with dcos spark secret").Default("").StringVar(&args.saslSecret)
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
 	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
 
@@ -218,8 +221,8 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
-	val = newSparkVal("py-files", "spark.submit.pyFiles", "Add .py, .zip or .egg files to " +
-		"be distributed with your application. If you depend on multiple Python files we recommend packaging them " +
+	val = newSparkVal("py-files", "spark.submit.pyFiles", "Add .py, .zip or .egg files to "+
+		"be distributed with your application. If you depend on multiple Python files we recommend packaging them "+
 		"into a .zip or .egg.")
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
@@ -252,24 +255,27 @@ func prepareBase64Secret(secretPath string) string {
 }
 
 func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
-	secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, "driver")
-	secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver")
-	appendToProperty(secretRefProp, secretPath, args)
-	appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
+	taskTypes := []string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
+		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
+		appendToProperty(secretRefProp, secretPath, args)
+		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
+	}
 	args.properties[property] = prepareBase64Secret(secretPath)
 }
 
 func setupKerberosAuthArgs(args *sparkArgs) error {
 	args.properties["spark.mesos.containerizer"] = "mesos"
-	if args.keytabSecretPath != "" {  // using keytab secret
+	if args.keytabSecretPath != "" { // using keytab secret
 		addArgsForFileBasedSecret(args, args.keytabSecretPath, "spark.yarn.keytab")
 		return nil
 	}
-	if args.tgtSecretPath != "" {  // using tgt secret
+	if args.tgtSecretPath != "" { // using tgt secret
 		addArgsForFileBasedSecret(args, args.tgtSecretPath, "spark.mesos.driverEnv.KRB5CCNAME")
 		return nil
 	}
-	if args.tgtSecretValue != "" {  // using secret by value
+	if args.tgtSecretValue != "" { // using secret by value
 		appendToProperty("spark.mesos.driver.secret.values", args.tgtSecretValue, args)
 		args.properties["spark.mesos.driverEnv.KRB5CCNAME"] = "tgt"
 		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver"), "tgt.base64", args)
@@ -283,8 +289,8 @@ func setupTLSArgs(args *sparkArgs) {
 	args.properties["spark.ssl.enabled"] = "true"
 
 	// Keystore and truststore
-	const keyStoreFileName  = "server.jks"
-	const trustStoreFileName  = "trust.jks"
+	const keyStoreFileName = "server.jks"
+	const trustStoreFileName = "trust.jks"
 	args.properties["spark.ssl.keyStore"] = keyStoreFileName
 	if args.truststoreSecretPath != "" {
 		args.properties["spark.ssl.trustStore"] = trustStoreFileName
@@ -303,7 +309,7 @@ func setupTLSArgs(args *sparkArgs) {
 	joinedFilenames := strings.Join(filenames, ",")
 	joinedEnvkeys := strings.Join(envkeys, ",")
 
-	taskTypes :=[]string{"driver", "executor"}
+	taskTypes := []string{"driver", "executor"}
 	for _, taskType := range taskTypes {
 		appendToProperty(fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType), joinedPaths, args)
 		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType), joinedFilenames, args)
@@ -321,6 +327,21 @@ func setupTLSArgs(args *sparkArgs) {
 	// Protocol
 	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
 		args.properties["spark.ssl.protocol"] = "TLS"
+	}
+}
+
+func setupSaslProperties(secretPath string, args *sparkArgs) {
+	args.properties["spark.mesos.containerizer"] = "mesos"
+	args.properties["spark.authenticate"] = "true"
+	args.properties["spark.authenticate.enableSaslEncryption"] = "true"
+	args.properties["spark.authenticate.secret"] = "spark_shared_secret"
+	args.properties["spark.executorEnv._SPARK_AUTH_SECRET"] = "spark_shared_secret"
+	taskTypes := []string{"driver", "executor"}
+	for _, taskType := range taskTypes {
+		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
+		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
+		appendToProperty(secretRefProp, secretPath, args)
+		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
 	}
 }
 
@@ -367,7 +388,7 @@ func parseApplicationFile(args *sparkArgs) error {
 
 func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 
-  // collapse two or more spaces to one.
+	// collapse two or more spaces to one.
 	argsCompacted := collapseSpacesPattern.ReplaceAllString(argsStr, " ")
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
 	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsCompacted, " "))
@@ -390,12 +411,12 @@ ARGLOOP:
 				// if it's not of the format --flag=val which scopt allows
 				if strings.HasPrefix(arg, "-") {
 					appFlags = append(appFlags, arg)
-					if strings.Contains(arg, "=") || (i + 1) >= len(args) {
+					if strings.Contains(arg, "=") || (i+1) >= len(args) {
 						i += 1
 					} else {
 						// if there's a value with this flag, add it
-						if !strings.HasPrefix(args[i + 1], "-") {
-							appFlags = append(appFlags, args[i + 1])
+						if !strings.HasPrefix(args[i+1], "-") {
+							appFlags = append(appFlags, args[i+1])
 							i += 1
 						}
 						i += 1
@@ -514,7 +535,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
 	// then map flags
-	submit, args := sparkSubmitArgSetup()  // setup
+	submit, args := sparkSubmitArgSetup() // setup
 	// convert and get application flags, add them to the args passed to the spark app
 	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
 	args.appArgs = append(args.appArgs, appFlags...)
@@ -623,7 +644,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	_, contains = args.properties["spark.mesos.executor.docker.forcePullImage"]
 	if !contains {
-		log.Printf("Pulling image %s for executors, by default. To bypass set " +
+		log.Printf("Pulling image %s for executors, by default. To bypass set "+
 			"spark.mesos.executor.docker.forcePullImage=false", args.properties["spark.mesos.executor.docker.image"])
 		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
 	}
@@ -677,6 +698,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			_, contains := args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"]
 			if !contains {
 				args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
+				args.properties["spark.executorEnv.KRB5_CONFIG_BASE64"] = krb5conf
 			} else {
 				log.Printf("Using user-specified krb5 config")
 			}
@@ -702,6 +724,11 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		}
 
 		setupTLSArgs(args)
+	}
+
+	// RPC and SASL
+	if args.saslSecret != "" {
+		setupSaslProperties(args.saslSecret, args)
 	}
 
 	jsonMap := map[string]interface{}{

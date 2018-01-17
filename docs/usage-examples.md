@@ -55,3 +55,6 @@ Visit the Spark cluster dispatcher at `http://<dcos-url>/service/spark/` to view
         --conf spark.mesos.driverEnv.KRB5_CONFIG_BASE64=W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKCltyZWFsbXNdCiAgTE9DQUwgPSB7CiAgICBrZGMgPSBrZGMubWFyYXRob24uYXV0b2lwLmRjb3MudGhpc2Rjb3MuZGlyZWN0b3J5OjI1MDAKICB9Cg== \
         --class MyAppClass <URL_of_jar> [application args]"
 
+
+
+*Note* There are additional walkthroughs available in the `docs/walkthroughs/` directory of Mesosphere's `spark-build` [repo](https://github.com/mesosphere/spark-build/docs/walkthroughs/)
