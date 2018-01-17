@@ -44,14 +44,6 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
-if ls ${MESOS_SANDBOX}/*.base64 1> /dev/null 2>&1; then
-    for f in $MESOS_SANDBOX/*.base64 ; do
-        echo "decoding $f" >&2
-        secret=$(basename ${f} .base64)
-        cat ${f} | base64 -d > ${secret}
-    done
-fi
-
 if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
     KRB5CONF=${SPARK_MESOS_KRB5_CONF_BASE64}
 fi

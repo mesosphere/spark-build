@@ -1,7 +1,10 @@
 ---
-post_title: Interactive Spark Shell
-menu_order: 90
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Interactive Spark Shell
+menuWeight: 90
+
 ---
 
 # Interactive Spark Shell

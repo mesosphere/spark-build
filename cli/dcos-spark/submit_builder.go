@@ -243,19 +243,15 @@ func sparkSubmitHelp() string {
 	return buf.String()
 }
 
-func prepareBase64Secret(secretPath string, isEncoded bool) string {
+func prepareBase64Secret(secretPath string) string {
 	ss := strings.Split(secretPath, "/")
-	s := ss[len(ss)-1] // The secret file without any slashes
-	// secrets with __dcos_base64__ will be decoded by Mesos
-	if strings.HasPrefix(s, "__dcos_base64__") || strings.HasSuffix(s, "base64") {
-		// if we have the .base64, maintain the whole thing spark-env will decode it
-		return strings.TrimPrefix(s, "__dcos_base64__")
+	// The secret file without any slashes
+	fn := ss[len(ss) - 1]
+	// secrets with __dcos_base64__ will be decoded by Mesos, but remove the prefix here
+	if strings.HasPrefix(fn, "__dcos_base64__") {
+		return strings.TrimPrefix(fn, "__dcos_base64__")
 	}
-	if isEncoded {
-		return s + ".base64"
-	} else {
-		return s
-	}
+	return fn
 }
 
 func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
@@ -264,9 +260,9 @@ func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
 		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
 		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
 		appendToProperty(secretRefProp, secretPath, args)
-		appendToProperty(secretFileProp, prepareBase64Secret(secretPath, true), args)
+		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
 	}
-	args.properties[property] = prepareBase64Secret(secretPath, false)
+	args.properties[property] = prepareBase64Secret(secretPath)
 }
 
 func setupKerberosAuthArgs(args *sparkArgs) error {
@@ -551,13 +547,19 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 
 	for _, boolVal := range args.boolVals {
 		if boolVal.b {
-			args.properties[boolVal.propName] = "true"
+			_, contains := args.properties[boolVal.propName]
+			if !contains {
+				args.properties[boolVal.propName] = "true"
+			}
 		}
 	}
 
 	for _, stringVal := range args.stringVals {
 		if len(stringVal.s) != 0 {
-			args.properties[stringVal.propName] = stringVal.s
+			_, contains := args.properties[stringVal.propName]
+			if !contains {
+				args.properties[stringVal.propName] = stringVal.s
+			}
 		}
 	}
 

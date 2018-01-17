@@ -1,7 +1,11 @@
 ---
-post_title: Spark Distributions
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+menuWeight: 0
+excerpt:
+title: Spark Distributions
+featureMaturity:
+
 ---
 
 https://downloads.mesosphere.com/spark/assets/spark-1.6.0.tgz <br>
