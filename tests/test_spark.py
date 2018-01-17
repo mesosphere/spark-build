@@ -69,15 +69,7 @@ def test_rpc_auth():
         pkg=utils.SPARK_PACKAGE_NAME, secret=secret_name))
     assert rc == 0, "Failed to generate Spark auth secret, stderr {err} stdout {out}".format(err=stderr, out=stdout)
 
-    args = ["--conf", "spark.mesos.containerizer=mesos",
-            "--conf", "spark.authenticate=true",
-            "--conf", "spark.authenticate.secret=sparkauthsecret.secret",
-            "--conf", "spark.authenticate.enableSaslEncryption=true",
-            "--conf", "spark.executorEnv._SPARK_AUTH_SECRET=sparkauthsecret.secret",
-            "--conf", "spark.mesos.driver.secret.names={}".format(secret_name),
-            "--conf", "spark.mesos.driver.secret.filenames=sparkauthsecret.secret",
-            "--conf", "spark.mesos.executor.secret.names={}".format(secret_name),
-            "--conf", "spark.mesos.executor.secret.filenames=sparkauthsecret.secret",
+    args = ["--executor-auth-secret", secret_name,
             "--class", "org.apache.spark.examples.SparkPi"]
 
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
