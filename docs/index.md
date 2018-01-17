@@ -1,10 +1,11 @@
 ---
-post_title: Spark version 1.1.0-2.1.1
-nav_title: v1.1.0-2.1.1
-menu_order: 0
-post_excerpt: ""
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+title:
+navigationTitle:
+menuWeight: 0
+excerpt:
+featureMaturity:
+
 ---
 
 Welcome to the documentation for the DC/OS Apache Spark. For more information about new and changed features, see the [release notes](https://github.com/mesosphere/spark-build/releases/).

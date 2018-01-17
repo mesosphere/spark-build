@@ -1,8 +1,11 @@
 ---
-post_title: Custom Docker Images
-menu_order: 95
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Custom Docker Images
+menuWeight: 95
+featureMaturity:
+
 ---
 
 **Note:** Customizing the Spark image Mesosphere provides is supported. However, customizations have the potential to adversely affect the integration between Spark and DC/OS. In situations where Mesosphere support suspects a customization may be adversely impacting Spark with DC/OS, Mesosphere support may request that the customer reproduce the issue with an unmodified

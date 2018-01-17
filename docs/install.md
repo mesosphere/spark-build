@@ -1,8 +1,11 @@
 ---
-post_title: Install and Customize
-menu_order: 0
-feature_maturity: ""
-enterprise: 'no'
+layout: layout.pug
+navigationTitle: 
+excerpt:
+title: Install and Customize
+menuWeight: 1
+featureMaturity:
+
 ---
 
 Spark is available in the Universe and can be installed by using either the GUI or the DC/OS CLI.

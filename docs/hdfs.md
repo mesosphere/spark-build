@@ -1,8 +1,10 @@
 ---
-post_title: Integration with HDFS and S3
-nav_title: HDFS
-menu_order: 20
-enterprise: 'no'
+layout: layout.pug
+excerpt:
+title: Integration with HDFS and S3
+navigationTitle: HDFS
+menuWeight: 20
+
 ---
 
 # HDFS
