@@ -142,6 +142,26 @@ job from consuming the entire Quota the max CPUs for that Spark job should be se
 Quota’s resources. This ensures that the Spark job will get sufficient resources to make progress, setting the max CPUs
 ensures it will not starve other Spark jobs of resources as well as predictable offer suppression semantics.
 
+# Setting `spark.cores.max`
+
+To improve Spark job execution reliability, set the maximum number of cores consumed by any given job.  This avoids
+any particular Spark job consuming too many resources in a cluster.  It is highly recommended that each Spark job be
+submitted with a limitation on the maximum number of cores (cpus) it can consume. This is especially important for
+long-running and streaming Spark jobs. 
+
+```bash
+$ dcos spark run --verbose --name=spark --submit-args="\
+--driver-cores=1 \
+--driver-memory=1024M \
+--conf spark.cores.max=8 \ #<< Very important!
+--class org.apache.spark.examples.SparkPi \
+https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 3000"
+```
+
+When running multiple concurrent Spark jobs, consider setting spark.cores.max between
+`<total_executor_quota>/<max_concurrent_jobs>` and `<total_executor_quota>`, depending on your workload characteristics
+and goals.
+
 # Fine-grained mode
 
 **Note** Fine-grained mode has been deprecated and does not have all of the features of coarse-grained mode.
