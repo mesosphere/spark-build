@@ -3,7 +3,7 @@ layout: layout.pug
 navigationTitle: 
 excerpt:
 title: Install and Customize
-menuWeight: 1
+menuWeight: 0
 featureMaturity:
 
 ---
