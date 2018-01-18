@@ -1,10 +1,9 @@
 ---
 layout: layout.pug
 excerpt:
-title: Integration with HDFS and S3
+title: Integration with HDFS
 navigationTitle: HDFS
 menuWeight: 20
-
 ---
 
 # HDFS

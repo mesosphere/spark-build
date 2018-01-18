@@ -1,7 +1,7 @@
 ---
 layout: layout.pug
-title:
-navigationTitle:
+title: Spark
+navigationTitle: Spark
 menuWeight: 0
 excerpt:
 featureMaturity:
