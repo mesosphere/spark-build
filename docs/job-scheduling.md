@@ -47,16 +47,15 @@ mode above).
 Quota for the Drivers allows the operator of the cluster to ensure that only a given number of Drivers are concurrently
 running. As additional Drivers are submitted, they will be enqueued by the Spark Dispatcher. Below are the recommended
 steps for setting Quota for the Drivers:
-    1.  Set the Quota conservatively, keeping in mind that it will effect the number of jobs that can run concurrently.
-    1.  First you must decide how much of your cluster resources to allocate to running Drivers. These resources will
-        only be used for the Spark Drivers, meaning that here we can decide roughly how many concurrent jobs we’d like
-        to have running at a time. As additional jobs are submitted, they will be enqueued and run with
-        first-in-first-out semantics.
-    1.  For the most predictable behavior, enforce uniform driver resource requirements and a particular Quota size for
-        the Dispatcher.  If each driver consumes 1.0 cpu and it is desirable to run up to 5 Spark jobs concurrently,
-        Quota with 5 cpus should be created.
+1.  Set the Quota conservatively, keeping in mind that it will effect the number of jobs that can run concurrently.
+1.  Decide how much of your cluster's resources to allocate to running Drivers. These resources will only be used for
+    the Spark Drivers, meaning that here we can decide roughly how many concurrent jobs we’d like to have running at a
+    time. As additional jobs are submitted, they will be enqueued and run with first-in-first-out semantics.
+1.  For the most predictable behavior, enforce uniform driver resource requirements and a particular Quota size for the
+    Dispatcher.  If each driver consumes 1.0 cpu and it is desirable to run up to 5 Spark jobs concurrently, Quota with
+    5 cpus should be created.
         
-First ssh to the Mesos master and set the Quota for a role `dispatcher` in this example:
+ssh to the Mesos master and set the Quota for a role (`dispatcher` in this example):
 
 ```bash
 $ cat dispatcher-quota.json
@@ -93,9 +92,9 @@ $ dcos package install spark --options=options.json
 ## Setting Quota for the Executors
         
 It is recommended to allocate Quota for Spark job executors.  Allocating Quota for the Spark executors provides:
-    1.  A guarantee that Spark jobs will receive the requested amount of resources.
-    1.  Additional assurance that even misconfigured (e.g. greedy with unset `spark.cores.max`) Spark jobs do not
-        consume too many resources impacting other tenants on the cluster.
+1.  A guarantee that Spark jobs will receive the requested amount of resources.
+1.  Additional assurance that even misconfigured (e.g. greedy Driver with unset `spark.cores.max`) Spark jobs do not consume
+    too many resources impacting other tenants on the cluster.
 
 The drawback to allocating Quota to the Executors is that Quota resources cannot be used by other frameworks in the
 cluster.
@@ -139,11 +138,9 @@ https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT
 ```
 
 **Special consideration for streaming and long-running Spark jobs**: to prevent a single long-running or streaming Spark
-job from consuming the entire quota the max CPUs for that Spark job should be set to roughly one “job’s worth” of the
-quota’s resources. This ensures that the Spark job will get sufficient resources to make progress, setting the max CPUs
-ensures it will not starve other Spark jobs of resources as well as predictable offer suppression semantics (in the case
-where Executor Quota is not being used).
-
+job from consuming the entire Quota the max CPUs for that Spark job should be set to roughly one “job’s worth” of the
+Quota’s resources. This ensures that the Spark job will get sufficient resources to make progress, setting the max CPUs
+ensures it will not starve other Spark jobs of resources as well as predictable offer suppression semantics.
 
 # Fine-grained mode
 
