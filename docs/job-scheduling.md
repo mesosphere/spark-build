@@ -133,7 +133,7 @@ $ dcos spark run --verbose --name=spark --submit-args="\
 --conf spark.cores.max=8 \
 --conf spark.mesos.role=executor \
 --class org.apache.spark.examples.SparkPi \
-https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 3000"
+http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 3000"
 
 ```
 
@@ -155,7 +155,7 @@ $ dcos spark run --verbose --name=spark --submit-args="\
 --driver-memory=1024M \
 --conf spark.cores.max=8 \ #<< Very important!
 --class org.apache.spark.examples.SparkPi \
-https://downloads.mesosphere.com/spark/assets/spark-examples_2.10-1.4.0-SNAPSHOT.jar 3000"
+http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 3000"
 ```
 
 When running multiple concurrent Spark jobs, consider setting spark.cores.max between
