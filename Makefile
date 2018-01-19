@@ -5,30 +5,30 @@ CLI_DIST_DIR := $(BUILD_DIR)/cli_dist
 DIST_DIR := $(BUILD_DIR)/dist
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
-S3_BUCKET := infinity-artifacts
-S3_PREFIX := autodelete7d
+S3_BUCKET ?= infinity-artifacts
+S3_PREFIX ?= autodelete7d
 
 .ONESHELL:
 SHELL := /bin/bash
 .SHELLFLAGS = -ec
 
 # This image can be used to build spark dist and run tests
-DOCKER_BUILD_IMAGE := mesosphere/spark-build:$(GIT_COMMIT)
+DOCKER_BUILD_IMAGE ?= mesosphere/spark-build:$(GIT_COMMIT)
 docker-build:
 	docker build -t $(DOCKER_BUILD_IMAGE) .
 	echo $(DOCKER_BUILD_IMAGE) > $@
 
 # Pulls the spark distribution listed in the manifest as default
-SPARK_DIST_URI := $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
+SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
 manifest-dist:
 	mkdir -p $(DIST_DIR)
 	pushd $(DIST_DIR)
 	wget $(SPARK_DIST_URI)
 	popd
 
-HADOOP_VERSION := $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
+HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
 
-SPARK_DIR := $(ROOT_DIR)/spark
+SPARK_DIR ?= $(ROOT_DIR)/spark
 $(SPARK_DIR):
 	git clone https://github.com/mesosphere/spark $(SPARK_DIR)
 
@@ -85,7 +85,7 @@ clean-dist:
 docker-login:
 	docker login --email="$(DOCKER_EMAIL)" --username="$(DOCKER_USERNAME)" --password="$(DOCKER_PASSWORD)"
 
-DOCKER_DIST_IMAGE := mesosphere/spark-dev:$(GIT_COMMIT)
+DOCKER_DIST_IMAGE ?= mesosphere/spark-dev:$(GIT_COMMIT)
 docker-dist: $(DIST_DIR)
 	tar xvf $(DIST_DIR)/spark-*.tgz -C $(DIST_DIR)
 	rm -rf $(BUILD_DIR)/docker
@@ -162,7 +162,7 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	sbt clean compile test
 	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(MESOS_SPARK_TEST_JAR_PATH)
 
-PYTEST_ARGS := -s -vv -m sanity
+PYTEST_ARGS ?= -s -vv -m sanity
 test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
 	source $(ROOT_DIR)/test-env/bin/activate
 	if [ -z $(CLUSTER_URL) ]; then \
