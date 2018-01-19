@@ -116,7 +116,7 @@ def _require_spark_cli():
         LOGGER.info("Spark CLI already installed.")
     else:
         LOGGER.info("Installing Spark CLI.")
-        shakedown.run_dcos_command('package install --cli {} --yes'.format(
+        shakedown.run_dcos_command('--debug package install --cli {} --yes'.format(
             SPARK_PACKAGE_NAME))
 
 
