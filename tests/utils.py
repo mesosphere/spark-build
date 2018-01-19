@@ -15,10 +15,10 @@ import sdk_security
 from tests import s3
 
 
-SPARK_SERVICE_ACCOUNT = "spark-service-acct"
-SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
-SPARK_APP_NAME = "/spark"
-SPARK_USER = "nobody"
+SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
+SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
+SPARK_APP_NAME = os.getenv("SPARK_APP_NAME", "/spark")
+SPARK_USER = os.getenv("SPARK_USER", "nobody")
 FOLDERED_SPARK_APP_NAME = "/path/to" + SPARK_APP_NAME
 JOB_WAIT_TIMEOUT_SEC = 1800
 
