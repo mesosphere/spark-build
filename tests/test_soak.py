@@ -39,7 +39,6 @@ DCOS_PASSWORD = os.getenv('DCOS_PASSWORD')
 
 
 def setup_module(module):
-    _run_cli("config set core.ssl_verify False")
     utils.require_spark(service_name=SOAK_SPARK_APP_NAME, use_hdfs=True)
 
 
