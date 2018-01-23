@@ -40,7 +40,7 @@
                 "user": {
                     "description": "Executors will run as this user.",
                     "type": "string",
-                    "default": "nobody"
+                    "default": "root"
                 },
                 "docker-image": {
                     "type": "string",

@@ -236,12 +236,9 @@ def test_s3():
 @pytest.mark.smoke
 def test_marathon_group():
     app_id = utils.FOLDERED_SPARK_APP_NAME
-    options = {"service": {"name": app_id}}
-    utils.require_spark(options=options, service_name=app_id)
+    utils.require_spark(service_name=app_id, marathon_group=app_id)
     test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
-    #shakedown.uninstall_package_and_wait(SPARK_PACKAGE_NAME, app_id)
-
 
 
 @pytest.mark.sanity

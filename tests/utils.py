@@ -62,10 +62,13 @@ def streaming_job_running(job_name):
         return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
 
 
-def require_spark(options=None, service_name=None, use_hdfs=False, use_history=False):
+def require_spark(service_name=None, use_hdfs=False, use_history=False, marathon_group=None,
+                  strict_mode=is_strict(), user="nobody"):
     LOGGER.info("Ensuring Spark is installed.")
-
-    _require_package(SPARK_PACKAGE_NAME, service_name, _get_spark_options(options, use_hdfs, use_history))
+    _require_package(
+        SPARK_PACKAGE_NAME,
+        service_name,
+        _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user))
     _wait_for_spark(service_name)
     _require_spark_cli()
 
@@ -132,9 +135,13 @@ def no_spark_jobs(service_name):
     return len(driver_ips) == 0
 
 
-def _get_spark_options(options, use_hdfs, use_history):
-    if options is None:
-        options = {}
+def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user):
+    options = {}
+    options["service"] = options.get("service", {})
+    options["service"]["user"] = user
+    
+    if marathon_group is not None:
+        options["service"]["name"] = marathon_group
 
     if use_hdfs:
         options["hdfs"] = options.get("hdfs", {})
@@ -149,7 +156,7 @@ def _get_spark_options(options, use_hdfs, use_history):
         options["service"] = options.get("service", {})
         options["service"]["spark-history-server-url"] = history_url
 
-    if is_strict():
+    if strict_mode:
         options["service"] = options.get("service", {})
         options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
         options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
