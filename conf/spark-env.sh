@@ -44,6 +44,15 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
+echo "PWD $(pwd)"
+
+if [ -n "${SPARK_SECURITY_KERBEROS_KDC_HOSTNAME}" ] && [ -n "${SPARK_SECURITY_KERBEROS_KDC_PORT}" ] && [ -n "${SPARK_SECURITY_KERBEROS_REALM}" ]; then
+    echo "templating krb5.conf"
+    # working dir is /mnt/mesos/sandbox
+    CONFIG_TEMPLATE_KRB5CONF=../../../etc/krb5.conf.mustache,../../../etc/krb5.conf $BOOTSTRAP -template -resolve=false --print-env=false -install-certs=false
+    cat ../../../etc/krb5.conf
+fi
+
 if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
     KRB5CONF=${SPARK_MESOS_KRB5_CONF_BASE64}
 fi
@@ -61,7 +70,7 @@ if [[ -n "${KRB5CONF}" ]]; then
     echo "spark-env: Copying krb config from $KRB5CONF to /etc/" >&2
     echo "${KRB5CONF}" | ${BASE64_D} > /etc/krb5.conf
 else
-    echo "spark-env: No kerberos KDC config found" >&2
+    echo "spark-env: No SPARK_MESOS_KRB5_CONF_BASE64 decoded" >&2
 fi
 
 # Options read when launching programs locally with

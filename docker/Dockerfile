@@ -76,6 +76,7 @@ RUN ln -s /var/lib/runit/service/spark /etc/service/spark
 RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
 ADD dist /opt/spark/dist
+ADD krb5.conf.mustache /etc/
 
 # required to run as nobody
 RUN chmod -R ugo+rw /etc/nginx

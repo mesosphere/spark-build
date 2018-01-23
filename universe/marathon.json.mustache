@@ -5,21 +5,21 @@
     "cmd": "/sbin/init.sh",
     "user": "{{service.user}}",
     "env": {
-{{#security.kerberos.krb5conf}}
-        "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
-{{/security.kerberos.krb5conf}}
+{{#security.kerberos.enabled}}
+        {{#security.kerberos.krb5conf}}
+            "SPARK_MESOS_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
+        {{/security.kerberos.krb5conf}}
+        {{#security.kerberos.kdc.hostname}}
+            "SPARK_SECURITY_KERBEROS_KDC_HOSTNAME": "{{security.kerberos.kdc.hostname}}",
+        {{/security.kerberos.kdc.hostname}}
+        {{#security.kerberos.kdc.port}}
+            "SPARK_SECURITY_KERBEROS_KDC_PORT": "{{security.kerberos.kdc.port}}",
+        {{/security.kerberos.kdc.port}}
+        {{#security.kerberos.realm}}
+            "SPARK_SECURITY_KERBEROS_REALM": "{{security.kerberos.realm}}",
+        {{/security.kerberos.realm}}
+{{/security.kerberos.enabled}}
         "NO_BOOTSTRAP": "true",
-{{#security.ssl.enabled}}
-        "SPARK_SSL_ENABLED": "{{security.ssl.enabled}}",
-        "SPARK_SSL_KEYSTOREBASE64": "{{security.ssl.keyStoreBase64}}",
-        "SPARK_SSL_TRUSTSTOREBASE64": "{{security.ssl.trustStoreBase64}}",
-        "SPARK_SSL_KEYSTOREPASSWORD": "{{security.ssl.keyStorePassword}}",
-        "SPARK_SSL_KEYPASSWORD": "{{security.ssl.keyPassword}}",
-        "SPARK_SSL_TRUSTSTOREPASSWORD": "{{security.ssl.keyStorePassword}}",
-        "SPARK_SSL_PROTOCOL": "{{security.ssl.protocol}}",
-        "SPARK_SSL_ENABLEDALGORITHMS": "{{security.ssl.enabledAlgorithms}}",
-{{/security.ssl.enabled}}
-
 {{#service.service_account_secret}}
         "DCOS_SERVICE_ACCOUNT_CREDENTIAL": { "secret": "serviceCredential" },
         "MESOS_MODULES": "{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}",

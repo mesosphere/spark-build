@@ -1,0 +1,7 @@
+[libdefaults]
+default_realm = {{SPARK_SECURITY_KERBEROS_REALM}}
+
+[realms]
+    {{SPARK_SECURITY_KERBEROS_REALM}} = {
+        kdc = {{SPARK_SECURITY_KERBEROS_KDC_HOSTNAME}}:{{SPARK_SECURITY_KERBEROS_KDC_PORT}}
+    }
