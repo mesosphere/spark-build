@@ -145,12 +145,14 @@ test-env:
 	pip3 install -r tests/requirements.txt
 
 CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
-cluster-url:
+config.yaml:
 	$(eval export DCOS_LAUNCH_CONFIG_BODY)
+	echo "$$DCOS_LAUNCH_CONFIG_BODY" > config.yaml
+
+cluster-url: config.yaml
 	@if [ -z $(CLUSTER_URL) ]; then \
 	  source $(ROOT_DIR)/test-env/bin/activate; \
-	  echo "$$DCOS_LAUNCH_CONFIG_BODY" > dcos_launch_config.yaml; \
-	  dcos-launch create -c dcos_launch_config.yaml; \
+	  dcos-launch create; \
 	  dcos-launch wait; \
 	  echo https://`dcos-launch describe | jq -r .masters[0].public_ip` > $@; \
 	else \
