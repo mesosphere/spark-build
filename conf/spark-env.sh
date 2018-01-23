@@ -44,10 +44,8 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
-echo "PWD $(pwd)"
-
 if [ -n "${SPARK_SECURITY_KERBEROS_KDC_HOSTNAME}" ] && [ -n "${SPARK_SECURITY_KERBEROS_KDC_PORT}" ] && [ -n "${SPARK_SECURITY_KERBEROS_REALM}" ]; then
-    echo "templating krb5.conf"
+    echo "Templating krb5.conf from environment"
     # working dir is /mnt/mesos/sandbox
     CONFIG_TEMPLATE_KRB5CONF=../../../etc/krb5.conf.mustache,../../../etc/krb5.conf $BOOTSTRAP -template -resolve=false --print-env=false -install-certs=false
     cat ../../../etc/krb5.conf
@@ -62,6 +60,7 @@ if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
 fi
 
 if [[ -n "${KRB5CONF}" ]]; then
+    echo "Decoding base64 encoded krb5.conf"
     if base64 --help | grep -q GNU; then
           BASE64_D="base64 -d" # GNU
       else

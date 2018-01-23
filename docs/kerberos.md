@@ -103,7 +103,7 @@ single `krb5.conf` file for all of the its drivers.
 ## Job Submission
 
 To authenticate to a Kerberos KDC, Spark on Mesos supports keytab files as well as ticket-granting tickets (TGTs).
-Keytabs are valid infinitely, while tickets can expire. Keytabs are recommended, especially for long-running streaming
+Keytabs are valid indefinitely, while tickets can expire. Keytabs are recommended, especially for long-running streaming
 jobs.
 
 ### Keytab Authentication

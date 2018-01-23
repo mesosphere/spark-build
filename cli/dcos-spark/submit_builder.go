@@ -527,49 +527,19 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	}
 
 	// kerberos configuration:
-	kerberosPrincipal := GetPrincipal(args)
-	if kerberosPrincipal != "" {
-		err := ValidateInputs(args)
-		if err != nil {
-			return "", err
-		}
-
-		// Set principal
-		log.Printf("Using Kerberos principal %s", kerberosPrincipal)
-
-		// re-assign if the user used spark.yarn.principal
-		args.properties["spark.yarn.principal"] = args.kerberosPrincipal
-
-		// krb5.conf forwarding of environment variables:
-		forwardEnvironmentVariablesFromMarathonConfig(args, responseJson)
-
-		// mesos secrets
-		err = setupKerberosSecretsConfigs(args)
-		if err != nil {
-			return "", err
-		}
+	err = SetupKerberos(args, responseJson)
+	if err != nil {
+		return "", err
 	}
 
 	// TLS configuration
-	if args.keystoreSecretPath != "" {
-		// Make sure passwords are set
-		if args.keystorePassword == "" || args.privateKeyPassword == "" {
-			return "", errors.New("Need to provide keystore password and key password with keystore")
-		}
-
-		if args.truststoreSecretPath != "" {
-			if args.truststorePassword == "" {
-				return "", errors.New("Need to provide truststore password with truststore")
-			}
-		}
-
-		setupTLSArgs(args)
+	err = SetupTLS(args)
+	if err != nil {
+		return "", err
 	}
 
 	// RPC and SASL
-	if args.saslSecret != "" {
-		setupSaslProperties(args.saslSecret, args)
-	}
+	SetupSASL(args)
 
 	jsonMap := map[string]interface{}{
 		"action":               "CreateSubmissionRequest",

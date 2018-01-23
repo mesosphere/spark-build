@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 )
 
 func getStringFromTree(m map[string]interface{}, path []string) (string, error) {
@@ -42,4 +43,20 @@ func appendToPropertyIfSet(propValue, toAppend string, args *sparkArgs) {
 	if contains {
 		args.properties[propValue] += "," + toAppend
 	}
+}
+
+func setPropertyToDefaultIfNotSet(args *sparkArgs, prop, setting string) {
+	_, contains := args.properties[prop]
+	if !contains {
+		args.properties[prop] = setting
+	}
+}
+
+func addPropertyAndWarn(args *sparkArgs, prop, setting string) {
+	oldVal, contains := args.properties[prop]
+	if contains {
+		log.Printf("WARNING: property %s being overwritten with %s (previously %s)",
+			prop, setting, oldVal)
+	}
+	args.properties[prop] = setting
 }
