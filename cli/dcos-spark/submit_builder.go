@@ -20,10 +20,6 @@ var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 
-const SECRET_REFERENCE_TEMPLATE = "spark.mesos.%s.secret.names"
-const SECRET_FILENAME_TEMPLATE = "spark.mesos.%s.secret.filenames"
-const SECRET_ENVKEY_TEMPLATE = "spark.mesos.%s.secret.envkeys"
-
 type sparkVal struct {
 	flagName string
 	propName string
@@ -243,108 +239,6 @@ func sparkSubmitHelp() string {
 	return buf.String()
 }
 
-func prepareBase64Secret(secretPath string) string {
-	ss := strings.Split(secretPath, "/")
-	// The secret file without any slashes
-	fn := ss[len(ss) - 1]
-	// secrets with __dcos_base64__ will be decoded by Mesos, but remove the prefix here
-	if strings.HasPrefix(fn, "__dcos_base64__") {
-		return strings.TrimPrefix(fn, "__dcos_base64__")
-	}
-	return fn
-}
-
-func addArgsForFileBasedSecret(args *sparkArgs, secretPath, property string) {
-	taskTypes := []string{"driver", "executor"}
-	for _, taskType := range taskTypes {
-		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
-		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
-		appendToProperty(secretRefProp, secretPath, args)
-		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
-	}
-	args.properties[property] = prepareBase64Secret(secretPath)
-}
-
-func setupKerberosAuthArgs(args *sparkArgs) error {
-	args.properties["spark.mesos.containerizer"] = "mesos"
-	if args.keytabSecretPath != "" { // using keytab secret
-		addArgsForFileBasedSecret(args, args.keytabSecretPath, "spark.yarn.keytab")
-		return nil
-	}
-	if args.tgtSecretPath != "" { // using tgt secret
-		addArgsForFileBasedSecret(args, args.tgtSecretPath, "spark.mesos.driverEnv.KRB5CCNAME")
-		return nil
-	}
-	if args.tgtSecretValue != "" { // using secret by value
-		appendToProperty("spark.mesos.driver.secret.values", args.tgtSecretValue, args)
-		args.properties["spark.mesos.driverEnv.KRB5CCNAME"] = "tgt"
-		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, "driver"), "tgt.base64", args)
-		return nil
-	}
-	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
-}
-
-func setupTLSArgs(args *sparkArgs) {
-	args.properties["spark.mesos.containerizer"] = "mesos"
-	args.properties["spark.ssl.enabled"] = "true"
-
-	// Keystore and truststore
-	const keyStoreFileName = "server.jks"
-	const trustStoreFileName = "trust.jks"
-	args.properties["spark.ssl.keyStore"] = keyStoreFileName
-	if args.truststoreSecretPath != "" {
-		args.properties["spark.ssl.trustStore"] = trustStoreFileName
-	}
-
-	// Secret paths, filenames, and place holder envvars
-	paths := []string{args.keystoreSecretPath}
-	filenames := []string{keyStoreFileName}
-	envkeys := []string{"DCOS_SPARK_KEYSTORE"}
-	if args.truststoreSecretPath != "" {
-		paths = append(paths, args.truststoreSecretPath)
-		filenames = append(filenames, trustStoreFileName)
-		envkeys = append(envkeys, "DCOS_SPARK_TRUSTSTORE")
-	}
-	joinedPaths := strings.Join(paths, ",")
-	joinedFilenames := strings.Join(filenames, ",")
-	joinedEnvkeys := strings.Join(envkeys, ",")
-
-	taskTypes := []string{"driver", "executor"}
-	for _, taskType := range taskTypes {
-		appendToProperty(fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType), joinedPaths, args)
-		appendToProperty(fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType), joinedFilenames, args)
-		appendToPropertyIfSet(fmt.Sprintf(SECRET_ENVKEY_TEMPLATE, taskType), joinedEnvkeys, args)
-	}
-
-	// Passwords
-	args.properties["spark.ssl.keyStorePassword"] = args.keystorePassword
-	args.properties["spark.ssl.keyPassword"] = args.privateKeyPassword
-
-	if args.truststoreSecretPath != "" {
-		args.properties["spark.ssl.trustStorePassword"] = args.truststorePassword
-	}
-
-	// Protocol
-	if _, ok := args.properties["spark.ssl.protocol"]; !ok {
-		args.properties["spark.ssl.protocol"] = "TLS"
-	}
-}
-
-func setupSaslProperties(secretPath string, args *sparkArgs) {
-	args.properties["spark.mesos.containerizer"] = "mesos"
-	args.properties["spark.authenticate"] = "true"
-	args.properties["spark.authenticate.enableSaslEncryption"] = "true"
-	args.properties["spark.authenticate.secret"] = "spark_shared_secret"
-	args.properties["spark.executorEnv._SPARK_AUTH_SECRET"] = "spark_shared_secret"
-	taskTypes := []string{"driver", "executor"}
-	for _, taskType := range taskTypes {
-		secretRefProp := fmt.Sprintf(SECRET_REFERENCE_TEMPLATE, taskType)
-		secretFileProp := fmt.Sprintf(SECRET_FILENAME_TEMPLATE, taskType)
-		appendToProperty(secretRefProp, secretPath, args)
-		appendToProperty(secretFileProp, prepareBase64Secret(secretPath), args)
-	}
-}
-
 func parseApplicationFile(args *sparkArgs) error {
 	appString := args.app.String()
 	fs := strings.Split(appString, "/")
@@ -491,45 +385,6 @@ func getValsFromPropertiesFile(path string) map[string]string {
 	return vals
 }
 
-func getStringFromTree(m map[string]interface{}, path []string) (string, error) {
-	if len(path) == 0 {
-		return "", errors.New(fmt.Sprintf("empty path, nothing to navigate in: %s", m))
-	}
-	obj, ok := m[path[0]]
-	if !ok {
-		return "", errors.New(fmt.Sprintf("unable to find key '%s' in map: %s", path[0], m))
-	}
-	if len(path) == 1 {
-		ret, ok := obj.(string)
-		if !ok {
-			return "", errors.New(fmt.Sprintf("unable to cast map value '%s' (for key '%s') as string: %s", obj, path[0], m))
-		}
-		return ret, nil
-	} else {
-		next, ok := obj.(map[string]interface{})
-		if !ok {
-			return "", errors.New(fmt.Sprintf("unable to cast map value '%s' (for key '%s') as string=>object map: %s", obj, path[0], m))
-		}
-		return getStringFromTree(next, path[1:])
-	}
-}
-
-func appendToProperty(propValue, toAppend string, args *sparkArgs) {
-	_, contains := args.properties[propValue]
-	if !contains {
-		args.properties[propValue] = toAppend
-	} else {
-		args.properties[propValue] += "," + toAppend
-	}
-}
-
-func appendToPropertyIfSet(propValue, toAppend string, args *sparkArgs) {
-	_, contains := args.properties[propValue]
-	if contains {
-		args.properties[propValue] += "," + toAppend
-	}
-}
-
 func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	// first, import any values in the provided properties file (space separated "key val")
 	// then map applicable envvars
@@ -671,65 +526,20 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 			fmt.Sprintf("%s/hdfs-site.xml,%s/core-site.xml", hdfs_config_url, hdfs_config_url), args)
 	}
 
-	// kerberos configuration (include base64-encoded copy of --keytab OR --tgt):
-	if args.kerberosPrincipal != "" {
-		if args.keytabSecretPath == "" && args.tgtSecretPath == "" && args.tgtSecretValue == "" {
-			return "", errors.New("Need to provide Keytab secret, TGT secret, or TGT value " +
-				"with Kerberos principal")
-		}
-
-		if args.keytabSecretPath != "" && (args.tgtSecretValue != "" || args.tgtSecretPath != "") {
-			return "", errors.New("Keytabs and TGTs cannot be used together")
-		}
-
-		if args.tgtSecretPath != "" && args.tgtSecretValue != "" {
-			return "", errors.New("Cannot use a TGT-by-value and a TGT-by-secret at the same time")
-		}
-
-		log.Printf("Using Kerberos principal %s", args.kerberosPrincipal)
-		args.properties["spark.yarn.principal"] = args.kerberosPrincipal
-		krb5conf, err := getStringFromTree(responseJson, []string{"app", "env", "SPARK_MESOS_KRB5_CONF_BASE64"})
-		if err != nil && krb5conf == "" {
-			log.Printf("WARNING: krb5.conf (base64 encoded) could not be extracted from the " +
-				"Dispatcher's config")
-		}
-
-		if krb5conf != "" {
-			_, contains := args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"]
-			if !contains {
-				args.properties["spark.mesos.driverEnv.KRB5_CONFIG_BASE64"] = krb5conf
-				args.properties["spark.executorEnv.KRB5_CONFIG_BASE64"] = krb5conf
-			} else {
-				log.Printf("Using user-specified krb5 config")
-			}
-		}
-
-		err = setupKerberosAuthArgs(args)
-		if err != nil {
-			return "", err
-		}
+	// kerberos configuration:
+	err = SetupKerberos(args, responseJson)
+	if err != nil {
+		return "", err
 	}
 
 	// TLS configuration
-	if args.keystoreSecretPath != "" {
-		// Make sure passwords are set
-		if args.keystorePassword == "" || args.privateKeyPassword == "" {
-			return "", errors.New("Need to provide keystore password and key password with keystore")
-		}
-
-		if args.truststoreSecretPath != "" {
-			if args.truststorePassword == "" {
-				return "", errors.New("Need to provide truststore password with truststore")
-			}
-		}
-
-		setupTLSArgs(args)
+	err = SetupTLS(args)
+	if err != nil {
+		return "", err
 	}
 
 	// RPC and SASL
-	if args.saslSecret != "" {
-		setupSaslProperties(args.saslSecret, args)
-	}
+	SetupSASL(args)
 
 	jsonMap := map[string]interface{}{
 		"action":               "CreateSubmissionRequest",

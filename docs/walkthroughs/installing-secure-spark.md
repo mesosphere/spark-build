@@ -25,6 +25,7 @@
       },
       "security": {
           "kerberos": {
+              "enabled": true,
               "krb5conf": "<base64_encoded_krb5.conf>"  // just cut and paste it here, can be done form the UI also
         }
       }
