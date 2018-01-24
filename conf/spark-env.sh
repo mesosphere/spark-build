@@ -28,7 +28,7 @@ if [ -z ${NO_BOOTSTRAP} ]; then
         exit 1
     fi
 else
-    echo "Skipping bootstrap IP detection"
+    echo "Skipping bootstrap IP detection" >&2
 fi
 
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
@@ -44,6 +44,13 @@ export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
 echo "spark-env: User: $(whoami)" >&2
 
+if [ -n "${SPARK_SECURITY_KERBEROS_KDC_HOSTNAME}" ] && [ -n "${SPARK_SECURITY_KERBEROS_KDC_PORT}" ] && [ -n "${SPARK_SECURITY_KERBEROS_REALM}" ]; then
+    echo "Templating krb5.conf from environment" >&2
+    # working dir is /mnt/mesos/sandbox
+    CONFIG_TEMPLATE_KRB5CONF=../../../etc/krb5.conf.mustache,../../../etc/krb5.conf $BOOTSTRAP -template -resolve=false --print-env=false -install-certs=false
+    cat ../../../etc/krb5.conf
+fi
+
 if [[ -n "${SPARK_MESOS_KRB5_CONF_BASE64}" ]]; then
     KRB5CONF=${SPARK_MESOS_KRB5_CONF_BASE64}
 fi
@@ -53,6 +60,7 @@ if [[ -n "${KRB5_CONFIG_BASE64}" ]]; then
 fi
 
 if [[ -n "${KRB5CONF}" ]]; then
+    echo "Decoding base64 encoded krb5.conf" >&2
     if base64 --help | grep -q GNU; then
           BASE64_D="base64 -d" # GNU
       else
@@ -61,7 +69,7 @@ if [[ -n "${KRB5CONF}" ]]; then
     echo "spark-env: Copying krb config from $KRB5CONF to /etc/" >&2
     echo "${KRB5CONF}" | ${BASE64_D} > /etc/krb5.conf
 else
-    echo "spark-env: No kerberos KDC config found" >&2
+    echo "spark-env: No SPARK_MESOS_KRB5_CONF_BASE64 decoded" >&2
 fi
 
 # Options read when launching programs locally with

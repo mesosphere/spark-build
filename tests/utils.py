@@ -149,7 +149,11 @@ def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user)
         options["hdfs"]["config-url"] = "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
         options["security"] = options.get("security", {})
         options["security"]["kerberos"] = options["security"].get("kerberos", {})
-        options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
+        options["security"]["kerberos"]["enabled"] = True
+        options["security"]["kerberos"]["realm"] = "LOCAL"
+        options["security"]["kerberos"]["kdc"] = options["security"]["kerberos"].get("kdc", {})
+        options["security"]["kerberos"]["kdc"]["hostname"] = "kdc.marathon.autoip.dcos.thisdcos.directory"
+        options["security"]["kerberos"]["kdc"]["port"] = 2500
 
     if use_history:
         dcos_url = dcos.config.get_config_val("core.dcos_url")
