@@ -106,6 +106,25 @@ To authenticate to a Kerberos KDC, Spark on Mesos supports keytab files as well 
 Keytabs are valid indefinitely, while tickets can expire. Keytabs are recommended, especially for long-running streaming
 jobs.
 
+### Controlling the `krb5.conf` with environment variables
+
+If you did not specify `service.security.kerberos.kdc.hostname`, `service.security.kerberos.kdc.port`, and
+`services.security.realm` at install time, but wish to use a templated krb5.conf on a job submission you can do this
+with the following environment variables:
+    ```
+    --conf spark.mesos.driverEnv.SPARK_SECURITY_KERBEROS_KDC_HOSTNAME=<kdc_hostname> \
+    --conf spark.mesos.driverEnv.SPARK_SECURITY_KERBEROS_KDC_PORT=<kdc_port> \
+    --conf spark.mesos.driverEnv.SPARK_SECURITY_KERBEROS_REALM=<kerberos_realm> \
+    ```
+You can also set the base64 encoded krb5.conf after install time:
+
+    ```
+    --conf spark.mesos.driverEnv.SPARK_MESOS_KRB5_CONF_BASE64=<krb5.conf_base64_encoding> \
+    ```
+
+**Note** This setting `SPARK_MESOS_KRB5_CONF_BASE64` will overwrite/override any settings set with
+`SPARK_SECURITY_KERBEROS_KDC_HOSTNAME`, `SPARK_SECURITY_KERBEROS_KDC_PORT`, and `SPARK_SECURITY_KERBEROS_REALM`
+
 ### Keytab Authentication
 
 Submit the job with the keytab:
@@ -133,7 +152,7 @@ prefix, the keytab will be decoded and written to a file in the sandbox. This le
 recommended. 
 
 
-# Kafka Kerberos
+# Using Kerberos-secured Kafka
 
 Spark can consume data from a Kerberos-enabled Kafka cluster. Connecting Spark to secure Kafka does not require special
 installation parameters, however does require the Spark Driver _and_ the Spark Executors can access the following files:
