@@ -58,7 +58,7 @@ single `krb5.conf` file for all of the its drivers.
          }
      ```
 
-     Alternatively, you can use specify properties of the `krb5.conf` with more concise options:
+     Alternatively, you can specify properties of the `krb5.conf` with more concise options:
      ```json
          {
             "security": {
