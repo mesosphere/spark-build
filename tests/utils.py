@@ -153,7 +153,6 @@ def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user)
         options["security"]["kerberos"]["kdc"] = options["security"]["kerberos"].get("kdc", {})
         options["security"]["kerberos"]["kdc"]["hostname"] = "kdc.marathon.autoip.dcos.thisdcos.directory"
         options["security"]["kerberos"]["kdc"]["port"] = 2500
-        #options["security"]["kerberos"]["krb5conf"] = HDFS_KRB5_CONF
 
     if use_history:
         dcos_url = dcos.config.get_config_val("core.dcos_url")

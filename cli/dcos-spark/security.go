@@ -231,7 +231,6 @@ func addEnvvarToDriverAndExecutor(args *sparkArgs, key, value string) {
 
 func forwardEnvironmentVariablesFromMarathonConfig(args *sparkArgs, marathonJson map[string]interface{}) {
 	propertyChecker := propertyGiven(marathonJson)
-
 	// We allow the user to set SPARK_SECURITY_KERBEROS_KDC_HOSTNAME and SPARK_SECURITY_KERBEROS_KDC_PORT, and
 	// SPARK_SECURITY_KERBEROS_REALM, these values will be used to template a krb5.conf. If the user sets
 	// SPARK_MESOS_KRB5_CONF_BASE64 it will be overwritten, but log a warning to be sure.
