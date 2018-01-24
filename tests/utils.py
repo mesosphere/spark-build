@@ -15,10 +15,11 @@ import sdk_security
 from tests import s3
 
 
-SPARK_SERVICE_ACCOUNT = "spark-service-acct"
-SPARK_SERVICE_ACCOUNT_SECRET = "spark-service-acct-secret"
-SPARK_APP_NAME = "/spark"
-SPARK_USER = "nobody"
+SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
+SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
+SPARK_APP_NAME = os.getenv("SPARK_APP_NAME", "/spark")
+SPARK_USER = os.getenv("SPARK_USER", "nobody")
+SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
 FOLDERED_SPARK_APP_NAME = "/path/to" + SPARK_APP_NAME
 JOB_WAIT_TIMEOUT_SEC = 1800
 
@@ -196,11 +197,13 @@ def upload_file(file_path):
     return s3.http_url(basename)
 
 
-def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[], spark_user=SPARK_USER):
+def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[], spark_user=SPARK_USER,
+               driver_role=SPARK_DRIVER_ROLE):
     if is_strict():
         args += ["--conf", 'spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)]
         args += ["--conf", 'spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)]
-    args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"])
+    args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"] +
+                        ["--conf", "spark.mesos.role={}".format(driver_role)])
     submit_args = ' '.join([args_str, app_url, app_args])
     cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
         pkg_name=SPARK_PACKAGE_NAME,
