@@ -162,7 +162,7 @@ to follow these steps to install and run Spark.
     $ dcos package install dcos-enterprise-cli
     ```
 
-1.  Create a key pair, a 2048-bit RSA public-private key pair is created uses the Enterprise DC/OS CLI. Create a
+1.  Create a key pair, a 2048-bit RSA public-private key pair is created using the Enterprise DC/OS CLI. Create a
     public-private key pair and save each value into a separate file within the current directory.
 
     ```bash
