@@ -166,7 +166,7 @@ to follow these steps to install and run Spark.
     public-private key pair and save each value into a separate file within the current directory.
 
     ```bash
-    $ dcos security org service-accounts keypair <private-key>.pem <public-key>.pem
+    $ dcos security org service-accounts keypair <your-private-key>.pem <your-public-key>.pem
     ```
 
     For example:
@@ -175,10 +175,11 @@ to follow these steps to install and run Spark.
     dcos security org service-accounts keypair private-key.pem public-key.pem
     ```
 
-1.  Create a new service account, <service-account-id> (e.g. `spark`) containing the public key, <your-public-key>.pem.
+1.  Create a new service account, `service-account-id` (e.g. `spark-principal`) containing the public key,
+    `your-public-key.pem`.
 
     ```bash
-    $ dcos security org service-accounts create -p <your-public-key>.pem -d "Spark service account" <service-account-id>
+    $ dcos security org service-accounts create -p <your-public-key>.pem -d "Spark service account" <service-account>
     ```
 
     For example: 
@@ -193,17 +194,17 @@ to follow these steps to install and run Spark.
     **Note** You can verify your new service account using the following command.
 
     ```bash
-    $ dcos security org service-accounts show <service-account-id>
+    $ dcos security org service-accounts show <service-account>
     ```
 
-1.  Create a secret (e.g. `spark/<secret-name>`) with your service account, `service-account-id`, and private key
-    specified, `private-key>.pem`.
+1.  Create a secret (e.g. `spark/<secret-name>`) with your service account, `service-account`, and private key
+    specified, `your-private-key.pem`.
 
     ```bash
     # permissive mode
-    $ dcos security secrets create-sa-secret <private-key>.pem <service-account-id> spark/<secret-name>
+    $ dcos security secrets create-sa-secret <your-private-key>.pem <service-account> spark/<secret-name>
     # strict mode
-    $ dcos security secrets create-sa-secret --strict <private-key>.pem <service-account-id> spark/<secret-name>
+    $ dcos security secrets create-sa-secret --strict <private-key>.pem <service-account> spark/<secret-name>
     ```
 
     For example, on a strict-mode DC/OS cluster:
@@ -251,13 +252,13 @@ Permissions can also be assigned through the UI.
     
     ```
 
-    Note that here we're using the service account `spark-principal` and the `user` `root`.
+    Note that here we're using the service account `spark-principal` and the user `root`.
 
 1.  If you are running the Spark service as `root` (as we are in this example) you will need to add an additional
     permission for Marathon:
 
     ```bash
-    $ dcos security org users grant dcos_marathon dcos:mesos:master:task:user:root create --description "Allow Marathon to launch root containers"
+    dcos security org users grant dcos_marathon dcos:mesos:master:task:user:root create --description "Allow Marathon to launch containers as root"
     ```
 
 ## Install Spark with necessary configuration 
