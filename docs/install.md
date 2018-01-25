@@ -146,7 +146,7 @@ dcos package install --options=multiple.json spark
 To specify which instance of Spark to use add `--name=<service_name>` to your CLI, for example
 
 ```bash
-dcos spark --name=spark-dev run ...
+$ dcos spark --name=spark-dev run ...
 ```
 
 # Installation for Strict mode (setting service authentication)
