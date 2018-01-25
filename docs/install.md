@@ -15,11 +15,13 @@ Spark is available in the Universe and can be installed by using either the GUI 
 - [DC/OS and DC/OS CLI installed](https://docs.mesosphere.com/1.10/installing/oss/).
 - Depending on your [security mode](https://docs.mesosphere.com/1.10/security/ent/#security-modes), Spark requires
   service authentication for access to DC/OS. For more information:  
+
   | Security mode | Service Account       |
   |---------------|-----------------------|
   | Disabled      | Not available         |
   | Permissive    | Optional              |
   | Strict        | **Required**          |
+
 
 # Default Installation
 To install the DC/OS Apache Spark service, run the following command on the DC/OS CLI. This installs the Spark DC/OS
