@@ -47,6 +47,7 @@ mode above).
 Quota for the Drivers allows the operator of the cluster to ensure that only a given number of Drivers are concurrently
 running. As additional Drivers are submitted, they will be enqueued by the Spark Dispatcher. Below are the recommended
 steps for setting Quota for the Drivers:
+
 1.  Set the Quota conservatively, keeping in mind that it will effect the number of jobs that can run concurrently.
 1.  Decide how much of your cluster's resources to allocate to running Drivers. These resources will only be used for
     the Spark Drivers, meaning that here we can decide roughly how many concurrent jobs we’d like to have running at a
@@ -141,6 +142,91 @@ http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 3000"
 job from consuming the entire Quota the max CPUs for that Spark job should be set to roughly one “job’s worth” of the
 Quota’s resources. This ensures that the Spark job will get sufficient resources to make progress, setting the max CPUs
 ensures it will not starve other Spark jobs of resources as well as predictable offer suppression semantics.
+
+## Permissions when using Quota with Strict mode 
+
+Strict mode clusters (see [security modes](https://docs.mesosphere.com/1.10/security/ent/#security-modes)) require extra
+permissions to be set in order to use Quota. Follow the instructions in
+[installing](https://github.com/mesosphere/spark-build/blob/master/docs/install.md) and add the additional permissions
+for the roles you intend to use, detailed below. Following the example above they would be set as follows:
+
+1.    First set Quota for the Dispatcher's role (`dispatcher`)
+
+    ```bash
+    $ cat dispatcher-quota.json
+    {
+     "role": "dispatcher",
+     "guarantee": [
+       {
+         "name": "cpus",
+         "type": "SCALAR",
+         "scalar": { "value": 5.0 }
+       },
+       {
+         "name": "mem",
+         "type": "SCALAR",
+         "scalar": { "value": 5120.0 }
+       }
+     ]
+    }
+    ```
+
+    Then set the Quota *from your local machine*, this assumes you've downloaded the CA certificate,`dcos-ca.crt` to
+    your local machine via the `https://<dcos_url>/ca/dcos-ca.crt` endpoint:
+    
+    ```bash
+    curl -X POST --cacert dcos-ca.crt -H "Authorization: token=$(dcos config show core.dcos_acs_token)" $(dcos config show core.dcos_url)/mesos/quota -d @dispatcher-quota.json -H 'Content-Type: application/json'
+    ```
+
+1.    Optionally set Quota for the executors also, this is the same as above:
+
+    ```bash
+    $ cat executor-quota.json
+    {
+      "role": "executor",
+      "guarantee": [
+        {
+          "name": "cpus",
+          "type": "SCALAR",
+          "scalar": { "value": 100.0 }
+        },
+        {
+          "name": "mem",
+          "type": "SCALAR",
+          "scalar": { "value": 409600.0 }
+        }
+      ]
+    }
+    ```
+
+    Then set the Quota from your local machine, again assuming you have `dcos-ca.crt` locally:
+
+    ```bash
+    curl -X POST --cacert dcos-ca.crt -H "Authorization: token=$(dcos config show core.dcos_acs_token)" $(dcos config show core.dcos_url)/mesos/quota -d @executor-quota.json -H 'Content-Type: application/json'
+    ```
+
+1.    Install Spark with these minimal configurations:
+
+    ```bash
+    { 
+        "service": {
+                "service_account": "spark-principal",
+                "role": "dispatcher",
+                "user": "root",
+                "service_account_secret": "spark/spark-secret"
+        }
+    }
+    ```
+
+1.    Now you're ready to run a Spark job using the principal you set and the roles:
+
+    ```bash
+    dcos spark run --verbose --submit-args=" \
+    --conf spark.mesos.principal=spark-principal \
+    --conf spark.mesos.role=executor \
+    --conf spark.mesos.containerizer=mesos \
+    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 100"
+    ```
 
 # Setting `spark.cores.max`
 
