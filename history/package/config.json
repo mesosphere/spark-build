@@ -30,7 +30,7 @@
                 "user": {
                     "description": "OS user",
                     "type": "string",
-                    "default": "nobody"
+                    "default": "root"
                 },
                 "docker-image": {
                     "description": "Docker image to run in.  See https://hub.docker.com/r/mesosphere/spark/tags/ for options.",
@@ -72,8 +72,31 @@
                     "description": "Kerberos configuration.",
                     "type": "object",
                     "properties": {
+                        "enabled": {
+                            "description": "Enable kerberos authentication.",
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "kdc" : {
+                            "description": "KDC settings for Kerberos",
+                            "type": "object",
+                            "properties": {
+                                "hostname": {
+                                    "type": "string",
+                                    "description": "The name or address of a host running a KDC for the realm."
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "description": "The port of the host running a KDC for that realm."
+                                }
+                            }
+                        },
+                        "realm": {
+                            "type": "string",
+                            "description": "The Kerberos realm used to render the principal."
+                        },
                         "krb5conf": {
-                            "description": "Base64 encoded krb5.conf file to access your KDC.",
+                            "description": "Base64 encoded krb5.conf file to access your KDC. Providing this will override above settings.",
                             "type": "string",
                             "default": ""
                         },
