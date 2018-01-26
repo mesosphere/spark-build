@@ -27,6 +27,7 @@ HDFS_SERVICE_NAME='hdfs'
 KERBEROS_ARGS = ["--kerberos-principal", GENERIC_HDFS_USER_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(KEYTAB_SECRET_PATH)]
 HDFS_CLIENT_ID = "hdfsclient"
+SPARK_HISTORY_USER = "nobody"
 
 
 @pytest.fixture(scope='module')
@@ -136,10 +137,14 @@ def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_univer
         shakedown.install_package(
             package_name=utils.HISTORY_PACKAGE_NAME,
             options_json={
-                "service": {"hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
-                    .format(HDFS_SERVICE_NAME)},
+                "service": {
+                    "user": SPARK_HISTORY_USER,
+                    "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                        .format(HDFS_SERVICE_NAME)
+                },
                 "security": {
                     "kerberos": {
+                        "enabled": True,
                         "krb5conf": utils.HDFS_KRB5_CONF,
                         "principal": GENERIC_HDFS_USER_PRINCIPAL,
                         "keytab": KEYTAB_SECRET_PATH
@@ -257,3 +262,39 @@ def test_history():
                     expected_output="Pi is roughly 3",
                     app_name="/spark",
                     args=(job_args + KERBEROS_ARGS))
+
+
+@pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
+@pytest.mark.sanity
+def test_history_kdc_config(hdfs_with_kerberos):
+    history_service_with_kdc_config = "spark-history-with-kdc-config"
+    try:
+        # This deployment will fail if kerberos is not configured properly.
+        shakedown.install_package(
+            package_name=utils.HISTORY_PACKAGE_NAME,
+            options_json={
+                "service": {
+                    "name": history_service_with_kdc_config,
+                    "user": SPARK_HISTORY_USER,
+                    "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                        .format(HDFS_SERVICE_NAME)
+                },
+                "security": {
+                    "kerberos": {
+                        "enabled": True,
+                        "kdc": {
+                            "hostname": hdfs_with_kerberos.get_host(),
+                            "port": int(hdfs_with_kerberos.get_port())
+                        },
+                        "realm": sdk_auth.REALM,
+                        "principal": GENERIC_HDFS_USER_PRINCIPAL,
+                        "keytab": KEYTAB_SECRET_PATH
+                    }
+                }
+            },
+            wait_for_completion=True,  # wait for it to become healthy
+            timeout_sec=240
+        )
+
+    finally:
+        sdk_marathon.destroy_app(history_service_with_kdc_config)
