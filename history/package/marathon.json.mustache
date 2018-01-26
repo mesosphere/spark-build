@@ -2,22 +2,31 @@
     "id": "{{service.name}}",
     "cpus": {{service.cpus}},
     "mem": {{service.mem}},
-{{^security.kerberos.principal}}
+{{^security.kerberos.enabled}}
     "cmd": "SPARK_HISTORY_OPTS=\"-Dspark.history.ui.port=${PORT0} ${SPARK_HISTORY_OPTS}\" ./bin/spark-class org.apache.spark.deploy.history.HistoryServer",
-{{/security.kerberos.principal}}
-{{#security.kerberos.principal}}
+{{/security.kerberos.enabled}}
+{{#security.kerberos.enabled}}
     "cmd": "SPARK_HISTORY_OPTS=\"-Dspark.history.ui.port=${PORT0} ${SPARK_HISTORY_OPTS} ${SPARK_HISTORY_KERBEROS_OPTS}\" ./bin/spark-class org.apache.spark.deploy.history.HistoryServer",
-{{/security.kerberos.principal}}
+{{/security.kerberos.enabled}}
     "user": "{{service.user}}",
     "env": {
-{{#security.kerberos.krb5conf}}
-        "KRB5_CONFIG_BASE64": "{{security.kerberos.krb5conf}}",
-{{/security.kerberos.krb5conf}}
         "SPARK_USER": "{{service.user}}",
         "APPLICATION_WEB_PROXY_BASE": "/service/{{service.name}}",
-{{#security.kerberos.principal}}
+{{#security.kerberos.enabled}}
+        {{#security.kerberos.krb5conf}}
+            "KRB5_CONFIG_BASE64": "{{security.kerberos.krb5conf}}",
+        {{/security.kerberos.krb5conf}}
+        {{#security.kerberos.kdc.hostname}}
+            "SPARK_SECURITY_KERBEROS_KDC_HOSTNAME": "{{security.kerberos.kdc.hostname}}",
+        {{/security.kerberos.kdc.hostname}}
+        {{#security.kerberos.kdc.port}}
+            "SPARK_SECURITY_KERBEROS_KDC_PORT": "{{security.kerberos.kdc.port}}",
+        {{/security.kerberos.kdc.port}}
+        {{#security.kerberos.realm}}
+            "SPARK_SECURITY_KERBEROS_REALM": "{{security.kerberos.realm}}",
+        {{/security.kerberos.realm}}
         "SPARK_HISTORY_KERBEROS_OPTS": "-Dspark.history.kerberos.enabled=true -Dspark.history.kerberos.principal={{security.kerberos.principal}} -Dspark.history.kerberos.keytab=/opt/spark/hdfs.keytab",
-{{/security.kerberos.principal}}
+{{/security.kerberos.enabled}}
         "SPARK_HISTORY_OPTS": "-Dspark.history.fs.logDirectory={{service.log-dir}} -Dspark.history.fs.cleaner.enabled={{service.cleaner.enabled}} -Dspark.history.fs.cleaner.interval={{service.cleaner.interval}} -Dspark.history.fs.cleaner.maxAge={{service.cleaner.max-age}}"
     },
     "ports": [0],

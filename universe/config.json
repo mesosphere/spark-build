@@ -95,7 +95,7 @@
                             "description": "The Kerberos realm used to render the principal."
                         },
                         "krb5conf": {
-                            "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC.  Also used by the history server. Providing this will override above settings.",
+                            "description": "Base64 encoded krb5.conf file.  Copied to the drivers and executors so that they may access your KDC. Providing this will override above settings.",
                             "type": "string",
                             "media": {
                                 "binaryEncoding": "base64",

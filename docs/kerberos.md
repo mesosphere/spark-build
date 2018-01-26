@@ -51,7 +51,7 @@ single `krb5.conf` file for all of the its drivers.
            },
            "security": {
                "kerberos": {
-                   "enabled": "true",
+                   "enabled": true,
                    "krb5conf": "<base64_encoding>"
              }
            }
@@ -63,10 +63,10 @@ single `krb5.conf` file for all of the its drivers.
          {
             "security": {
               "kerberos": {
-               "enabled": "true",
+               "enabled": true,
                "kdc": {
                   "hostname": "<kdc_hostname>",
-                  "port": "<kdc_port>"
+                  "port": <kdc_port>
                 },
                 "realm": "<kdc_realm>"
               }
@@ -86,19 +86,40 @@ single `krb5.conf` file for all of the its drivers.
    for the history server.
 
    Add the Kerberos configurations to your spark-history JSON configuration file:
-
+   ```json
          {
             "service": {
+                "user": "nobody",
                 "hdfs-config-url": "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
             },
             "security": {
                 "kerberos": {
+                  "enabled": true,
                   "krb5conf": "<base64_encoding>",
                   "principal": "<Kerberos principal>",  # e.g. spark@REALM
                   "keytab": "<keytab secret path>"      # e.g. __dcos_base64__hdfs_keytab
                 }
             }
          }
+    ```
+
+   Alternatively, you can specify properties of the `krb5.conf`:
+   ```json
+            {
+               "security": {
+                   "kerberos": {
+                     "enabled": true,
+                     "kdc": {
+                       "hostname": "<kdc_hostname>",
+                       "port": <kdc_port>
+                     },
+                     "realm": "<kdc_realm>"
+                     "principal": "<Kerberos principal>",  # e.g. spark@REALM
+                     "keytab": "<keytab secret path>"      # e.g. __dcos_base64__hdfs_keytab
+                   }
+               }
+            }
+       ```
 
 ## Job Submission
 
