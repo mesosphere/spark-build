@@ -61,7 +61,7 @@
                     "description": "Launch the Dispatcher using the Universal Container Runtime (UCR)",
                     "default": false
                 },
-                "Use_bootstrap_for_IP_detect": {
+                "use_bootstrap_for_IP_detect": {
                     "type": "boolean",
                     "description": "Use the bootstrap utility for detecting host IP as opposed to using Spark's internal mechanism, see troubleshooting.md.",
                     "default": false

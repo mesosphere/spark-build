@@ -40,9 +40,9 @@ menuWeight: 125
     18/01/25 17:42:57 INFO ShutdownHookManager: Shutdown hook called
     ```
 
-    In this case, remove the environment variable called `NO_BOOTSTRAP` from the Dispatcher config, either via the UI, editing the task or set to false in the options.json, and restart the
-    service.  This will cause the DC/OS-specific `bootstrap` binary to detect the IP, which may allow the initialization
-    of the Spark service to complete. 
+    In this case, enable the `service.use_bootstrap_for_IP_detect` option in the Dispatcher config, either via the UI,
+    editing the task or set to `true` in the options.json, and restart the service.  This will cause the DC/OS-specific
+    `bootstrap` utility to detect the IP, which may allow the initialization of the Spark service to complete. 
 
 # Jobs
 
@@ -54,6 +54,9 @@ menuWeight: 125
 
 *   Jobs themselves log output to their sandbox, which you can access through the Mesos UI. The Spark logs will be sent
     to `stderr`, while any output you write in your job will be sent to `stdout`.
+
+*   To disable using the Mesosphere `bootstrap` utility for host IP detection in jobs add
+    `spark.mesos.driverEnv.SKIP_BOOTSTRAP_IP_DETECT=true` to your job configuration.
 
 # CLI
 
