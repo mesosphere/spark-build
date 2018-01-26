@@ -47,6 +47,7 @@ mode above).
 Quota for the Drivers allows the operator of the cluster to ensure that only a given number of Drivers are concurrently
 running. As additional Drivers are submitted, they will be enqueued by the Spark Dispatcher. Below are the recommended
 steps for setting Quota for the Drivers:
+
 1.  Set the Quota conservatively, keeping in mind that it will effect the number of jobs that can run concurrently.
 1.  Decide how much of your cluster's resources to allocate to running Drivers. These resources will only be used for
     the Spark Drivers, meaning that here we can decide roughly how many concurrent jobs we’d like to have running at a
@@ -142,9 +143,10 @@ job from consuming the entire Quota the max CPUs for that Spark job should be se
 Quota’s resources. This ensures that the Spark job will get sufficient resources to make progress, setting the max CPUs
 ensures it will not starve other Spark jobs of resources as well as predictable offer suppression semantics.
 
-## Permissions when using Quota with Strict mode Strict mode clusters (see [security
-modes](https://docs.mesosphere.com/1.10/security/ent/#security-modes)) require extra permissions to be set in order to
-use Quota. Follow the instructions in
+## Permissions when using Quota with Strict mode 
+
+Strict mode clusters (see [security modes](https://docs.mesosphere.com/1.10/security/ent/#security-modes)) require extra
+permissions to be set in order to use Quota. Follow the instructions in
 [installing](https://github.com/mesosphere/spark-build/blob/master/docs/install.md) and add the additional permissions
 for the roles you intend to use, detailed below. Following the example above they would be set as follows:
 
