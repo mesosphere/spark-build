@@ -19,7 +19,13 @@
             "SPARK_SECURITY_KERBEROS_REALM": "{{security.kerberos.realm}}",
         {{/security.kerberos.realm}}
 {{/security.kerberos.enabled}}
-        "NO_BOOTSTRAP": "true",
+
+{{#service.use_bootstrap_for_IP_detect}}
+{{/service.use_bootstrap_for_IP_detect}}
+{{^service.use_bootstrap_for_IP_detect}}
+        "SKIP_BOOTSTRAP_IP_DETECT": "true",
+{{/service.use_bootstrap_for_IP_detect}}
+
 {{#service.service_account_secret}}
         "DCOS_SERVICE_ACCOUNT_CREDENTIAL": { "secret": "serviceCredential" },
         "MESOS_MODULES": "{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}",
