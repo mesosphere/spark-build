@@ -111,7 +111,7 @@ For development purposes, you can install Spark on a local DC/OS cluster. For th
 1. Run a simple Job:
 
    ```bash
-   dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com.s3.amazonaws.com/assets/spark/spark-examples_2.10-1.5.0.jar"
+   dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30"
    ```
 
 **Note**: A limited resource environment such as DC/OS Vagrant restricts some of the features available in DC/OS Apache
