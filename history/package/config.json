@@ -98,6 +98,10 @@
                         "krb5conf": {
                             "description": "Base64 encoded krb5.conf file to access your KDC. Providing this will override above settings.",
                             "type": "string",
+                            "media": {
+                                "binaryEncoding": "base64",
+                                "type": "application/x-yaml"
+                            },
                             "default": ""
                         },
                         "principal": {
