@@ -5,7 +5,7 @@
     "scm": "https://github.com/apache/spark.git",
     "maintainer": "support@mesosphere.io",
     "postUninstallNotes": "The Apache Spark History Server has been uninstalled and will no longer run.",
-    "name": "spark-history",
+    "name": "beta-spark-history",
     "description": "The Apache Spark History Server allows you to view the state of running and completed Spark jobs.",
     "licenses": [
         {
