@@ -38,13 +38,6 @@ def configure_security_hdfs():
 @pytest.fixture(scope='module')
 def hdfs_with_kerberos(configure_security_hdfs):
     try:
-        # To do: remove the following as soon as HDFS with kerberos is released
-        log.warning('Temporarily using HDFS stub universe until kerberos is released')
-        sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
-            'hdfs-aws',
-            'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-hdfs/20171122-112028-Vl2QaSERix2q6Dhk/stub-universe-beta-hdfs.json')
-        )
-
         primaries = ["hdfs", "HTTP"]
         fqdn = "{service_name}.{host_suffix}".format(
             service_name=HDFS_SERVICE_NAME, host_suffix=sdk_hosts.AUTOIP_HOST_SUFFIX)
