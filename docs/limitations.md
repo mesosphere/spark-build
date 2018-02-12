@@ -34,5 +34,5 @@ featureMaturity:
     always the case. As Mesos does not perform UID mapping between Linux user namespaces, specifying a service user of
     `nobody` in this case will cause access failures when the container user attempts to open or execute a filesystem
     resource owned by a user with a different UID, preventing the service from launching. If the hosts in your cluster
-    have a UID for `nobody` other than 65534, you will need to maintain the default use (`root`) to run DC/OS Spark
+    have a UID for `nobody` other than 65534, you will need to maintain the default user (`root`) to run DC/OS Spark
     successfully.

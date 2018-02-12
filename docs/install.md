@@ -54,17 +54,18 @@ dcos package install spark --cli
 # Custom Installation
 
 You can customize the default configuration properties by creating a JSON options file and passing it to `dcos package
-install --options`. For example, to install the history server, create a file called `options.json`:
+install --options`. For example, to launch the Dispatcher using the Universal Container Runtime (UCR), create a file
+called `options.json`:
 
 ```json
 {
-  "history-server": {
-    "enabled": true
+  "service": {
+    "UCR_containerizer": true
   }
 }
 ```
 
-Install Spark with the  configuration specified in the `options.json` file:
+Install Spark with the configuration specified in the `options.json` file:
 
 ```bash
 dcos package install --options=options.json spark
