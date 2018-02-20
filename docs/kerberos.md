@@ -153,10 +153,12 @@ You can also set the base64 encoded krb5.conf after install time:
 
 ### Setting the Spark User
 
-By default, when Kerberos is enabled, Spark runs as the OS user coresponding to the
-Kerberos principal. For example, the principal "alice@LOCAL" would likely translate to "alice".
-Since "alice" would probably not be available as an OS user, it is recommended to
-specify the Spark user to be "root" or "nobody" instead:
+By default, when Kerberos is enabled, Spark runs as the OS user
+corresponding to the primary of the specified Kerberos principal.
+For example, the principal "alice@LOCAL" would map to the username "alice".
+If it is known that "alice" is not available as an OS user, either in
+the docker image or in the host,
+the Spark user should be specified as "root" or "nobody" instead:
 
     ```
     --conf spark.mesos.driverEnv.SPARK_USER=<Spark user>

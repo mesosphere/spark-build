@@ -140,6 +140,7 @@ def hdfs_cmd(cmd):
 @pytest.fixture(scope='module')
 def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_universe):
     try:
+        sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
         hdfs_cmd("mkdir /history")
         hdfs_cmd("chmod 1777 /history")
 
@@ -177,33 +178,34 @@ def setup_spark(hdfs_with_kerberos, setup_history_server, configure_security_spa
         utils.teardown_spark()
 
 
+def _run_terasort_job(terasort_class, app_args, expected_output):
+    jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
+    submit_args = ["--class", terasort_class] + KERBEROS_ARGS
+    utils.run_tests(app_url=jar_url,
+                    app_args=" ".join(app_args),
+                    expected_output=expected_output,
+                    args=submit_args)
+
+
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_terasort_suite():
-    jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
-
     data_dir = "hdfs:///users/alice"
     terasort_in = "{}/{}".format(data_dir, "terasort_in")
     terasort_out = "{}/{}".format(data_dir, "terasort_out")
     terasort_validate = "{}/{}".format(data_dir, "terasort_validate")
 
-    teragen_args=["--class", "com.github.ehiggs.spark.terasort.TeraGen"] + KERBEROS_ARGS
-    utils.run_tests(app_url=jar_url,
-                    app_args="1g {}".format(terasort_in),
-                    expected_output="Number of records written",
-                    args=teragen_args)
+    _run_terasort_job(terasort_class="com.github.ehiggs.spark.terasort.TeraGen",
+                      app_args=["1g", terasort_in],
+                      expected_output="Number of records written")
 
-    terasort_args = ["--class", "com.github.ehiggs.spark.terasort.TeraSort"] + KERBEROS_ARGS
-    utils.run_tests(app_url=jar_url,
-                    app_args="{} {}".format(terasort_in, terasort_out),
-                    expected_output="",
-                    args=terasort_args)
+    _run_terasort_job(terasort_class="com.github.ehiggs.spark.terasort.TeraSort",
+                      app_args=[terasort_in, terasort_out],
+                      expected_output="")
 
-    teravalidate_args = ["--class", "com.github.ehiggs.spark.terasort.TeraValidate"] + KERBEROS_ARGS
-    utils.run_tests(app_url=jar_url,
-                    app_args="{} {}".format(terasort_out, terasort_validate),
-                    expected_output="partitions are properly sorted",
-                    args=teravalidate_args)
+    _run_terasort_job(terasort_class="com.github.ehiggs.spark.terasort.TeraValidate",
+                      app_args=[terasort_out, terasort_validate],
+                      expected_output="partitions are properly sorted")
 
 
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
@@ -229,8 +231,9 @@ def test_supervise():
                 "--conf", "spark.cores.max=8",
                 "--conf", "spark.executors.cores=4"]
 
+    data_dir = "hdfs:///users/alice"
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                 app_args="10.0.0.1 9090 hdfs:///users/alice/netcheck hdfs:///users/alice/outfile",
+                                 app_args="10.0.0.1 9090 {dir}/netcheck {dir}/outfile".format(dir=data_dir),
                                  app_name=utils.SPARK_APP_NAME,
                                  args=(KERBEROS_ARGS + job_args))
     log.info("Started supervised driver {}".format(driver_id))
