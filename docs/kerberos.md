@@ -121,6 +121,11 @@ single `krb5.conf` file for all of the its drivers.
             }
        ```
 
+1. Make sure all users have write permission to the history HDFS directory. In an HDFS client:
+    ```bash
+    hdfs dfs -chmod 1777 <history directory>
+    ```
+
 ## Job Submission
 
 To authenticate to a Kerberos KDC, Spark on Mesos supports keytab files as well as ticket-granting tickets (TGTs).
@@ -146,6 +151,19 @@ You can also set the base64 encoded krb5.conf after install time:
 **Note** This setting `SPARK_MESOS_KRB5_CONF_BASE64` will overwrite/override any settings set with
 `SPARK_SECURITY_KERBEROS_KDC_HOSTNAME`, `SPARK_SECURITY_KERBEROS_KDC_PORT`, and `SPARK_SECURITY_KERBEROS_REALM`
 
+### Setting the Spark User
+
+By default, when Kerberos is enabled, Spark runs as the OS user
+corresponding to the primary of the specified Kerberos principal.
+For example, the principal "alice@LOCAL" would map to the username "alice".
+If it is known that "alice" is not available as an OS user, either in
+the docker image or in the host,
+the Spark user should be specified as "root" or "nobody" instead:
+
+    ```
+    --conf spark.mesos.driverEnv.SPARK_USER=<Spark user>
+    ```
+
 ### Keytab Authentication
 
 Submit the job with the keytab:
@@ -153,6 +171,7 @@ Submit the job with the keytab:
     dcos spark run --submit-args="\
     --kerberos-principal user@REALM \
     --keytab-secret-path /__dcos_base64__hdfs-keytab \
+    --conf spark.mesos.driverEnv.SPARK_USER=<spark user> \
     --conf ... --class MySparkJob <url> <args>"
 
 ### TGT Authentication
@@ -162,6 +181,7 @@ Submit the job with the ticket:
     dcos spark run --submit-args="\
     --kerberos-principal user@REALM \
     --tgt-secret-path /__dcos_base64__tgt \
+    --conf spark.mesos.driverEnv.SPARK_USER=<spark user> \
     --conf ... --class MySparkJob <url> <args>"
 
 **Note:** You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters from Spark on Mesos.
