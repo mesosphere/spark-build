@@ -56,78 +56,13 @@ will set the containerizer to `mesos`, the executor cores to `4` and enable the 
 
 
 ## Secrets
-Enterprise DC/OS provides a secrets store to enable access to sensitive data such as database passwords, private keys, and API tokens. DC/OS manages secure transportation of secret data, access control and authorization, and secure storage of secret content. The content of a secret is copied and made available within the pod.  A secret can be exposed to drivers as a file and/or as an environment variable. Secrets in Spark are specified with the following configuration properties:
-#### File-based secret
-```bash
-dcos spark run --submit-args="\
-...
---conf spark.mesos.driver.secret.name=/mysecret \
---conf spark.mesos.driver.secret.filename=asecret \
-...
-```
-#### Environment-based secret
-```bash
-dcos spark run --submit-args="\
-...
---conf spark.mesos.driver.secret.name=/mysecret \
---conf spark.mesos.driver.secret.envkey=SECRETKEY \
-...
-```
-Multiple secrets can be injected by using a comma-separated list:
-```bash
-dcos spark run --submit-args="\
-...
---conf spark.mesos.driver.secret.name=/user,/password \
---conf spark.mesos.driver.secret.filename=secretuser,seretpassword \
---conf spark.mesos.driver.secret.envkey=USER,PASSWORD \
-...
-```
 
-**Note:** Secrets are available only in Enterprise DC/OS 1.9 onwards. [Learn more about the secrets store](https://docs.mesosphere.com/1.9/security/secrets/).
-
-### Authorization for Secrets
-
-The path of a secret defines which service IDs can have access to it. You can think of secret paths as namespaces. _Only_ services that are under the same namespace can read the content of the secret.
-
-
-| Secret                               | Service ID                          | Can service access secret? |
-|--------------------------------------|-------------------------------------|----------------------------|
-| `secret-svc/Secret_Path1`            | `/user`                             | No                         |
-| `secret-svc/Secret_Path1`            | `/user/dev1`                        | No                         |
-| `secret-svc/Secret_Path1`            | `/secret-svc`                       | Yes                        |
-| `secret-svc/Secret_Path1`            | `/secret-svc/dev1`                  | Yes                        |
-| `secret-svc/Secret_Path1`            | `/secret-svc/instance2/dev2`        | Yes                        |
-| `secret-svc/Secret_Path1`            | `/secret-svc/a/b/c/dev3`            | Yes                        |
-| `secret-svc/instance1/Secret_Path2`  | `/secret-svc/dev1`                  | No                         |
-| `secret-svc/instance1/Secret_Path2`  | `/secret-svc/instance2/dev3`        | No                         |
-| `secret-svc/instance1/Secret_Path2`  | `/secret-svc/instance1`             | Yes                        |
-| `secret-svc/instance1/Secret_Path2`  | `/secret-svc/instance1/dev3`        | Yes                        |
-| `secret-svc/instance1/Secret_Path2`  | `/secret-svc/instance1/someDir/dev3`| Yes                        |
-
-
-
-**Note:** Absolute paths (paths with a leading slash) to secrets are not supported. The file path for a secret must be relative to the sandbox.
-
-### Binary Secrets
-
-When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648. 
-
-You can use standard `base64` command line utility. Take a look at the following example that is using BSD `base64` command.
-``` 
-$  base64 -i krb5.keytab -o kerb5.keytab.base64-encoded 
-```
-
-`base64` command line utility in Linux inserts line-feeds in the encoded data by default. Disable line-wrapping via  `-w 0` argument.  Here is a sample base64 command in Linux.
-``` 
-$  base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded 
-```
-
-Give the secret basename prefixed with `__dcos_base64__`. For example, `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
-
-``` 
-$  dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
-```
-When you reference the `__dcos_base64__mysecret` secret in your service, the content of the secret will be first base64-decoded, and then copied and made available to your Spark application. Refer to a binary secret only as a file such that it will be automatically decoded and made available as a temporary in-memory file mounted within your container (file-based secrets). 
+Enterprise DC/OS provides a secrets store to enable access to sensitive data such as database passwords,
+private keys, and API tokens. DC/OS manages secure transportation of secret data, access control and
+authorization, and secure storage of secret content. A secret can be exposed to drivers and executors
+as a file and/or as an environment variable. To configure a job to access a secret, see the sections on
+[Using the Secret Store][../security/#using-the-secret-store] and
+[Using Mesos Secrets][../security/#using-mesos-secrets].
 
 # DC/OS Overlay Network
 

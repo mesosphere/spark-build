@@ -14,12 +14,50 @@ must authenticate to Mesos using a [DC/OS Service Account](https://docs.mesosphe
 
 Follow these instructions to [authenticate in strict mode](https://docs.mesosphere.com/services/spark/spark-auth/).
 
-# Using Mesos Secrets
+# Using the Secret Store
 
 DC/OS Enterprise allows users to add privileged information in the form of a file to the DC/OS secret store. These files
 can be referenced in Spark jobs and used for authentication and authorization with various external services (e.g.
 HDFS). For example, we use this functionality to pass the Kerberos Keytab. Details about how to use Secrets can be found
-at [official documentation](https://docs.mesosphere.com/latest/security/ent/secrets/). Once the secret has been added,
+at [official documentation](https://docs.mesosphere.com/latest/security/ent/secrets/).
+
+### Restricting Access to Secrets
+If only Spark requires access to a secret, store the secret in a path
+that matches the name of the Spark service (e.g. `spark/secret`).  See the [Secrets
+Documentation about Spaces][13] for more details about using spaces to restrict
+access to secrets.
+
+### Limitations
+Anyone who has access to the Spark service has access to all secrets
+available to Spark.
+Therefore, you should not allow anyone access to Spark who should not
+have access to those secrets.
+
+### Binary Secrets
+
+When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648.
+
+You can use standard `base64` command line utility. Take a look at the following example that is using BSD `base64` command.
+```
+$  base64 -i krb5.keytab -o kerb5.keytab.base64-encoded
+```
+
+`base64` command line utility in Linux inserts line-feeds in the encoded data by default. Disable line-wrapping via  `-w 0` argument.  Here is a sample base64 command in Linux.
+```
+$  base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded
+```
+
+Give the secret basename prefixed with `__dcos_base64__`. For example, `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
+
+```
+$  dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
+```
+When you reference the `__dcos_base64__mysecret` secret in your service, the content of the secret will be first base64-decoded, and then copied and made available to your Spark application. Refer to a binary secret only as a file such that it will be automatically decoded and made available as a temporary in-memory file mounted within your container (file-based secrets).
+
+
+# Using Mesos Secrets
+
+Once a secret has been added in the secret store,
 you can pass them to Spark with the `spark.mesos.<task-name>.secret.names` and
 `spark.mesos.<task-name>.secret.<filenames|envkeys>` confguration parameters where `<task-name>` is either `driver` or
 `executor`. Specifying `filenames` or `envkeys` will materialize the secret as either a file-based secret or an
@@ -45,27 +83,16 @@ AWS credentials) you change the configurations to be the following:
 This assumes that your secret access key is stored in a secret named `spark/my-aws-secret` and your secret key ID in
 `spark/my-aws-key`.
 
-### Restricting Access to Secrets
-If only Spark requires access to a secret, store the secret in a path
-that matches the name of the Spark service (e.g. `spark/secret`).  See the [Secrets
-Documentation about Spaces][13] for more details about using spaces to restrict
-access to secrets.
-
 ### Limitations
-Anyone who has access to the Spark service has access to all secrets
-available to Spark.
-Therefore, you should not allow anyone access to Spark who should not
-have access to those secrets.
-
 When using a combination of environment and file-based secrets there needs to be an equal number of sinks and secret
 sources (i.e. files and environment variables). For example
 ```
---conf spark.mesos.driver.secret.names=/my-secret-file,/my-secret-envvar
+--conf spark.mesos.driver.secret.names=/spark/my-secret-file,/spark/my-secret-envvar
 --conf spark.mesos.driver.secret.filenames=target-secret-file,placeholder-file
 --conf spark.mesos.driver.secret.envkeys=PLACEHOLDER,SECRET_ENVVAR
 ```
-will place the content of `my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file
-as well as the content of `my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary
+will place the content of `spark/my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file
+as well as the content of `spark/my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary
 secrets (tagged with `__dcos_base64__`, for example) the environment variable will still be empty because environment
 variables cannot be assigned to binary values.
 
@@ -117,8 +144,8 @@ are server.jks.base64 and trust.jks.base64, respectively, then use the following
 store: 
 
 ```bash
-dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
-dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
+dcos security secrets create /spark/__dcos_base64__keystore --value-file server.jks.base64
+dcos security secrets create /spark/__dcos_base64__truststore --value-file trust.jks.base64
 ```
 
 You must add the following configurations to your `dcos spark run ` command.
@@ -147,14 +174,14 @@ communicate with each other. A secret can be generated with the DC/OS Spark CLI
 ```bash
 dcos spark secret <secret_path>
 # for example
-dcos spark secret /sparkAuthSecret
+dcos spark secret /spark/sparkAuthSecret
 ```
 This will generate a random secret and upload it to the DC/OS secrets store [14] at the designated path. To use this
 secret for RPC authentication add the following configutations to your CLI command:
 ```bash
 dcos spark run --submit-args="\
 ...
---executor-auth-secret=/sparkAuthSecret
+--executor-auth-secret=/spark/sparkAuthSecret
 ...
 "
 
