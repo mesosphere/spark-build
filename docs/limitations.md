@@ -22,6 +22,11 @@ featureMaturity:
     `spark.mesos.[driver|executor].secret.envkeys, the keystore and truststore secrets will also show up as
     environment-based secrets, due to the way secrets are implemented. You can ignore these extra environment variables.
     
+*   Anyone who has access to the Spark service has access to all secrets
+    available to Spark.
+    Therefore, you should not allow anyone access to Spark who should not
+    have access to those secrets.
+
 *   When using Kerberos and HDFS, the Spark Driver generates delegation tokens and distributes them to it's Executors
     via RPC.  Authentication of the Executors with the Driver is done with a [shared
     secret][https://spark.apache.org/docs/latest/security.html#spark-security]. Without authentication, it is possible

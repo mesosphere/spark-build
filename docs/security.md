@@ -27,25 +27,36 @@ environment variable. These configuration parameters take comma-separated lists 
 final secret file or environment variable. We recommend using file-based secrets whenever possible as they are more
 secure than environment variables.
  
-For example to use a secret named `my-secret-file` as a file in the driver _and_ the executors add these configuration 
+For example to use a secret named `spark/my-secret-file` as a file in the driver _and_ the executors add these configuration
 parameters:
 ```
---conf spark.mesos.driver.secret.names=my-secret-file
+--conf spark.mesos.driver.secret.names=spark/my-secret-file
 --conf spark.mesos.driver.secret.filenames=target-secret-file
---conf spark.mesos.executor.secret.names=my-secret-file
+--conf spark.mesos.executor.secret.names=spark/my-secret-file
 --conf spark.mesos.executor.secret.filenames=target-secret-file
 ```
-this will put the contents of the secret `my-secret-file` in a secure RAM-FS mounted secret file named
+this will put the contents of the secret `spark/my-secret-file` in a secure RAM-FS mounted secret file named
 `target-secret-file` in the driver and executors sandboxes. If you want to use a secret as an environment variable (e.g.
 AWS credentials) you change the configurations to be the following: 
 ```
---conf spark.mesos.driver.secret.names=/my-aws-secret,/my-aws-key
+--conf spark.mesos.driver.secret.names=/spark/my-aws-secret,/spark/my-aws-key
 --conf spark.mesos.driver.secret.envkeys=AWS_SECRET_ACCESS_KEY,AWS_ACCESS_KEY_ID
 ```
-This assumes that your secret access key is stored in a secret named `my-aws-secret` and your secret key in
-`my-aws-key`.
+This assumes that your secret access key is stored in a secret named `spark/my-aws-secret` and your secret key ID in
+`spark/my-aws-key`.
+
+### Restricting Access to Secrets
+If only Spark requires access to a secret, store the secret in a path
+that matches the name of the Spark service (e.g. `spark/secret`).  See the [Secrets
+Documentation about Spaces][13] for more details about using spaces to restrict
+access to secrets.
 
 ### Limitations
+Anyone who has access to the Spark service has access to all secrets
+available to Spark.
+Therefore, you should not allow anyone access to Spark who should not
+have access to those secrets.
+
 When using a combination of environment and file-based secrets there needs to be an equal number of sinks and secret
 sources (i.e. files and environment variables). For example
 ```
@@ -116,18 +127,14 @@ The ones in parentheses are optional:
 ```bash
 
 dcos spark run --verbose --submit-args="\
---keystore-secret-path=<path/to/keystore, e.g. __dcos_base64__keystore> \
+--keystore-secret-path=<path/to/keystore, e.g. spark/__dcos_base64__keystore> \
 --keystore-password=<password to keystore> \
 --private-key-password=<password to private key in keystore> \
-(—-truststore-secret-path=<path/to/truststore, e.g. __dcos_base64__truststore> \)
+(—-truststore-secret-path=<path/to/truststore, e.g. spark/__dcos_base64__truststore> \)
 (--truststore-password=<password to truststore> \)
 (—-conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
-
-**Note:** If you have specified a space for your secrets other than the default value, `/spark`, then you must set
-`spark.mesos.task.labels=DCOS_SPACE:<dcos_space>` in the command above in order to access the secrets.  See the [Secrets
-Documentation about spaces][13] for more details about spaces.
 
 **Note:** If you specify environment-based secrets with `spark.mesos.[driver|executor].secret.envkeys`, the keystore and
 truststore secrets will also show up as environment-based secrets, due to the way secrets are implemented. You can
@@ -157,5 +164,5 @@ dcos spark run --submit-args="\
 
  [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
- [13]: https://docs.mesosphere.com/1.10/security/#spaces
+ [13]: https://docs.mesosphere.com/1.10/security/ent/#spaces
  [14]: https://docs.mesosphere.com/latest/security/secrets/

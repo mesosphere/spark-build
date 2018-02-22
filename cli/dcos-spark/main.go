@@ -22,7 +22,6 @@ type SparkCommand struct {
 	submissionId      string
 	submitArgs        string
 	submitDockerImage string
-	submitDcosSpace   string
 	submitEnv         map[string]string
 	secretPath		  string
 
@@ -174,10 +173,6 @@ func handleCommands(app *kingpin.Application) {
 	run.Flag("docker-image", "Docker image to run the job within").
 		Default("").
 		StringVar(&cmd.submitDockerImage)
-	// TODO this should be moved to submit args
-	run.Flag("dcos-space", "DCOS_SPACE to run the job with (default to Dispatcher's DCOS_SPACE)").
-		Default("").
-		StringVar(&cmd.submitDcosSpace)
 	run.Flag("env", "Environment variable(s) to pass into the Spark job.").
 		Short('E').
 		PlaceHolder("ENVKEY=ENVVAL").
