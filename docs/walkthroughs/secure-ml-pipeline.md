@@ -62,18 +62,20 @@ DC/OS 1.10 and 1.11 the binary file must be base64 encoded and the resultant str
     ```json
     {
       "service": {
-        "kerberos": {
-          "enabled": "true",
-          "kdc": {
-            "hostname":  "<agent_hosting_kdc_or_dns>",
-            "port": "<port_to_communicate_with_kdc>"
+        "security": {
+          "kerberos": {
+            "enabled": true,
+            "kdc": {
+              "hostname": "<agent_hosting_kdc_or_dns>",
+              "port": "<port_to_communicate_with_kdc>"
+            },
+            "realm": "LOCAL",
+            "keytab_secret": "__dcos_base64__keytab"
           },
-          "realm": "LOCAL",
-          "keytab_secret": "__dcos_base64__keytab"
-        },
-        "transport_encryption": {
-          "enabled": "true",
-          "allow_plaintext": "false"
+          "transport_encryption": {
+            "enabled": true,
+            "allow_plaintext": false
+          }
         }
       }
     }
@@ -107,13 +109,13 @@ _All of the code for this example is in SpamHam.scala in the
     [resources](https://github.com/mesosphere/spark-build/tree/master/tests/resources) of the test repo. This artifact
     needs to be publicly available to your cluster, we will refer to this artifact as `http://SMS_DATA.txt`.
 1.  Build the example jar by following the instructions in the
-    [README](https://github.com/mesosphere/spark-build/tree/ar-hdfs-kafka-pipeline/tests/jobs). Upload that to S3 so
+    [README](https://github.com/mesosphere/spark-build/tree/master/tests/jobs). Upload that to S3 so
     that it can be publicly accessible, we will refer to this artifact as `http://DCOS_EXAMPLES.jar` 
 1.  Run the model training step, notice here we only use HDFS:
     ```bash
     dcos spark run --submit-args="\
     --kerberos-principal=hdfs@LOCAL \
-    --keytab-secret-path=/__dcos_base64___keytab \
+    --keytab-secret-path=/__dcos_base64__keytab \
     --keystore-secret-path=__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
@@ -128,7 +130,7 @@ _All of the code for this example is in SpamHam.scala in the
     ```bash
     dcos spark run --submit-args="\
     --kerberos-principal=client@LOCAL \
-    --keytab-secret-path=/__dcos_base64___keytab \
+    --keytab-secret-path=/__dcos_base64__keytab \
     --keystore-secret-path=__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
@@ -155,7 +157,7 @@ _All of the code for this example is in SpamHam.scala in the
     ```bash
     dcos spark run --submit-args="\
     --kerberos-principal=client@LOCAL \
-    --keytab-secret-path=/__dcos_base64___keytab \
+    --keytab-secret-path=/__dcos_base64__keytab \
     --keystore-secret-path=__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
@@ -164,8 +166,8 @@ _All of the code for this example is in SpamHam.scala in the
     --executor-auth-secret=/spark-auth-secret \
     --conf spark.cores.max=4 \
     --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
-    --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/generic_keytab.jaas \
-    --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/generic_keytab.jaas \
+    --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
+    --conf spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
     --class SpamHamStreamingClassifier http://DCOS_EXAMPLES.jar top1 <broker>:<port> hdfs:///nb_model true"
 
     ```   
