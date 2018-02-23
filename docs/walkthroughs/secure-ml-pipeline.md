@@ -116,27 +116,32 @@ _All of the code for this example is in SpamHam.scala in the
     dcos spark run --submit-args="\
     --kerberos-principal=hdfs@LOCAL \
     --keytab-secret-path=/__dcos_base64__keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=spark-auth-secret \
+    --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=8 \
     --conf spark.mesos.uris=http://SMS_DATA.txt \
     --class SpamHamModelFactory http://DCOS_EXAMPLES.jar file:///mnt/mesos/sandbox/SMSSpamCollection.txt 0.8 hdfs:///nb_model"
     ```
+
+    **Note:** The examples on this page assume that you are using the default
+    service name for Spark, "spark". If using a different service name, update
+    the secret paths accordingly.
+
 1.  Setup the Spammer, this small job will just push messages to the topic:
     ```bash
     dcos spark run --submit-args="\
     --kerberos-principal=client@LOCAL \
     --keytab-secret-path=/__dcos_base64__keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=spark-auth-secret \
+    --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=2 \
     --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
     --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \
@@ -158,12 +163,12 @@ _All of the code for this example is in SpamHam.scala in the
     dcos spark run --submit-args="\
     --kerberos-principal=client@LOCAL \
     --keytab-secret-path=/__dcos_base64__keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=/spark-auth-secret \
+    --executor-auth-secret=/spark/spark-auth-secret \
     --conf spark.cores.max=4 \
     --conf spark.mesos.uris=http://SMS_DATA.txt,http://JAAS_ARTIFACT.conf \
     --conf spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/mnt/mesos/sandbox/JAAS_ARTIFACT.conf \

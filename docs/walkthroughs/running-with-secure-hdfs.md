@@ -1,7 +1,7 @@
 # Fully secure HDFS and Spark with Kerberos, SASL, and TLS. 
 This walkthrough will show how to run a version of the [TeraSort Benchmark](https://github.com/ehiggs/spark-terasort)
 with Spark in a fully secure deployment and Kerberos-secured HDFS as the storage backend. Specifically, we will
-demonstrate the following the following:
+demonstrate the following:
 1.  Use a Kerberos-secured HDFS with Spark.
 1.  Use TLS to secure the file-serving channels of your Spark jobs.
 1.  Use SASL for authentication of Spark Executors and encryption of the BlockTransferService
@@ -86,26 +86,31 @@ The TeraSort suite has 3 steps: generating the data, sorting the data, and valid
     dcos spark run --submit-args="\
     --kerberos-principal=hdfs@LOCAL \
     --keytab-secret-path=/__dcos_base64___keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=spark-auth-secret \
+    --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraGen https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar 1g hdfs:///terasort_in_secure"
     ```
+
+    **Note:** The examples on this page assume that you are using the default
+    service name for Spark, "spark". If using a different service name, update
+    the secret paths accordingly.
+
 1.  Run the `TeraSort` step:
     ```bash
     dcos spark run --submit-args="\
     --kerberos-principal=hdfs@LOCAL \
     --keytab-secret-path=/__dcos_base64___keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=spark-auth-secret \
+    --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraSort https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_in_secure hdfs:///terasort_out_secure"
     ```
@@ -115,12 +120,12 @@ The TeraSort suite has 3 steps: generating the data, sorting the data, and valid
     dcos spark run --submit-args="\
     --kerberos-principal=hdfs@LOCAL \
     --keytab-secret-path=/__dcos_base64___keytab \
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    --truststore-secret-path=__dcos_base64__truststore \
+    --truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit \
-    --executor-auth-secret=spark-auth-secret \
+    --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
     --class com.github.ehiggs.spark.terasort.TeraValidate https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_out_secure hdfs:///terasort_validate_secure"
     ```

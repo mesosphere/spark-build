@@ -74,26 +74,30 @@ Spark has two communication channels used amongst its components:
     base64 -w 0 server.jks > server.jks.base64
     base64 -w 0 trust.jks > trust.jks.base64
     # uploading
-    dcos security secrets create /__dcos_base64__truststore --value-file trust.jks.base64
-    dcos security secrets create /__dcos_base64__keystore --value-file server.jks.base64
+    dcos security secrets create /spark/__dcos_base64__truststore --value-file trust.jks.base64
+    dcos security secrets create /spark/__dcos_base64__keystore --value-file server.jks.base64
     ```
     *Note* that your version of `base64` may need a different flag (other than `-w 0`) to disable line wrapping, we use
     the coreutils version.
     
+    **Note:** The examples on this page assume that you are using the default
+    service name for Spark, "spark". If using a different service name, update
+    the secret paths accordingly.
+
 1.  To enable TLS in a Spark job add the following configuration:
     ```bash
     dcos spark run --verbose --submit-args="\
-    --keystore-secret-path=__dcos_base64__keystore \
+    --keystore-secret-path=spark/__dcos_base64__keystore \
     --keystore-password=changeit \
     --private-key-password=changeit \
-    —-truststore-secret-path=__dcos_base64__truststore \
+    —-truststore-secret-path=spark/__dcos_base64__truststore \
     --truststore-password=changeit "
     ```
 
 ### Setup BlockTransferService SASL and Executor Authentication
 1.  The DC/OS Spark CLI will generate a secret "cookie" for sharing between Spark components. Simply:
     ```bash
-    dcos spark secret /spark-auth-secret
+    dcos spark secret /spark/spark-auth-secret
     ```
     `spark-auth-secret` you may choose a different name and/or path for the secret, but we provide a concrete example here.
     
@@ -101,7 +105,7 @@ Spark has two communication channels used amongst its components:
     ```bash
     dcos spark run --submit-args="\
     ...
-    --executor-auth-secret=spark-auth-secret
+    --executor-auth-secret=spark/spark-auth-secret
     ..."
     ```
 
