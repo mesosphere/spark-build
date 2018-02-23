@@ -29,12 +29,6 @@ that matches the name of the Spark service (e.g. `spark/secret`).  See the [Secr
 Documentation about Spaces][13] for details about how secret paths restrict
 service access to secrets.
 
-### Limitations
-**WARNING:** Anyone who has access to the Spark service has access to all secrets
-available to Spark.
-Therefore, you should not allow anyone access to Spark who should not
-have access to those secrets.
-
 ### Binary Secrets
 
 When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648.
