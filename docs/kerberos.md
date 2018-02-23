@@ -79,7 +79,8 @@ single `krb5.conf` file for all of the its drivers.
 
         dcos package install --options=/path/to/options.json spark
         
-1.  Make sure your keytab is in the DC/OS Secret Store. See [Using the Secret Store][../security/#using-the-secret-store]
+1.  Make sure your keytab is in the DC/OS Secret Store, under a path that is accessible
+    by the Spark service. See [Using the Secret Store][../security/#using-the-secret-store]
     for details.
 
 
@@ -184,6 +185,10 @@ Submit the job with the ticket:
     --tgt-secret-path /spark/__dcos_base64__tgt \
     --conf spark.mesos.driverEnv.SPARK_USER=<spark user> \
     --conf ... --class MySparkJob <url> <args>"
+
+**Note:** The examples on this page assume that you are using the default
+service name for Spark, "spark". If using a different service name, update
+the secret paths accordingly.
 
 **Note:** You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters from Spark on Mesos.
 

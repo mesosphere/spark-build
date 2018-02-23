@@ -21,14 +21,16 @@ can be referenced in Spark jobs and used for authentication and authorization wi
 HDFS). For example, we use this functionality to pass the Kerberos Keytab. Details about how to use Secrets can be found
 at [official documentation](https://docs.mesosphere.com/latest/security/ent/secrets/).
 
-### Restricting Access to Secrets
+### Where to Place Secrets
+In order for a secret to be available to Spark, it must be placed in a path
+that can be accessed by the Spark service.
 If only Spark requires access to a secret, store the secret in a path
 that matches the name of the Spark service (e.g. `spark/secret`).  See the [Secrets
-Documentation about Spaces][13] for more details about using spaces to restrict
-access to secrets.
+Documentation about Spaces][13] for details about how secret paths restrict
+service access to secrets.
 
 ### Limitations
-Anyone who has access to the Spark service has access to all secrets
+**WARNING:** Anyone who has access to the Spark service has access to all secrets
 available to Spark.
 Therefore, you should not allow anyone access to Spark who should not
 have access to those secrets.
@@ -38,19 +40,19 @@ have access to those secrets.
 When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648.
 
 You can use standard `base64` command line utility. Take a look at the following example that is using BSD `base64` command.
-```
-$  base64 -i krb5.keytab -o kerb5.keytab.base64-encoded
+```bash
+$ base64 -i krb5.keytab -o kerb5.keytab.base64-encoded
 ```
 
 `base64` command line utility in Linux inserts line-feeds in the encoded data by default. Disable line-wrapping via  `-w 0` argument.  Here is a sample base64 command in Linux.
-```
-$  base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded
+```bash
+$ base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded
 ```
 
 Give the secret basename prefixed with `__dcos_base64__`. For example, `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
 
-```
-$  dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
+```bash
+$ dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
 ```
 When you reference the `__dcos_base64__mysecret` secret in your service, the content of the secret will be first base64-decoded, and then copied and made available to your Spark application. Refer to a binary secret only as a file such that it will be automatically decoded and made available as a temporary in-memory file mounted within your container (file-based secrets).
 
@@ -189,7 +191,7 @@ dcos spark run --submit-args="\
 
 
 
- [11]: https://docs.mesosphere.com/1.9/overview/architecture/components/
+ [11]: https://docs.mesosphere.com/latest/overview/architecture/components/
  [12]: http://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
- [13]: https://docs.mesosphere.com/1.10/security/ent/#spaces
+ [13]: https://docs.mesosphere.com/latest/security/ent/#spaces-for-secrets
  [14]: https://docs.mesosphere.com/latest/security/secrets/
