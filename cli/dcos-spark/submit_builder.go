@@ -504,18 +504,16 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
 	}
 
-	// DCOS_SPACE
-	if cmd.submitDcosSpace == "" { // get the DCOS_SPACE from the marathon app
-		dispatcherId, err := getStringFromTree(responseJson, []string{"app", "id"})
-		if err != nil {
-			return "", err
-		}
-		cmd.submitDcosSpace = dispatcherId
+	// Get the DCOS_SPACE from the marathon app
+	dispatcherID, err := getStringFromTree(responseJson, []string{"app", "id"})
+	if err != nil {
+		log.Printf("Failed to get Dispatcher app id from Marathon app definition: %s", err)
+		return "", err
 	}
-	log.Printf("Setting DCOS_SPACE to %s", cmd.submitDcosSpace)
-	appendToProperty("spark.mesos.driver.labels", fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace),
+	log.Printf("Setting DCOS_SPACE to %s", dispatcherID)
+	appendToProperty("spark.mesos.driver.labels", fmt.Sprintf("DCOS_SPACE:%s", dispatcherID),
 		args)
-	appendToProperty("spark.mesos.task.labels", fmt.Sprintf("DCOS_SPACE:%s", cmd.submitDcosSpace),
+	appendToProperty("spark.mesos.task.labels", fmt.Sprintf("DCOS_SPACE:%s", dispatcherID),
 		args)
 
 	// HDFS config
