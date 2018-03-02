@@ -123,7 +123,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     stop_count = str(stop_count)
     kerberized = True if kerberos_flag == "true" else False
     broker_dns = _kafka_broker_dns()
-    topic = "top1"
+    topic = "top2"
 
     big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
 
