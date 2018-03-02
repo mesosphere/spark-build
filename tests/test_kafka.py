@@ -123,7 +123,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     stop_count = str(stop_count)
     kerberized = True if kerberos_flag == "true" else False
     broker_dns = _kafka_broker_dns()
-    topic = "top3"
+    topic = "top4"
 
     big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
 
@@ -205,4 +205,5 @@ def _kafka_broker_dns():
         package_name=KAFKA_PACKAGE_NAME, service_name=KAFKA_SERVICE_NAME)
     rt, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
     assert rt == 0, "Failed to get broker endpoints"
-    return json.loads(stdout)["dns"][2]
+    endpoints = json.loads(stdout)["dns"]
+    return ",".join([endpoints[0], endpoints[1], endpoints[2]])
