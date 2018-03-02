@@ -205,4 +205,4 @@ def _kafka_broker_dns():
         package_name=KAFKA_PACKAGE_NAME, service_name=KAFKA_SERVICE_NAME)
     rt, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
     assert rt == 0, "Failed to get broker endpoints"
-    return json.loads(stdout)["dns"][0]
+    return json.loads(stdout)["dns"][2]
