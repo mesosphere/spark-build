@@ -216,6 +216,7 @@ installation parameters, however does require the Spark Driver _and_ the Spark E
         
 *   The `keytab` containing the credentials for accessing the Kafka cluster.
         
+        --conf spark.mesos.containerizer=mesos                            # required for secrets
         --conf spark.mesos.driver.secret.names=<base64_encoded_keytab>    # e.g. spark/__dcos_base64__kafka_keytab
         --conf spark.mesos.driver.secret.filenames=<keytab_file_name>     # e.g. kafka.keytab
         --conf spark.mesos.executor.secret.names=<base64_encoded_keytab>  # e.g. spark/__dcos_base64__kafka_keytab
