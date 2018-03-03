@@ -4,7 +4,7 @@
     "scm": "https://github.com/apache/spark.git",
     "maintainer": "support@mesosphere.io",
     "postUninstallNotes": "The Apache Spark DC/OS Service has been uninstalled and will no longer run.\nPlease follow the instructions at https://docs.mesosphere.com/service-docs/spark/uninstall/ to clean up any persisted state.",
-    "name": "beta-spark",
+    "name": "spark",
     "description": "Spark is a fast and general cluster computing system for Big Data.  Documentation: https://docs.mesosphere.com/service-docs/spark/",
     "licenses": [
         {
