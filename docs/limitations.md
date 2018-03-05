@@ -21,7 +21,11 @@ featureMaturity:
 *   With Spark SSL/TLS enabled, if you specify environment-based secrets with
     `spark.mesos.[driver|executor].secret.envkeys, the keystore and truststore secrets will also show up as
     environment-based secrets, due to the way secrets are implemented. You can ignore these extra environment variables.
-    
+
+*   Anyone who has access to the Spark (Dispatcher) service instance has access to all secrets available to it. Do not
+    grant users access to the Spark Dispatcher instance unless they are also permitted to access all secrets available
+    to the Spark Dispatcher instance.
+
 *   When using Kerberos and HDFS, the Spark Driver generates delegation tokens and distributes them to it's Executors
     via RPC.  Authentication of the Executors with the Driver is done with a [shared
     secret][https://spark.apache.org/docs/latest/security.html#spark-security]. Without authentication, it is possible
