@@ -60,15 +60,22 @@ When you reference the `__dcos_base64__mysecret` secret in your service, the con
 
 Once a secret has been added in the secret store,
 you can pass them to Spark with the `spark.mesos.<task-name>.secret.names` and
-`spark.mesos.<task-name>.secret.<filenames|envkeys>` confguration parameters where `<task-name>` is either `driver` or
+`spark.mesos.<task-name>.secret.<filenames|envkeys>` configuration parameters where `<task-name>` is either `driver` or
 `executor`. Specifying `filenames` or `envkeys` will materialize the secret as either a file-based secret or an
 environment variable. These configuration parameters take comma-separated lists that are "zipped" together to make the
 final secret file or environment variable. We recommend using file-based secrets whenever possible as they are more
 secure than environment variables.
- 
+
+**NOTE**: Secrets are only supported for Mesos containerizer and not for the Docker containerizer.
+To use the Mesos containerizer, add this configuration:
+```
+--conf spark.mesos.containerizer=mesos
+```
+
 For example to use a secret named `spark/my-secret-file` as a file in the driver _and_ the executors add these configuration
 parameters:
 ```
+--conf spark.mesos.containerizer=mesos
 --conf spark.mesos.driver.secret.names=spark/my-secret-file
 --conf spark.mesos.driver.secret.filenames=target-secret-file
 --conf spark.mesos.executor.secret.names=spark/my-secret-file
@@ -78,6 +85,7 @@ this will put the contents of the secret `spark/my-secret-file` in a secure RAM-
 `target-secret-file` in the driver and executors sandboxes. If you want to use a secret as an environment variable (e.g.
 AWS credentials) you change the configurations to be the following: 
 ```
+--conf spark.mesos.containerizer=mesos
 --conf spark.mesos.driver.secret.names=/spark/my-aws-secret,/spark/my-aws-key
 --conf spark.mesos.driver.secret.envkeys=AWS_SECRET_ACCESS_KEY,AWS_ACCESS_KEY_ID
 ```
@@ -88,6 +96,7 @@ This assumes that your secret access key is stored in a secret named `spark/my-a
 When using a combination of environment and file-based secrets there needs to be an equal number of sinks and secret
 sources (i.e. files and environment variables). For example
 ```
+--conf spark.mesos.containerizer=mesos
 --conf spark.mesos.driver.secret.names=/spark/my-secret-file,/spark/my-secret-envvar
 --conf spark.mesos.driver.secret.filenames=target-secret-file,placeholder-file
 --conf spark.mesos.driver.secret.envkeys=PLACEHOLDER,SECRET_ENVVAR
