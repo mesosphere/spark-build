@@ -69,6 +69,10 @@ Spark has two communication channels used amongst its components:
     directory.
     
 1.  Now base64 encode these two artifacts and upload them to the secret store.
+
+    **DC/OS 1.11+:** Base64 encoding of binary secrets is not necessary in DC/OS 1.11+. You may skip the encoding
+    and update the secret names accordingly in the following example.
+
     ```bash
     # encoding
     base64 -w 0 server.jks > server.jks.base64

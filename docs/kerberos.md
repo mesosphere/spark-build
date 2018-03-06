@@ -80,7 +80,8 @@ single `krb5.conf` file for all of the its drivers.
         dcos package install --options=/path/to/options.json spark
         
 1.  Make sure your keytab is in the DC/OS Secret Store, under a path that is accessible
-    by the Spark service. See [Using the Secret Store][../security/#using-the-secret-store]
+    by the Spark service. Since the keytab is a binary file, you must also base64 encode it on DC/OS 1.10 or lower.
+    See [Using the Secret Store][../security/#using-the-secret-store]
     for details.
 
 
@@ -99,7 +100,7 @@ single `krb5.conf` file for all of the its drivers.
                   "enabled": true,
                   "krb5conf": "<base64_encoding>",
                   "principal": "<Kerberos principal>",  # e.g. spark@REALM
-                  "keytab": "<keytab secret path>"      # e.g. spark-history/__dcos_base64__hdfs_keytab
+                  "keytab": "<keytab secret path>"      # e.g. spark-history/hdfs_keytab
                 }
             }
          }
@@ -117,7 +118,7 @@ single `krb5.conf` file for all of the its drivers.
                      },
                      "realm": "<kdc_realm>"
                      "principal": "<Kerberos principal>",  # e.g. spark@REALM
-                     "keytab": "<keytab secret path>"      # e.g. spark-history/__dcos_base64__hdfs_keytab
+                     "keytab": "<keytab secret path>"      # e.g. spark-history/hdfs_keytab
                    }
                }
             }
@@ -172,7 +173,7 @@ Submit the job with the keytab:
 
     dcos spark run --submit-args="\
     --kerberos-principal user@REALM \
-    --keytab-secret-path /spark/__dcos_base64__hdfs-keytab \
+    --keytab-secret-path /spark/hdfs-keytab \
     --conf spark.mesos.driverEnv.SPARK_USER=<spark user> \
     --conf ... --class MySparkJob <url> <args>"
 
@@ -182,7 +183,7 @@ Submit the job with the ticket:
 
     dcos spark run --submit-args="\
     --kerberos-principal user@REALM \
-    --tgt-secret-path /spark/__dcos_base64__tgt \
+    --tgt-secret-path /spark/tgt \
     --conf spark.mesos.driverEnv.SPARK_USER=<spark user> \
     --conf ... --class MySparkJob <url> <args>"
 
@@ -192,7 +193,7 @@ the secret paths accordingly.
 
 **Note:** You can access external (i.e. non-DC/OS) Kerberos-secured HDFS clusters from Spark on Mesos.
 
-**Note:** These credentials are security-critical. The DC/OS Secret Store requires you to base64 encode binary secrets
+**DC/OS 1.10 or lower:** These credentials are security-critical. The DC/OS Secret Store requires you to base64 encode binary secrets
 (such as the Kerberos keytab) before adding them. If they are uploaded with the `__dcos_base64__` prefix, they are
 automatically decoded when the secret is made available to your Spark job. If the secret name **doesn't** have this
 prefix, the keytab will be decoded and written to a file in the sandbox. This leaves the secret exposed and is not
@@ -217,9 +218,9 @@ installation parameters, however does require the Spark Driver _and_ the Spark E
 *   The `keytab` containing the credentials for accessing the Kafka cluster.
         
         --conf spark.mesos.containerizer=mesos                            # required for secrets
-        --conf spark.mesos.driver.secret.names=<base64_encoded_keytab>    # e.g. spark/__dcos_base64__kafka_keytab
+        --conf spark.mesos.driver.secret.names=<keytab>                   # e.g. spark/kafka_keytab
         --conf spark.mesos.driver.secret.filenames=<keytab_file_name>     # e.g. kafka.keytab
-        --conf spark.mesos.executor.secret.names=<base64_encoded_keytab>  # e.g. spark/__dcos_base64__kafka_keytab
+        --conf spark.mesos.executor.secret.names=<keytab>                 # e.g. spark/kafka_keytab
         --conf spark.mesos.executor.secret.filenames=<keytab_file_name>   # e.g. kafka.keytab
         
 
