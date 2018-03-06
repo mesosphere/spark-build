@@ -160,24 +160,16 @@ The keystore and truststore are created using the [Java keytool][12]. The keysto
 signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly
 trusted by Java.
 
-Both stores must be base64 encoded without newlines, for example:
+**DC/OS 1.10 or lower:** Since both stores are binary files, they must be base64-encoded before being placed in the
+DC/OS secret store. Follow the instructions above on encoding binary secrets to encode the keystore and truststore.
 
-```bash
-cat keystore | base64 -w 0 > keystore.base64
-cat keystore.base64
-/u3+7QAAAAIAAAACAAAAAgA...
-```
-
-**Note:** The base64 string of the keystore will probably be much longer than the snippet above, spanning 50 lines or
-so.
-
-Add the stores to your secrets in the DC/OS secret store. For example, if your base64-encoded keystores and truststores
-are server.jks.base64 and trust.jks.base64, respectively, then use the following commands to add them to the secret
+Add the stores to your secrets in the DC/OS secret store. For example, if your keystores and truststores
+are server.jks and trust.jks, respectively, then use the following commands to add them to the secret
 store: 
 
 ```bash
-dcos security secrets create /spark/__dcos_base64__keystore --value-file server.jks.base64
-dcos security secrets create /spark/__dcos_base64__truststore --value-file trust.jks.base64
+dcos security secrets create /spark/keystore --value-file server.jks
+dcos security secrets create /spark/truststore --value-file trust.jks
 ```
 
 You must add the following configurations to your `dcos spark run ` command.
@@ -186,10 +178,10 @@ The ones in parentheses are optional:
 ```bash
 
 dcos spark run --verbose --submit-args="\
---keystore-secret-path=<path/to/keystore, e.g. spark/__dcos_base64__keystore> \
+--keystore-secret-path=<path/to/keystore, e.g. spark/keystore> \
 --keystore-password=<password to keystore> \
 --private-key-password=<password to private key in keystore> \
-(—-truststore-secret-path=<path/to/truststore, e.g. spark/__dcos_base64__truststore> \)
+(—-truststore-secret-path=<path/to/truststore, e.g. spark/truststore> \)
 (--truststore-password=<password to truststore> \)
 (—-conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
 --class <Spark Main class> <Spark Application JAR> [application args]"
