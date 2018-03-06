@@ -36,24 +36,46 @@ to the Spark Dispatcher instance.
 
 ### Binary Secrets
 
-When you need to store binary files into DC/OS secrets store, for example a Kerberos keytab file, your file needs to be base64-encoded as specified in RFC 4648.
+You can store binary files, like a Kerberos keytab, in the DC/OS secrets store. In DC/OS 1.11+ you can create
+secrets from binary files directly, while in DC/OS 1.10 or lower, files must be base64-encoded as specified in
+RFC 4648 prior to being stored as secrets.
 
-You can use standard `base64` command line utility. Take a look at the following example that is using BSD `base64` command.
+#### DC/OS 1.11+
+
+To create a secret called `mysecret` with the binary contents of `kerb5.keytab` run:
+
+```bash
+$ dcos security secrets create --file kerb5.keytab mysecret
+```
+
+#### DC/OS 1.10 or lower
+
+To create a secret called `mysecret` with the binary contents of `kerb5.keytab`, first encode it using the
+`base64` command line utility. The following example uses BSD `base64` (default on macOS).
+
 ```bash
 $ base64 -i krb5.keytab -o kerb5.keytab.base64-encoded
 ```
 
-`base64` command line utility in Linux inserts line-feeds in the encoded data by default. Disable line-wrapping via  `-w 0` argument.  Here is a sample base64 command in Linux.
+Alternatively, GNU `base64` (the default on Linux) inserts line-feeds in the encoded data by default.
+Disable line-wrapping with the `-w 0` argument.
+
 ```bash
 $ base64 -w 0 -i krb5.keytab > kerb5.keytab.base64-encoded
 ```
 
-Give the secret basename prefixed with `__dcos_base64__`. For example, `some/path/__dcos_base64__mysecret` and `__dcos_base64__mysecret` will be base64-decoded automatically.
+Now that the file is encoded it can be stored as a secret.
 
 ```bash
 $ dcos security secrets  create -f kerb5.keytab.base64-encoded  some/path/__dcos_base64__mysecret
 ```
-When you reference the `__dcos_base64__mysecret` secret in your service, the content of the secret will be first base64-decoded, and then copied and made available to your Spark application. Refer to a binary secret only as a file such that it will be automatically decoded and made available as a temporary in-memory file mounted within your container (file-based secrets).
+
+**Note:** The secret name **must** be prefixed with `__dcos_base64__`.
+
+When the `some/path/__dcos_base64__mysecret` secret is referenced in your `dcos spark run` command, its base64-decoded
+contents will be made available as a [temporary file](http://mesos.apache.org/documentation/latest/secrets/#file-based-secrets)
+in your Spark application. **Note:** Make sure to only refer to binary secrets as files since holding binary content
+in environment variables is discouraged.
 
 
 # Using Mesos Secrets
@@ -103,8 +125,8 @@ sources (i.e. files and environment variables). For example
 ```
 will place the content of `spark/my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file
 as well as the content of `spark/my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary
-secrets (tagged with `__dcos_base64__`, for example) the environment variable will still be empty because environment
-variables cannot be assigned to binary values.
+secrets the environment variable will still be empty because environment
+variables cannot be assigned binary values.
 
 # Spark SSL
 
@@ -138,24 +160,13 @@ The keystore and truststore are created using the [Java keytool][12]. The keysto
 signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly
 trusted by Java.
 
-Both stores must be base64 encoded without newlines, for example:
-
-```bash
-cat keystore | base64 -w 0 > keystore.base64
-cat keystore.base64
-/u3+7QAAAAIAAAACAAAAAgA...
-```
-
-**Note:** The base64 string of the keystore will probably be much longer than the snippet above, spanning 50 lines or
-so.
-
-Add the stores to your secrets in the DC/OS secret store. For example, if your base64-encoded keystores and truststores
-are server.jks.base64 and trust.jks.base64, respectively, then use the following commands to add them to the secret
+Add the stores to your secrets in the DC/OS secret store. For example, if your keystores and truststores
+are server.jks and trust.jks, respectively, then use the following commands to add them to the secret
 store: 
 
 ```bash
-dcos security secrets create /spark/__dcos_base64__keystore --value-file server.jks.base64
-dcos security secrets create /spark/__dcos_base64__truststore --value-file trust.jks.base64
+dcos security secrets create /spark/keystore --value-file server.jks
+dcos security secrets create /spark/truststore --value-file trust.jks
 ```
 
 You must add the following configurations to your `dcos spark run ` command.
@@ -164,14 +175,17 @@ The ones in parentheses are optional:
 ```bash
 
 dcos spark run --verbose --submit-args="\
---keystore-secret-path=<path/to/keystore, e.g. spark/__dcos_base64__keystore> \
+--keystore-secret-path=<path/to/keystore, e.g. spark/keystore> \
 --keystore-password=<password to keystore> \
 --private-key-password=<password to private key in keystore> \
-(—-truststore-secret-path=<path/to/truststore, e.g. spark/__dcos_base64__truststore> \)
+(—-truststore-secret-path=<path/to/truststore, e.g. spark/truststore> \)
 (--truststore-password=<password to truststore> \)
 (—-conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
+
+**DC/OS 1.10 or lower:** Since both stores are binary files, they must be base64 encoded before being placed in the
+DC/OS secret store. Follow the instructions above on encoding binary secrets to encode the keystore and truststore.
 
 **Note:** If you specify environment-based secrets with `spark.mesos.[driver|executor].secret.envkeys`, the keystore and
 truststore secrets will also show up as environment-based secrets, due to the way secrets are implemented. You can

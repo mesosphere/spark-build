@@ -45,7 +45,7 @@ Visit the Spark cluster dispatcher at `http://<dcos-url>/service/spark/` to view
         dcos spark run --submit-args="\
         --conf spark.mesos.containerizer=mesos \  # required for secrets
         --conf spark.mesos.uris=<URI_of_jaas.conf> \
-        --conf spark.mesos.driver.secret.names=spark/__dcos_base64___keytab \  # __dcos_base64__ prefix required for decoding base64 encoded binary secrets
+        --conf spark.mesos.driver.secret.names=spark/__dcos_base64___keytab \  # base64 encoding of binary secrets required in DC/OS 1.10 or lower
         --conf spark.mesos.driver.secret.filenames=kafka-client.keytab \
         --conf spark.mesos.executor.secret.names=spark/__dcos_base64___keytab \
         --conf spark.mesos.executor.secret.filenames=kafka-client.keytab \
