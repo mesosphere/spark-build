@@ -125,8 +125,8 @@ sources (i.e. files and environment variables). For example
 ```
 will place the content of `spark/my-secret-file` into the `PLACEHOLDER` environment variable and the `target-secret-file` file
 as well as the content of `spark/my-secret-envvar` into the `SECRET_ENVVAR` and `placeholder-file`. In the case of binary
-secrets, the environment variable will still be empty because environment
-variables cannot be assigned to binary values.
+secrets the environment variable will still be empty because environment
+variables cannot be assigned binary values.
 
 # Spark SSL
 
@@ -160,9 +160,6 @@ The keystore and truststore are created using the [Java keytool][12]. The keysto
 signed public key. The truststore is optional and might contain a self-signed root-ca certificate that is explicitly
 trusted by Java.
 
-**DC/OS 1.10 or lower:** Since both stores are binary files, they must be base64-encoded before being placed in the
-DC/OS secret store. Follow the instructions above on encoding binary secrets to encode the keystore and truststore.
-
 Add the stores to your secrets in the DC/OS secret store. For example, if your keystores and truststores
 are server.jks and trust.jks, respectively, then use the following commands to add them to the secret
 store: 
@@ -186,6 +183,9 @@ dcos spark run --verbose --submit-args="\
 (—-conf spark.ssl.enabledAlgorithms=<cipher, e.g., TLS_RSA_WITH_AES_128_CBC_SHA256> \)
 --class <Spark Main class> <Spark Application JAR> [application args]"
 ```
+
+**DC/OS 1.10 or lower:** Since both stores are binary files, they must be base64 encoded before being placed in the
+DC/OS secret store. Follow the instructions above on encoding binary secrets to encode the keystore and truststore.
 
 **Note:** If you specify environment-based secrets with `spark.mesos.[driver|executor].secret.envkeys`, the keystore and
 truststore secrets will also show up as environment-based secrets, due to the way secrets are implemented. You can

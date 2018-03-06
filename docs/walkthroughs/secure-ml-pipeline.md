@@ -18,7 +18,7 @@ Completing this walkthrough requires the following.
 The Keberos `keytab` is a binary file and cannot be uploaded to the Secret Store directly. To use binary secrets in
 DC/OS 1.10 and lower the binary file must be base64 encoded and the resultant string will be uploaded with the prefix:
 `__dcos_base64__<secretname>`, this tells DC/OS to decode the file before placing it in the Sandbox.
-In DC/OS 1.11+, base64-encoding of binary secrets is not necessary. You may skip the encoding
+In DC/OS 1.11+, base64 encoding of binary secrets is not necessary. You may skip the encoding
 and update the secret names accordingly in the following example.
 
 1.  Establish correct principals for HDFS and Kafka, assuming you're using the packages from the DC/OS universe.

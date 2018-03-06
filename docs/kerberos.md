@@ -80,7 +80,7 @@ single `krb5.conf` file for all of the its drivers.
         dcos package install --options=/path/to/options.json spark
         
 1.  Make sure your keytab is in the DC/OS Secret Store, under a path that is accessible
-    by the Spark service. Since the keytab is a binary file, you must also base64-encode it on DC/OS 1.10 or lower.
+    by the Spark service. Since the keytab is a binary file, you must also base64 encode it on DC/OS 1.10 or lower.
     See [Using the Secret Store][../security/#using-the-secret-store]
     for details.
 
