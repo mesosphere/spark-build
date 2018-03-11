@@ -17,6 +17,8 @@ SOAK_SPARK_APP_NAME = "/" + SOAK_SPARK_SERVICE_NAME
 TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
 SOAK_HDFS_SERVICE_NAME = os.getenv('SOAK_HDFS_SERVICE_NAME', 'hdfs')
+HDFSCLIENT_KERBEROS_SERVICE_NAME = os.getenv('HDFSCLIENT_KERBEROS_SERVICE_NAME', 'hdfsclient-kerberos')
+HDFSCLIENT_KERBEROS_TASK = HDFSCLIENT_KERBEROS_SERVICE_NAME.replace("/", "_")
 HDFS_KERBEROS_ENABLED=os.getenv('HDFS_KERBEROS_ENABLED', 'true')
 HDFS_KEYTAB_SECRET=os.getenv('HDFS_KEYTAB_SECRET', '__dcos_base64__hdfs_keytab')
 HDFS_PRINCIPAL="hdfs/name-0-node.{}.autoip.dcos.thisdcos.directory@LOCAL".format(
@@ -64,6 +66,7 @@ def test_spark_kafka_interservice():
             stop_count=stop_count,
             jar_uri=JAR_URI,
             keytab_secret=KAFKA_KEYTAB_SECRET,
+            spark_app_name=SOAK_SPARK_APP_NAME,
             jaas_uri=KAFKA_JAAS_URI)
 
 
@@ -122,7 +125,9 @@ def _add_job(metronome_client, job_name):
     with open(job_path) as job_file:
         job = json.load(job_file)
     job["run"] = job.get("run", {})
-    job["run"]["cmd"] = job["run"]["cmd"].replace("{principal}", HDFS_PRINCIPAL)
+    job["run"]["cmd"] = job["run"]["cmd"]\
+        .replace("{principal}", HDFS_PRINCIPAL)\
+        .replace("{hdfsclient-kerberos}", HDFSCLIENT_KERBEROS_TASK)
     job["run"]["env"] = job["run"].get("env", {})
     job["run"]["env"]["DCOS_UID"] = DCOS_UID
     job["run"]["env"]["DCOS_PASSWORD"] = DCOS_PASSWORD
