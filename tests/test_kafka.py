@@ -190,7 +190,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_n
                     app_name=spark_app_name,
                     args=consumer_config)
 
-    utils.kill_driver(producer_id, utils.SPARK_APP_NAME)
+    utils.kill_driver(producer_id, spark_app_name)
 
 
 def _producer_launched():
