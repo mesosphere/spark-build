@@ -116,10 +116,11 @@ def test_spark_and_kafka():
         kerberos_flag=kerberos_flag,
         jar_uri=utils._scala_test_jar_url(),
         keytab_secret="__dcos_base64___keytab",
-        stop_count=stop_count)
+        stop_count=stop_count,
+        spark_app_name=utils.SPARK_APP_NAME)
 
 
-def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=None):
+def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_name, jaas_uri=None):
     stop_count = str(stop_count)
     kerberized = True if kerberos_flag == "true" else False
     broker_dns = _kafka_broker_dns()
@@ -169,7 +170,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
 
     producer_id = utils.submit_job(app_url=jar_uri,
                                    app_args=producer_args,
-                                   app_name=utils.SPARK_APP_NAME,
+                                   app_name=spark_app_name,
                                    args=producer_config)
 
     shakedown.wait_for(lambda: _producer_launched(), ignore_exceptions=False, timeout_seconds=600)
@@ -186,10 +187,10 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, jaas_uri=No
     utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
-                    app_name=utils.SPARK_APP_NAME,
+                    app_name=spark_app_name,
                     args=consumer_config)
 
-    utils.kill_driver(producer_id, utils.SPARK_APP_NAME)
+    utils.kill_driver(producer_id, spark_app_name)
 
 
 def _producer_launched():
