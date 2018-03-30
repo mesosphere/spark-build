@@ -297,5 +297,18 @@ def test_driver_executor_tls():
         shakedown.run_dcos_command('security secrets delete /{}'.format(my_secret))
 
 
+@pytest.mark.sanity
+def test_multiple_executors_per_host():
+    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'monte_carlo_portfolio.py')
+    python_script_url = utils.upload_file(python_script_path)
+    utils.run_tests(app_url=python_script_url,
+                    app_args="100000 50",
+                    expected_output="Average return: 427",
+                    args=["--conf", "spark.cores.max=22",
+                          "--conf", "spark.default.parallelism=22",
+                          "--conf", "spark.executor.cores=1"],
+                    timeout_sec=420)
+
+
 def _scala_test_jar_url():
     return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))

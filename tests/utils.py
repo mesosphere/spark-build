@@ -169,17 +169,17 @@ def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user)
     return options
 
 
-def run_tests(app_url, app_args, expected_output, app_name=SPARK_APP_NAME, args=[]):
+def run_tests(app_url, app_args, expected_output, app_name=SPARK_APP_NAME, args=[], timeout_sec=JOB_WAIT_TIMEOUT_SEC):
     task_id = submit_job(app_url=app_url,
                          app_args=app_args,
                          app_name=app_name,
                          args=args)
-    check_job_output(task_id, expected_output)
+    check_job_output(task_id, expected_output, timeout_sec)
 
 
-def check_job_output(task_id, expected_output):
+def check_job_output(task_id, expected_output, timeout_sec=JOB_WAIT_TIMEOUT_SEC):
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
-    shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SEC)
+    shakedown.wait_for_task_completion(task_id, timeout_sec=timeout_sec)
     stdout = _task_log(task_id)
 
     if expected_output not in stdout:

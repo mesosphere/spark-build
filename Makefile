@@ -37,7 +37,7 @@ $(SPARK_DIR):
 dev-dist: $(SPARK_DIR)
 	cd $(SPARK_DIR)
 	rm -rf spark-*.tgz
-	build/sbt -Xmax-classfile-name -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver package
+	build/sbt -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver package
 	rm -rf /tmp/spark-SNAPSHOT*
 	mkdir -p /tmp/spark-SNAPSHOT/jars
 	cp -r assembly/target/scala*/jars/* /tmp/spark-SNAPSHOT/jars
