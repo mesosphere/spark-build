@@ -45,16 +45,22 @@ def setup_spark(configure_security, configure_universe):
 
 
 @pytest.mark.sanity
-def test_multiple_executors_per_host():
-    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'monte_carlo_portfolio.py')
-    python_script_url = utils.upload_file(python_script_path)
-    utils.run_tests(app_url=python_script_url,
-                    app_args="100000 50",
-                    expected_output="Average return: 427",
-                    args=["--conf", "spark.cores.max=22",
-                          "--conf", "spark.default.parallelism=22",
-                          "--conf", "spark.executor.cores=1"],
-                    timeout_sec=420)
+def test_task_not_lost():
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                      app_args="1500",   # Long enough to examine the Executor's task info
+                                      args=["--conf", "spark.cores.max=1",
+                                            "--class", "org.apache.spark.examples.SparkPi"])
+
+    # Wait until executor is running
+    utils.wait_for_executors_running(SPARK_PI_FW_NAME, 1)
+
+    # Check Executor task ID - should be 0, the first task.
+    # If it's > 0, that means the first task was lost.
+    executor_task = shakedown.get_service_tasks(SPARK_PI_FW_NAME)[0]
+    assert executor_task['id'] == "0"
+
+    # Check job output
+    utils.check_job_output(driver_task_id, "Pi is roughly 3")
 
 
 @pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
