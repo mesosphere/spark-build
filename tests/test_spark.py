@@ -230,6 +230,19 @@ def test_s3():
                     args=args)
 
 
+@pytest.mark.sanity
+def test_multiple_executors_per_host():
+    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'monte_carlo_portfolio.py')
+    python_script_url = utils.upload_file(python_script_path)
+    utils.run_tests(app_url=python_script_url,
+                    app_args="100000 50",
+                    expected_output="Average return: 427",
+                    args=["--conf", "spark.cores.max=22",
+                          "--conf", "spark.default.parallelism=22",
+                          "--conf", "spark.executor.cores=1"],
+                    timeout_sec=420)
+
+
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
@@ -239,7 +252,6 @@ def test_marathon_group():
     utils.require_spark(service_name=app_id, marathon_group=app_id)
     test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
-    shakedown.uninstall_package_and_wait(package_name=utils.SPARK_PACKAGE_NAME, service_name=app_id)
 
 
 @pytest.mark.sanity
@@ -296,19 +308,6 @@ def test_driver_executor_tls():
         shakedown.run_dcos_command('security secrets delete /{}'.format(keystore_secret))
         shakedown.run_dcos_command('security secrets delete /{}'.format(truststore_secret))
         shakedown.run_dcos_command('security secrets delete /{}'.format(my_secret))
-
-
-@pytest.mark.sanity
-def test_multiple_executors_per_host():
-    python_script_path = os.path.join(THIS_DIR, 'jobs', 'python', 'monte_carlo_portfolio.py')
-    python_script_url = utils.upload_file(python_script_path)
-    utils.run_tests(app_url=python_script_url,
-                    app_args="100000 50",
-                    expected_output="Average return: 427",
-                    args=["--conf", "spark.cores.max=22",
-                          "--conf", "spark.default.parallelism=22",
-                          "--conf", "spark.executor.cores=1"],
-                    timeout_sec=420)
 
 
 def _scala_test_jar_url():
