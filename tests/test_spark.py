@@ -239,6 +239,7 @@ def test_marathon_group():
     utils.require_spark(service_name=app_id, marathon_group=app_id)
     test_sparkPi(app_name=app_id)
     LOGGER.info("Uninstalling app_id={}".format(app_id))
+    shakedown.uninstall_package_and_wait(package_name=utils.SPARK_PACKAGE_NAME, service_name=app_id)
 
 
 @pytest.mark.sanity
