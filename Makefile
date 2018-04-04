@@ -37,7 +37,7 @@ $(SPARK_DIR):
 dev-dist: $(SPARK_DIR)
 	cd $(SPARK_DIR)
 	rm -rf spark-*.tgz
-	build/sbt -Xmax-classfile-name -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver package
+	build/sbt -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver package
 	rm -rf /tmp/spark-SNAPSHOT*
 	mkdir -p /tmp/spark-SNAPSHOT/jars
 	cp -r assembly/target/scala*/jars/* /tmp/spark-SNAPSHOT/jars
@@ -94,8 +94,8 @@ docker-dist: $(DIST_DIR)
 	cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
 	cp -r conf/* $(BUILD_DIR)/docker/dist/conf
 	cp -r docker/* $(BUILD_DIR)/docker
-	pushd $(BUILD_DIR)/docker
-	docker build -t $(DOCKER_DIST_IMAGE) .
+	pushd $(BUILD_DIR)/docker; \
+	docker build -t $(DOCKER_DIST_IMAGE) .; \
 	popd
 	docker push $(DOCKER_DIST_IMAGE)
 	echo "$(DOCKER_DIST_IMAGE)" > $@

@@ -10,7 +10,8 @@ def _get_conn():
     if conn is None:
         conn = S3Connection(
             os.environ['AWS_ACCESS_KEY_ID'],
-            os.environ['AWS_SECRET_ACCESS_KEY'])
+            os.environ['AWS_SECRET_ACCESS_KEY'],
+            security_token=os.getenv('AWS_SESSION_TOKEN'))
     return conn
 
 
