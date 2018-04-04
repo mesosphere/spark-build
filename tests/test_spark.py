@@ -44,6 +44,25 @@ def setup_spark(configure_security, configure_universe):
         utils.teardown_spark()
 
 
+@pytest.mark.sanity
+def test_task_not_lost():
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                      app_args="1500",   # Long enough to examine the Executor's task info
+                                      args=["--conf", "spark.cores.max=1",
+                                            "--class", "org.apache.spark.examples.SparkPi"])
+
+    # Wait until executor is running
+    utils.wait_for_executors_running(SPARK_PI_FW_NAME, 1)
+
+    # Check Executor task ID - should be 0, the first task.
+    # If it's > 0, that means the first task was lost.
+    executor_task = shakedown.get_service_tasks(SPARK_PI_FW_NAME)[0]
+    assert executor_task['id'] == "0"
+
+    # Check job output
+    utils.check_job_output(driver_task_id, "Pi is roughly 3")
+
+
 @pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
 @pytest.mark.sanity
 @pytest.mark.smoke
