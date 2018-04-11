@@ -43,7 +43,7 @@ object GpuPiApp {
     println("Calculating Pi with GPUs")
     val totalSamples = numberOfExecutors * numThreads * samplesPerThread
     val totalInTheCircle = sc.range(0, numberOfExecutors).map { x =>
-      GpuPi.gpuPiMonteCarlo().sum
+      sumInts(GpuPi.gpuPiMonteCarlo())
     }.reduce(_ + _)
     val piGPU = totalInTheCircle * 4.0 / totalSamples
 
@@ -53,6 +53,9 @@ object GpuPiApp {
     val piGPUDiffPercent = (actualPi - piGPU) * 100.0 / actualPi
     println(s"Pi calculated with GPUs: $piGPU, DiffPercent: ${piGPUDiffPercent}%")
   }
+
+  private def sumInts(xs: Iterable[Int]): Long =
+    xs.foldLeft(0L)(_ + _)
 
   private def writeCuFile(samplesPerThread: Int, filePath: String): Unit = {
     val contents = s"""
