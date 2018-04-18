@@ -213,7 +213,7 @@ def test_s3():
             "--conf",
             "spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
             "--class", "S3Job"]
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
+    utils.run_tests(app_url=utils.scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
                     args=args)
@@ -229,7 +229,7 @@ def test_s3():
             "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
                 os.environ["AWS_SECRET_ACCESS_KEY"]),
             "--class", "S3Job"]
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
+    utils.run_tests(app_url=utils.scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
                     args=args)
@@ -243,7 +243,7 @@ def test_s3():
             "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
                 os.environ["AWS_SECRET_ACCESS_KEY"]),
             "--class", "S3Job"]
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
+    utils.run_tests(app_url=utils.scala_test_jar_url(),
                     app_args=app_args,
                     expected_output="Read 3 lines",
                     args=args)

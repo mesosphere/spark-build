@@ -13,16 +13,18 @@ object GpuPiApp {
   def main(args: Array[String]): Unit = {
     println("RUNNING GpuPiApp")
     if (args.length < 1) {
-      throw new IllegalArgumentException("USAGE: <number_of_executors> [samples_per_thread]")
+      throw new IllegalArgumentException("USAGE: <number_of_executors> [samples_per_thread] [app_name]")
     }
 
-    val conf = new SparkConf().setAppName("GpuPiApp")
-    val sc = new SparkContext(conf)
     val numThreads = 1024
     val numberOfExecutors = args(0).toLong
     println(s"numberOfExecutors: $numberOfExecutors")
     val samplesPerThread = if (args.length < 2) 1000 else args(1).toInt
     println(s"samplesPerThread: $samplesPerThread")
+    val appName = if (args.length < 3) "GpuPiApp" else args(2)
+    println(s"appName: $appName")
+    val conf = new SparkConf().setAppName(appName)
+    val sc = new SparkContext(conf)
 
     doGpu(sc, samplesPerThread, numThreads, numberOfExecutors)
   }
