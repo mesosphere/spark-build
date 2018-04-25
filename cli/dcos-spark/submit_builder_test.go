@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/suite"
+	"os"
 	"testing"
 )
 
@@ -13,53 +15,67 @@ const driverMemory = "512M"
 const appJar = "http://spark-example.jar"
 const mainClass = "org.apache.spark.examples.SparkPi"
 const principal = "client@local"
-const keytab_prefixed = "__dcos_base64__keytab"
+const keytabPrefixed = "__dcos_base64__keytab"
 const keytab = "keytab"
 const sparkAuthSecret = "spark-auth-secret"
 const marathonAppId = "spark-app"
 var marathonConfig = map[string]interface{}{ "app": map[string]interface{}{ "id": marathonAppId }}
 
+type CliTestSuite struct {
+	suite.Suite
+}
+
+func (suite *CliTestSuite) SetupSuite() {
+	// buildSubmitJson performs an internal lookup against core.ssl_verify to configure spark.ssl.noCertVerification:
+	os.Setenv("DCOS_SSL_VERIFY", "false")
+	// buildSubmitJson also fetches the service URL to configure spark.master:
+	os.Setenv("DCOS_URL", "https://fake-url")
+}
+func TestCliTestSuite(t *testing.T) {
+	suite.Run(t, new(CliTestSuite))
+}
+
 // test spaces
-func TestCleanUpSubmitArgs(t *testing.T) {
+func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf    spark.app.name=kerberosStreaming   --conf spark.cores.max=8"
 	submitArgs, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
 	if "--conf=spark.app.name=kerberosStreaming" != submitArgs[0] {
-		t.Errorf("Failed to reduce spaces while cleaning submit args.")
+		suite.T().Errorf("Failed to reduce spaces while cleaning submit args.")
 	}
 
 	if "--conf=spark.cores.max=8" != submitArgs[1] {
-		t.Errorf("Failed to reduce spaces while cleaning submit args.")
+		suite.T().Errorf("Failed to reduce spaces while cleaning submit args.")
 	}
 }
 
 // test scopts pattern for app args when have full submit args
-func TestScoptAppArgs(t *testing.T) {
+func (suite *CliTestSuite) TestScoptAppArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := `--driver-cores 1 --conf spark.cores.max=1 --driver-memory 512M
   --class org.apache.spark.examples.SparkPi http://spark-example.jar --input1 value1 --input2 value2`
 	submitArgs, appFlags := cleanUpSubmitArgs(inputArgs, args.boolVals)
 
 	if "--input1" != appFlags[0] {
-		t.Errorf("Failed to parse app args.")
+		suite.T().Errorf("Failed to parse app args.")
 	}
 	if "value1" != appFlags[1] {
-		t.Errorf("Failed to parse app args.")
+		suite.T().Errorf("Failed to parse app args.")
 	}
 
 	if "--driver-memory=512M" != submitArgs[2] {
-		t.Errorf("Failed to parse submit args..")
+		suite.T().Errorf("Failed to parse submit args..")
 	}
 	if "http://spark-example.jar" != submitArgs[4] {
-		t.Errorf("Failed to parse submit args..")
+		suite.T().Errorf("Failed to parse submit args..")
 	}
 }
 
-func createCommand(inputArgs string) SparkCommand {
+func createCommand(inputArgs, dockerImage string) SparkCommand {
 	return SparkCommand{
 		"subId",
 		inputArgs,
-		image,
+		dockerImage,
 		make(map[string]string),
 		false,
 		false,
@@ -74,7 +90,7 @@ func createCommand(inputArgs string) SparkCommand {
 	}
 }
 
-func TestPayloadSimple(t *testing.T) {
+func (suite *CliTestSuite) TestPayloadSimple() {
 	inputArgs := fmt.Sprintf(
 		"--driver-cores %s "+
 			"--conf spark.cores.max=%s "+
@@ -82,7 +98,7 @@ func TestPayloadSimple(t *testing.T) {
 			"--class %s "+
 			"%s --input1 value1 --input2 value2", driverCores, maxCores, driverMemory, mainClass, appJar)
 
-	cmd := createCommand(inputArgs)
+	cmd := createCommand(inputArgs, image)
 	payload, err := buildSubmitJson(&cmd, marathonConfig)
 
 	m := make(map[string]interface{})
@@ -90,15 +106,15 @@ func TestPayloadSimple(t *testing.T) {
 	json.Unmarshal([]byte(payload), &m)
 
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		suite.T().Errorf("%s", err.Error())
 	}
 
 	if m["appResource"] != "http://spark-example.jar" {
-		t.Errorf("App resource incorrect, got %s, should be http://", m["appResource"])
+		suite.T().Errorf("App resource incorrect, got %s, should be http://", m["appResource"])
 	}
 
 	if m["mainClass"] != mainClass {
-		t.Errorf("mainClass should be %s got %s", mainClass, m["mainClass"])
+		suite.T().Errorf("mainClass should be %s got %s", mainClass, m["mainClass"])
 	}
 
 	stringProps := map[string]string{
@@ -117,25 +133,76 @@ func TestPayloadSimple(t *testing.T) {
 
 	v, ok := m["sparkProperties"].(map[string]interface{})
 	if !ok {
-		t.Errorf("%+v", ok)
+		suite.T().Errorf("%+v", ok)
 	}
 
-	checkProps(v, stringProps, t)
+	suite.checkProps(v, stringProps)
 }
 
-func checkProps(obs map[string]interface{}, expected map[string]string, t *testing.T) {
+func (suite *CliTestSuite) TestPayloadCustomImageNoExecutor() {
+	inputArgs := fmt.Sprintf(
+		"--driver-cores %s "+
+			"--conf spark.mesos.executor.docker.image=other "+
+			"--conf spark.mesos.executor.docker.forcePullImage=false "+
+			"--conf spark.cores.max=%s "+
+			"--driver-memory %s "+
+			"--class %s "+
+			"%s --input1 value1 --input2 value2", driverCores, maxCores, driverMemory, mainClass, appJar)
+
+	cmd := createCommand(inputArgs, "")
+	payload, err := buildSubmitJson(&cmd, marathonConfig)
+
+	m := make(map[string]interface{})
+
+	json.Unmarshal([]byte(payload), &m)
+
+	if err != nil {
+		suite.T().Errorf("%s", err.Error())
+	}
+
+	if m["appResource"] != "http://spark-example.jar" {
+		suite.T().Errorf("App resource incorrect, got %s, should be http://", m["appResource"])
+	}
+
+	if m["mainClass"] != mainClass {
+		suite.T().Errorf("mainClass should be %s got %s", mainClass, m["mainClass"])
+	}
+
+	stringProps := map[string]string{
+		"spark.driver.cores": driverCores,
+		"spark.cores.max": maxCores,
+		"spark.mesos.executor.docker.forcePullImage": "false",
+		"spark.mesos.executor.docker.image": "other",
+		"spark.mesos.task.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.ssl.noCertVerification": "true",
+		"spark.executor.memory": "1G", // default
+		"spark.submit.deployMode": "cluster",
+		"spark.mesos.driver.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.driver.memory": driverMemory,
+		"spark.jars": appJar,
+	}
+
+	v, ok := m["sparkProperties"].(map[string]interface{})
+	if !ok {
+		suite.T().Errorf("%+v", ok)
+	}
+
+	suite.checkProps(v, stringProps)
+}
+
+func (suite *CliTestSuite) checkProps(obs map[string]interface{}, expected map[string]string) {
 	for prop, value := range expected {
 		setting, contains := obs[prop]
 		if !contains {
-			t.Errorf("Should have property %s", prop)
+			suite.T().Errorf("Should have property %s", prop)
 		}
 		if setting != value {
-			t.Errorf("config %s should be %s, got %s", prop, value, setting)
+			suite.T().Errorf("config %s should be %s, got %s", prop, value, setting)
 		}
 	}
 }
 
-func checkSecret(secretPath, secretFile string, t *testing.T) {
+func (suite *CliTestSuite) checkSecret(secretPath, secretFile string) {
 	inputArgs := fmt.Sprintf(
 		"--driver-cores %s "+
 			"--kerberos-principal %s " +
@@ -146,7 +213,7 @@ func checkSecret(secretPath, secretFile string, t *testing.T) {
 			"%s --input1 value1 --input2 value2",
 		driverCores, principal, secretPath, maxCores, driverMemory, mainClass, appJar)
 
-	cmd := createCommand(inputArgs)
+	cmd := createCommand(inputArgs, image)
 	payload, err := buildSubmitJson(&cmd, marathonConfig)
 
 	m := make(map[string]interface{})
@@ -154,12 +221,12 @@ func checkSecret(secretPath, secretFile string, t *testing.T) {
 	json.Unmarshal([]byte(payload), &m)
 
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		suite.T().Errorf("%s", err.Error())
 	}
 
 	v, ok := m["sparkProperties"].(map[string]interface{})
 	if !ok {
-		t.Errorf("%+v", ok)
+		suite.T().Errorf("%+v", ok)
 	}
 
 	secretProps := map[string]string{
@@ -168,22 +235,22 @@ func checkSecret(secretPath, secretFile string, t *testing.T) {
 		"spark.mesos.driver.secret.filenames": secretFile,
 		"spark.mesos.driver.secret.names": fmt.Sprintf("/%s", secretPath),
 	}
-	checkProps(v, secretProps, t)
+	suite.checkProps(v, secretProps)
 }
 
-func TestPayloadWithSecret(t *testing.T) {
-	checkSecret(keytab, keytab, t)
-	checkSecret(keytab_prefixed, keytab, t)
+func (suite *CliTestSuite) TestPayloadWithSecret() {
+	suite.checkSecret(keytab, keytab)
+	suite.checkSecret(keytabPrefixed, keytab)
 }
 
-func TestSaslSecret(t *testing.T) {
+func (suite *CliTestSuite) TestSaslSecret() {
 	inputArgs := fmt.Sprintf(
 		"--executor-auth-secret /%s " +
 			"--class %s "+
 			"%s --input1 value1 --input2 value2", sparkAuthSecret, mainClass, appJar)
 
 
-	cmd := createCommand(inputArgs)
+	cmd := createCommand(inputArgs, image)
 	payload, err := buildSubmitJson(&cmd, marathonConfig)
 
 	m := make(map[string]interface{})
@@ -191,7 +258,7 @@ func TestSaslSecret(t *testing.T) {
 	json.Unmarshal([]byte(payload), &m)
 
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		suite.T().Errorf("%s", err.Error())
 	}
 
 	stringProps := map[string]string{
@@ -206,8 +273,8 @@ func TestSaslSecret(t *testing.T) {
 
 	v, ok := m["sparkProperties"].(map[string]interface{})
 	if !ok {
-		t.Errorf("%+v", ok)
+		suite.T().Errorf("%+v", ok)
 	}
 
-	checkProps(v, stringProps, t)
+	suite.checkProps(v, stringProps)
 }

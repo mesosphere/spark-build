@@ -248,7 +248,7 @@ func parseApplicationFile(args *sparkArgs) error {
 		if args.mainClass != "" {
 			return errors.New("Can only specify main class when using a Scala or Java Spark application")
 		}
-		log.Printf("Parsing application as R job")
+		client.PrintMessage("Parsing application as R job")
 		if args.mainClass != "" {
 			return errors.New("Cannot specify a main class for an R job")
 		}
@@ -263,7 +263,7 @@ func parseApplicationFile(args *sparkArgs) error {
 		if args.mainClass != "" {
 			return errors.New("Can only specify main class when using a Scala or Java Spark application")
 		}
-		log.Printf("Parsing application as Python job")
+		client.PrintMessage("Parsing application as Python job")
 		if args.mainClass != "" {
 			return errors.New("Cannot specify a main class for an python job")
 		}
@@ -345,10 +345,8 @@ ARGLOOP:
 			i += 1
 		}
 	}
-	if config.Verbose {
-		log.Printf("Translated spark-submit arguments: '%s'\n", argsEquals)
-		log.Printf("Translated application arguments: '%s'\n", appFlags)
-	}
+	client.PrintVerbose("Translated spark-submit arguments: '%s'", argsEquals)
+	client.PrintVerbose("Translated application arguments: '%s'", appFlags)
 
 	return argsEquals, appFlags
 }
@@ -400,7 +398,7 @@ func fetchMarathonConfig() (map[string]interface{}, error) {
 	}
 
 	if config.Verbose {
-		log.Printf("Response from Marathon lookup of task '%s':", config.ServiceName)
+		client.PrintMessage("Response from Marathon lookup of task '%s':", config.ServiceName)
 		prettyJson, err := json.MarshalIndent(responseJson, "", " ")
 		if err != nil {
 			log.Fatalf("Failed to prettify json (%s): %s", err, responseJson)
@@ -486,34 +484,43 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 	}
 
 	// driver image
+	var imageSource string
 	_, contains := args.properties["spark.mesos.executor.docker.image"]
-	if !contains {
+	if contains {
+		imageSource = "Spark config: spark.mesos.executor.docker.image"
+	} else {
 		if cmd.submitDockerImage == "" {
 			dispatcher_image, err := getStringFromTree(marathonConfig, []string{"app", "container", "docker", "image"})
 			if err != nil {
 				return "", err
 			}
 			args.properties["spark.mesos.executor.docker.image"] = dispatcher_image
+			imageSource = "dispatcher: container.docker.image"
 		} else {
 			args.properties["spark.mesos.executor.docker.image"] = cmd.submitDockerImage
+			imageSource = "flag: --docker-image"
 		}
 	}
-	log.Printf("Using %s as the image for the driver", args.properties["spark.mesos.executor.docker.image"])
 
 	_, contains = args.properties["spark.mesos.executor.docker.forcePullImage"]
-	if !contains {
-		log.Printf("Pulling image %s for executors, by default. To bypass set "+
-			"spark.mesos.executor.docker.forcePullImage=false", args.properties["spark.mesos.executor.docker.image"])
+	if contains {
+		client.PrintMessage("Using image '%s' for the driver (from %s)",
+			args.properties["spark.mesos.executor.docker.image"], imageSource)
+	} else {
+		client.PrintMessage("Using image '%s' for the driver and the executors (from %s).",
+			args.properties["spark.mesos.executor.docker.image"], imageSource)
+		client.PrintMessage("To disable this image on executors, set "+
+			"spark.mesos.executor.docker.forcePullImage=false")
 		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
 	}
 
 	// Get the DCOS_SPACE from the marathon app
 	dispatcherID, err := getStringFromTree(marathonConfig, []string{"app", "id"})
 	if err != nil {
-		log.Printf("Failed to get Dispatcher app id from Marathon app definition: %s", err)
+		client.PrintMessage("Failed to get Dispatcher app id from Marathon app definition: %s", err)
 		return "", err
 	}
-	log.Printf("Setting DCOS_SPACE to %s", dispatcherID)
+	client.PrintVerbose("Setting DCOS_SPACE to %s", dispatcherID)
 	appendToProperty("spark.mesos.driver.labels", fmt.Sprintf("DCOS_SPACE:%s", dispatcherID),
 		args)
 	appendToProperty("spark.mesos.task.labels", fmt.Sprintf("DCOS_SPACE:%s", dispatcherID),
@@ -557,9 +564,7 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 		return "", err
 	}
 
-	if config.Verbose {
-		log.Printf("Spark-submit json: %s\n", jsonPayload)
-	}
+	client.PrintVerbose("spark-submit json: %s", jsonPayload)
 
 	return string(jsonPayload), nil
 }

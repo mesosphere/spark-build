@@ -241,10 +241,10 @@ func (cmd *SparkCommand) runQuotaCreate(a *kingpin.Application, e *kingpin.Parse
 	if err != nil {
 		return err
 	}
-	client.PrintMessage(fmt.Sprintf(`The requested quota for role '%s' has been successfully configured. This quota may be used in your Spark configuration:
+	client.PrintMessage(`The requested quota for role '%s' has been successfully configured. This quota may be used in your Spark configuration:
 - In the Dispatcher: 'dcos package install spark' with 'service.role' option configured
 - In the Executors: 'dcos spark run' with '--conf spark.cores.max' and '--conf spark.mesos.role' options configured
-For more information, see the Job Scheduling section of the documentation at http://docs.mesosphere.com/services/spark/`, cmd.quotaRole))
+For more information, see the Job Scheduling section of the documentation at http://docs.mesosphere.com/services/spark/`, cmd.quotaRole)
 	return err
 }
 
@@ -254,7 +254,7 @@ func (cmd *SparkCommand) runQuotaRemove(a *kingpin.Application, e *kingpin.Parse
 	if err != nil {
 		return err
 	}
-	client.PrintMessage(fmt.Sprintf(`The quota for role '%s' has been successfully removed.`, cmd.quotaRole))
+	client.PrintMessage(`The quota for role '%s' has been successfully removed.`, cmd.quotaRole)
 	return err
 }
 
@@ -290,14 +290,14 @@ func (cmd *SparkCommand) runQuotaList(a *kingpin.Application, e *kingpin.ParseEl
 	case 1:
 		client.PrintMessage("1 quota entry:")
 	default:
-		client.PrintMessage(fmt.Sprintf("%d quota entries:", len(response.Infos)))
+		client.PrintMessage("%d quota entries:", len(response.Infos))
 	}
 	for _, info := range response.Infos {
 		resources := ""
 		for _, guarantee := range info.Guarantees {
 			resources += fmt.Sprintf(" %s=%g", guarantee.Name, guarantee.Scalar.Value)
 		}
-		client.PrintMessage(fmt.Sprintf("- role=%s:%s (principal=%s)", info.Role, resources, info.Principal))
+		client.PrintMessage("- role=%s:%s (principal=%s)", info.Role, resources, info.Principal)
 	}
 	return err
 }
