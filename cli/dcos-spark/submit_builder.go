@@ -385,7 +385,33 @@ func getValsFromPropertiesFile(path string) map[string]string {
 	return vals
 }
 
-func buildSubmitJson(cmd *SparkCommand) (string, error) {
+func fetchMarathonConfig() (map[string]interface{}, error) {
+	// fetch the spark task definition from Marathon, extract the docker image and HDFS config url:
+	url := client.CreateServiceURL("replaceme", "")
+	url.Path = fmt.Sprintf("/marathon/v2/apps/%s", config.ServiceName)
+
+	responseBytes, err := client.CheckHTTPResponse(
+		client.HTTPQuery(client.CreateHTTPURLRequest("GET", url, nil, "", "")))
+
+	responseJson := make(map[string]interface{})
+	err = json.Unmarshal(responseBytes, &responseJson)
+	if err != nil {
+		return responseJson, err
+	}
+
+	if config.Verbose {
+		log.Printf("Response from Marathon lookup of task '%s':", config.ServiceName)
+		prettyJson, err := json.MarshalIndent(responseJson, "", " ")
+		if err != nil {
+			log.Fatalf("Failed to prettify json (%s): %s", err, responseJson)
+		} else {
+			fmt.Fprintf(os.Stderr, "%s\n", string(prettyJson))
+		}
+	}
+	return responseJson, nil
+}
+
+func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (string, error) {
 	// first, import any values in the provided properties file (space separated "key val")
 	// then map applicable envvars
 	// then parse all -Dprop.key=propVal, and all --conf prop.key=propVal
@@ -459,34 +485,11 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		args.properties["spark.app.name"] = args.mainClass
 	}
 
-	// fetch the spark task definition from Marathon, extract the docker image and HDFS config url:
-	url := client.CreateServiceURL("replaceme", "")
-	url.Path = fmt.Sprintf("/marathon/v2/apps/%s", config.ServiceName)
-
-	responseBytes, err := client.CheckHTTPResponse(
-		client.HTTPQuery(client.CreateHTTPURLRequest("GET", url, "", "", "")))
-
-	responseJson := make(map[string]interface{})
-	err = json.Unmarshal(responseBytes, &responseJson)
-	if err != nil {
-		return "", err
-	}
-
-	if config.Verbose {
-		log.Printf("Response from Marathon lookup of task '%s':", config.ServiceName)
-		prettyJson, err := json.MarshalIndent(responseJson, "", " ")
-		if err != nil {
-			log.Fatalf("Failed to prettify json (%s): %s", err, responseJson)
-		} else {
-			fmt.Fprintf(os.Stderr, "%s\n", string(prettyJson))
-		}
-	}
-
 	// driver image
 	_, contains := args.properties["spark.mesos.executor.docker.image"]
 	if !contains {
 		if cmd.submitDockerImage == "" {
-			dispatcher_image, err := getStringFromTree(responseJson, []string{"app", "container", "docker", "image"})
+			dispatcher_image, err := getStringFromTree(marathonConfig, []string{"app", "container", "docker", "image"})
 			if err != nil {
 				return "", err
 			}
@@ -505,7 +508,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	}
 
 	// Get the DCOS_SPACE from the marathon app
-	dispatcherID, err := getStringFromTree(responseJson, []string{"app", "id"})
+	dispatcherID, err := getStringFromTree(marathonConfig, []string{"app", "id"})
 	if err != nil {
 		log.Printf("Failed to get Dispatcher app id from Marathon app definition: %s", err)
 		return "", err
@@ -517,7 +520,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 		args)
 
 	// HDFS config
-	hdfs_config_url, err := getStringFromTree(responseJson, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
+	hdfs_config_url, err := getStringFromTree(marathonConfig, []string{"app", "labels", "SPARK_HDFS_CONFIG_URL"})
 	if err == nil && len(hdfs_config_url) != 0 { // fail silently: it's normal for this to be unset
 		hdfs_config_url = strings.TrimRight(hdfs_config_url, "/")
 		appendToProperty("spark.mesos.uris",
@@ -525,7 +528,7 @@ func buildSubmitJson(cmd *SparkCommand) (string, error) {
 	}
 
 	// kerberos configuration:
-	err = SetupKerberos(args, responseJson)
+	err = SetupKerberos(args, marathonConfig)
 	if err != nil {
 		return "", err
 	}

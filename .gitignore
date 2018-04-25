@@ -1,5 +1,6 @@
 .idea/
 .cache/
+.gopath/
 build/
 tests/env
 tests/venv
