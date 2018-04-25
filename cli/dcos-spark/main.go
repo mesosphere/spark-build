@@ -242,9 +242,9 @@ func (cmd *SparkCommand) runQuotaCreate(a *kingpin.Application, e *kingpin.Parse
 		return err
 	}
 	client.PrintMessage(fmt.Sprintf(`The requested quota for role '%s' has been successfully configured. This quota may be used in your Spark configuration:
-- Dispatcher quota: 'dcos package install spark' with 'service.role' option configured
-- Executor quota: 'dcos spark run' with '--conf spark.cores.max' and '--conf spark.mesos.role' options configured
-For more information, see the Job Scheduling section of the Spark documentation.`, cmd.quotaRole))
+- In the Dispatcher: 'dcos package install spark' with 'service.role' option configured
+- In the Executors: 'dcos spark run' with '--conf spark.cores.max' and '--conf spark.mesos.role' options configured
+For more information, see the Job Scheduling section of the documentation at http://docs.mesosphere.com/services/spark/`, cmd.quotaRole))
 	return err
 }
 
@@ -286,7 +286,7 @@ func (cmd *SparkCommand) runQuotaList(a *kingpin.Application, e *kingpin.ParseEl
 	}
 	switch len(response.Infos) {
 	case 0:
-		client.PrintMessage("No quotas have been configured.")
+		client.PrintMessage("No quotas are configured.")
 	case 1:
 		client.PrintMessage("1 quota entry:")
 	default:
@@ -297,7 +297,7 @@ func (cmd *SparkCommand) runQuotaList(a *kingpin.Application, e *kingpin.ParseEl
 		for _, guarantee := range info.Guarantees {
 			resources += fmt.Sprintf(" %s=%g", guarantee.Name, guarantee.Scalar.Value)
 		}
-		client.PrintMessage(fmt.Sprintf("- role %s, principal %s:%s", info.Role, info.Principal, resources))
+		client.PrintMessage(fmt.Sprintf("- role=%s:%s (principal=%s)", info.Role, resources, info.Principal))
 	}
 	return err
 }
