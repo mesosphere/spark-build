@@ -87,6 +87,7 @@ func createCommand(inputArgs, dockerImage string) SparkCommand {
 		0.0,
 		0,
 		false,
+		false,
 	}
 }
 

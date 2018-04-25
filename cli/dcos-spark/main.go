@@ -39,6 +39,7 @@ type SparkCommand struct {
 	quotaMem   float64
 	quotaGpus  int
 	quotaForce bool
+	quotaJson  bool
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
@@ -279,6 +280,10 @@ func (cmd *SparkCommand) runQuotaList(a *kingpin.Application, e *kingpin.ParseEl
 	if err != nil {
 		return err
 	}
+	if cmd.quotaJson {
+		client.PrintJSONBytes(responseBytes)
+		return nil
+	}
 	var response quotaListResponse
 	err = json.Unmarshal(responseBytes, &response)
 	if err != nil {
@@ -347,7 +352,8 @@ func handleCommands(app *kingpin.Application) {
 	quotaCreate.Flag("force", "Force the role to be created, even if it doesn't fit").BoolVar(&cmd.quotaForce)
 	quotaRemove := quota.Command("remove", "Remove a previously created quota for a given role").Action(cmd.runQuotaRemove)
 	quotaRemove.Arg("role", "Mesos role to remove the quota from").Required().StringVar(&cmd.quotaRole)
-	quota.Command("list", "List all currently assigned quotas").Alias("ls").Action(cmd.runQuotaList)
+	list := quota.Command("list", "List all currently assigned quotas").Alias("ls").Action(cmd.runQuotaList)
+	list.Flag("json", "Show raw JSON response instead of user-friendly list").BoolVar(&cmd.quotaJson)
 
 	app.Command("webui", "Returns the Spark Web UI URL").Action(cmd.runWebui)
 }
