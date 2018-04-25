@@ -43,7 +43,7 @@
         "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.service_account}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
-        "SPARK_LOG_LEVEL": "{{service.log-level}}"
+        "SPARK_LOG_LEVEL": "{{service.log_level}}"
     },
 
 {{#service.service_account_secret}}
@@ -85,12 +85,12 @@
     "container": {
     "type": "MESOS",
     "docker": {
-    {{#service.docker-image}}
-        "image": "{{service.docker-image}}",
-    {{/service.docker-image}}
-    {{^service.docker-image}}
+    {{#service.docker_image}}
+        "image": "{{service.docker_image}}",
+    {{/service.docker_image}}
+    {{^service.docker_image}}
         "image": "{{resource.assets.container.docker.spark_docker}}",
-    {{/service.docker-image}}
+    {{/service.docker_image}}
     "forcePullImage": true
     }
     },
@@ -99,12 +99,12 @@
     "container": {
     "type": "DOCKER",
     "docker": {
-    {{#service.docker-image}}
-        "image": "{{service.docker-image}}",
-    {{/service.docker-image}}
-    {{^service.docker-image}}
+    {{#service.docker_image}}
+        "image": "{{service.docker_image}}",
+    {{/service.docker_image}}
+    {{^service.docker_image}}
         "image": "{{resource.assets.container.docker.spark_docker}}",
-    {{/service.docker-image}}
+    {{/service.docker_image}}
     "network": "HOST",
     {{#service.user}}
         "parameters": [

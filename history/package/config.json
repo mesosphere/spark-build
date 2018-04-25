@@ -32,7 +32,7 @@
                     "type": "string",
                     "default": "root"
                 },
-                "docker-image": {
+                "docker_image": {
                     "description": "Docker image to run in.  See https://hub.docker.com/r/mesosphere/spark/tags/ for options.",
                     "type": "string",
                     "default": "{{default-docker-image}}"
