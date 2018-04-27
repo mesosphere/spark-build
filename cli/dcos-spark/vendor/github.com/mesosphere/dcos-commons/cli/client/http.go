@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 
@@ -35,13 +36,13 @@ func HTTPServiceGetQuery(urlPath, urlQuery string) ([]byte, error) {
 
 // HTTPServiceGetData triggers a HTTP GET request with a payload of contentType to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServiceGetData(urlPath, payload, contentType string) ([]byte, error) {
+func HTTPServiceGetData(urlPath string, payload []byte, contentType string) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPDataRequest("GET", urlPath, payload, contentType)))
 }
 
 // HTTPServiceGetJSON triggers a HTTP GET request containing jsonPayload to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServiceGetJSON(urlPath, jsonPayload string) ([]byte, error) {
+func HTTPServiceGetJSON(urlPath string, jsonPayload []byte) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPJSONRequest("GET", urlPath, jsonPayload)))
 }
 
@@ -59,13 +60,13 @@ func HTTPServiceDeleteQuery(urlPath, urlQuery string) ([]byte, error) {
 
 // HTTPServiceDeleteData triggers a HTTP DELETE request with a payload of contentType to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServiceDeleteData(urlPath, payload, contentType string) ([]byte, error) {
+func HTTPServiceDeleteData(urlPath string, payload []byte, contentType string) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPDataRequest("DELETE", urlPath, payload, contentType)))
 }
 
 // HTTPServiceDeleteJSON triggers a HTTP DELETE request containing jsonPayload to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServiceDeleteJSON(urlPath, jsonPayload string) ([]byte, error) {
+func HTTPServiceDeleteJSON(urlPath string, jsonPayload []byte) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPJSONRequest("DELETE", urlPath, jsonPayload)))
 }
 
@@ -82,13 +83,13 @@ func HTTPServicePostQuery(urlPath, urlQuery string) ([]byte, error) {
 
 // HTTPServicePostData triggers a HTTP POST request with a payload of contentType to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServicePostData(urlPath, payload, contentType string) ([]byte, error) {
+func HTTPServicePostData(urlPath string, payload []byte, contentType string) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPDataRequest("POST", urlPath, payload, contentType)))
 }
 
 // HTTPServicePostJSON triggers a HTTP POST request containing jsonPayload to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServicePostJSON(urlPath, jsonPayload string) ([]byte, error) {
+func HTTPServicePostJSON(urlPath string, jsonPayload []byte) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPJSONRequest("POST", urlPath, jsonPayload)))
 }
 
@@ -105,151 +106,93 @@ func HTTPServicePutQuery(urlPath, urlQuery string) ([]byte, error) {
 
 // HTTPServicePutData triggers a HTTP PUT request with a payload of contentType to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServicePutData(urlPath, payload, contentType string) ([]byte, error) {
+func HTTPServicePutData(urlPath string, payload []byte, contentType string) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPDataRequest("PUT", urlPath, payload, contentType)))
 }
 
 // HTTPServicePutJSON triggers a HTTP PUT request containing jsonPayload to:
 // <config.DcosURL>/service/<config.ServiceName>/<urlPath>
-func HTTPServicePutJSON(urlPath, jsonPayload string) ([]byte, error) {
+func HTTPServicePutJSON(urlPath string, jsonPayload []byte) ([]byte, error) {
 	return CheckHTTPResponse(HTTPQuery(CreateServiceHTTPJSONRequest("PUT", urlPath, jsonPayload)))
 }
 
-// HTTPQuery does a HTTP query
-func HTTPQuery(request *http.Request) *http.Response {
-	if config.TLSForceInsecure { // user override via '--force-insecure'
-		config.TLSCliSetting = config.TLSUnverified
+// HTTPQuery does a HTTP query, returning the response if it's successful, or an error otherwise
+func HTTPQuery(request *http.Request) (*http.Response, error) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			// Support for 'HTTP[S]_PROXY'/'NO_PROXY' envvars
+			Proxy: http.ProxyFromEnvironment,
+			// Support main CLI's 'core.ssl_verify' setting
+			TLSClientConfig: buildTLSConfig(),
+		},
 	}
-	if config.TLSCliSetting == config.TLSUnknown {
-		// get CA settings from CLI
-		cliVerifySetting := OptionalCLIConfigValue("core.ssl_verify")
-		if strings.EqualFold(cliVerifySetting, "false") {
-			// 'false': disable cert validation
-			config.TLSCliSetting = config.TLSUnverified
-		} else if strings.EqualFold(cliVerifySetting, "true") {
-			// 'true': require validation against default CAs
-			config.TLSCliSetting = config.TLSVerified
-		} else if len(cliVerifySetting) != 0 {
-			// '<other string>': path to local/custom cert file
-			if len(config.TLSCACertPath) == 0 {
-				config.TLSCACertPath = cliVerifySetting
-			}
-			config.TLSCliSetting = config.TLSSpecificCert
-		} else {
-			// this shouldn't happen: 'auth login' requires a non-empty setting.
-			// play it safe and leave cert verification enabled by default.
-			config.TLSCliSetting = config.TLSVerified
-		}
-	}
-
-	// allow unverified certs if user invoked --force-insecure, or if it's configured that way in CLI:
-	tlsConfig := &tls.Config{InsecureSkipVerify: (config.TLSCliSetting == config.TLSUnverified)}
-
-	// import custom cert if user manually set the flag, or if it's configured in CLI:
-	if len(config.TLSCACertPath) != 0 {
-		// include custom CA cert as verified
-		cert, err := ioutil.ReadFile(config.TLSCACertPath)
-		if err != nil {
-			PrintMessageAndExit("Unable to read from CA certificate file %s: %s", config.TLSCACertPath, err)
-		}
-		certPool := x509.NewCertPool()
-		certPool.AppendCertsFromPEM(cert)
-		tlsConfig.RootCAs = certPool
-	}
-
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}
-	var err interface{}
-	response, err := client.Do(request)
-	switch err.(type) {
-	case *url.Error:
-		// extract wrapped error
-		err = err.(*url.Error).Err
-	}
-	if err != nil {
-		switch err.(type) {
-		case x509.UnknownAuthorityError:
-			// custom suggestions for a certificate error:
-			PrintMessage("HTTP %s Query for %s failed: %s", request.Method, request.URL, err)
-			PrintMessage("- Is the cluster CA certificate configured correctly? Check 'dcos config show core.ssl_verify'.")
-			PrintMessageAndExit("- To ignore the unvalidated certificate and force your command (INSECURE), use --force-insecure")
-		default:
-			PrintMessage("HTTP %s Query for %s failed: %s", request.Method, request.URL, err)
-			PrintMessage("- Is 'core.dcos_url' set correctly? Check 'dcos config show core.dcos_url'.")
-			PrintMessageAndExit("- Is 'core.dcos_acs_token' set correctly? Run 'dcos auth login' to log in.")
-		}
-	}
-	return response
+	return client.Do(request)
 }
 
 // CreateServiceHTTPJSONRequest creates a service HTTP JSON request
-func CreateServiceHTTPJSONRequest(method, urlPath, jsonPayload string) *http.Request {
+func CreateServiceHTTPJSONRequest(method, urlPath string, jsonPayload []byte) *http.Request {
 	return CreateServiceHTTPDataRequest(method, urlPath, jsonPayload, "application/json")
 }
 
 // CreateServiceHTTPDataRequest creates a service HTTP data request
-func CreateServiceHTTPDataRequest(method, urlPath, jsonPayload, contentType string) *http.Request {
+func CreateServiceHTTPDataRequest(method, urlPath string, jsonPayload []byte, contentType string) *http.Request {
 	return CreateHTTPRawRequest(method, CreateServiceURL(urlPath, ""), jsonPayload, "", contentType)
 }
 
 // CreateServiceHTTPQueryRequest creates a service HTTP query request
 func CreateServiceHTTPQueryRequest(method, urlPath, urlQuery string) *http.Request {
-	return CreateHTTPRawRequest(method, CreateServiceURL(urlPath, urlQuery), "", "", "")
+	return CreateHTTPRawRequest(method, CreateServiceURL(urlPath, urlQuery), nil, "", "")
 }
 
 // CreateServiceHTTPRequest creates a service HTTP request
 func CreateServiceHTTPRequest(method, urlPath string) *http.Request {
-	return CreateHTTPRawRequest(method, CreateServiceURL(urlPath, ""), "", "", "")
+	return CreateHTTPRawRequest(method, CreateServiceURL(urlPath, ""), nil, "", "")
 }
 
-// CreateHTTPRawRequest creates a HTTP request
-func CreateHTTPRawRequest(method string, url *url.URL, payload, accept, contentType string) *http.Request {
+// CreateHTTPRawRequest creates an HTTP request
+func CreateHTTPRawRequest(method string, url *url.URL, payload []byte, accept, contentType string) *http.Request {
 	return CreateHTTPURLRequest(method, url, payload, accept, contentType)
 }
 
-// GetDCOSURL gets DC/OS URL
-func GetDCOSURL() {
-	// get data from CLI, if overrides were not provided by user:
-	if len(config.DcosURL) == 0 {
-		config.DcosURL = RequiredCLIConfigValue(
-			"core.dcos_url",
-			"DC/OS Cluster URL",
-			"Run 'dcos config set core.dcos_url http://your-cluster.com' to configure.")
-	}
-	// Trim eg "/#/" from copy-pasted Dashboard URL:
-	config.DcosURL = strings.TrimRight(config.DcosURL, "#/")
+// GetDCOSURL gets the DC/OS cluster URL in the form of "http://cluster-host.com"
+func GetDCOSURL() string {
+	// get data from CLI or from envar, and trim e.g. "/" or "/#/" from copy-pasted Dashboard URLs:
+	return strings.TrimRight(RequiredCLIConfigValue(
+		"core.dcos_url",
+		"DC/OS Cluster URL",
+		"Run 'dcos config set core.dcos_url http://your-cluster.com' to configure"),
+		"#/")
 }
 
-// CreateServiceURL creates a service URL
+// CreateServiceURL creates a service URL of the form http://clusterurl.com/service/<servicename>/<urlPath>[?urlQuery]
 func CreateServiceURL(urlPath, urlQuery string) *url.URL {
-	GetDCOSURL()
 	joinedURLPath := path.Join("service", config.ServiceName, urlPath)
-	return CreateURL(config.DcosURL, joinedURLPath, urlQuery)
+	return CreateURL(GetDCOSURL(), joinedURLPath, urlQuery)
 }
 
-// CreateURL creates a URL
+// CreateURL creates a URL of the form <baseURL>/<urlPath>[?urlQuery]
 func CreateURL(baseURL, urlPath, urlQuery string) *url.URL {
 	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
-		PrintMessageAndExit("Unable to parse DC/OS Cluster URL '%s': %s", config.DcosURL, err)
+		PrintMessage("Unable to parse DC/OS Cluster URL '%s': %s", baseURL, err)
+		os.Exit(1)
 	}
 	parsedURL.Path = urlPath
 	parsedURL.RawQuery = urlQuery
 	return parsedURL
 }
 
-// CreateHTTPURLRequest creates a HTTP url request
-func CreateHTTPURLRequest(method string, url *url.URL, payload, accept, contentType string) *http.Request {
-	request, err := http.NewRequest(method, url.String(), bytes.NewReader([]byte(payload)))
+// CreateHTTPURLRequest creates a HTTP url request which includes cluster auth headers as needed.
+func CreateHTTPURLRequest(method string, url *url.URL, payload []byte, accept, contentType string) *http.Request {
+	request, err := http.NewRequest(method, url.String(), bytes.NewReader(payload))
 	if err != nil {
-		PrintMessageAndExit("Failed to create HTTP %s request for %s: %s", method, url, err)
+		PrintMessage("Failed to create HTTP %s request for %s: %s", method, url, err)
+		os.Exit(1)
 	}
-	if len(config.DcosAuthToken) == 0 {
-		// if the token wasnt manually provided by the user, try to fetch it from the main CLI.
-		// this value is optional: clusters can be configured to not require any auth
-		config.DcosAuthToken = OptionalCLIConfigValue("core.dcos_acs_token")
-	}
-	if len(config.DcosAuthToken) != 0 {
-		request.Header.Set("Authorization", fmt.Sprintf("token=%s", config.DcosAuthToken))
+	// This value is optional: clusters can be configured to not require any auth
+	authToken := OptionalCLIConfigValue("core.dcos_acs_token")
+	if len(authToken) != 0 {
+		request.Header.Set("Authorization", fmt.Sprintf("token=%s", authToken))
 	}
 	if len(accept) != 0 {
 		request.Header.Set("Accept", accept)
@@ -257,12 +200,39 @@ func CreateHTTPURLRequest(method string, url *url.URL, payload, accept, contentT
 	if len(contentType) != 0 {
 		request.Header.Set("Content-Type", contentType)
 	}
-	if config.Verbose {
-		if len(payload) > 0 {
-			PrintMessage("HTTP Query (%d byte payload): %s %s\n%s", len(payload), method, url, payload)
-		} else {
-			PrintMessage("HTTP Query: %s %s", method, url)
-		}
+	if len(payload) > 0 {
+		PrintVerbose("HTTP Query (%d byte payload): %s %s\n%s", len(payload), method, url, string(payload))
+	} else {
+		PrintVerbose("HTTP Query: %s %s", method, url)
 	}
 	return request
+}
+
+// buildTLSConfig returns a new tls.Config object which honors the CLI 'ssl_verify' setting.
+func buildTLSConfig() *tls.Config {
+	rawTLSSetting := OptionalCLIConfigValue("core.ssl_verify")
+	if strings.EqualFold(rawTLSSetting, "false") {
+		// 'false' (case insensitive): disable cert validation
+		return &tls.Config{InsecureSkipVerify: true}
+	} else if strings.EqualFold(rawTLSSetting, "true") {
+		// 'true' (case insensitive): require validation against default CAs
+		return &tls.Config{InsecureSkipVerify: false}
+	} else if len(rawTLSSetting) != 0 {
+		// '<other string>': path to local/custom cert file
+		cert, err := ioutil.ReadFile(rawTLSSetting)
+		if err != nil {
+			PrintMessage("Unable to read from CA certificate file %s: %s", rawTLSSetting, err)
+			os.Exit(1)
+		}
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM(cert)
+		return &tls.Config{
+			InsecureSkipVerify: false,
+			RootCAs:            certPool,
+		}
+	} else { // len(rawTLSSetting) == 0
+		// This shouldn't happen: 'dcos auth login' requires a non-empty setting.
+		// Play it safe and leave cert verification enabled by default (equivalent to 'true' case)
+		return &tls.Config{InsecureSkipVerify: false}
+	}
 }
