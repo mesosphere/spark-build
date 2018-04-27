@@ -5,8 +5,8 @@ import (
 	"errors"
 	"crypto/rand"
 	"encoding/base64"
+	"github.com/mesosphere/dcos-commons/cli/client"
 	"strings"
-	"log"
 )
 
 
@@ -164,7 +164,7 @@ func SetupKerberos(args *sparkArgs, marathonConfig map[string]interface{}) error
 		}
 
 		// Set principal
-		log.Printf("Using Kerberos principal %s", kerberosPrincipal)
+		client.PrintMessage("Using Kerberos principal '%s'", kerberosPrincipal)
 
 		// re-assign if the user used spark.yarn.principal
 		args.properties["spark.yarn.principal"] = args.kerberosPrincipal
@@ -237,41 +237,43 @@ func forwardEnvironmentVariablesFromMarathonConfig(args *sparkArgs, marathonJson
 	kdcPropCount := 0
 	given, value := propertyChecker([]string{"app", "env", SPARK_KDC_HOSTNAME_KEY})
 	if given {
-		log.Printf("Using %s for KDC hostname", value)
+		client.PrintMessage("Using KDC hostname '%s' from dispatcher env:%s", value, SPARK_KDC_HOSTNAME_KEY)
 		addEnvvarToDriverAndExecutor(args, SPARK_KDC_HOSTNAME_KEY, value)
 		kdcPropCount += 1
 	}
 
 	given, value = propertyChecker([]string{"app", "env", SPARK_KDC_PORT_KEY})
 	if given {
-		log.Printf("Using %s for KDC port", value)
+		client.PrintMessage("Using KDC port '%s' from dispatcher env:%s", value, SPARK_KDC_PORT_KEY)
 		addEnvvarToDriverAndExecutor(args, SPARK_KDC_PORT_KEY, value)
 		kdcPropCount += 1
 	}
 
 	given, value = propertyChecker([]string{"app", "env", SPARK_KERBEROS_REALM_KEY})
 	if given {
-		log.Printf("Using %s for KDC realm", value)
+		client.PrintMessage("Using KDC realm '%s' from dispatcher env:%s", value, SPARK_KERBEROS_REALM_KEY)
 		addEnvvarToDriverAndExecutor(args, SPARK_KERBEROS_REALM_KEY, value)
 		kdcPropCount += 1
 	}
 
 	if kdcPropCount > 0 && kdcPropCount != 3 {
-		log.Printf("WARNING: Only some of the required 3 environment variables (%s, %s, %s) were " +
-			"found for templating krb5.conf", SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
+		client.PrintMessage(
+			"WARNING: Missing some of the 3 dispatcher environment variables (%s, %s, %s) " +
+			"required for templating krb5.conf",
+			SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
 	}
 
 	given, value = propertyChecker([]string{"app", "env", SPARK_KERBEROS_KRB5_BLOB})
 	if given {
 		if kdcPropCount > 0 {
-			log.Printf("WARNING: base64 encoded krb5.conf found (env key %s), overwriting %s " +
-				"%s and %s", SPARK_KERBEROS_KRB5_BLOB, SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY,
-				SPARK_KERBEROS_REALM_KEY)
+			client.PrintMessage(
+				"WARNING: Found base64-encoded krb5.conf in dispatcher env:%s, ignoring %s, %s, and %s",
+				SPARK_KERBEROS_KRB5_BLOB, SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
 		}
 		addEnvvarToDriverAndExecutor(args, SPARK_KERBEROS_KRB5_BLOB, value)
 	} else {
 		if kdcPropCount == 0 {
-			log.Printf("No KDC krb5.conf parameters found in marathon configuration")
+			client.PrintMessage("No KDC krb5.conf parameters were found in the dispatcher Marathon configuration")
 		}
 	}
 }

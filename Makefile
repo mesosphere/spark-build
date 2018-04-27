@@ -107,7 +107,6 @@ $(CLI_DIST_DIR):
 	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark-darwin $@/
 	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark-linux $@/
 	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark.exe $@/
-	mv $(ROOT_DIR)/cli/python/dist/*.whl $@/
 
 cli: $(CLI_DIST_DIR)
 
@@ -122,8 +121,7 @@ $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
         $(ROOT_DIR)/universe/ \
         $(CLI_DIST_DIR)/dcos-spark-darwin \
         $(CLI_DIST_DIR)/dcos-spark-linux \
-        $(CLI_DIST_DIR)/dcos-spark.exe \
-        $(CLI_DIST_DIR)/*.whl; \
+        $(CLI_DIST_DIR)/dcos-spark.exe; \
     UNIVERSE_URL_PATH=$(HISTORY_URL_PATH) \
     TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
         $(TOOLS_DIR)/publish_aws.py \
