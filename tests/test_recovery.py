@@ -5,7 +5,7 @@ import re
 import shakedown
 import time
 
-from tests import utils
+import spark_utils as utils
 
 
 LOGGER = logging.getLogger(__name__)

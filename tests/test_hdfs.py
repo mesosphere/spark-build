@@ -15,7 +15,7 @@ import sdk_security
 import sdk_tasks
 
 from tests import hdfs_auth
-from tests import utils
+import spark_utils as utils
 
 
 log = logging.getLogger(__name__)

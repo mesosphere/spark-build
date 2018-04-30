@@ -16,8 +16,8 @@ import shakedown
 import sdk_utils
 import sdk_cmd
 
-from tests import s3
-from tests import utils
+import spark_s3 as s3
+import spark_utils as utils
 
 
 LOGGER = logging.getLogger(__name__)

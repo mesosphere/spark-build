@@ -1,19 +1,16 @@
 import dcos.config
 import dcos.http
 import dcos.package
-
 import logging
 import os
 import re
+import sdk_security
 import shakedown
 import subprocess
 import urllib
 import urllib.parse
 
-import sdk_security
-
-from tests import s3
-
+import spark_s3
 
 SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
@@ -195,23 +192,25 @@ def upload_file(file_path):
         os.environ['S3_BUCKET'],
         os.environ['S3_PREFIX']))
 
-    s3.upload_file(file_path)
+    spark_s3.upload_file(file_path)
 
     basename = os.path.basename(file_path)
-    return s3.http_url(basename)
+    return spark_s3.http_url(basename)
 
 
 def submit_job(app_url, app_args, app_name=SPARK_APP_NAME, args=[], spark_user=SPARK_USER,
-               driver_role=SPARK_DRIVER_ROLE):
+               driver_role=SPARK_DRIVER_ROLE, verbose=True):
     if is_strict():
         args += ["--conf", 'spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)]
         args += ["--conf", 'spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)]
     args_str = ' '.join(args + ["--conf", "spark.driver.memory=2g"] +
                         ["--conf", "spark.mesos.role={}".format(driver_role)])
     submit_args = ' '.join([args_str, app_url, app_args])
-    cmd = 'dcos {pkg_name} --name={app_name}  run --verbose --submit-args="{args}"'.format(
+    verbose_flag = "--verbose" if verbose else ""
+    cmd = 'dcos {pkg_name} --name={app_name} run {verbose_flag} --submit-args="{args}"'.format(
         pkg_name=SPARK_PACKAGE_NAME,
         app_name=app_name,
+        verbose_flag=verbose_flag,
         args=submit_args)
 
     LOGGER.info("Running {}".format(cmd))
@@ -267,7 +266,7 @@ def teardown_spark():
 
 
 def _scala_test_jar_url():
-    return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
+    return spark_s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
 
 
 def spark_security_session():
