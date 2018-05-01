@@ -29,18 +29,21 @@ def submit_job(dispatcher):
             "--conf", "spark.mesos.role={}".format(driver_role),
             "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:931ca56273af913d103718376e2fbc04be7cbde0",
             # use Hector's image
-            "--conf", "spark.port.maxRetries=32"  # setting to allow up to 32 drivers on same node
+            "--conf", "spark.port.maxRetries=32",  # setting to allow up to 32 drivers on same node
             #"--conf", "spark.mesos.driverEnv.SPARK_USER=root", # Run as root on centos
+            "--supervise"
+            #"--conf", "spark.mesos.rejectOfferDuration=1000s",
             ]
 
-    app_args = "100000 300"
+    app_args = "100000 3000"
 
     utils.submit_job(
         app_name="/{}".format(dispatcher_name),
         app_url=MONTE_CARLO_APP_URL,
         app_args=app_args,
         verbose=False,
-        args=args)
+        args=args,
+        driver_role=driver_role)
 
 
 def submit_loop(launch_rate_per_min, dispatchers):
@@ -51,7 +54,8 @@ def submit_loop(launch_rate_per_min, dispatchers):
 
     dispatcher_index = 0
     while(True):
-        t = Thread(target=submit_job, args=(dispatchers[dispatcher_index],))
+        service_name,driver_role = dispatchers[dispatcher_index].split(",")
+        t = Thread(target=submit_job, args=(service_name, driver_role))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         print("sleeping {} sec.".format(sec_between_submits))
