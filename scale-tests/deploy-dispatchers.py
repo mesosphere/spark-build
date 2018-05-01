@@ -23,6 +23,7 @@ Options:
     --mem <n>                    amount of memory (mb) to use per dispatcher [default: 1024.0]
     --options-json <file>        a file containing installation options in JSON format
     --package-name <name>        name of the Spark package name [default: spark]
+    --package-repo <url>         URL of the Spark package repo to install from
     --role <role>                Mesos role registered by dispatcher [default: *]
     --service-account <account>  Mesos principal registered by dispatcher
     --service-secret <secret>    Mesos secret registered by dispatcher
@@ -51,11 +52,18 @@ def deploy_dispatchers(
     service_name_base,
     output_file,
     options,
-    options_file=None
+    options_file=None,
+    package_repo=None
 ):
     with open(output_file, "w") as outfile:
         for i in range(0, num_dispatchers):
             service_name = "{}-{}".format(service_name_base, str(i))
+
+            if package_repo is not None:
+                if package_repo not in [x['uri'] for x in shakedown.get_package_repos()['repositories']]:
+                    shakedown.add_package_repo(
+                        repo_name="{}-repo".format(service_name_base),
+                        repo_url=package_repo)
 
             if options_file is not None:
                 shakedown.install_package(
@@ -108,4 +116,5 @@ if __name__ == "__main__":
         arguments['<service_name_base>'],
         arguments['<output_file>'],
         options,
-        arguments['--options-json'])
+        arguments['--options-json'],
+        arguments['--package-repo'])
