@@ -132,6 +132,7 @@ def deploy_dispatchers(
                     service_name=service_name,
                     options_file=options_file)
             else:
+                options["service"]["role"] = "dispatcher-{}-role".format(i)
                 shakedown.install_package(
                     package_name=arguments['--package-name'],
                     service_name=service_name,
