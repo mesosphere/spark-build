@@ -127,7 +127,7 @@ def deploy_dispatchers(
                     service_name=service_name,
                     options_json=options)
 
-            outfile.write("{}\n".format(service_name))
+            outfile.write("{},{}\n".format(service_name, options["service"]["role"]))
 
 
 if __name__ == "__main__":
