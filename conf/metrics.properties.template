@@ -1,0 +1,9 @@
+
+# Enable StatsdSink for all instances by class name
+*.sink.statsd.class=org.apache.spark.metrics.sink.StatsDSink
+*.sink.statsd.prefix=spark
+*.sink.statsd.host=<STATSD_UDP_HOST>
+*.sink.statsd.port=<STATSD_UDP_PORT>
+
+# Enable JVM metrics source for all instances (master, worker, driver and executor) by class name
+*.source.jvm.class=org.apache.spark.metrics.source.JvmSource

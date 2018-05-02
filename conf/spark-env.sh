@@ -12,6 +12,8 @@ mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
 
+SPARK_WORKING_DIR=${PWD}
+
 cd $MESOS_SANDBOX
 
 MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
@@ -70,6 +72,14 @@ if [[ -n "${KRB5CONF}" ]]; then
     echo "${KRB5CONF}" | ${BASE64_D} > /etc/krb5.conf
 else
     echo "spark-env: No SPARK_MESOS_KRB5_CONF_BASE64 decoded" >&2
+fi
+
+if [ -n "${STATSD_UDP_HOST}" ] && [ -n "${STATSD_UDP_PORT}" ]; then
+    sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
+        -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
+        ${SPARK_WORKING_DIR}/conf/metrics.properties.template >${SPARK_WORKING_DIR}/conf/metrics.properties
+else
+    echo "spark-env: No STATSD_UDP environment variables were defined" >&2
 fi
 
 # Options read when launching programs locally with
