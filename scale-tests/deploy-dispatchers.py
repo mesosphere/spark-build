@@ -106,6 +106,9 @@ def deploy_dispatchers(
         for i in range(0, num_dispatchers):
             service_name = "{}-{}".format(service_name_base, str(i))
 
+            # set service name
+            options["service"]["name"] = service_name
+
             if package_repo is not None:
                 if package_repo not in [x['uri'] for x in shakedown.get_package_repos()['repositories']]:
                     shakedown.add_package_repo(
