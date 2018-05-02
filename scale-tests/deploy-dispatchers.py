@@ -25,8 +25,10 @@ Options:
     --package-name <name>        name of the Spark package name [default: spark]
     --package-repo <url>         URL of the Spark package repo to install from
     --quota-dispatcher-cpus <n>  number of CPUs to use for dispatcher quota [default: 1]
+    --quota-dispatcher-gpus <n>  number of GPUs to use for dispatcher quota [default: 0]
     --quota-dispatcher-mem <n>   amount of memory (mb) to use per dispatcher quota [default: 2048.0]
     --quota-driver-cpus <n>      number of CPUs to use for driver quota [default: 1]
+    --quota-driver-gpus <n>      number of GPUs to use for driver quota [default: 0]
     --quota-driver-mem <n>       amount of memory (mb) to use per driver quota [default: 1524.0]
     --role <role>                Mesos role registered by dispatcher [default: *]
     --service-account <account>  Mesos principal registered by dispatcher
@@ -67,8 +69,9 @@ def no_stdout():
 
 def create_quota(
     name,
-    cpus=100,
-    mem=102400
+    cpus=1,
+    gpus=0,
+    mem=1024.0
 ):
     with no_stdout():
         stdout, stderr, return_code = shakedown.run_dcos_command("spark quota list --json")
@@ -80,7 +83,7 @@ def create_quota(
 
     # create quota
     stdout, stderr, return_code = shakedown.run_dcos_command(
-        "spark quota create -c {} -m {} {}".format(cpus, mem, name))
+        "spark quota create -c {} -g {} -m {} {}".format(cpus, gpus, mem, name))
 
 
 def deploy_dispatchers(
@@ -91,8 +94,10 @@ def deploy_dispatchers(
     options_file=None,
     package_repo=None,
     quota_dispatcher_cpus=1,
+    quota_dispatcher_gpus=0,
     quota_dispatcher_mem=2048.0,
     quota_driver_cpus=1,
+    quota_driver_gpus=0,
     quota_driver_mem=1024.0
 ):
     with open(output_file, "w") as outfile:
@@ -109,9 +114,9 @@ def deploy_dispatchers(
 
             # create dispatcher & driver role quotas
             create_quota(name="{}-dispatcher-role".format(service_name),
-		cpus=quota_dispatcher_cpus, mem=quota_dispatcher_mem)
+		cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
             create_quota(name="{}-driver-role".format(service_name),
-		cpus=quota_driver_cpus, mem=quota_driver_mem)
+		cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
             options["service"]["role"] = "{}-dispatcher-role".format(service_name)
@@ -170,6 +175,8 @@ if __name__ == "__main__":
         options_file=arguments['--options-json'],
         package_repo=arguments['--package-repo'],
         quota_dispatcher_cpus=arguments['--quota-dispatcher-cpus'],
+        quota_dispatcher_gpus=arguments['--quota-dispatcher-gpus'],
         quota_dispatcher_mem=arguments['--quota-dispatcher-mem'],
         quota_driver_cpus=arguments['--quota-driver-cpus'],
+        quota_driver_gpus=arguments['--quota-driver-gpus'],
         quota_driver_mem=arguments['--quota-driver-mem'])
