@@ -116,13 +116,15 @@ def deploy_dispatchers(
                         repo_url=package_repo)
 
             # create dispatcher & driver role quotas
-            create_quota(name="{}-dispatcher-role".format(service_name),
+            dispatcher_role = "{}-dispatcher-role".format(service_name)
+            create_quota(name=dispatcher_role,
 		cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
-            create_quota(name="{}-driver-role".format(service_name),
+            driver_role = "{}-driver-role".format(service_name)
+            create_quota(name=driver_role,
 		cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
-            options["service"]["role"] = "{}-dispatcher-role".format(service_name)
+            options["service"]["role"] = dispatcher_role
 
             if options_file is not None:
                 shakedown.install_package(
@@ -135,7 +137,7 @@ def deploy_dispatchers(
                     service_name=service_name,
                     options_json=options)
 
-            outfile.write("{},{}\n".format(service_name, options["service"]["role"]))
+            outfile.write("{},{},{}\n".format(service_name, dispatcher_role, driver_role))
 
 
 if __name__ == "__main__":
