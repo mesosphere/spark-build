@@ -24,18 +24,20 @@ MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.
 def submit_job(dispatcher):
     dispatcher_name, dispatcher_role, driver_role = dispatcher
 
-    args = ["--conf", "spark.cores.max=1",
+    args = ["--conf", "spark.cores.max=4",
+            "--conf", "spark.executor.cores=1",
             "--conf", "spark.mesos.containerizer=mesos",
-            "--conf", "spark.mesos.role={}".format(driver_role),
-            "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:931ca56273af913d103718376e2fbc04be7cbde0",
+            "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-1d7926a8b500d0105b80a6bb808a671b047dc963",
             # use Hector's image
             "--conf", "spark.port.maxRetries=32",  # setting to allow up to 32 drivers on same node
             #"--conf", "spark.mesos.driverEnv.SPARK_USER=root", # Run as root on centos
-            "--supervise"
+            "--supervise",
             #"--conf", "spark.mesos.rejectOfferDuration=1000s",
+            "--conf", "spark.mesos.driver.failoverTimeout=30",
+            "--conf", "spark.mesos.task.labels=jpmc_test_id:spark_batch_run001"
             ]
 
-    app_args = "100000 3000"
+    app_args = "100000 6000"
 
     utils.submit_job(
         app_name="/{}".format(dispatcher_name),

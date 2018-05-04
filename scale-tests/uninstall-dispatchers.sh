@@ -18,6 +18,7 @@ fi
 
 ACS_TOKEN=`dcos config show core.dcos_acs_token`
 PACKAGE_NAME=spark
+DISPATCHERS_FILE=$1
 
 uninstall_instance () {
     SERVICE_NAME=$1
@@ -30,7 +31,7 @@ run_janitor () {
     dcos node ssh --leader --user=centos --master-proxy "$JANITOR_CMD"
 }
 
-for instance in `cat dispatchers.out`
+for instance in `cat $DISPATCHERS_FILE`
 do
     uninstall_instance $instance
 done
@@ -38,7 +39,7 @@ done
 sleep 10
 
 #TODO: if instance is "spark", the znode name is simply "spark_mesos_dispatcher"
-for instance in `cat dispatchers.out`
+for instance in `cat $DISPATCHERS_FILE`
 do
     run_janitor spark_mesos_dispatcher${instance}
 done
