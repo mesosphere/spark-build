@@ -22,7 +22,7 @@ MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.
 
 
 def submit_job(dispatcher):
-    dispatcher_name, dispatcher_role, driver_role = dispatcher
+    dispatcher_name, driver_role = dispatcher.split(",")
 
     args = ["--conf", "spark.cores.max=4",
             "--conf", "spark.executor.cores=1",
@@ -56,8 +56,8 @@ def submit_loop(launch_rate_per_min, dispatchers):
 
     dispatcher_index = 0
     while(True):
-        service_name,driver_role = dispatchers[dispatcher_index]
-        t = Thread(target=submit_job, args=(service_name, driver_role))
+        service_name, driver_role = dispatchers[dispatcher_index]
+        t = Thread(target=submit_job, args=("{},{}".format(service_name, driver_role)))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         print("sleeping {} sec.".format(sec_between_submits))
