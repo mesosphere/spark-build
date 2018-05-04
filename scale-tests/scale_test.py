@@ -1,3 +1,4 @@
+import csv
 import sys
 import time
 import spark_utils as utils
@@ -20,9 +21,12 @@ MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.
 # > python scale_test.py /tmp/dispatchers.txt 6
 
 
-def submit_job(dispatcher_service_name):
+def submit_job(dispatcher):
+    dispatcher_name, dispatcher_role, driver_role = dispatcher
+
     args = ["--conf", "spark.cores.max=1",
             "--conf", "spark.mesos.containerizer=mesos",
+            "--conf", "spark.mesos.role={}".format(driver_role),
             "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:931ca56273af913d103718376e2fbc04be7cbde0",
             # use Hector's image
             "--conf", "spark.port.maxRetries=32"  # setting to allow up to 32 drivers on same node
@@ -32,7 +36,7 @@ def submit_job(dispatcher_service_name):
     app_args = "100000 300"
 
     utils.submit_job(
-        app_name="/{}".format(dispatcher_service_name),
+        app_name="/{}".format(dispatcher_name),
         app_url=MONTE_CARLO_APP_URL,
         app_args=app_args,
         verbose=False,
@@ -64,10 +68,13 @@ if __name__ == "__main__":
         print(usage)
         sys.exit(2)
 
+    dispatchers = []
+
     dispatchers_file = sys.argv[1]
     print("dispatchers_file: {}".format(dispatchers_file))
     with open(dispatchers_file) as f:
-        dispatchers = f.read().splitlines()
+        infile = csv.reader(f, delimiter=',')
+        for row in infile: dispatchers.append(row)
     print("dispatchers: {}".format(dispatchers))
 
     launch_rate_per_min = int(sys.argv[2])
