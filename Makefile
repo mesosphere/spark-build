@@ -131,11 +131,11 @@ $(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
 
 stub-universe: $(UNIVERSE_URL_PATH)
 
-DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
+DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
 $(DCOS_SPARK_TEST_JAR_PATH):
 	cd tests/jobs/scala
 	sbt assembly
-	cp $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_PATH)
+	cp $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_PATH)
 
 test-env:
 	python3 -m venv test-env
