@@ -56,7 +56,8 @@ def submit_loop(launch_rate_per_min, dispatchers):
 
     dispatcher_index = 0
     while(True):
-        t = Thread(target=submit_job, args=(dispatchers[dispatcher_index]))
+        service_name,driver_role = dispatchers[dispatcher_index]
+        t = Thread(target=submit_job, args=(service_name, driver_role))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         print("sleeping {} sec.".format(sec_between_submits))
