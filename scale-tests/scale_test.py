@@ -21,7 +21,7 @@ MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.
 # > python scale_test.py /tmp/dispatchers.txt 6
 
 
-def submit_job(driver_role):
+def submit_job(dispatcher_name, driver_role):
     #dispatcher_name, driver_role = dispatcher.split(",")
 
     args = ["--conf", "spark.cores.max=4",
@@ -59,7 +59,7 @@ def submit_loop(launch_rate_per_min, dispatchers):
         service_name, driver_role = dispatchers[dispatcher_index].split(",")
         #t = Thread(target=submit_job, args=(driver_role))
         #t.start()
-        submit_job(driver_role)
+        submit_job(service_name, driver_role)
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         print("sleeping {} sec.".format(sec_between_submits))
         time.sleep(sec_between_submits)
