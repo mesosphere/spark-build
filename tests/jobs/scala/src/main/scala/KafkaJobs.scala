@@ -135,13 +135,16 @@ object KafkaConsumer {
     val conf = new SparkConf().setAppName("Kafka->Spark Validator Consumer")
     val ssc = new StreamingContext(conf, Seconds(2))
 
-    println(s"Using brokers $brokers and topic $topic")
+    // unique group ids allow multiple consumers to simultaneously read from the same topic
+    val groupId = System.currentTimeMillis().toString
+
+    println(s"Using brokers $brokers and topic $topic for group $groupId")
 
     val props = mutable.Map[String, Object](
       "bootstrap.servers" -> brokers,
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> "use_a_separate_group_id_for_each_stream",
+      "group.id" -> s"group-$groupId",
       "auto.offset.reset" -> "latest",
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )

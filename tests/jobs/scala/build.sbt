@@ -1,6 +1,7 @@
 lazy val root = (project in file("."))
   .settings(
     name := "dcos-spark-scala-tests",
+    version := "0.2-SNAPSHOT",
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % "2.2.0" % "provided",
