@@ -27,7 +27,7 @@ def submit_job(dispatcher_name, driver_role):
     args = ["--conf", "spark.cores.max=4",
             "--conf", "spark.executor.cores=1",
             "--conf", "spark.mesos.containerizer=mesos",
-            "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-1d7926a8b500d0105b80a6bb808a671b047dc963",
+            "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
             # use Hector's image
             "--conf", "spark.port.maxRetries=32",  # setting to allow up to 32 drivers on same node
             #"--conf", "spark.mesos.driverEnv.SPARK_USER=root", # Run as root on centos
