@@ -11,7 +11,7 @@
       "DCOS_UID": "dcos-dev",
       "DCOS_PASSWORD": "dogfoodinit",
       "DOCKER_IMAGE": "mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
-      "SERVICE_BASE_NAME": "auto",
+      "SERVICE_BASE_NAME": "dispatcher-mixed",
       "NUM_DISPATCHERS": "1",
       "OUTPUT_FILE": "dispatchers.out"
     },
