@@ -75,10 +75,11 @@ def create_quota(
 ):
     with no_stdout():
         stdout, stderr, return_code = shakedown.run_dcos_command("spark quota list --json")
-        existing_quotas = json.loads(stdout)
+        quota_list = json.loads(stdout)
+        existing_quotas = quota_list.get('infos', {})
 
     # remove existing quotas matching name
-    if name in [x['role'] for x in existing_quotas['infos']]:
+    if name in [x['role'] for x in existing_quotas]:
         shakedown.run_dcos_command("spark quota remove {}".format(name))
 
     # create quota
@@ -118,10 +119,10 @@ def deploy_dispatchers(
             # create dispatcher & driver role quotas
             dispatcher_role = "{}-dispatcher-role".format(service_name)
             create_quota(name=dispatcher_role,
-		cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
+                         cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
             driver_role = "{}-driver-role".format(service_name)
             create_quota(name=driver_role,
-		cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
+                         cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
             options["service"]["role"] = dispatcher_role
@@ -132,7 +133,6 @@ def deploy_dispatchers(
                     service_name=service_name,
                     options_file=options_file)
             else:
-                options["service"]["role"] = "dispatcher-{}-role".format(i)
                 shakedown.install_package(
                     package_name=arguments['--package-name'],
                     service_name=service_name,

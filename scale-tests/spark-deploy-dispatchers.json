@@ -1,0 +1,32 @@
+{
+  "id": "spark-deploy-dispatchers",
+  "description": "Setup quota and dispatchers for Spark batch and streaming workloads",
+  "labels": {},
+  "run": {
+    "cpus": 1,
+    "mem": 1024,
+    "disk": 1024,
+    "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; cd scale-tests/; python3 deploy-dispatchers.py --docker-image $DOCKER_IMAGE $NUM_DISPATCHERS $SERVICE_BASE_NAME $OUTPUT_FILE",
+    "env": {
+      "DCOS_UID": "dcos-dev",
+      "DCOS_PASSWORD": "dogfoodinit",
+      "DOCKER_IMAGE": "mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
+      "SERVICE_BASE_NAME": "auto",
+      "NUM_DISPATCHERS": "1",
+      "OUTPUT_FILE": "dispatchers.out"
+    },
+    "placement": {
+      "constraints": []
+    },
+    "artifacts": [],
+    "maxLaunchDelay": 3600,
+    "docker": {
+      "image": "mesosphere/spark-build:latest"
+    },
+    "volumes": [],
+    "restart": {
+      "policy": "NEVER"
+    }
+  },
+  "schedules": []
+}
