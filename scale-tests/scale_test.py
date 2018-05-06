@@ -38,7 +38,7 @@ def submit_job(dispatcher):
             "--conf", "spark.mesos.task.labels=jpmc_test_id:spark_batch_run001"
             ]
 
-    app_args = "100000 6000"
+    app_args = "100000 900" # runs for about an hour
 
     utils.submit_job(
         app_name="/{}".format(dispatcher_name),
