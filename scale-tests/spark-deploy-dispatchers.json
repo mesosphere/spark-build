@@ -6,7 +6,7 @@
     "cpus": 1,
     "mem": 1024,
     "disk": 1024,
-    "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; cd scale-tests/; python3 deploy-dispatchers.py --docker-image $DOCKER_IMAGE --quota-dispatcher-cpus $QUOTA_DISPATCHER_CPUS --quota-dispatcher-mem $QUOTA_DISPATCHER_MEM --quota-driver-cpus $QUOTA_DRIVER_CPUS --quota-driver-mem $QUOTA_DRIVER_MEM $NUM_DISPATCHERS $SERVICE_BASE_NAME $OUTPUT_FILE",
+    "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; cd scale-tests/; python3 deploy-dispatchers.py --docker-image $DOCKER_IMAGE --quota-dispatcher-cpus $QUOTA_DISPATCHER_CPUS --quota-dispatcher-mem $QUOTA_DISPATCHER_MEM --quota-driver-cpus $QUOTA_DRIVER_CPUS --quota-driver-mem $QUOTA_DRIVER_MEM $NUM_DISPATCHERS $SERVICE_BASE_NAME $MESOS_SANDBOX/$OUTPUT_FILE",
     "env": {
       "DCOS_UID": "bootstrapuser",
       "DCOS_PASSWORD": "deleteme",
