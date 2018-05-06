@@ -21,8 +21,9 @@ MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.
 # > python scale_test.py /tmp/dispatchers.txt 6
 
 
-def submit_job(dispatcher_name, driver_role):
-    #dispatcher_name, driver_role = dispatcher.split(",")
+def submit_job(dispatcher):
+    print("T dispatcher: {}".format(dispatcher))
+    dispatcher_name, dispatcher_role, driver_role = dispatcher
 
     args = ["--conf", "spark.cores.max=4",
             "--conf", "spark.executor.cores=1",
@@ -49,6 +50,7 @@ def submit_job(dispatcher_name, driver_role):
 
 
 def submit_loop(launch_rate_per_min, dispatchers):
+    print("dispatchers: {}".format(dispatchers))
     sec_between_submits = 60 / launch_rate_per_min
     print("sec_between_submits: {}".format(sec_between_submits))
     num_dispatchers = len(dispatchers)
@@ -56,10 +58,9 @@ def submit_loop(launch_rate_per_min, dispatchers):
 
     dispatcher_index = 0
     while(True):
-        service_name, driver_role = dispatchers[dispatcher_index].split(",")
-        #t = Thread(target=submit_job, args=(driver_role))
-        #t.start()
-        submit_job(service_name, driver_role)
+        print("dispatchers[index]: {}".format(dispatchers[dispatcher_index]))
+        t = Thread(target=submit_job, args=(dispatchers[dispatcher_index],))
+        t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         print("sleeping {} sec.".format(sec_between_submits))
         time.sleep(sec_between_submits)
@@ -80,7 +81,8 @@ if __name__ == "__main__":
     dispatchers_file = sys.argv[1]
     print("dispatchers_file: {}".format(dispatchers_file))
     with open(dispatchers_file) as f:
-        dispatchers = f.read().splitlines()
+        infile = csv.reader(f, delimiter=',')
+        for row in infile: dispatchers.append(row)
     print("dispatchers: {}".format(dispatchers))
 
     launch_rate_per_min = int(sys.argv[2])
