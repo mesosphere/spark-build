@@ -1,39 +1,56 @@
 {
-  "id": "spark-batch-workload",
-  "description": "Runs a Spark batch workload",
-  "labels": {},
-  "run": {
-    "cpus": 2,
-    "mem": 8192,
-    "disk": 1024,
-    "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 scale_test.py $MESOS_SANDBOX/$DISPATCHERS_FILENAME $SUBMITS_PER_MIN",
-    "env": {
-      "DCOS_UID": "bootstrapuser",
-      "DCOS_PASSWORD": "deleteme",
-      "DOCKER_IMAGE": "mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
-      "SPARK_BUILD_BRANCH": "master",
-      "DISPATCHERS_FILENAME": "dispatchers.out",
-      "SUBMITS_PER_MIN": "1"
-    },
-    "placement": {
-      "constraints": []
-    },
-    "artifacts": [
-      {
-        "uri": "https://xhuynh-dev.s3.amazonaws.com/dispatchers.out",
-        "extract": true,
-        "executable": false,
-        "cache": false
-      }
-    ],
-    "maxLaunchDelay": 3600,
-    "docker": {
-      "image": "mesosphere/spark-build:latest"
-    },
+  "id": "/spark-batch-workload",
+  "backoffFactor": 1.15,
+  "backoffSeconds": 1,
+  "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 scale_test.py $MESOS_SANDBOX/$DISPATCHERS_FILENAME $SUBMITS_PER_MIN",
+  "container": {
+    "type": "DOCKER",
     "volumes": [],
-    "restart": {
-      "policy": "NEVER"
+    "docker": {
+      "image": "mesosphere/spark-build:latest",
+      "forcePullImage": false,
+      "privileged": false,
+      "parameters": []
     }
   },
-  "schedules": []
+  "cpus": 2,
+  "disk": 1024,
+  "env": {
+    "DCOS_PASSWORD": "deleteme",
+    "DOCKER_IMAGE": "mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
+    "SPARK_BUILD_BRANCH": "master",
+    "DISPATCHERS_FILENAME": "dispatchers.out",
+    "DCOS_UID": "bootstrapuser",
+    "SUBMITS_PER_MIN": "1"
+  },
+  "fetch": [
+    {
+      "uri": "https://xhuynh-dev.s3.amazonaws.com/dispatchers.out",
+      "extract": false,
+      "executable": false,
+      "cache": false
+    }
+  ],
+  "instances": 1,
+  "maxLaunchDelaySeconds": 3600,
+  "mem": 8192,
+  "gpus": 0,
+  "networks": [
+    {
+      "mode": "host"
+    }
+  ],
+  "portDefinitions": [],
+  "requirePorts": false,
+  "upgradeStrategy": {
+    "maximumOverCapacity": 1,
+    "minimumHealthCapacity": 1
+  },
+  "killSelection": "YOUNGEST_FIRST",
+  "unreachableStrategy": {
+    "inactiveAfterSeconds": 0,
+    "expungeAfterSeconds": 0
+  },
+  "healthChecks": [],
+  "constraints": []
 }
