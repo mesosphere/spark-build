@@ -84,7 +84,7 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
     num_words_to_read = int(desired_runtime * PRODUCER_NUM_WORDS_PER_MIN)
 
     for dispatcher in dispatchers:
-        spark_app_name, driver_role = dispatcher.split(",")
+        spark_app_name, _, driver_role = dispatcher.split(",")
         topic = "topic-{}".format(spark_app_name)
 
         _submit_producer(broker_dns, common_conf, topic, spark_app_name, driver_role)
