@@ -5,12 +5,9 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.receiver.Receiver
 
 class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](StorageLevel.MEMORY_ONLY_2) with Logging {
-
-  val waitFor : Long = (1000L / wordsPerSecond).toLong
-  val inputList : Array[String] = "the quick brown fox jumps over the lazy dog".split(" ")
-
-  val random : Random = Random
-
+  val waitFor: Long = (1000L / wordsPerSecond).toLong
+  val inputList: Array[String] = "the quick brown fox jumps over the lazy dog".split(" ")
+  val random: Random = Random
 
   def onStart(): Unit = {
     // Start the thread that receives data over a connection
@@ -30,7 +27,7 @@ class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](Storage
   private def receive(): Unit = {
     try {
       while(!isStopped) {
-        val word : String = inputList(random.nextInt(inputList.length))
+        val word: String = inputList(random.nextInt(inputList.length))
 
         logInfo(s"Writing: $word")
         store(word)
@@ -45,5 +42,4 @@ class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](Storage
         restart("Error receiving data", t)
     }
   }
-
 }
