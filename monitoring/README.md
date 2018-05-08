@@ -13,6 +13,7 @@ In this repository, we added few [dashboards](./dashboards) that will show some 
 task metrics.
 - Mesos: This dashboard plots some metrics related to Mesos.
 - Spark: This dashboard shows a bunch of graphs with related Spark metrics.
+- GPU: This dashboard plots metrics pulled from nvidia-smi queries
 
 To load this dashboards in Grafana, you need at least one public agent on your
 cluster to access to the Grafana UI. Grafana is exposed in the url: `http://<public_agent_ip>:<grafana_port>`.
