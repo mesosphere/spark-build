@@ -123,9 +123,7 @@ object KafkaWordCount extends Logging {
       CassandraConnector(spark.sparkContext.getConf).withSessionDo { session =>
 
         session.execute(
-          s"""DROP KEYSPACE IF EXISTS $keyspaceName""")
-        session.execute(
-          s"""CREATE KEYSPACE $keyspaceName WITH REPLICATION = {
+          s"""CREATE KEYSPACE IF NOT EXISTS $keyspaceName WITH REPLICATION = {
             'class': 'SimpleStrategy',
             'replication_factor': 3
           }""")
@@ -146,18 +144,17 @@ object KafkaWordCount extends Logging {
       LocationStrategies.PreferConsistent,
       ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams))
 
-    val timestamp = new Date().getTime()
     // Get the lines, split them into words, count the words and print
     val lines = messages.map(_.value)
     val words = lines.flatMap(_.split(" "))
     val wordCounts = words
       .map(x => (x, 1L))
       .reduceByKey(_ + _)
-      .map(x => (timestamp, x._1, x._2))
+      .map(x => (new Date().getTime(), x._1, x._2))
 
     if (cassandraEnabled) {
       wordCounts.foreachRDD(rdd => {
-        logInfo(s"Writing ${rdd.toString} to Cassandra")
+        println(s"Writing ${rdd.toString} to Cassandra")
         rdd.saveToCassandra(keyspaceName, tableName, cassandraColumns)
       })
     }
