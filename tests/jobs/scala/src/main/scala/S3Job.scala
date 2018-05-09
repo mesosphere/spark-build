@@ -39,19 +39,18 @@ object S3Job {
 
     if (parser.parse(args)) {
       println("RUNNING S3 JOB")
-      val conf = new SparkConf().setAppName("S3 Test")
-      val sc = new SparkContext(conf)
 
-      val readURL = config.readurl
-      val writeURL = config.writeurl
+      val sc = new SparkContext(new SparkConf().setAppName("S3 Test"))
 
-      println(s"Reading from ${readURL}.  Writing to ${writeURL}.")
+      println(s"Reading from ${config.readurl}.  Writing to ${config.writeurl}.")
 
-      val textRDD = sc.textFile(readURL)
-      println(s"Read ${textRDD.count()} lines from ${readURL}.")
+      val textRDD = sc.textFile(config.readurl)
+      println(s"Read ${textRDD.count()} lines from ${config.readurl}.")
 
-      textRDD.map(_.length).saveAsTextFile(writeURL)
-      println(s"Wrote ${textRDD.count()} lines to ${writeURL}.")
+      if (config.writeurl != null) {
+        textRDD.map(_.length).saveAsTextFile(config.writeurl)
+        println(s"Wrote ${textRDD.count()} lines to ${config.writeurl}.")
+      }
 
       sc.stop()
     } else {

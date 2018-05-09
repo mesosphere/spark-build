@@ -27,12 +27,7 @@ $(SPARK_DIR):
 prod-dist: $(SPARK_DIR)
 	pushd $(SPARK_DIR)
 	rm -rf spark-*.tgz
-	if [ -n "$(does_profile_exist,mesos)" ]; then
-		MESOS_PROFILE="-Pmesos"
-	else
-		MESOS_PROFILE=""
-	fi
-	./dev/make-distribution.sh --tgz "$${MESOS_PROFILE}" "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests
+	./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Phive -Phive-thriftserver -DskipTests
 	filename=`ls spark-*.tgz`
 	rm -rf $(DIST_DIR)
 	mkdir -p $(DIST_DIR)
@@ -165,10 +160,6 @@ clean: clean-dist
 
 define spark_dist
 `cd $(DIST_DIR) && ls spark-*.tgz`
-endef
-
-define does_profile_exist
-`cd "$(SPARK_DIR)" && ./build/mvn help:all-profiles | grep $(1)`
 endef
 
 define DCOS_LAUNCH_CONFIG_BODY

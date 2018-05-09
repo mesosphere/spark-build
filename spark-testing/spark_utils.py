@@ -16,7 +16,7 @@ import spark_s3
 DCOS_SPARK_TEST_JAR_PATH_ENV = "DCOS_SPARK_TEST_JAR_PATH"
 DCOS_SPARK_TEST_JAR_PATH = os.getenv(DCOS_SPARK_TEST_JAR_PATH_ENV, None)
 DCOS_SPARK_TEST_JAR_URL_ENV = "DCOS_SPARK_TEST_JAR_URL"
-DCOS_SPARK_TEST_JAR_URL = "http://infinity-artifacts.s3.amazonaws.com/autodelete7d/spark/test-20180427-181842-oD2P6bHrJSvMlluA/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar"#os.getenv(DCOS_SPARK_TEST_JAR_URL_ENV, None)
+DCOS_SPARK_TEST_JAR_URL = os.getenv(DCOS_SPARK_TEST_JAR_URL_ENV, None)
 if not DCOS_SPARK_TEST_JAR_URL and not os.path.exists(DCOS_SPARK_TEST_JAR_PATH):
     raise Exception('''Missing URL or path to file dcos-spark-scala-tests-assembly-[...].jar:
 - No URL: {}={}
