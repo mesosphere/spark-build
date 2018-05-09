@@ -6,3 +6,4 @@ tests/env
 tests/venv
 tests/.cache
 tests/__pycache__
+/tmp/
