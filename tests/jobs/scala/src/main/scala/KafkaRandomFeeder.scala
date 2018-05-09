@@ -7,9 +7,9 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object KafkaRandomFeeder extends Logging {
   def main(args: Array[String]): Unit = {
-    StreamingExamples.setStreamingLogLevels(Level.WARN)
+    KafkaCassandraStream.setStreamingLogLevels(Level.WARN)
 
-    val parser = StreamingExamples.getParser(this.getClass.getSimpleName, true).parse(args, Config())
+    val parser = KafkaCassandraStream.getParser(this.getClass.getSimpleName, true).parse(args, Config())
 
     if (parser.isEmpty) {
       logError("Bad arguments")
@@ -19,7 +19,7 @@ object KafkaRandomFeeder extends Logging {
     val config = parser.get
     println(s"Using config: $config")
 
-    val spark = StreamingExamples.createSparkSession(config)
+    val spark = KafkaCassandraStream.createSparkSession(config)
 
     val streamingContext = new StreamingContext(spark.sparkContext, Seconds(config.batchSizeSeconds))
 

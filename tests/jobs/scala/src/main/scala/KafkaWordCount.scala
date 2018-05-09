@@ -11,9 +11,9 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object KafkaWordCount extends Logging {
   def main(args: Array[String]): Unit = {
-    StreamingExamples.setStreamingLogLevels(Level.WARN)
+    KafkaCassandraStream.setStreamingLogLevels(Level.WARN)
 
-    val parser = StreamingExamples.getParser(this.getClass.getSimpleName, false).parse(args, Config())
+    val parser = KafkaCassandraStream.getParser(this.getClass.getSimpleName, false).parse(args, Config())
 
     if (parser.isEmpty) {
       logError("Bad arguments")
@@ -23,18 +23,10 @@ object KafkaWordCount extends Logging {
     val config = parser.get
     println(s"Using config: $config")
 
-    val spark = StreamingExamples.createSparkSession(config)
-
-    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(config.batchSizeSeconds))
-
-    // Create direct kafka stream with brokers and topics
-    val topicsSet = config.topics.split(",").toSet
-
-    val kafkaParams = getKafkaProperties(config.brokers, config.groupId, config.isKerberized)
+    val spark = KafkaCassandraStream.createSparkSession(config)
 
     val shouldWriteToCassandra: Boolean = config.shouldWriteToCassandra
 
-    // Set up the cassandra session:
     val keyspaceName = config.cassandraKeyspace
     val tableName = config.cassandraTable
     val cassandraColumns = SomeColumns("ts" as "_1", "word" as "_2", "count" as "_3")
@@ -58,13 +50,19 @@ object KafkaWordCount extends Logging {
       }
     }
 
+    val topicsSet = config.topics.split(",").toSet
+
+    val kafkaParams = getKafkaProperties(config.brokers, config.groupId, config.isKerberized)
+
+    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(config.batchSizeSeconds))
+
     val messages = KafkaUtils.createDirectStream[String, String](
       streamingContext,
       LocationStrategies.PreferConsistent,
       ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams)
     )
 
-    // Get the lines, split them into words, count the words and print
+    // Get the lines, split them into words, count the words and print.
     val lines = messages.map(_.value)
     val words = lines.flatMap(_.split(" "))
     val wordCounts = words
@@ -81,7 +79,6 @@ object KafkaWordCount extends Logging {
 
     wordCounts.print()
 
-    // Start the computation
     streamingContext.start()
     streamingContext.awaitTermination()
   }

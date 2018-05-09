@@ -249,52 +249,6 @@ def test_s3():
                     args=args)
 
 
-@pytest.mark.sanity
-@pytest.mark.smoke
-@pytest.mark.skip("TODO")
-def test_kafka_cassandra_stream():
-    def make_credential_secret(envvar, secret_path):
-        rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create {p} -v {e}"
-                                                 .format(p=secret_path, e=os.environ[envvar]))
-        assert rc == 0, "Failed to create secret {secret} from envvar {envvar}, stderr: {err}, stdout: {out}".format(
-            secret=secret_path, envvar=envvar, err=stderr, out=stdout)
-
-    LOGGER.info("Creating AWS secrets")
-
-    aws_access_key_secret_path = "aws_access_key_id"
-    aws_secret_access_key_path = "aws_secret_access_key"
-
-    make_credential_secret(envvar="AWS_ACCESS_KEY_ID", secret_path="/{}".format(aws_access_key_secret_path))
-    make_credential_secret(envvar="AWS_SECRET_ACCESS_KEY", secret_path="/{}".format(aws_secret_access_key_path))
-
-    app_args = "--numberOfRecords 10000 --numberOfPartitions 10 --minColumnsLength 20 --maxColumnsLength 30"
-
-    args = [
-        "--conf",
-        "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(os.environ["AWS_ACCESS_KEY_ID"]),
-        "--conf",
-        "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(os.environ["AWS_SECRET_ACCESS_KEY"]),
-        "--conf",
-        "spark.cassandra.connection.host=node-0-server.cassandra.autoip.dcos.thisdcos.directory",
-        "--conf",
-        "spark.cassandra.connection.port=9042",
-        "--conf",
-        "spark.mesos.executor.docker.image=mesosphere/spark:latest",
-        "--conf",
-        "spark.mesos.executor.home=/opt/spark/dist",
-        "--class",
-        "KafkaCassandraStream"
-    ]
-    shakedown.run_dcos_command('package install cassandra --yes')
-
-    utils.run_tests(app_url=utils._scala_test_jar_url(),
-                    app_args=app_args,
-                    expected_output="Wrote batch",
-                    args=args)
-
-    shakedown.run_dcos_command('package uninstall cassandra --yes')
-
-
 # Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
 @pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
 @pytest.mark.sanity
