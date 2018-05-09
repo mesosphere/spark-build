@@ -6,10 +6,10 @@ import org.apache.spark.sql.SparkSession
   * A config class used to set the command line arguments.
   */
 case class Config(
-  appName: String = "KafkaRandomFeeder",
+  appName: String = "",
   brokers: String = "" ,
   topics: String = "",
-  groupId: String = "random_feeder_group",
+  groupId: String = "kafka_cassandra_stream",
   wordsPerSecond: Float = 1.0F,
   batchSizeSeconds: Long = 1L,
   cassandraKeyspace: String = "kafka_cassandra_stream",
@@ -75,7 +75,7 @@ object StreamingExamples extends Logging {
           c.copy(shouldWriteToCassandra = true)).text("Write word counts to Cassandra")
 
         opt[String]("groupId").action((x, c) =>
-          c.copy(groupId = x)).text("The group ID for a consumer")
+          c.copy(groupId = x)).text("The Kafka group ID for consumers")
 
         opt[String]("cassandraKeyspace").action((x, c) =>
           c.copy(cassandraKeyspace = x) ).text("The Cassandra keyspace to use")
