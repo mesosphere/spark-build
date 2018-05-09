@@ -30,11 +30,13 @@ object KafkaRandomFeeder extends Logging {
     val topic: String = config.topics
 
     stream.foreachRDD { rdd =>
+      println(s"Handling streamed RDD of size ${rdd.count}")
       rdd.foreachPartition { partition =>
         val producer = new KafkaProducer[String, String](kafkaProperties)
+        println(s"Handling streamed RDD partition")
 
         partition.foreach { word =>
-          println(s"Writing $word to Kafka")
+          println(s"Writing ${word} to Kafka")
           val msg = new ProducerRecord[String, String](topic, null, word)
           producer.send(msg)
         }
