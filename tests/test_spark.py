@@ -181,6 +181,8 @@ def _check_task_network_info(task):
     assert labels[1]['value'] == "val2"
 
 
+# Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
+@pytest.mark.skipif(s3.get_credentials().token is not None, reason="Session credentials won't work")
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
@@ -196,18 +198,10 @@ def test_s3_secrets():
     make_credential_secret(aws_access_key_path, creds.access_key)
     aws_secret_key_path = "aws_secret_access_key"
     make_credential_secret(aws_secret_key_path, creds.secret_key)
-    if creds.token:
-        # Include session token, required for temporary creds
-        aws_session_token_path = "aws_session_token"
-        make_credential_secret(aws_session_token_path, creds.token)
 
-        secret_names = "/{key},/{secret},/{session}".format(
-            key=aws_access_key_path, secret=aws_secret_key_path, session=aws_session_token_path)
-        secret_envkeys = "AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN"
-    else:
-        secret_names = "/{key},/{secret}".format(
-            key=aws_access_key_path, secret=aws_secret_key_path)
-        secret_envkeys = "AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY"
+    secret_names = "/{key},/{secret}".format(
+        key=aws_access_key_path, secret=aws_secret_key_path)
+    secret_envkeys = "AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY"
 
     args = ["--conf spark.mesos.containerizer=mesos",
             "--conf spark.mesos.driver.secret.names={}".format(secret_names),
@@ -234,6 +228,8 @@ def test_s3_secrets():
     assert len(list(s3.list("linecount-secret.txt"))) > 0
 
 
+# Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
+@pytest.mark.skipif(s3.get_credentials().token is not None, reason="Session credentials won't work")
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_s3_env():
@@ -241,8 +237,6 @@ def test_s3_env():
     creds = s3.get_credentials()
     args = ["--conf spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(creds.access_key),
             "--conf spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(creds.secret_key)]
-    if creds.token:
-        args.append("--conf spark.mesos.driverEnv.AWS_SESSION_TOKEN={}".format(creds.token))
     args.append("--class S3Job")
 
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')

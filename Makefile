@@ -139,13 +139,11 @@ test: test-jars stub-universe-url config.yaml
 		rm -f $(ROOT_DIR)/cluster_info.json # TODO remove this when launch_cluster.sh in docker image is updated
 	fi
 	STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)` \
-	CUSTOM_DOCKER_ARGS="\
--e DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${DCOS_SPARK_TEST_JAR_PATH}` \
--e MESOS_SPARK_TEST_JAR_PATH=/build/`basename ${MESOS_SPARK_TEST_JAR_PATH}` \
--e S3_PREFIX=$(S3_PREFIX) \
--e S3_BUCKET=$(S3_BUCKET) \
--e AWS_REGION=$(AWS_REGION)" \
 	S3_BUCKET=$(S3_BUCKET) \
+	TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${DCOS_SPARK_TEST_JAR_PATH}` \
+	TEST_SH_MESOS_SPARK_TEST_JAR_PATH=/build/`basename ${MESOS_SPARK_TEST_JAR_PATH}` \
+	TEST_SH_S3_PREFIX=$(S3_PREFIX) \
+	TEST_SH_AWS_REGION=$(AWS_REGION) \
 		$(ROOT_DIR)/test.sh $(TEST_SH_ARGS)
 
 
