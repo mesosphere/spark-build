@@ -182,7 +182,7 @@ def _check_task_network_info(task):
 
 
 @sdk_utils.dcos_ee_only
-@pytest.mark.nick # TODO
+@pytest.mark.sanity
 @pytest.mark.smoke
 def test_s3_secrets():
     # reuse s3.py's session to get creds:
@@ -234,7 +234,7 @@ def test_s3_secrets():
     assert len(list(s3.list("linecount-secret.txt"))) > 0
 
 
-@pytest.mark.sanity # TODO
+@pytest.mark.sanity
 @pytest.mark.smoke
 def test_s3_env():
     # reuse s3.py's session to get creds:
