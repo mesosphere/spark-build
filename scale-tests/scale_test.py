@@ -44,7 +44,7 @@ def submit_job(dispatcher, duration):
     dispatcher_name, dispatcher_role, driver_role = dispatcher
     print("duration: {}".format(str(duration)))
 
-    args = ["--conf", "spark.cores.max=4",
+    args = ["--conf", "spark.cores.max=1",
             "--conf", "spark.executor.cores=1",
             "--conf", "spark.mesos.containerizer=mesos",
             "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:fea8e635e369596fb521e3aa140faecdbb0cacd0-5879a4ecf7d9a3781c70f3cdec64acff4f770e73",
