@@ -19,7 +19,7 @@
     "DCOS_UID": "{template-dcos-username}",
     "DCOS_PASSWORD": "{template-dcos-password}",
     "SCRIPT_ARGS": "{template-script-args}",
-    "SPARK_BUILD_BRANCH": "sh-spark-737"
+    "SPARK_BUILD_BRANCH": "master"
   },
   "fetch": [
     {
