@@ -2,7 +2,7 @@
   "id": "/spark-batch-workload",
   "backoffFactor": 1.15,
   "backoffSeconds": 1,
-  "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 scale_test.py $MESOS_SANDBOX/$DISPATCHERS_FILENAME $SUBMITS_PER_MIN",
+  "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 batch_test.py $MESOS_SANDBOX/$SCRIPT_ARGS",
   "container": {
     "type": "DOCKER",
     "volumes": [],
@@ -16,16 +16,14 @@
   "cpus": 2,
   "disk": 1024,
   "env": {
-    "DCOS_PASSWORD": "deleteme",
-    "DOCKER_IMAGE": "mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-aee120236ee37309892ddbee42acf0028096947f",
-    "SPARK_BUILD_BRANCH": "master",
-    "DISPATCHERS_FILENAME": "dispatchers.out",
-    "DCOS_UID": "bootstrapuser",
-    "SUBMITS_PER_MIN": "1"
+    "DCOS_UID": "{template-dcos-username}",
+    "DCOS_PASSWORD": "{template-dcos-password}",
+    "SCRIPT_ARGS": "{template-script-args}",
+    "SPARK_BUILD_BRANCH": "sh-spark-737"
   },
   "fetch": [
     {
-      "uri": "https://xhuynh-dev.s3.amazonaws.com/dispatchers.out",
+      "uri": "{template-input-file-uri}",
       "extract": false,
       "executable": false,
       "cache": false

@@ -12,7 +12,6 @@ Arguments:
 
 Options:
     --cpus <n>                   number of CPUs to use per dispatcher [default: 1]
-    --docker-image <image>       custom Docker image to use
     --enable-kerberos <bool>     enable Kerberos configuration [default: False]
     --hdfs-config <url>          URL of the HDFS configuration files
     --history-service <url>      URL of the Spark history service
@@ -152,7 +151,6 @@ if __name__ == "__main__":
             "service_account": arguments["--service-account"] or "",
             "service_account_secret": arguments["--service-secret"] or "",
             "user": arguments["--user"],
-            "docker-image": arguments['--docker-image'] or "mesosphere/spark-dev:931ca56273af913d103718376e2fbc04be7cbde0",
             "log-level": arguments["--log-level"],
             "spark-history-server-url": arguments["--history-service"] or "",
             "UCR_containerizer": ast.literal_eval(arguments.get("--ucr-containerizer", True)),
