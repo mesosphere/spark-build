@@ -108,6 +108,6 @@ if __name__ == "__main__":
         user_conf += ["--conf", "spark.mesos.driver.labels={}".format(args["--spark-mesos-driver-labels"])]
 
     if not args["--no-supervise"]:
-        user_conf += "--supervise"
+        user_conf += ["--supervise"]
 
     submit_loop(int(args["--submits-per-min"]), dispatchers, user_conf)
