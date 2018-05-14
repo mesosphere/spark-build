@@ -263,6 +263,8 @@ def test_foldered_spark():
     utils.require_spark(service_name=service_name, zk=zk)
     test_sparkPi(service_name=service_name)
     utils.teardown_spark(service_name=service_name, zk=zk)
+    # reinstall CLI so that it's available for the following tests:
+    sdk_cmd.run_cli('package install --cli {} --yes'.format(utils.SPARK_PACKAGE_NAME))
 
 
 @pytest.mark.sanity
