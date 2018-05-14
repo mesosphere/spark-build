@@ -27,7 +27,7 @@ if [ -d $REPO_ROOT_DIR/frameworks ]; then
     FRAMEWORK_LIST=$(ls $REPO_ROOT_DIR/frameworks | sort)
 else
     # standalone repo (e.g. spark-build)
-    FRAMEWORK_LIST=$(basename $(pwd))
+    FRAMEWORK_LIST=$(basename ${REPO_ROOT_DIR})
 fi
 
 
@@ -44,7 +44,7 @@ if [ -n "$azure_enabled" ]; then
 else
     pytest_m="sanity and not azure"
 fi
-gradle_cache="$(pwd)/.gradle_cache"
+gradle_cache="${REPO_ROOT_DIR}/.gradle_cache"
 ssh_path="${HOME}/.ssh/ccm.pem"
 aws_creds_path="${HOME}/.aws/credentials"
 enterprise="true"
@@ -194,7 +194,7 @@ if [ -n "${aws_profile}" ]; then
 elif [ -n "$AWS_PROFILE" ]; then
     echo "Using provided AWS_PROFILE: $AWS_PROFILE"
     aws_profile=$AWS_PROFILE
-elif [ -a -f "${aws_creds_path}" ]; then
+elif [ -f "${aws_creds_path}" ]; then
     # Check the creds file. If there's exactly one profile, then use that profile.
     available_profiles=$(grep -oE '^\[\S+\]' $aws_creds_path | tr -d '[]') # find line(s) that look like "[profile]", remove "[]"
     available_profile_count=$(echo "$available_profiles" | wc -l)
@@ -316,7 +316,7 @@ ${docker_interactive_arg} \
 ${ssh_key_volume_arg} \
 ${gradle_cache_volume_arg} \
 ${dcos_files_volume_arg} \
--v $(pwd):$WORK_DIR \
+-v ${REPO_ROOT_DIR}:$WORK_DIR \
 -w $WORK_DIR \
 -t \
 mesosphere/dcos-commons:latest \

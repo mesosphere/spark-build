@@ -25,8 +25,6 @@ LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
-SECRET_NAME = "secret"
-SECRET_CONTENTS = "mgummelt"
 
 
 @pytest.fixture(scope='module')
@@ -187,7 +185,9 @@ def _check_task_network_info(task):
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_s3_secrets():
-    # reuse s3.py's session to get creds:
+    linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
+    s3.upload_file(linecount_path)
+
     creds = s3.get_credentials()
 
     def make_credential_secret(path, val):
@@ -199,33 +199,29 @@ def test_s3_secrets():
     aws_secret_key_path = "aws_secret_access_key"
     make_credential_secret(aws_secret_key_path, creds.secret_key)
 
-    secret_names = "/{key},/{secret}".format(
-        key=aws_access_key_path, secret=aws_secret_key_path)
-    secret_envkeys = "AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY"
-
     args = ["--conf spark.mesos.containerizer=mesos",
-            "--conf spark.mesos.driver.secret.names={}".format(secret_names),
-            "--conf spark.mesos.driver.secret.envkeys={}".format(secret_envkeys),
+            "--conf spark.mesos.driver.secret.names=/{key},/{secret}".format(
+                key=aws_access_key_path, secret=aws_secret_key_path),
+            "--conf spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
             "--class S3Job"]
-    linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
-    s3.upload_file(linecount_path)
 
-    # download/read linecount.txt only
+    try:
+        # download/read linecount.txt only
+        utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                        app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
+                        expected_output="Read 3 lines",
+                        args=args)
+        # download/read linecount.txt, reupload as linecount-secret.txt:
+        utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                        app_args="--readUrl {} --writeUrl {}".format(
+                            s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-secret.txt')),
+                        expected_output="Read 3 lines",
+                        args=args)
+        assert len(list(s3.list("linecount-secret.txt"))) > 0
+    finally:
+        sdk_security.delete_secret(aws_access_key_path)
+        sdk_security.delete_secret(aws_secret_key_path)
 
-    utils.run_tests(app_url=utils.dcos_test_jar_url(),
-                    app_args="--readUrl {} --countOnly".format(s3.s3a_url('linecount.txt')),
-                    expected_output="Read 3 lines",
-                    args=args)
-
-    # download/read linecount.txt, reupload as linecount-secret.txt:
-
-    utils.run_tests(app_url=utils.dcos_test_jar_url(),
-                    app_args="--readUrl {} --writeUrl {}".format(
-                        s3.s3a_url('linecount.txt'), s3.s3a_url('linecount-secret.txt')),
-                    expected_output="Read 3 lines",
-                    args=args)
-
-    assert len(list(s3.list("linecount-secret.txt"))) > 0
 
 
 # Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
@@ -233,7 +229,6 @@ def test_s3_secrets():
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_s3_env():
-    # reuse s3.py's session to get creds:
     creds = s3.get_credentials()
     args = ["--conf spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(creds.access_key),
             "--conf spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(creds.secret_key)]
@@ -243,17 +238,15 @@ def test_s3_env():
     s3.upload_file(linecount_path)
 
     # download/read linecount.txt only
-
     utils.run_tests(app_url=utils.dcos_test_jar_url(),
-                    app_args="--readUrl {} --countOnly".format(s3.s3a_url('linecount.txt')),
+                    app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
     # download/read linecount.txt, reupload as linecount-env.txt
-
     utils.run_tests(app_url=utils.dcos_test_jar_url(),
                     app_args="--readUrl {} --writeUrl {}".format(
-                        s3.s3a_url('linecount.txt'), s3.s3a_url('linecount-env.txt')),
+                        s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-env.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
