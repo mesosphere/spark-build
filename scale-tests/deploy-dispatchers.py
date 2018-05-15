@@ -78,7 +78,7 @@ def create_quota(
         existing_quotas = json.loads(stdout)
 
     # remove existing quotas matching name
-    if name in [x['role'] for x in existing_quotas['infos']]:
+    if name in [x['role'] for x in existing_quotas.get('infos', [])]:
         shakedown.run_dcos_command("spark quota remove {}".format(name))
 
     # create quota
