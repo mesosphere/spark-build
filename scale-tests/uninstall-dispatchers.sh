@@ -16,8 +16,8 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-readonly DISPATCHERS_FILE="${1:-}"
-readonly SPARK_PRINCIPAL="${2:-}"
+readonly DISPATCHERS_FILE="${1}"
+readonly SPARK_PRINCIPAL="${2:-spark_principal}"
 
 readonly ACS_TOKEN="$(dcos config show core.dcos_acs_token)"
 readonly PACKAGE_NAME="spark"
