@@ -70,6 +70,9 @@ if __name__ == "__main__":
         kafka_service_name,
         kafka_num_brokers,
         {
+            "service": {
+                "name": kafka_service_name
+            },
             "brokers": {
                 "count": kafka_num_brokers
             }
@@ -83,6 +86,9 @@ if __name__ == "__main__":
         cassandra_service_name,
         cassandra_num_nodes,
         {
+            "service": {
+                "name": cassandra_service_name
+            },
             "nodes": {
                 "count": cassandra_num_nodes
             }
@@ -103,7 +109,7 @@ if __name__ == "__main__":
 
     def _submit_producer(kafka_broker_dns, common_conf, app_name, driver_role, kafka_topics, words_per_second, spark_cores_max, spark_executor_cores):
         app_args = ["--topics",         kafka_topics,
-                    "--wordsPerSecond", words_per_second,
+                    "--wordsPerSecond", str(words_per_second),
                     "--brokers",        ",".join(kafka_broker_dns),
                     "--appName",        PRODUCER_CLASS_NAME]
 
@@ -114,7 +120,7 @@ if __name__ == "__main__":
         args = app_config + common_conf
 
         spark_utils.submit_job(app_url=jar,
-                               app_args=app_args,
+                               app_args=" ".join(app_args),
                                app_name=app_name,
                                args=args,
                                driver_role=driver_role,
@@ -122,18 +128,23 @@ if __name__ == "__main__":
 
     def _submit_consumer(kafka_broker_dns, cassandra_native_client_dns, common_conf, app_name, driver_role, kafka_topics, batch_size_seconds, spark_cores_max, spark_executor_cores):
         app_args = ["--topics",           kafka_topics,
-                    "--batchSizeSeconds", batch_size_seconds,
+                    "--batchSizeSeconds", str(batch_size_seconds),
                     "--brokers",          ",".join(kafka_broker_dns),
                     "--appName",          CONSUMER_CLASS_NAME]
 
+        cassandra_hosts = map(lambda x: x.split(':')[0], cassandra_native_client_dns)
+        cassandra_port = cassandra_native_client_dns[0].split(':')[1]
+
         app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
                       "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
+                      "--conf",  "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
+                      "--conf",  "spark.cassandra.connection.port={}".format(cassandra_port),
                       "--class", CONSUMER_CLASS_NAME]
 
         args = app_config + common_conf
 
         spark_utils.submit_job(app_url=jar,
-                               app_args=app_args,
+                               app_args=" ".join(app_args),
                                app_name=app_name,
                                args=args,
                                driver_role=driver_role,
@@ -160,7 +171,6 @@ if __name__ == "__main__":
         _submit_producer(
             kafka_broker_dns,
             common_conf,
-            kafka_topics,
             dispatcher_app_name,
             driver_role,
             kafka_topics,
@@ -168,7 +178,7 @@ if __name__ == "__main__":
             PRODUCER_SPARK_CORES_MAX,
             PRODUCER_SPARK_EXECUTOR_CORES)
 
-        for _ in range(0, num_consumers):
+        for _ in range(0, num_consumers_per_producer):
             _submit_consumer(
                 kafka_broker_dns,
                 cassandra_native_client_dns,
