@@ -11,7 +11,7 @@ set -x
 # This script:
 # - uninstalls instances of spark listed in an input file.
 
-if [ "$#" -lt 1 ]; then
+if [ "$#" -eq 0 ] || [ "$#" -gt 2 ]; then
     echo "Usage: ./uninstall-dispatchers.sh [dispatchers_file] [spark_principal]"
     exit 1
 fi
