@@ -2,7 +2,7 @@
 set -e
 set -x
 
-exec 2>&1
+#exec 2>&1
 
 SPARK_DIST_PATH=/opt/spark/dist
 
