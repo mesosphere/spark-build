@@ -78,8 +78,8 @@ object KafkaCassandraStream extends Logging {
         opt[Int]("numberOfWords").action((x, c) =>
           c.copy(numberOfWords = x.toLong)).text("The number of words to be sent to Kafka before stopping the producer")
       } else {
-        opt[Unit]("shouldWriteToCassandra").action((x, c) =>
-          c.copy(shouldWriteToCassandra = x)).text("Write word counts to Cassandra")
+        opt[Unit]("shouldNotWriteToCassandra").action((_, c) =>
+          c.copy(shouldWriteToCassandra = false)).text("Do not write word counts to Cassandra")
 
         opt[String]("groupId").action((x, c) =>
           c.copy(groupId = x)).text("The Kafka group ID for consumers")
