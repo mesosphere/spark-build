@@ -31,11 +31,10 @@ Options:
 import logging
 import json
 
-import sdk_cmd
-import sdk_install
-import spark_utils
-
 from docopt import docopt
+
+import sdk_cmd
+import spark_utils
 
 log = logging.getLogger(__name__)
 
