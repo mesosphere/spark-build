@@ -11,6 +11,7 @@ case class Config(
   topics: String = "",
   groupId: String = "kafka_cassandra_stream",
   wordsPerSecond: Float = 1.0F,
+  numberOfWords: Long = 1L,
   batchSizeSeconds: Long = 1L,
   cassandraKeyspace: String = "kafka_cassandra_stream",
   cassandraTable: String = "records",
@@ -74,6 +75,8 @@ object KafkaCassandraStream extends Logging {
       if (isSource) {
         opt[Double]("wordsPerSecond").action((x, c) =>
           c.copy(wordsPerSecond = x.toFloat)).text("The rate at which words should be written to Kafka")
+        opt[Int]( "numberOfWords").action((x, c) =>
+          c.copy(numberOfWords = x.toLong)).text("The number of words to be set to Kafka before stopping the producer")
       } else {
         opt[Unit]("shouldWriteToCassandra").action((_, c) =>
           c.copy(shouldWriteToCassandra = true)).text("Write word counts to Cassandra")

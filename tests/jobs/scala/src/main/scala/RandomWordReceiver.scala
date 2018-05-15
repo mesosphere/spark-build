@@ -4,7 +4,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.receiver.Receiver
 
-class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](StorageLevel.MEMORY_ONLY_2) with Logging {
+class RandomWordReceiver(wordsPerSecond: Float, numberOfWords: Long = 0L) extends Receiver[String](StorageLevel.MEMORY_ONLY_2) with Logging {
   val waitFor: Long = (1000L / wordsPerSecond).toLong
   val inputList: Array[String] = "the quick brown fox jumps over the lazy dog".split(" ")
   val random: Random = Random
@@ -12,7 +12,7 @@ class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](Storage
   def onStart(): Unit = {
     // Start the thread that receives data over a connection
     new Thread("Random Word Receiver") {
-      override def run() : Unit = { receive() }
+      override def run() : Unit = { receive(numberOfWords) }
     }.start()
   }
 
@@ -24,13 +24,21 @@ class RandomWordReceiver(wordsPerSecond: Float) extends Receiver[String](Storage
   /**
     * Select a random word from the input list until the receiver is stopped.
     */
-  private def receive(): Unit = {
+  private def receive(numberOfWords: Long): Unit = {
     try {
+      var wordsStored = 0L
       while(!isStopped) {
         val word: String = inputList(random.nextInt(inputList.length))
 
-        logInfo(s"Writing: $word")
+        logInfo(s"Writing: $word (${wordsStored + 1} of ${numberOfWords}")
+
         store(word)
+
+        wordsStored += 1
+        if (numberOfWords > 0 && wordsStored >= numberOfWords) {
+          stop("Requested number of words sent")
+        }
+
         Thread.sleep(waitFor)
       }
 
