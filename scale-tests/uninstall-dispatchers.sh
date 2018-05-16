@@ -45,7 +45,7 @@ janitor_cmd () {
 run_leader_cmd () {
     local command="${1}"
 
-    dcos node ssh --leader --user=${DCOS_SSH_USER:-centos} --master-proxy "${command}"
+    dcos node ssh --leader --user=${DCOS_SSH_USER:-centos} --master-proxy --option='StrictHostKeyChecking=no' "${command}"
 }
 
 run_janitor () {
