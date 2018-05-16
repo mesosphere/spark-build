@@ -5,7 +5,25 @@
 
 ## Streaming
 
-Tweak variables as required.
+Cluster requirements:
+- Enough resources to run the workload given the parameters.
+- Package repository containing a version of Spark with quotas.
+
+### 0. Getting a shell session that's able to run the scripts
+
+```bash
+your-machine $ git clone git@github.com:mesosphere/spark-build.git
+your-machine $ cd spark-build
+your-machine $ docker run -it --net=host -v (pwd):/spark-build -v </path/to/soak/key>:/ssh/key mesosphere/spark-build:latest
+docker-container # cd /spark-build
+docker-container # pip3 install -r tests/requirements.txt
+docker-container # export PYTHONPATH=$(pwd)/testing:$(pwd)/spark-testing
+docker-container # dcos cluster setup --insecure --username=<username> --password=<password> <cluster-url>
+docker-container # eval "$(ssh-agent)"
+docker-container # ssh-add -k /ssh/key
+```
+
+For the next sections, tweak variables as required.
 
 ### 1. Set up infrastructure (Kafka, Zookeeper and Cassandra clusters)
 
@@ -15,16 +33,15 @@ In order to install the infrastructure for the streaming tests, the
 For example, the following command:
 
 ```bash
-PYTHONPATH=../testing:../spark-testing
-
-INFRASTRUCTURE_OUTPUT_FILE=service-options.json
-KAFKA_ZOOKEEPER_CONFIG=configs/kafka-zookeeper-options.json
+TEST_NAME=dispatcher-streaming
+INFRASTRUCTURE_OUTPUT_FILE="${TEST_NAME}-infrastructure.json"
+KAFKA_ZOOKEEPER_CONFIG=scale-tests/configs/kafka-zookeeper-options.json
 KAFKA_CLUSTER_COUNT=1
-KAFKA_CONFIG=configs/kafka-options.json
+KAFKA_CONFIG=scale-tests/configs/kafka-options.json
 CASSANDRA_CLUSTER_COUNT=1
-CASSANDRA_CONFIG=configs/cassandra-options.json
+CASSANDRA_CONFIG=scale-tests/configs/cassandra-options.json
 
-./setup_streaming.py $INFRASTRUCTURE_OUTPUT_FILE \
+./scale-tests/setup_streaming.py $INFRASTRUCTURE_OUTPUT_FILE \
   --kafka-zookeeper-config $KAFKA_ZOOKEEPER_CONFIG \
   --kafka-cluster-count $KAFKA_CLUSTER_COUNT \
   --kafka-config $KAFKA_CONFIG \
@@ -34,7 +51,8 @@ CASSANDRA_CONFIG=configs/cassandra-options.json
 
 installs:
 * 1 Confluent ZooKeeper ensemble with the specified options
-* 1 Confluent Kafka ensemble with the `kafka.kafka_zookeeper_uri` set up for the Confluent ZooKeeper ensemble and specified options
+* 1 Confluent Kafka ensemble with the `kafka.kafka_zookeeper_uri` set up for the
+  Confluent ZooKeeper ensemble and specified options
 * 1 Cassandra cluster with the specified options
 
 The specifications (package names and service names) for the installed services
@@ -42,25 +60,28 @@ are written to the specified output file: `$INFRASTRUCTURE_OUTPUT_FILE`.
 
 Check the `setup_streaming.py` script for more customization options.
 
-*TODO*: maybe make the installed service names have `$DISPATCHER_NAME_PREFIX` as a
-prefix so all related tasks are grouped visually. Right now this installs
-services as e.g. `cassandra-00`, but it would be cool if it was something like
-`$DISPATCHER_NAME_PREFIX-cassandra-00`, e.g. `dispatcher-streaming-cassandra-00`.
+*TODO*: maybe make the installed service names have `$TEST_NAME` as a prefix so
+all related tasks are grouped visually. Right now this installs services as e.g.
+`cassandra-00`, but it would be cool if it was `$TEST_NAME-cassandra-00`, e.g.
+`dispatcher-streaming-cassandra-00`.
 
 ### 2. Install Spark dispatchers
 
-```bash
-PYTHONPATH=../testing:../spark-testing
+Depends on:
+- `$TEST_NAME` exported in step #1.
 
+Wait for the infrastructure to come online and run the following command:
+
+```bash
 QUOTA_DISPATCHER_CPUS=8
 QUOTA_DISPATCHER_MEM=8096
 QUOTA_DRIVER_CPUS=10
 QUOTA_DRIVER_MEM=8096
-NUM_DISPATCHERS=1
-DISPATCHER_NAME_PREFIX=dispatcher-streaming
+NUM_DISPATCHERS=10
+DISPATCHER_NAME_PREFIX="${TEST_NAME}"
 DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
 
-python3 deploy-dispatchers.py \
+./scale-tests/deploy-dispatchers.py \
   --quota-dispatcher-cpus $QUOTA_DISPATCHER_CPUS \
   --quota-dispatcher-mem $QUOTA_DISPATCHER_MEM \
   --quota-driver-cpus $QUOTA_DRIVER_CPUS \
@@ -80,17 +101,10 @@ Depends on:
 Wait for the dispatchers to come online and run the following command:
 
 ```bash
-PYTHONPATH=../testing:../spark-testing
-
 JAR=http://infinity-artifacts.s3.amazonaws.com/autodelete7d/evan-dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
-KAFKA_PACKAGE_NAME=confluent-kafka    # TODO: get from infrastructure output file.
-KAFKA_SERVICE_NAME=confluent-kafka-00 # TODO: get from infrastructure output file.
-KAFKA_NUM_BROKERS=3                   # TODO: get from running service through infrastructure output file.
-CASSANDRA_PACKAGE_NAME=cassandra      # TODO: get from infrastructure output file.
-CASSANDRA_SERVICE_NAME=cassandra-00   # TODO: get from infrastructure output file.
-CASSANDRA_NUM_NODES=3                 # TODO: get from running service through infrastructure output file.
 NUM_PRODUCERS_PER_DISPATCHER=1
 NUM_CONSUMERS_PER_PRODUCER=1
+PRODUCER_NUMBER_OF_WORDS=100000
 PRODUCER_WORDS_PER_SECOND=10
 PRODUCER_SPARK_CORES_MAX=2
 PRODUCER_SPARK_EXECUTOR_CORES=2
@@ -98,16 +112,13 @@ CONSUMER_BATCH_SIZE_SECONDS=10
 CONSUMER_SPARK_CORES_MAX=1
 CONSUMER_SPARK_EXECUTOR_CORES=1
 
-python3 kafka_cassandra_streaming_test.py $DISPATCHERS_OUTPUT_FILE \
+./scale-tests/kafka_cassandra_streaming_test.py \
+  $DISPATCHERS_OUTPUT_FILE \
+  $INFRASTRUCTURE_OUTPUT_FILE \
   --jar $JAR \
-  --kafka-package-name $KAFKA_PACKAGE_NAME \
-  --kafka-service-name $KAFKA_SERVICE_NAME \
-  --kafka-num-brokers $KAFKA_NUM_BROKERS \
-  --cassandra-package-name $CASSANDRA_PACKAGE_NAME \
-  --cassandra-service-name $CASSANDRA_SERVICE_NAME \
-  --cassandra-num-nodes $CASSANDRA_NUM_NODES \
-  --num-producers $NUM_PRODUCERS_PER_DISPATCHER \
+  --num-producers-per-dispatcher $NUM_PRODUCERS_PER_DISPATCHER \
   --num-consumers-per-producer $NUM_CONSUMERS_PER_PRODUCER \
+  --producer-number-of-words $PRODUCER_NUMBER_OF_WORDS \
   --producer-words-per-second $PRODUCER_WORDS_PER_SECOND \
   --producer-spark-cores-max $PRODUCER_SPARK_CORES_MAX \
   --producer-spark-executor-cores $PRODUCER_SPARK_EXECUTOR_CORES \
@@ -145,7 +156,7 @@ considered successful:
 *TODO*: handle installed Cassandra service name in URL.
 
 ```
-dcos task exec -it node-0-server bash -c 'PATH=$MESOS_SANDBOX/python-dist/bin:$PATH && CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "select * from kafka_cassandra_stream.records"'
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "describe keyspaces"'
 ```
 
 ```
@@ -169,7 +180,7 @@ Depends on:
 ```bash
 SPARK_PRINCIPAL=spark-principal
 
-./uninstall-dispatchers.sh $DISPATCHERS_OUTPUT_FILE $SPARK_PRINCIPAL
+./scale-tests/uninstall-dispatchers.sh $DISPATCHERS_OUTPUT_FILE $SPARK_PRINCIPAL
 ```
 
 ### 6. (Optional) Tear down infrastructure (Kafka, Zookeeper and Cassandra clusters)
@@ -177,7 +188,7 @@ SPARK_PRINCIPAL=spark-principal
 The services can be uninstalled manually as with any other DC/OS services, but running:
 
 ```bash
-PYTHONPATH=../testing:../spark-testing
+export PYTHONPATH=../testing:../spark-testing
 
 ./setup_streaming.py $INFRASTRUCTURE_OUTPUT_FILE --cleanup
 ```

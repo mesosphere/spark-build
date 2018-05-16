@@ -83,8 +83,7 @@ def install_package(package_name: str, index: int, service_task_count: int, conf
         package_name,
         service_name,
         expected_task_count,
-        additional_options=service_options
-        )
+        additional_options=service_options)
 
     return {"package_name": package_name, **service_options}
 
