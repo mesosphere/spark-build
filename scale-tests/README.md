@@ -101,7 +101,7 @@ Depends on:
 Wait for the dispatchers to come online and run the following command:
 
 ```bash
-JAR=http://infinity-artifacts.s3.amazonaws.com/autodelete7d/evan-dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
+JAR=http://infinity-artifacts.s3.amazonaws.com/autodelete7d/dcos-spark-scala-tests-assembly-kafka-cassandra-streaming-20180517.jar
 NUM_PRODUCERS_PER_DISPATCHER=1
 NUM_CONSUMERS_PER_PRODUCER=1
 PRODUCER_NUMBER_OF_WORDS=100000
@@ -122,6 +122,7 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
   --producer-words-per-second $PRODUCER_WORDS_PER_SECOND \
   --producer-spark-cores-max $PRODUCER_SPARK_CORES_MAX \
   --producer-spark-executor-cores $PRODUCER_SPARK_EXECUTOR_CORES \
+  --consumer-write-to-cassandra \
   --consumer-batch-size-seconds $CONSUMER_BATCH_SIZE_SECONDS \
   --consumer-spark-cores-max $CONSUMER_SPARK_CORES_MAX \
   --consumer-spark-executor-cores $CONSUMER_SPARK_EXECUTOR_CORES
@@ -156,7 +157,15 @@ considered successful:
 *TODO*: handle installed Cassandra service name in URL.
 
 ```
-dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "describe keyspaces"'
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "describe tables"'
+```
+
+```
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "select count(*) from dispatcher_mixed_0_0.table_0"'
+```
+
+```
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "select * from dispatcher_mixed_0_0.table_0 limit 10"'
 ```
 
 ```

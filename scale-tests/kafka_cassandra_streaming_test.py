@@ -21,6 +21,7 @@ Options:
     --producer-spark-cores-max <n>      spark.cores.max [default: 2]
     --producer-spark-executor-cores <n> spark.executor.cores [default: 2]
     --consumer-batch-size-seconds <n>   number seconds accumulating entries for each batch request [default: 10]
+    --consumer-write-to-cassandra       write to Cassandra [default: False]
     --consumer-spark-cores-max <n>      spark.cores.max [default: 1]
     --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
 """
@@ -40,12 +41,13 @@ log = logging.getLogger(__name__)
 DEFAULT_JAR = 'https://infinity-artifacts.s3.amazonaws.com/soak/spark/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar'
 PRODUCER_CLASS_NAME = 'KafkaRandomFeeder'
 CONSUMER_CLASS_NAME = 'KafkaWordCount'
+SPARK_PACKAGE_NAME = 'spark'
 COMMON_CONF = [
     "--supervise",
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
     "--conf", "spark.port.maxRetries=32",
-    "--conf", "spark.mesos.executor.docker.image=mesosphere/spark:latest",
+    "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:7081f3483a0d904992994edbed07abbc5110f003-815904ac6c6604ac82368a44d69f8a7423bcb8dc",
     "--conf", "spark.mesos.executor.home=/opt/spark/dist",
     "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
     "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
@@ -102,6 +104,7 @@ def _submit_consumer(kafka_broker_dns,
                      driver_role,
                      kafka_topics,
                      kafka_group_id,
+                     write_to_cassandra,
                      batch_size_seconds,
                      cassandra_keyspace,
                      cassandra_table,
@@ -114,6 +117,9 @@ def _submit_consumer(kafka_broker_dns,
                 "--batchSizeSeconds",  str(batch_size_seconds),
                 "--cassandraKeyspace", cassandra_keyspace,
                 "--cassandraTable",    cassandra_table]
+
+    if not write_to_cassandra:
+        app_args.extend(["--shouldNotWriteToCassandra"])
 
     cassandra_hosts = map(lambda x: x.split(':')[0], cassandra_native_client_dns)
     cassandra_port = cassandra_native_client_dns[0].split(':')[1]
@@ -162,6 +168,7 @@ if __name__ == "__main__":
     producer_words_per_second     = int(args['--producer-words-per-second'])
     producer_spark_cores_max      = int(args['--producer-spark-cores-max'])
     producer_spark_executor_cores = int(args['--producer-spark-executor-cores'])
+    consumer_write_to_cassandra   = args['--consumer-write-to-cassandra']
     consumer_batch_size_seconds   = int(args['--consumer-batch-size-seconds'])
     consumer_spark_cores_max      = int(args['--consumer-spark-cores-max'])
     consumer_spark_executor_cores = int(args['--consumer-spark-executor-cores'])
@@ -170,9 +177,10 @@ if __name__ == "__main__":
 
     _install_package_cli(kafka_package_name)
     _install_package_cli(cassandra_package_name)
+    _install_package_cli(SPARK_PACKAGE_NAME)
 
     kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, "broker")
-    cassandra_native_client_dns = ['node-1-server.cassandra-00.autoip.dcos.thisdcos.directory:9042']
+    cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
     for dispatcher in dispatchers:
         dispatcher_app_name, _, driver_role = dispatcher.split(",")
@@ -206,6 +214,7 @@ if __name__ == "__main__":
                     driver_role,
                     kafka_topics,
                     consumer_kafka_group_id,
+                    consumer_write_to_cassandra,
                     consumer_batch_size_seconds,
                     producer_cassandra_keyspace,
                     consumer_cassandra_table,
