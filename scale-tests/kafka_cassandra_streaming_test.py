@@ -25,7 +25,6 @@ Options:
     --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
 
     --conf-spark-port-maxRetries  <n>          max number of retries for Spark to bind to a port [default: 32]
-    --conf-spark-executor-docker-image <image> docker image to submit with spark job [default: mesosphere/spark:latest]
 
 """
 
