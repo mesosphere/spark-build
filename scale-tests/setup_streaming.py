@@ -99,7 +99,7 @@ def _get_cluster_count(args: dict, service: str) -> int:
     return cluster_count
 
 
-def _get_pod_cout(service_options: dict, pod_name: str, default: int) -> int:
+def _get_pod_count(service_options: dict, pod_name: str, default: int) -> int:
     """
     Return the count of the specified pod name if present in the service config.
     Return the default value otherwise.
@@ -112,7 +112,7 @@ def install_zookeeper(args: dict) -> list:
     Install the ZooKeeper service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return 2 * _get_pod_cout(service_options, "node", 3)
+        return 2 * _get_pod_count(service_options, "node", 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -135,7 +135,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
     Install the Kafka service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return _get_pod_cout(service_options, "brokers", 3)
+        return _get_pod_count(service_options, "brokers", 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -170,7 +170,7 @@ def install_cassandra(args: dict) -> list:
     Install the Cassandra service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return _get_pod_cout(service_options, "nodes", 3)
+        return _get_pod_count(service_options, "nodes", 3)
 
     cassandra_cluster_count = _get_cluster_count(args, "cassandra")
 
