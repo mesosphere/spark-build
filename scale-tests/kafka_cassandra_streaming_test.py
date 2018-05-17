@@ -45,13 +45,21 @@ log = logging.getLogger(__name__)
 DEFAULT_JAR = 'https://infinity-artifacts.s3.amazonaws.com/soak/spark/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar'
 PRODUCER_CLASS_NAME = 'KafkaRandomFeeder'
 CONSUMER_CLASS_NAME = 'KafkaWordCount'
+COMMON_CONF = [
+    "--supervise",
+    "--conf", "spark.mesos.containerizer=mesos",
+    "--conf", "spark.mesos.driver.failoverTimeout=30",
+    "--conf", "spark.mesos.executor.home=/opt/spark/dist",
+    "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
+    "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
+]
 
 
 def get_spark_conf(args: dict) -> typing.List[str]:
     """
     Get the spark options from the command line parameter and merge it with the defaults:
 
-    Note, we could add:
+    Note, we could add (after removing from COMMON_CONF):
 
     --conf-spark-mesos-containerizer <name> [default: mesos]
     --conf-spark-mesos-driver-failoverTimeout <n> [default: 30]
@@ -61,15 +69,7 @@ def get_spark_conf(args: dict) -> typing.List[str]:
 
     as additional options to make the other values used here configurable.
     """
-    spark_conf = [
-        "--supervise",
-        "--conf", "spark.mesos.containerizer=mesos",
-        "--conf", "spark.mesos.driver.failoverTimeout=30",
-        "--conf", "spark.mesos.executor.home=/opt/spark/dist",
-        "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
-        "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
-    ]
-
+    spark_conf = COMMON_CONF.copy()
     for option, value in args.items():
         if option.startswith("--conf-"):
             option_name = option[len("--conf-"):].replace("-", ".")
@@ -80,7 +80,7 @@ def get_spark_conf(args: dict) -> typing.List[str]:
 
 def _install_package_cli(package_name):
     cmd = "package install {package_name} --yes --cli".format(package_name=package_name)
-    rt, stdout, _ = sdk_cmd.run_raw_cli(cmd)
+    rt, _, _ = sdk_cmd.run_raw_cli(cmd)
     assert rt == 0, "Failed to install CLI for {package_name}"
 
 
