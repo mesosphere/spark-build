@@ -1,5 +1,4 @@
 #!/bin/sh
-cd "${0%/*}" # to the folder containing this script.
 
 set -x
 
@@ -46,7 +45,7 @@ janitor_cmd () {
 run_leader_cmd () {
     local command="${1}"
 
-    dcos node ssh --leader --user=centos --master-proxy "${command}"
+    dcos node ssh --leader --user=${DCOS_SSH_USER:-centos} --master-proxy --option='StrictHostKeyChecking=no' "${command}"
 }
 
 run_janitor () {
@@ -72,7 +71,9 @@ do
     driver_role="$(echo ${dispatcher} | cut -d, -f3)"
 
     uninstall_service "${service_name}"
+    dcos package install --yes --cli "${PACKAGE_NAME}"
     remove_quota "${dispatcher_role}"
     remove_quota "${driver_role}"
+    dcos package uninstall --cli "${PACKAGE_NAME}"
     run_janitor "${service_name}" "${dispatcher_role}" "${SPARK_PRINCIPAL}"
 done

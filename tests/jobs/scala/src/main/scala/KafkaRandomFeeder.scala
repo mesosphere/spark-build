@@ -23,7 +23,7 @@ object KafkaRandomFeeder extends Logging {
 
     val streamingContext = new StreamingContext(spark.sparkContext, Seconds(config.batchSizeSeconds))
 
-    val stream = streamingContext.receiverStream(new RandomWordReceiver(config.wordsPerSecond))
+    val stream = streamingContext.receiverStream(new RandomWordReceiver(config.wordsPerSecond, config.numberOfWords))
 
     val kafkaProperties = getKafkaProperties(config.brokers, config.isKerberized)
     println(s"${kafkaProperties}")
