@@ -43,6 +43,7 @@ from docopt import docopt
 
 import sdk_cmd
 import sdk_install
+import sdk_utils
 
 
 logging.basicConfig(
@@ -103,11 +104,7 @@ def install_zookeeper(args: dict) -> list:
     Install the ZooKeeper service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        if "node" in service_options:
-            if "count" in service_options["node"]:
-                return 2 * int(service_options["node"]["count"])
-
-        return 2 * 3
+        return 2 * sdk_utils.get_in(['node', 'count'], service_options, 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -129,11 +126,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
     Install the Kafka service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        if "brokers" in service_options:
-            if "count" in service_options["brokers"]:
-                return int(service_options["brokers"]["count"])
-
-        return 3
+        return sdk_utils.get_in(['brokers', 'count'], service_options, 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -168,11 +161,7 @@ def install_cassandra(args: dict) -> list:
     Install the Cassandra service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        if "node" in service_options:
-            if "count" in service_options["node"]:
-                return int(service_options["node"]["count"])
-
-        return 3
+        return sdk_utils.get_in(['nodes', 'count'], service_options, 3)
 
     cassandra_cluster_count = _get_cluster_count(args, "cassandra")
 
