@@ -55,7 +55,7 @@ log = logging.getLogger(__name__)
 
 
 def install_package(package_name: str, index: int, service_task_count: int, config_path: str,
-                    additional_options: dict=None) -> None:
+                    additional_options: dict=None) -> dict:
     service_name = "{}-{:0>2}".format(package_name, index)
 
     log.info("Installing %s index %s as %s", package_name, index, service_name)
@@ -99,12 +99,20 @@ def _get_cluster_count(args: dict, service: str) -> int:
     return cluster_count
 
 
+def _get_pod_cout(service_options: dict, pod_name: str, default: int) -> int:
+    """
+    Return the count of the specified pod name if present in the service config.
+    Return the default value otherwise.
+    """
+    return int(sdk_utils.get_in([pod_name, 'count'], service_options, default))
+
+
 def install_zookeeper(args: dict) -> list:
     """
     Install the ZooKeeper service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return 2 * sdk_utils.get_in(['node', 'count'], service_options, 3)
+        return 2 * _get_pod_cout(service_options, "node", 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -116,7 +124,8 @@ def install_zookeeper(args: dict) -> list:
 
     services = []
     for i in range(kafka_cluster_count):
-        services.append(install_package(kafka_zookeeper_package_name, i, get_expected_task_count, kafka_zookeeper_config))
+        services.append(install_package(kafka_zookeeper_package_name, i, get_expected_task_count,
+                                        kafka_zookeeper_config))
 
     return services
 
@@ -126,7 +135,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
     Install the Kafka service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return sdk_utils.get_in(['brokers', 'count'], service_options, 3)
+        return _get_pod_cout(service_options, "brokers", 3)
 
     kafka_cluster_count = _get_cluster_count(args, "kafka")
 
@@ -161,7 +170,7 @@ def install_cassandra(args: dict) -> list:
     Install the Cassandra service(s) as defined by the arguments
     """
     def get_expected_task_count(service_options: dict) -> int:
-        return sdk_utils.get_in(['nodes', 'count'], service_options, 3)
+        return _get_pod_cout(service_options, "nodes", 3)
 
     cassandra_cluster_count = _get_cluster_count(args, "cassandra")
 
