@@ -51,6 +51,13 @@ make dev-dist
 This will build Spark from source using a fast `sbt` compile.  This is the
 most common way to build a Spark package during development.
 
+**Note**: if you encounter errors similar to: 
+```
+/bin/bash: build/sbt: No such file or directory
+make: *** [dev-dist] Error 127
+```
+you may have an outdated version of `make`. Create a docker image via [build environment](#build-environment) and run this step from within the container. You will have to clone this repo again inside the container.
+
 
 ### Package
 The above distribution needs to be bundled into a Docker image and paried with
