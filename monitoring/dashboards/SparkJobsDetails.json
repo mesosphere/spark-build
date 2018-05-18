@@ -61,7 +61,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 17,
+      "id": 21,
       "legend": {
         "avg": false,
         "current": false,
@@ -85,7 +85,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_driver_launched)",
+          "expr": "mesos_master_framework_offers{framework_name=\"dispatcher-mixed-0\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -95,7 +95,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "# Dispatchers",
+      "title": "Dispatcher 0 Offers",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -221,7 +221,7 @@
         "x": 0,
         "y": 9
       },
-      "id": 15,
+      "id": 17,
       "legend": {
         "avg": false,
         "current": false,
@@ -245,7 +245,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "spark_mesos_cluster_executor_start_to_all_launched_mean / 1000",
+          "expr": "count(spark_mesos_cluster_driver_launched)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -255,7 +255,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Job launch time (sec) - driver start to all executors launched",
+      "title": "# Dispatchers",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -380,46 +380,41 @@
         "x": 0,
         "y": 18
       },
-      "id": 4,
+      "id": 19,
       "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": false,
-        "max": true,
-        "min": true,
-        "rightSide": true,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
         "show": true,
-        "sort": null,
-        "sortDesc": null,
         "total": false,
-        "values": true
+        "values": false
       },
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "null as zero",
+      "nullPointMode": "null",
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "spark_mesos_cluster_driver_launched",
+          "expr": "offers_received",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Driver Launches by Dispatcher",
+      "title": "offers_received",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -549,6 +544,171 @@
         "x": 0,
         "y": 27
       },
+      "id": 15,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "spark_mesos_cluster_executor_start_to_all_launched_mean / 1000",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Job launch time (sec) - driver start to all executors launched",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "id": 4,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideEmpty": false,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "sort": null,
+        "sortDesc": null,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "spark_mesos_cluster_driver_launched",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Driver Launches by Dispatcher",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
       "id": 6,
       "legend": {
         "avg": false,
@@ -642,7 +802,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 36
+        "y": 54
       },
       "id": 13,
       "legend": {
@@ -722,7 +882,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 45
+        "y": 63
       },
       "id": 2,
       "legend": {
@@ -804,8 +964,8 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
-    "to": "now"
+    "from": "2018-05-17T18:14:06.744Z",
+    "to": "2018-05-18T00:14:06.746Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -835,5 +995,5 @@
   "timezone": "",
   "title": "Spark: Jobs Details",
   "uid": "ztz-KNnmz",
-  "version": 2
+  "version": 3
 }
