@@ -13,17 +13,17 @@
       "parameters": []
     }
   },
-  "cpus": 2,
+  "cpus": {{template-script-cpus}},
   "disk": 1024,
   "env": {
-    "DCOS_UID": "{template-dcos-username}",
-    "DCOS_PASSWORD": "{template-dcos-password}",
-    "SCRIPT_ARGS": "{template-script-args}",
+    "DCOS_UID": "{{template-dcos-username}}",
+    "DCOS_PASSWORD": "{{template-dcos-password}}",
+    "SCRIPT_ARGS": "{{template-script-args}}",
     "SPARK_BUILD_BRANCH": "master"
   },
   "fetch": [
     {
-      "uri": "{template-input-file-uri}",
+      "uri": "{{template-input-file-uri}}",
       "extract": false,
       "executable": false,
       "cache": false
@@ -31,7 +31,7 @@
   ],
   "instances": 1,
   "maxLaunchDelaySeconds": 3600,
-  "mem": 8192,
+  "mem": {{template-script-mem}},
   "gpus": 0,
   "networks": [
     {

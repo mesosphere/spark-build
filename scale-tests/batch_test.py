@@ -22,9 +22,11 @@ import csv
 import logging
 import random
 import time
-import spark_utils as utils
 from docopt import docopt
 from threading import Thread
+from typing import List
+
+import spark_utils
 
 
 # This script will submit jobs at a specified submit rate, alternating among the given
@@ -41,7 +43,7 @@ log = logging.getLogger(__name__)
 MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.py"
 
 
-def _get_duration():
+def _get_duration() -> int:
     """
     Randomly choose among a set of job durations in minutes according to a distribution.
     The average job duration is one hour.
@@ -58,13 +60,13 @@ def _get_duration():
     return duration
 
 
-def submit_job(dispatcher, duration, config):
-    log.info("Submitting job to dispatcher: {}, with duration: {} min.".format(dispatcher, str(duration)))
+def submit_job(dispatcher: str, duration: int, config: List[str]):
+    log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher, duration)
     dispatcher_name, _, driver_role = dispatcher
 
     app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
 
-    utils.submit_job(
+    spark_utils.submit_job(
         app_name="/{}".format(dispatcher_name),
         app_url=MONTE_CARLO_APP_URL,
         app_args=app_args,
@@ -73,11 +75,11 @@ def submit_job(dispatcher, duration, config):
         driver_role=driver_role)
 
 
-def submit_loop(submits_per_min, dispatchers, user_conf):
+def submit_loop(submits_per_min: int, dispatchers: List[str], user_conf: List[str]):
     sec_between_submits = 60 / submits_per_min
-    log.info("sec_between_submits: {}".format(sec_between_submits))
+    log.info("sec_between_submits: %s", sec_between_submits)
     num_dispatchers = len(dispatchers)
-    log.info("num_dispatchers: {}".format(num_dispatchers))
+    log.info("num_dispatchers: %s", num_dispatchers)
 
     dispatcher_index = 0
     while(True):
@@ -85,7 +87,7 @@ def submit_loop(submits_per_min, dispatchers, user_conf):
         t = Thread(target=submit_job, args=(dispatchers[dispatcher_index], duration, user_conf))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
-        log.info("sleeping {} sec.".format(sec_between_submits))
+        log.info("sleeping %s sec.", sec_between_submits)
         time.sleep(sec_between_submits)
 
 
@@ -95,7 +97,8 @@ if __name__ == "__main__":
     dispatchers = []
     with open(args["<dispatcher_file>"]) as f:
         infile = csv.reader(f, delimiter=',')
-        for row in infile: dispatchers.append(row)
+        for row in infile:
+            dispatchers.append(row)
 
     user_conf = ["--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
                  "--conf", "spark.executor.cores={}".format(args["--spark-executor-cores"]),
