@@ -73,7 +73,6 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
         "--supervise",
         "--conf", "spark.mesos.containerizer=mesos",
         "--conf", "spark.mesos.driver.failoverTimeout=30",
-        "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:f5dd540adffd9ab9e3e826e48d22e39ebc296567-1d7926a8b500d0105b80a6bb808a671b047dc963",
         "--conf", "spark.mesos.uris=http://norvig.com/big.txt",
         "--conf", "spark.port.maxRetries=32",
         "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
