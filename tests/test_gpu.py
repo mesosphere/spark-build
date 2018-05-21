@@ -6,7 +6,7 @@ import uuid
 import shakedown
 from shakedown.dcos.spinner import TimeoutExpired
 
-from tests import utils
+import spark_utils
 
 
 # Prerequisites
@@ -20,18 +20,18 @@ GPU_PI_APP_NAME = "GpuPiApp"
 
 @pytest.fixture(scope='module')
 def configure_security_spark():
-    yield from utils.spark_security_session()
+    yield from spark_utils.spark_security_session()
 
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(configure_security_spark, configure_universe):
     try:
-        utils.require_spark(user="root",             # Run as root on centos
-                            use_bootstrap_ip=True)   # Needed on GPU nodes
-        utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+        spark_utils.require_spark(user="root",             # Run as root on centos
+                                  use_bootstrap_ip=True)   # Needed on GPU nodes
+        spark_utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
         yield
     finally:
-        utils.teardown_spark()
+        spark_utils.teardown_spark()
 
 
 def _submit_gpu_app(num_executors, executor_gpus, gpus_max, app_name=None):
@@ -53,8 +53,8 @@ def _submit_gpu_app(num_executors, executor_gpus, gpus_max, app_name=None):
     if app_name is not None:
         app_args += " {}".format(app_name)
 
-    driver_task_id = utils.submit_job(
-        app_url=utils.scala_test_jar_url(),
+    driver_task_id = spark_utils.submit_job(
+        app_url=spark_utils.scala_test_jar_url(),
         app_args=app_args,
         args=args)
     return driver_task_id
@@ -72,7 +72,7 @@ def test_executor_gpus_allocated():
                                      gpus_max=num_executors*executor_gpus)
 
     # Wait until executors are running
-    utils.wait_for_executors_running(GPU_PI_APP_NAME, num_executors)
+    spark_utils.wait_for_executors_running(GPU_PI_APP_NAME, num_executors)
 
     # Check Executor gpus - should be 1.
     for i in range(0, num_executors):
@@ -80,7 +80,7 @@ def test_executor_gpus_allocated():
         assert executor_task['resources']['gpus'] == 1.0
 
     # Check job output
-    utils.check_job_output(driver_task_id, "Pi calculated with GPUs: 3.14")
+    spark_utils.check_job_output(driver_task_id, "Pi calculated with GPUs: 3.14")
 
 
 @pytest.mark.gpus
@@ -98,7 +98,7 @@ def test_executor_gpus_exceeds_available_gpus():
         shakedown.wait_for_task_completion(driver_task_id, timeout_sec=240)
     except TimeoutExpired:
         log.info("Job failed to complete, as expected.")
-        utils.kill_driver(driver_task_id, utils.SPARK_APP_NAME)
+        spark_utils.kill_driver(driver_task_id, spark_utils.SPARK_APP_NAME)
         return
 
     pytest.fail("Did not expect this job to complete.")
