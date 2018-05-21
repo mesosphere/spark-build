@@ -54,16 +54,13 @@ import sys
 # file.
 
 
-class DummyFile(object):
-    def write(self, x): pass
-
-
 @contextlib.contextmanager
 def no_stdout():
     save_stdout = sys.stdout
-    sys.stdout = DummyFile()
-    yield
-    sys.stdout = save_stdout
+    with open("/dev/null", "w") as null:
+        sys.stdout = null
+        yield
+        sys.stdout = save_stdout
 
 
 def create_quota(
