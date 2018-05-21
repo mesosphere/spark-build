@@ -126,7 +126,5 @@ def test_gpus_max():
     log.info("Task gpus: {}".format(str(gpus)))
     total_gpus = sum(gpus)
     log.info("Total gpus allocated: {}".format(str(total_gpus)))
-    assert total_gpus <= gpus_max
-    # TODO: Actually, we expect total gpus == gpus.max because gpus are allocated greedily.
-    # Uncomment the following line when this is fixed in the Spark PR.
-    #assert total_gpus == gpus_max
+    # We expect total gpus == gpus.max because gpus are allocated greedily.
+    assert total_gpus == gpus_max
