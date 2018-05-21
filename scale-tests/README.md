@@ -101,7 +101,7 @@ Depends on:
 Wait for the dispatchers to come online and run the following command:
 
 ```bash
-JAR=http://infinity-artifacts.s3.amazonaws.com/autodelete7d/evan-dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
+JAR=http://infinity-artifacts.s3.amazonaws.com/evan-dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
 NUM_PRODUCERS_PER_DISPATCHER=1
 NUM_CONSUMERS_PER_PRODUCER=1
 PRODUCER_NUMBER_OF_WORDS=100000
