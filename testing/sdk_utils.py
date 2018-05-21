@@ -6,6 +6,7 @@ SHOULD ALSO BE APPLIED TO sdk_utils IN ANY OTHER PARTNER REPOS
 '''
 import functools
 import logging
+import operator
 
 import dcos
 import shakedown
