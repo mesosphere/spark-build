@@ -10,7 +10,6 @@ Arguments:
 
 Options:
     --desired-runtime <n>        desired time for consumers to run (in minutes) [default: 10]
-    --docker-image <image>       docker image to submit with spark job [default: mesosphere/spark:latest]
     --port-retries <n>           max number of retries for Spark to bind to a port [default: 16]
     --jar <url>                  url path to hosted jar
     --kafka-package-name <name>  name of Kafka package [default: kafka]
@@ -33,7 +32,7 @@ PRODUCER_NUM_WORDS_PER_MIN = 480
 
 
 def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, desired_runtime, kerberos_flag,
-         docker_image, port_retries):
+         port_retries):
 
     def _kafka_broker_dns():
         cmd = "{package_name} --name={service_name} endpoints broker".format(
@@ -76,7 +75,6 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
         "--supervise",
         "--conf", "spark.mesos.containerizer=mesos",
         "--conf", "spark.mesos.driver.failoverTimeout=30",
-        "--conf", "spark.mesos.executor.docker.image={}".format(docker_image),
         "--conf", "spark.mesos.uris=http://norvig.com/big.txt",
         "--conf", "spark.port.maxRetries={}".format(port_retries),
         "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
@@ -116,5 +114,4 @@ if __name__ == "__main__":
          num_consumers=int(args["--num-consumers"]),
          desired_runtime=int(args["--desired-runtime"]),
          kerberos_flag=args["--kerberos-flag"],
-         docker_image=args["--docker-image"],
          port_retries=args["--port-retries"])
