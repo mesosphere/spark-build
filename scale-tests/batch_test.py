@@ -10,6 +10,7 @@ Options:
     --submits-per-min <n>         number of jobs to submit per minute [default: 1]
     --spark-cores-max <n>         max executor cores per job [default: 1]
     --spark-executor-cores <n>    number of cores per executor [default: 1]
+    --spark-driver-cores <n>      number of cores per driver [default: 1]
     --spark-port-max-retries <n>  num of retries to find a driver UI port [default: 64]
     --spark-mesos-driver-failover-timeout <seconds>   driver failover timeout in seconds [default: 30]
     --spark-mesos-containerizer <containerizer>       containerizer for each driver [default: mesos]
@@ -102,6 +103,7 @@ if __name__ == "__main__":
 
     user_conf = ["--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
                  "--conf", "spark.executor.cores={}".format(args["--spark-executor-cores"]),
+                 "--conf", "spark.driver.cores={}".format(args["--spark-driver-cores"]),
                  "--conf", "spark.mesos.containerizer={}".format(args["--spark-mesos-containerizer"]),
                  "--conf", "spark.port.maxRetries={}".format(args["--spark-port-max-retries"]),
                  "--conf", "spark.mesos.driver.failoverTimeout={}".format(args["--spark-mesos-driver-failover-timeout"])
