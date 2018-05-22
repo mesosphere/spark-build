@@ -10,6 +10,7 @@ Arguments:
 
 Options:
     --desired-runtime <n>        desired time for consumers to run (in minutes) [default: 10]
+    --port-retries <n>           max number of retries for Spark to bind to a port [default: 16]
     --jar <url>                  url path to hosted jar
     --kafka-package-name <name>  name of Kafka package [default: kafka]
     --kafka-service-name <name>  name of Kafka service [default: kafka]
@@ -30,7 +31,8 @@ log = logging.getLogger(__name__)
 PRODUCER_NUM_WORDS_PER_MIN = 480
 
 
-def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, desired_runtime, kerberos_flag):
+def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, desired_runtime, kerberos_flag,
+         port_retries):
 
     def _kafka_broker_dns():
         cmd = "{package_name} --name={service_name} endpoints broker".format(
@@ -38,7 +40,7 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
             service_name=kafka_svc_name)
         rt, stdout, _ = sdk_cmd.run_raw_cli(cmd)
         assert rt == 0, "Failed to get broker endpoints"
-        return json.loads(stdout)["dns"][0]
+        return ",".join(json.loads(stdout)["dns"])
 
     def _submit_producer(broker_dns, common_conf, topic, spark_app_name, driver_role):
         big_file = "file:///mnt/mesos/sandbox/big.txt"
@@ -74,7 +76,7 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
         "--conf", "spark.mesos.containerizer=mesos",
         "--conf", "spark.mesos.driver.failoverTimeout=30",
         "--conf", "spark.mesos.uris=http://norvig.com/big.txt",
-        "--conf", "spark.port.maxRetries=32",
+        "--conf", "spark.port.maxRetries={}".format(port_retries),
         "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
         "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
     ]
@@ -111,4 +113,5 @@ if __name__ == "__main__":
          kafka_svc_name=args["--kafka-service-name"],
          num_consumers=int(args["--num-consumers"]),
          desired_runtime=int(args["--desired-runtime"]),
-         kerberos_flag=args["--kerberos-flag"])
+         kerberos_flag=args["--kerberos-flag"],
+         port_retries=args["--port-retries"])
