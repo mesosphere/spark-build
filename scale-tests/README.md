@@ -177,6 +177,8 @@ dog   | 2018-01-01 00:00:00+0000 |     1
 Depends on:
 - `$DISPATCHER_OUTPUT_FILE` exported in step #2.
 
+Also, make sure you `export DCOS_SSH_USER=core` if you run a coreos-based cluster.
+
 ```bash
 SPARK_PRINCIPAL=spark-principal
 
