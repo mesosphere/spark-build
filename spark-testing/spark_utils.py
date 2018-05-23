@@ -61,12 +61,12 @@ def streaming_job_running(job_name):
 
 
 def require_spark(service_name=None, use_hdfs=False, use_history=False, marathon_group=None,
-                  strict_mode=is_strict(), user="nobody"):
+                  strict_mode=is_strict(), user="nobody", use_bootstrap_ip=False):
     LOGGER.info("Ensuring Spark is installed.")
     _require_package(
         SPARK_PACKAGE_NAME,
         service_name,
-        _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user))
+        _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user, use_bootstrap_ip))
     _wait_for_spark(service_name)
     _require_spark_cli()
 
@@ -133,7 +133,7 @@ def no_spark_jobs(service_name):
     return len(driver_ips) == 0
 
 
-def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user):
+def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user, use_bootstrap_ip):
     options = {}
     options["service"] = options.get("service", {})
     options["service"]["user"] = user
@@ -162,6 +162,10 @@ def _get_spark_options(use_hdfs, use_history, marathon_group, strict_mode, user)
         options["service"] = options.get("service", {})
         options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
         options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
+
+    if use_bootstrap_ip:
+        options["service"] = options.get("service", {})
+        options["service"]["use_bootstrap_for_IP_detect"] = True
 
     return options
 
@@ -265,7 +269,7 @@ def teardown_spark():
     _run_janitor()
 
 
-def _scala_test_jar_url():
+def scala_test_jar_url():
     return spark_s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
 
 

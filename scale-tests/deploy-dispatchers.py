@@ -12,7 +12,6 @@ Arguments:
 
 Options:
     --cpus <n>                   number of CPUs to use per dispatcher [default: 1]
-    --docker-image <image>       custom Docker image to use
     --enable-kerberos <bool>     enable Kerberos configuration [default: False]
     --hdfs-config <url>          URL of the HDFS configuration files
     --history-service <url>      URL of the Spark history service
@@ -24,6 +23,7 @@ Options:
     --options-json <file>        a file containing installation options in JSON format
     --package-name <name>        name of the Spark package name [default: spark]
     --package-repo <url>         URL of the Spark package repo to install from
+    --create-quotas <bool>       create dispatcher and driver quotas [default: True]
     --quota-dispatcher-cpus <n>  number of CPUs to use for dispatcher quota [default: 1]
     --quota-dispatcher-gpus <n>  number of GPUs to use for dispatcher quota [default: 0]
     --quota-dispatcher-mem <n>   amount of memory (mb) to use per dispatcher quota [default: 2048.0]
@@ -55,16 +55,13 @@ import sys
 # file.
 
 
-class DummyFile(object):
-    def write(self, x): pass
-
-
 @contextlib.contextmanager
 def no_stdout():
     save_stdout = sys.stdout
-    sys.stdout = DummyFile()
-    yield
-    sys.stdout = save_stdout
+    with open("/dev/null", "w") as null:
+        sys.stdout = null
+        yield
+        sys.stdout = save_stdout
 
 
 def create_quota(
@@ -93,6 +90,7 @@ def deploy_dispatchers(
     options,
     options_file=None,
     package_repo=None,
+    create_quotas=True,
     quota_dispatcher_cpus=1,
     quota_dispatcher_gpus=0,
     quota_dispatcher_mem=2048.0,
@@ -117,11 +115,12 @@ def deploy_dispatchers(
 
             # create dispatcher & driver role quotas
             dispatcher_role = "{}-dispatcher-role".format(service_name)
-            create_quota(name=dispatcher_role,
-		cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
             driver_role = "{}-driver-role".format(service_name)
-            create_quota(name=driver_role,
-		cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
+            if create_quotas:
+              create_quota(name=dispatcher_role,
+                           cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
+              create_quota(name=driver_role,
+                           cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
             options["service"]["role"] = dispatcher_role
@@ -151,7 +150,6 @@ if __name__ == "__main__":
             "service_account": arguments["--service-account"] or "",
             "service_account_secret": arguments["--service-secret"] or "",
             "user": arguments["--user"],
-            "docker-image": arguments['--docker-image'] or "mesosphere/spark-dev:931ca56273af913d103718376e2fbc04be7cbde0",
             "log-level": arguments["--log-level"],
             "spark-history-server-url": arguments["--history-service"] or "",
             "UCR_containerizer": ast.literal_eval(arguments.get("--ucr-containerizer", True)),
@@ -179,6 +177,7 @@ if __name__ == "__main__":
         options=options,
         options_file=arguments['--options-json'],
         package_repo=arguments['--package-repo'],
+        create_quotas=ast.literal_eval(arguments.get("--create-quotas", True)),
         quota_dispatcher_cpus=arguments['--quota-dispatcher-cpus'],
         quota_dispatcher_gpus=arguments['--quota-dispatcher-gpus'],
         quota_dispatcher_mem=arguments['--quota-dispatcher-mem'],

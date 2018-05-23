@@ -115,7 +115,7 @@ def test_spark_and_kafka():
     stop_count = "48"  # some reasonable number
     test_pipeline(
         kerberos_flag=kerberos_flag,
-        jar_uri=utils._scala_test_jar_url(),
+        jar_uri=utils.scala_test_jar_url(),
         keytab_secret="__dcos_base64___keytab",
         stop_count=stop_count,
         spark_app_name=utils.SPARK_APP_NAME)

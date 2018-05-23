@@ -1,3 +1,3 @@
 # Testing utils
 
-Common python code used in the [shakedown](https://github.com/mesosphere/shakedown)-based integration tests for services in this repository.
+Copy of the [dcos-commons testing directory](https://github.com/mesosphere/dcos-commons/tree/master/testing).
