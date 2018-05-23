@@ -63,7 +63,7 @@ Check the `setup_streaming.py` script for more customization options.
 *TODO*: maybe make the installed service names have `$TEST_NAME` as a prefix so
 all related tasks are grouped visually. Right now this installs services as e.g.
 `cassandra-00`, but it would be cool if it was `$TEST_NAME/cassandra-00`, e.g.
-`dispatcher-streaming-cassandra-00`.
+`dispatcher-streaming/cassandra-00`.
 
 ### 2. Install Spark dispatchers
 
