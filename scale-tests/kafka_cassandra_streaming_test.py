@@ -44,7 +44,6 @@ PRODUCER_CLASS_NAME = 'KafkaRandomFeeder'
 CONSUMER_CLASS_NAME = 'KafkaWordCount'
 SPARK_PACKAGE_NAME = 'spark'
 COMMON_CONF = [
-    "--supervise",
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
     "--conf", "spark.port.maxRetries=32",
@@ -89,6 +88,11 @@ def _submit_producer(kafka_broker_dns,
                   "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
                   "--class", PRODUCER_CLASS_NAME]
 
+    # `number_of_words == 0` means infinite stream, so we'd like to have it
+    # restarted in the case of failures.
+    if number_of_words == 0:
+        app_config.extend(["--supervise"])
+
     args = app_config + COMMON_CONF
 
     submission_id = spark_utils.submit_job(
@@ -128,11 +132,12 @@ def _submit_consumer(kafka_broker_dns,
     cassandra_hosts = map(lambda x: x.split(':')[0], cassandra_native_client_dns)
     cassandra_port = cassandra_native_client_dns[0].split(':')[1]
 
-    app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
-                  "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
-                  "--conf",  "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
-                  "--conf",  "spark.cassandra.connection.port={}".format(cassandra_port),
-                  "--class", CONSUMER_CLASS_NAME]
+    app_config = ["--supervise",
+                  "--conf",      "spark.cores.max={}".format(spark_cores_max),
+                  "--conf",      "spark.executor.cores={}".format(spark_executor_cores),
+                  "--conf",      "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
+                  "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
+                  "--class",     CONSUMER_CLASS_NAME]
 
     args = app_config + COMMON_CONF
 
