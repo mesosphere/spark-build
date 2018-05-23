@@ -71,16 +71,16 @@ def create_quota(
     mem=1024.0
 ):
     with no_stdout():
-        stdout, stderr, return_code = shakedown.run_dcos_command("spark quota list --json")
+        stdout, _, _ = shakedown.run_dcos_command("spark quota list --json", raise_on_error=True)
         existing_quotas = json.loads(stdout)
 
     # remove existing quotas matching name
     if name in [x['role'] for x in existing_quotas.get('infos', [])]:
-        shakedown.run_dcos_command("spark quota remove {}".format(name))
+        shakedown.run_dcos_command("spark quota remove {}".format(name), raise_on_error=True)
 
     # create quota
-    stdout, stderr, return_code = shakedown.run_dcos_command(
-        "spark quota create -c {} -g {} -m {} {}".format(cpus, gpus, mem, name))
+    shakedown.run_dcos_command(
+        "spark quota create -c {} -g {} -m {} {}".format(cpus, gpus, mem, name), raise_on_error=True)
 
 
 def deploy_dispatchers(
@@ -99,7 +99,7 @@ def deploy_dispatchers(
     quota_driver_mem=1024.0
 ):
     with open(output_file, "w") as outfile:
-        shakedown.run_dcos_command("package install spark --cli --yes")
+        shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
 
         for i in range(0, num_dispatchers):
             service_name = "{}-{}".format(service_name_base, str(i))
@@ -117,10 +117,10 @@ def deploy_dispatchers(
             dispatcher_role = "{}-dispatcher-role".format(service_name)
             driver_role = "{}-driver-role".format(service_name)
             if create_quotas:
-              create_quota(name=dispatcher_role,
-                           cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
-              create_quota(name=driver_role,
-                           cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
+                create_quota(name=dispatcher_role,
+                             cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
+                create_quota(name=driver_role,
+                             cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
             options["service"]["role"] = dispatcher_role
