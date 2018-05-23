@@ -68,12 +68,11 @@ object KafkaWordCount extends Logging {
     val wordCounts = words
       .map(x => (x, 1L))
       .reduceByKey(_ + _)
-      .map(x => (new Date().getTime(), x._1, x._2))
 
     if (shouldWriteToCassandra) {
-      wordCounts.foreachRDD(rdd => {
-        println(s"Writing ${rdd.count} records to Cassandra")
-        rdd.saveToCassandra(keyspaceName, tableName, cassandraColumns)
+      wordCounts.foreachRDD((rdd, time) => {
+        println(s"Writing ${rdd.count} records to Cassandra with timestamp ${time}")
+        rdd.map(x => (time.milliseconds, x._1, x._2)).saveToCassandra(keyspaceName, tableName, cassandraColumns)
       })
     }
 

@@ -223,7 +223,6 @@ def test_s3_secrets():
         sdk_security.delete_secret(aws_secret_key_path)
 
 
-
 # Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
 @pytest.mark.skipif(s3.get_credentials().token is not None, reason="Session credentials won't work")
 @pytest.mark.sanity
