@@ -39,7 +39,7 @@ import spark_utils
 log = logging.getLogger(__name__)
 
 
-DEFAULT_JAR = 'https://infinity-artifacts.s3.amazonaws.com/soak/spark/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar'
+DEFAULT_JAR = 'http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar'
 PRODUCER_CLASS_NAME = 'KafkaRandomFeeder'
 CONSUMER_CLASS_NAME = 'KafkaWordCount'
 SPARK_PACKAGE_NAME = 'spark'
