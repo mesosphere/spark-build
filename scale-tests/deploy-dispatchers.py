@@ -33,6 +33,7 @@ Options:
     --role <role>                Mesos role registered by dispatcher [default: *]
     --service-account <account>  Mesos principal registered by dispatcher
     --service-secret <secret>    Mesos secret registered by dispatcher
+    --strict-mode <bool>         strict mode [default: False]
     --ucr-containerizer <bool>   launch using the Universal Container Runtime [default: True]
     --user <user>                user to run dispatcher service as [default: root]
 
@@ -47,6 +48,8 @@ import os
 import sdk_install
 import shakedown
 import sys
+
+import sdk_security
 
 
 # This script will deploy the specified number of dispatchers with an optional
@@ -85,6 +88,21 @@ def create_quota(
         "spark quota create -c {} -g {} -m {} {}".format(cpus, gpus, mem, name), raise_on_error=True)
 
 
+def setup_security(service_name, user):
+    # create service account and secret
+    service_account = "{}-sa".format(service_name)
+    secret = "{}-secret".format(service_account)
+    sdk_security.create_service_account(service_account_name=service_account, service_account_secret=secret)
+
+    # grant permissions
+    for role in
+    sdk_security.grant_permissions(
+        linux_user=user,
+        role_name=role,
+        service_account_name=service_account
+    )
+
+
 def deploy_dispatchers(
     num_dispatchers,
     service_name_base,
@@ -97,7 +115,9 @@ def deploy_dispatchers(
     quota_drivers_mem=2048.0,
     quota_executors_cpus=1,
     quota_executors_gpus=0,
-    quota_executors_mem=1024.0
+    quota_executors_mem=1024.0,
+    strict_mode=False,
+    user="root"
 ):
     with open(output_file, "w") as outfile:
         shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
@@ -113,6 +133,10 @@ def deploy_dispatchers(
                     shakedown.add_package_repo(
                         repo_name="{}-repo".format(service_name_base),
                         repo_url=package_repo)
+
+            # setup security for strict mode
+            if strict_mode:
+                setup_security(service_name, user)
 
             # create drivers & executors role quotas
             drivers_role = "{}-drivers-role".format(service_name)
@@ -193,4 +217,6 @@ if __name__ == "__main__":
         quota_drivers_mem=arguments['--quota-drivers-mem'],
         quota_executors_cpus=arguments['--quota-executors-cpus'],
         quota_executors_gpus=arguments['--quota-executors-gpus'],
-        quota_executors_mem=arguments['--quota-executors-mem'])
+        quota_executors_mem=arguments['--quota-executors-mem'],
+        strict_mode=ast.literal_eval(arguments.get("--strict-mode", False)),
+        user=arguments["--user"])
