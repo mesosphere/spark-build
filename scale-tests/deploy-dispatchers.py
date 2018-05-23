@@ -23,7 +23,7 @@ Options:
     --options-json <file>        a file containing installation options in JSON format
     --package-name <name>        name of the Spark package name [default: spark]
     --package-repo <url>         URL of the Spark package repo to install from
-    --create-quotas <bool>       create dispatcher and executor quotas [default: True]
+    --create-quotas <bool>       create drivers and executors quotas [default: True]
     --quota-drivers-cpus <n>     number of CPUs to use for drivers quota [default: 1]
     --quota-drivers-gpus <n>     number of GPUs to use for drivers quota [default: 0]
     --quota-drivers-mem <n>      amount of memory (mb) to use per drivers quota [default: 2048.0]
