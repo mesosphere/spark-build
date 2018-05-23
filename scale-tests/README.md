@@ -151,6 +151,7 @@ Wait for the dispatchers to come online and run the following command:
 
 ```bash
 JAR=http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar
+SUBMISSIONS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-submissions.out"
 NUM_PRODUCERS_PER_DISPATCHER=1
 NUM_CONSUMERS_PER_PRODUCER=1
 PRODUCER_NUMBER_OF_WORDS=100000
@@ -164,6 +165,7 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
 ./scale-tests/kafka_cassandra_streaming_test.py \
   $DISPATCHERS_OUTPUT_FILE \
   $INFRASTRUCTURE_OUTPUT_FILE \
+  $SUBMISSIONS_OUTPUT_FILE \
   --jar $JAR \
   --num-producers-per-dispatcher $NUM_PRODUCERS_PER_DISPATCHER \
   --num-consumers-per-producer $NUM_CONSUMERS_PER_PRODUCER \
@@ -176,6 +178,9 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
   --consumer-spark-cores-max $CONSUMER_SPARK_CORES_MAX \
   --consumer-spark-executor-cores $CONSUMER_SPARK_EXECUTOR_CORES
 ```
+
+This generates a file with a list of `dispatcher name`-`submission ID` pairs
+that can be used to kill started jobs.
 
 #### 4. Verify scale test correctness
 
@@ -230,7 +235,16 @@ lazy  | 2018-01-01 00:00:00+0000 |     1
 dog   | 2018-01-01 00:00:00+0000 |     1
 ```
 
-#### 5. (Optional) Tear down Spark dispatchers
+#### 5. (Optional) Kill jobs
+
+Depends on:
+- `$SUBMISSIONS_OUTPUT_FILE` exported in step #4.
+
+```bash
+./scale-tests/kill-jobs.sh $SUBMISSIONS_OUTPUT_FILE
+```
+
+#### 6. (Optional) Tear down Spark dispatchers
 
 Depends on:
 - `$DISPATCHER_OUTPUT_FILE` exported in step #2.
@@ -243,7 +257,7 @@ SPARK_PRINCIPAL=spark-principal
 ./scale-tests/uninstall-dispatchers.sh $DISPATCHERS_OUTPUT_FILE $SPARK_PRINCIPAL
 ```
 
-#### 6. (Optional) Tear down infrastructure (Kafka, Zookeeper and Cassandra clusters)
+#### 7. (Optional) Tear down infrastructure (Kafka, Zookeeper and Cassandra clusters)
 
 The services can be uninstalled manually as with any other DC/OS services, but running:
 

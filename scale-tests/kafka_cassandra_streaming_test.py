@@ -4,13 +4,14 @@
 kafka_cassandra_streaming_test.py
 
 Usage:
-    ./kafka_cassandra_streaming_test.py <dispatcher_file> <infrastructure_file> [options]
+    ./kafka_cassandra_streaming_test.py <dispatcher_file> <infrastructure_file> <submissions_output_file> [options]
 
 Arguments:
     dispatcher_file                     file path to dispatchers list
     infrastructure_file                 file path to infrastructure description
                                         (contains package names, service names
                                         and their configuration)
+    submissions_output_file             file path to output `dispatcher name`,`submission ID` pairs
 
 Options:
     --jar <URL>                         hosted JAR URL
@@ -90,12 +91,15 @@ def _submit_producer(kafka_broker_dns,
 
     args = app_config + COMMON_CONF
 
-    spark_utils.submit_job(app_url=jar,
-                           app_args=" ".join(str(a) for a in app_args),
-                           app_name=app_name,
-                           args=args,
-                           driver_role=driver_role,
-                           verbose=False)
+    submission_id = spark_utils.submit_job(
+        app_url=jar,
+        app_args=" ".join(str(a) for a in app_args),
+        app_name=app_name,
+        args=args,
+        driver_role=driver_role,
+        verbose=False)
+
+    return submission_id
 
 
 def _submit_consumer(kafka_broker_dns,
@@ -132,12 +136,20 @@ def _submit_consumer(kafka_broker_dns,
 
     args = app_config + COMMON_CONF
 
-    spark_utils.submit_job(app_url=jar,
-                           app_args=" ".join(str(a) for a in app_args),
-                           app_name=app_name,
-                           args=args,
-                           driver_role=driver_role,
-                           verbose=False)
+    submission_id = spark_utils.submit_job(
+        app_url=jar,
+        app_args=" ".join(str(a) for a in app_args),
+        app_name=app_name,
+        args=args,
+        driver_role=driver_role,
+        verbose=False)
+
+    return submission_id
+
+
+def append_submission(output_file: str, dispatcher_app_name: str, submission_id: str):
+    with open(output_file, "a") as f:
+        f.write("{},{}\n".format(dispatcher_app_name, submission_id))
 
 
 if __name__ == "__main__":
@@ -156,6 +168,7 @@ if __name__ == "__main__":
         cassandra = infrastructure['cassandra'][0]
 
     jar                           = args["--jar"] if args["--jar"] else DEFAULT_JAR
+    submissions_output_file       = args["<submissions_output_file>"]
     kafka_package_name            = kafka['package_name']
     kafka_service_name            = kafka['service']['name']
     kafka_num_brokers             = kafka['brokers']['count']
@@ -192,7 +205,7 @@ if __name__ == "__main__":
             kafka_topics = producer_name
             producer_cassandra_keyspace = producer_name.replace('-', '_')
 
-            _submit_producer(
+            producer_submission_id = _submit_producer(
                 kafka_broker_dns,
                 dispatcher_app_name,
                 driver_role,
@@ -202,12 +215,17 @@ if __name__ == "__main__":
                 producer_spark_cores_max,
                 producer_spark_executor_cores)
 
+            append_submission(
+                submissions_output_file,
+                dispatcher_app_name,
+                producer_submission_id)
+
             for consumer_idx in range(0, num_consumers_per_producer):
                 consumer_name = '{}-{}'.format(producer_name, consumer_idx)
                 consumer_kafka_group_id = consumer_name
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
-                _submit_consumer(
+                consumer_submission_id = _submit_consumer(
                     kafka_broker_dns,
                     cassandra_native_client_dns,
                     dispatcher_app_name,
@@ -220,3 +238,8 @@ if __name__ == "__main__":
                     consumer_cassandra_table,
                     consumer_spark_cores_max,
                     consumer_spark_executor_cores)
+
+                append_submission(
+                    submissions_output_file,
+                    dispatcher_app_name,
+                    consumer_submission_id)
