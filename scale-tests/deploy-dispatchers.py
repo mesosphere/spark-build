@@ -117,10 +117,10 @@ def deploy_dispatchers(
             dispatcher_role = "{}-dispatcher-role".format(service_name)
             driver_role = "{}-driver-role".format(service_name)
             if create_quotas:
-              create_quota(name=dispatcher_role,
-                           cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
-              create_quota(name=driver_role,
-                           cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
+                create_quota(name=dispatcher_role,
+                             cpus=quota_dispatcher_cpus, gpus=quota_dispatcher_gpus, mem=quota_dispatcher_mem)
+                create_quota(name=driver_role,
+                             cpus=quota_driver_cpus, gpus=quota_driver_gpus, mem=quota_driver_mem)
 
             # install dispatcher with appropriate role
             options["service"]["role"] = dispatcher_role
