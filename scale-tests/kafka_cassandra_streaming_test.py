@@ -21,10 +21,12 @@ Options:
     --producer-words-per-second <n>     number of words per second published by producers [default: 1]
     --producer-spark-cores-max <n>      spark.cores.max [default: 2]
     --producer-spark-executor-cores <n> spark.executor.cores [default: 2]
+    --producer-must-fail                the producer is passed an invalid command line argument causing it to fail [default: False]
     --consumer-batch-size-seconds <n>   number seconds accumulating entries for each batch request [default: 10]
     --consumer-write-to-cassandra       write to Cassandra [default: False]
     --consumer-spark-cores-max <n>      spark.cores.max [default: 1]
     --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
+    --consumer-must-fail                the consumer is passed an invalid command line argument causing it to fail [default: False]
 """
 
 
@@ -77,12 +79,16 @@ def _submit_producer(kafka_broker_dns,
                      number_of_words,
                      words_per_second,
                      spark_cores_max,
-                     spark_executor_cores):
+                     spark_executor_cores,
+                     must_fail: bool):
     app_args = ["--appName",        PRODUCER_CLASS_NAME,
                 "--brokers",        ",".join(kafka_broker_dns),
                 "--topics",         kafka_topics,
                 "--numberOfWords",  str(number_of_words),
                 "--wordsPerSecond", str(words_per_second)]
+
+    if must_fail:
+        app_args.extend(["--mustFailDueToInvalidArgument", ])
 
     app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
                   "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
@@ -117,7 +123,8 @@ def _submit_consumer(kafka_broker_dns,
                      cassandra_keyspace,
                      cassandra_table,
                      spark_cores_max,
-                     spark_executor_cores):
+                     spark_executor_cores,
+                     must_fail: bool):
     app_args = ["--appName",           CONSUMER_CLASS_NAME,
                 "--brokers",           ",".join(kafka_broker_dns),
                 "--topics",            kafka_topics,
@@ -125,6 +132,9 @@ def _submit_consumer(kafka_broker_dns,
                 "--batchSizeSeconds",  str(batch_size_seconds),
                 "--cassandraKeyspace", cassandra_keyspace,
                 "--cassandraTable",    cassandra_table]
+
+    if must_fail:
+        app_args.extend(["--mustFailDueToInvalidArgument"])
 
     if not write_to_cassandra:
         app_args.extend(["--shouldNotWriteToCassandra"])
@@ -191,6 +201,9 @@ if __name__ == "__main__":
     consumer_spark_cores_max      = int(args['--consumer-spark-cores-max'])
     consumer_spark_executor_cores = int(args['--consumer-spark-executor-cores'])
 
+    producer_must_fail = args['--producer-must-fail']
+    consumer_must_fail = args['--consumer-must-fail']
+
     log.info("Dispatchers: \n{}".format("\n".join(dispatchers)))
 
     _install_package_cli(kafka_package_name)
@@ -218,7 +231,8 @@ if __name__ == "__main__":
                 producer_number_of_words,
                 producer_words_per_second,
                 producer_spark_cores_max,
-                producer_spark_executor_cores)
+                producer_spark_executor_cores,
+                producer_must_fail)
 
             append_submission(
                 submissions_output_file,
@@ -242,7 +256,8 @@ if __name__ == "__main__":
                     producer_cassandra_keyspace,
                     consumer_cassandra_table,
                     consumer_spark_cores_max,
-                    consumer_spark_executor_cores)
+                    consumer_spark_executor_cores,
+                    consumer_must_fail)
 
                 append_submission(
                     submissions_output_file,
