@@ -153,13 +153,16 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
                                         zookeeper_service["service"]["name"],
                                         "endpoint clientport", json=True)["dns"]
 
+        expected_count = get_expected_task_count
+
         service_options = {
-            "kafka": {
-                "kafka_zookeeper_uri": ",".join(zookeeper_dns)
+            "brokers": {
+                "kafka_zookeeper_uri": ",".join(zookeeper_dns),
+                "count": expected_count
             }
         }
 
-        services.append(install_package(kafka_package_name, i, get_expected_task_count, kafka_config,
+        services.append(install_package(kafka_package_name, i, expected_count, kafka_config,
                                         additional_options=service_options))
 
     return services
@@ -181,8 +184,16 @@ def install_cassandra(args: dict) -> list:
     cassandra_config = args.get("--cassandra-config", "")
 
     services = []
+
+    expected_count = get_expected_task_count
+    service_options = {
+        "nodes": {
+            "count": expected_count
+        }
+    }
     for i in range(cassandra_cluster_count):
-        services.append(install_package(cassandra_package_name, i, get_expected_task_count, cassandra_config))
+        services.append(install_package(cassandra_package_name, i, expected_count, cassandra_config,
+                                        additional_options=service_options))
 
     return services
 
