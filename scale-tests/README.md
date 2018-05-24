@@ -27,20 +27,15 @@ Change the spark-build path as necessary and fill in the AWS credentials found
 in `${HOME}/.aws/credentials`, then run the following command:
 
 ```bash
-AWS_ACCESS_KEY='<aws_access_key>'
-AWS_SECRET_KEY='<aws_secret_key>'
-AWS_ACCESS_TOKEN='<aws_access_token>'
-S3_BUCKET=infinity-artifacts/scale-tests
+S3_BUCKET=infinity-artifacts
+S3_FOLDER=scale-tests
 SPARK_BUILD_PATH="${HOME}/mesosphere/spark-build"
 JAR_LOCAL_PATH="${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar"
 JAR_NAME="dcos-spark-scala-tests-assembly-$(date +%Y%m%d)-$(git rev-parse --short HEAD).jar"
 
-s3cmd put \
-  --access_key="${AWS_ACCESS_KEY}" \
-  --secret_key="${AWS_SECRET_KEY}" \
-  --access_token="${AWS_ACCESS_TOKEN}" \
-  -P "${JAR_LOCAL_PATH}" \
-  "s3://${S3_BUCKET}/${JAR_NAME}"
+aws s3 cp --acl public-read \
+  "${JAR_LOCAL_PATH}" \
+  "s3://${S3_BUCKET}/${S3_FOLDER}/${JAR_NAME}"
 ```
 
 This will upload the "tests assembly" JAR to S3 and output its public object URL.
