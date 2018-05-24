@@ -1,15 +1,57 @@
 # Spark Scale Tests
 
-## Batch
+## Preparation
+
+### Building and uploading a "tests assembly" JAR
+
+If you want to run a specific JAR you'll need to go through these steps.
+
+1. Generate temporary AWS credentials with [`maws`](https://github.com/mesosphere/maws)
+
+2. Build "tests assembly" JAR
+
+Change the spark-build path as necessary.
+
+```bash
+SPARK_BUILD_PATH="${HOME}/mesosphere/spark-build"
+cd "${SPARK_BUILD_PATH}"/tests/jobs/scala
+sbt assembly
+```
+
+This will generate the "tests assembly" JAR at
+`${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar`.
+
+2. Upload "tests assembly" JAR
+
+Change the spark-build path as necessary and fill in the AWS credentials found
+in `${HOME}/.aws/credentials`, then run the following command:
+
+```bash
+S3_BUCKET=infinity-artifacts
+S3_FOLDER=scale-tests
+SPARK_BUILD_PATH="${HOME}/mesosphere/spark-build"
+JAR_LOCAL_PATH="${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar"
+JAR_NAME="dcos-spark-scala-tests-assembly-$(date +%Y%m%d)-$(git rev-parse --short HEAD).jar"
+
+aws s3 cp --acl public-read \
+  "${JAR_LOCAL_PATH}" \
+  "s3://${S3_BUCKET}/${S3_FOLDER}/${JAR_NAME}"
+```
+
+This will upload the "tests assembly" JAR to S3 and output its public object URL.
+
+## Running Tests
+
+### Batch
 [To be filled in]
 
-## Streaming
+### Streaming
 
 Cluster requirements:
 - Enough resources to run the workload given the parameters.
 - Package repository containing a version of Spark with quotas.
 
-### 0. Getting a shell session that's able to run the scripts
+#### 0. Getting a shell session that's able to run the scripts
 
 ```bash
 your-machine $ git clone git@github.com:mesosphere/spark-build.git
@@ -25,7 +67,7 @@ docker-container # ssh-add -k /ssh/key
 
 For the next sections, tweak variables as required.
 
-### 1. Set up infrastructure (Kafka, Zookeeper and Cassandra clusters)
+#### 1. Set up infrastructure (Kafka, Zookeeper and Cassandra clusters)
 
 In order to install the infrastructure for the streaming tests, the
 `setup_streaming.py` script can be used.
@@ -65,7 +107,7 @@ all related tasks are grouped visually. Right now this installs services as e.g.
 `cassandra-00`, but it would be cool if it was `$TEST_NAME/cassandra-00`, e.g.
 `dispatcher-streaming/cassandra-00`.
 
-### 2. Install Spark dispatchers
+#### 2. Install Spark dispatchers
 
 Depends on:
 - `$TEST_NAME` exported in step #1.
@@ -91,17 +133,20 @@ DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
   $DISPATCHERS_OUTPUT_FILE
 ```
 
-### 3. Run scale test script
+#### 3. Run scale test script
 
 Depends on:
 - `$INFRASTRUCTURE_OUTPUT_FILE` exported in step #1.
 - `$DISPATCHER_NAME_PREFIX` exported in step #2.
 - `$DISPATCHER_OUTPUT_FILE` exported in step #2.
 
+If you want to run a different JAR make sure to build, upload it and use its public object URL.
+
 Wait for the dispatchers to come online and run the following command:
 
 ```bash
-JAR=http://infinity-artifacts.s3.amazonaws.com/autodelete7d/evan-dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
+JAR=http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar
+SUBMISSIONS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-submissions.out"
 NUM_PRODUCERS_PER_DISPATCHER=1
 NUM_CONSUMERS_PER_PRODUCER=1
 PRODUCER_NUMBER_OF_WORDS=100000
@@ -115,6 +160,7 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
 ./scale-tests/kafka_cassandra_streaming_test.py \
   $DISPATCHERS_OUTPUT_FILE \
   $INFRASTRUCTURE_OUTPUT_FILE \
+  $SUBMISSIONS_OUTPUT_FILE \
   --jar $JAR \
   --num-producers-per-dispatcher $NUM_PRODUCERS_PER_DISPATCHER \
   --num-consumers-per-producer $NUM_CONSUMERS_PER_PRODUCER \
@@ -122,12 +168,16 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
   --producer-words-per-second $PRODUCER_WORDS_PER_SECOND \
   --producer-spark-cores-max $PRODUCER_SPARK_CORES_MAX \
   --producer-spark-executor-cores $PRODUCER_SPARK_EXECUTOR_CORES \
+  --consumer-write-to-cassandra \
   --consumer-batch-size-seconds $CONSUMER_BATCH_SIZE_SECONDS \
   --consumer-spark-cores-max $CONSUMER_SPARK_CORES_MAX \
   --consumer-spark-executor-cores $CONSUMER_SPARK_EXECUTOR_CORES
 ```
 
-### 4. Verify scale test correctness
+This generates a file with a list of `dispatcher name`-`submission ID` pairs
+that can be used to kill started jobs.
+
+#### 4. Verify scale test correctness
 
 *This is currently being done manually. Going forward it might make sense to add
 correctness checking to the scale test scripts themselves.*
@@ -156,7 +206,15 @@ considered successful:
 *TODO*: handle installed Cassandra service name in URL.
 
 ```
-dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "describe keyspaces"'
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "describe tables"'
+```
+
+```
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "select count(*) from dispatcher_mixed_0_0.table_0"'
+```
+
+```
+dcos task exec -it node-0-server bash -c 'CQLSH=$(ls -d ./apache-cassandra-*/bin/cqlsh) && $CQLSH node-0-server.cassandra-00.autoip.dcos.thisdcos.directory 9042 -e "select * from dispatcher_mixed_0_0.table_0 limit 10"'
 ```
 
 ```
@@ -172,7 +230,16 @@ lazy  | 2018-01-01 00:00:00+0000 |     1
 dog   | 2018-01-01 00:00:00+0000 |     1
 ```
 
-### 5. (Optional) Tear down Spark dispatchers
+#### 5. (Optional) Kill jobs
+
+Depends on:
+- `$SUBMISSIONS_OUTPUT_FILE` exported in step #4.
+
+```bash
+./scale-tests/kill-jobs.sh $SUBMISSIONS_OUTPUT_FILE
+```
+
+#### 6. (Optional) Tear down Spark dispatchers
 
 Depends on:
 - `$DISPATCHER_OUTPUT_FILE` exported in step #2.
@@ -185,7 +252,7 @@ SPARK_PRINCIPAL=spark-principal
 ./scale-tests/uninstall-dispatchers.sh $DISPATCHERS_OUTPUT_FILE $SPARK_PRINCIPAL
 ```
 
-### 6. (Optional) Tear down infrastructure (Kafka, Zookeeper and Cassandra clusters)
+#### 7. (Optional) Tear down infrastructure (Kafka, Zookeeper and Cassandra clusters)
 
 The services can be uninstalled manually as with any other DC/OS services, but running:
 

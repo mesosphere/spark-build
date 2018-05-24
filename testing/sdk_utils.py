@@ -5,6 +5,7 @@ SHOULD ALSO BE APPLIED TO sdk_utils IN ANY OTHER PARTNER REPOS
 ************************************************************************
 '''
 import functools
+import operator
 import logging
 import operator
 
