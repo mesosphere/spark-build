@@ -1,0 +1,54 @@
+{
+  "id": "/spark-gpu-workload",
+  "backoffFactor": 1.15,
+  "backoffSeconds": 1,
+  "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; chmod +x gpu_test.sh; ./gpu_test.sh $MESOS_SANDBOX/$SCRIPT_ARGS",
+  "container": {
+    "type": "DOCKER",
+    "volumes": [],
+    "docker": {
+      "image": "mesosphere/spark-build:latest",
+      "forcePullImage": false,
+      "privileged": false,
+      "parameters": []
+    }
+  },
+  "cpus": {{template-script-cpus}},
+  "disk": 1024,
+  "env": {
+    "DCOS_UID": "{{template-dcos-username}}",
+    "DCOS_PASSWORD": "{{template-dcos-password}}",
+    "SCRIPT_ARGS": "{{template-script-args}}",
+    "SPARK_BUILD_BRANCH": "gpu-marathon-app"
+  },
+  "fetch": [
+    {
+      "uri": "{{template-input-file-uri}}",
+      "extract": false,
+      "executable": false,
+      "cache": false
+    }
+  ],
+  "instances": 1,
+  "maxLaunchDelaySeconds": 3600,
+  "mem": {{template-script-mem}},
+  "gpus": 0,
+  "networks": [
+    {
+      "mode": "host"
+    }
+  ],
+  "portDefinitions": [],
+  "requirePorts": false,
+  "upgradeStrategy": {
+    "maximumOverCapacity": 1,
+    "minimumHealthCapacity": 1
+  },
+  "killSelection": "YOUNGEST_FIRST",
+  "unreachableStrategy": {
+    "inactiveAfterSeconds": 0,
+    "expungeAfterSeconds": 0
+  },
+  "healthChecks": [],
+  "constraints": []
+}
