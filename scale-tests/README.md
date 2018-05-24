@@ -115,19 +115,19 @@ Depends on:
 Wait for the infrastructure to come online and run the following command:
 
 ```bash
-QUOTA_DISPATCHER_CPUS=8
-QUOTA_DISPATCHER_MEM=8096
-QUOTA_DRIVER_CPUS=10
-QUOTA_DRIVER_MEM=8096
+QUOTA_DRIVERS_CPUS=8
+QUOTA_DRIVERS_MEM=8096
+QUOTA_EXECUTORS_CPUS=10
+QUOTA_EXECUTORS_MEM=8096
 NUM_DISPATCHERS=10
 DISPATCHER_NAME_PREFIX="${TEST_NAME}"
 DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
 
 ./scale-tests/deploy-dispatchers.py \
-  --quota-dispatcher-cpus $QUOTA_DISPATCHER_CPUS \
-  --quota-dispatcher-mem $QUOTA_DISPATCHER_MEM \
-  --quota-driver-cpus $QUOTA_DRIVER_CPUS \
-  --quota-driver-mem $QUOTA_DRIVER_MEM \
+  --quota-drivers-cpus $QUOTA_DRIVERS_CPUS \
+  --quota-drivers-mem $QUOTA_DRIVERS_MEM \
+  --quota-executors-cpus $QUOTA_EXECUTORS_CPUS \
+  --quota-executors-mem $QUOTA_EXECUTORS_MEM \
   $NUM_DISPATCHERS \
   $DISPATCHER_NAME_PREFIX \
   $DISPATCHERS_OUTPUT_FILE
