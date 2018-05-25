@@ -12,7 +12,6 @@ mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
 
-SPARK_WORKING_DIR=${PWD}
 
 cd $MESOS_SANDBOX
 
@@ -22,15 +21,14 @@ MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 # this should be LIBPROCESS_IP iff the driver is on the host network, $(hostname) when it's not (e.g. CNI).
 if [ -z ${SKIP_BOOTSTRAP_IP_DETECT} ]; then
     if [ -f ${BOOTSTRAP} ]; then
-        echo "Using bootstrap to set SPARK_LOCAL_IP" >&2
         SPARK_LOCAL_IP=$($BOOTSTRAP --get-task-ip)
-        echo "SPARK_LOCAL_IP = ${SPARK_LOCAL_IP}" >&2
+        echo "spark-env: Configured SPARK_LOCAL_IP with bootstrap: ${SPARK_LOCAL_IP}" >&2
     else
-        echo "ERROR: Unable to find bootstrap here: ${BOOTSTRAP}, exiting." >&2
+        echo "ERROR: Unable to find bootstrap to configure SPARK_LOCAL_IP at ${BOOTSTRAP}, exiting." >&2
         exit 1
     fi
 else
-    echo "Skipping bootstrap IP detection" >&2
+    echo "spark-env: Skipping bootstrap IP detection" >&2
 fi
 
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
@@ -71,15 +69,22 @@ if [[ -n "${KRB5CONF}" ]]; then
     echo "spark-env: Copying krb config from $KRB5CONF to /etc/" >&2
     echo "${KRB5CONF}" | ${BASE64_D} > /etc/krb5.conf
 else
-    echo "spark-env: No SPARK_MESOS_KRB5_CONF_BASE64 decoded" >&2
+    echo "spark-env: No SPARK_MESOS_KRB5_CONF_BASE64 to decode" >&2
 fi
 
 if [ -n "${STATSD_UDP_HOST}" ] && [ -n "${STATSD_UDP_PORT}" ]; then
-    sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
-        -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
-        ${SPARK_WORKING_DIR}/conf/metrics.properties.template >${SPARK_WORKING_DIR}/conf/metrics.properties
+    SPARK_CONF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    if [ -f "${SPARK_CONF_DIR}/metrics.properties.template" ]; then
+        echo "spark-env: Configuring StatsD endpoint ${STATSD_UDP_HOST}:${STATSD_UDP_PORT} in ${SPARK_CONF_DIR}/metrics.properties" >&2
+        sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
+            -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
+            ${SPARK_CONF_DIR}/metrics.properties.template >${SPARK_CONF_DIR}/metrics.properties
+    else
+        echo "spark-env: Skipping metrics configuration: Template not found: ${SPARK_CONF_DIR}/metrics.properties.template" >&2
+    fi
 else
-    echo "spark-env: No STATSD_UDP environment variables were defined" >&2
+    echo "spark-env: Skipping metrics configuration: STATSD_UDP_HOST/STATSD_UDP_PORT are not defined" >&2
+    echo "spark-env: StatsD metrics require Mesos UCR. For dispatcher metrics, enable the 'UCR_containerizer' option. For driver metrics, include '--conf spark.mesos.containerizer=mesos' in your run"
 fi
 
 # Options read when launching programs locally with

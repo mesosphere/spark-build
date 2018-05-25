@@ -1,12 +1,12 @@
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-TOOLS_DIR := $(ROOT_DIR)/tools
 BUILD_DIR := $(ROOT_DIR)/build
-CLI_DIST_DIR := $(BUILD_DIR)/cli_dist
 DIST_DIR := $(BUILD_DIR)/dist
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
+AWS_REGION ?= us-west-2
 S3_BUCKET ?= infinity-artifacts
-S3_PREFIX ?= autodelete7d
+# Default to putting artifacts under a random directory, which will get cleaned up automatically:
+S3_PREFIX ?= autodelete7d/spark/test-`date +%Y%m%d-%H%M%S`-`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
 SPARK_REPO_URL ?= https://github.com/mesosphere/spark
 
 .ONESHELL:
@@ -19,148 +19,97 @@ docker-build:
 	docker build -t $(DOCKER_BUILD_IMAGE) .
 	echo $(DOCKER_BUILD_IMAGE) > $@
 
-# Pulls the spark distribution listed in the manifest as default
+HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
+SPARK_DIR ?= $(ROOT_DIR)/spark
+$(SPARK_DIR):
+	git clone $(SPARK_REPO_URL) $(SPARK_DIR)
+
+prod-dist: $(SPARK_DIR)
+	pushd $(SPARK_DIR)
+	rm -rf spark-*.tgz
+	./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Phive -Phive-thriftserver -DskipTests
+	filename=`ls spark-*.tgz`
+	rm -rf $(DIST_DIR)
+	mkdir -p $(DIST_DIR)
+	mv $${filename} $(DIST_DIR)
+	echo "Built: $(DIST_DIR)/$${filename}"
+
+# If build/dist/ doesn't exist, creates it and downloads the spark build in manifest.json.
+# To instead use a locally built version of spark, you must run "make prod-dist".
 SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
-manifest-dist:
+$(DIST_DIR):
 	mkdir -p $(DIST_DIR)
 	pushd $(DIST_DIR)
 	wget $(SPARK_DIST_URI)
 	popd
 
-HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
-
-SPARK_DIR ?= $(ROOT_DIR)/spark
-$(SPARK_DIR):
-	git clone $(SPARK_REPO_URL) $(SPARK_DIR)
-
-# Builds a quick dev version of spark from the mesosphere fork
-dev-dist: $(SPARK_DIR)
-	cd $(SPARK_DIR)
-	rm -rf spark-*.tgz
-	build/sbt -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver package
-	rm -rf /tmp/spark-SNAPSHOT*
-	mkdir -p /tmp/spark-SNAPSHOT/jars
-	cp -r assembly/target/scala*/jars/* /tmp/spark-SNAPSHOT/jars
-	mkdir -p /tmp/spark-SNAPSHOT/examples/jars
-	cp -r examples/target/scala*/jars/* /tmp/spark-SNAPSHOT/examples/jars
-	for f in /tmp/spark-SNAPSHOT/examples/jars/*; do \
-		name=$$(basename "$$f"); \
-		if [ -f "/tmp/spark-SNAPSHOT/jars/$${name}" ]; then \
-			rm "/tmp/spark-SNAPSHOT/examples/jars/$${name}"; \
-		fi; \
-	done; \
-	cp -r data /tmp/spark-SNAPSHOT/
-	mkdir -p /tmp/spark-SNAPSHOT/conf
-	cp conf/* /tmp/spark-SNAPSHOT/conf
-	cp -r bin /tmp/spark-SNAPSHOT
-	cp -r sbin /tmp/spark-SNAPSHOT
-	cp -r python /tmp/spark-SNAPSHOT
-	cd /tmp
-	tar czf spark-SNAPSHOT.tgz spark-SNAPSHOT
-	mkdir -p $(DIST_DIR)
-	cp /tmp/spark-SNAPSHOT.tgz $(DIST_DIR)/
-
-prod-dist: $(SPARK_DIR)
-	cd $(SPARK_DIR)
-	rm -rf spark-*.tgz
-	if [ -f make-distribution.sh ]; then \
-		./make-distribution.sh --tgz "-Phadoop-$(HADOOP_VERSION)" -Phive -Phive-thriftserver -DskipTests; \
-	else \
-		if [ -n $(does_profile_exist,mesos) ]; then \
-			MESOS_PROFILE="-Pmesos"; \
-		else \
-			MESOS_PROFILE=""; \
-		fi; \
-		./dev/make-distribution.sh --tgz "$${MESOS_PROFILE}" "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests; \
-	fi; \
-	mkdir -p $(DIST_DIR)
-	cp spark-*.tgz $(DIST_DIR)
-
-# this target serves as default dist type
-$(DIST_DIR):
-	$(MAKE) manifest-dist
-
 clean-dist:
-	@[ ! -e $(DIST_DIR) ] || rm -rf $(DIST_DIR)
+	rm -f $(ROOT_DIR)/docker-dist
+	rm -rf $(DIST_DIR)
 
 docker-login:
-	docker login --email="$(DOCKER_EMAIL)" --username="$(DOCKER_USERNAME)" --password="$(DOCKER_PASSWORD)"
+	docker login --username="$(DOCKER_USERNAME)" --password="$(DOCKER_PASSWORD)"
 
 DOCKER_DIST_IMAGE ?= mesosphere/spark-dev:$(GIT_COMMIT)
 docker-dist: $(DIST_DIR)
-	tar xvf $(DIST_DIR)/spark-*.tgz -C $(DIST_DIR)
+	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
+	if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
+		echo "Using spark: $${SPARK_BUILDS}"
+	else
+		echo "Should have a single Spark package in $(DIST_DIR), found: $${SPARK_BUILDS}"
+		echo "Delete the ones you don't want?"
+		exit 1
+	fi
+	tar xvf $${SPARK_BUILDS} -C $(DIST_DIR)
+
 	rm -rf $(BUILD_DIR)/docker
 	mkdir -p $(BUILD_DIR)/docker/dist
 	cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
 	cp -r conf/* $(BUILD_DIR)/docker/dist/conf
 	cp -r docker/* $(BUILD_DIR)/docker
-	pushd $(BUILD_DIR)/docker; \
-	docker build -t $(DOCKER_DIST_IMAGE) .; \
+
+	pushd $(BUILD_DIR)/docker
+	docker build -t $(DOCKER_DIST_IMAGE) .
 	popd
+
 	docker push $(DOCKER_DIST_IMAGE)
 	echo "$(DOCKER_DIST_IMAGE)" > $@
 
-CLI_VERSION ?= $(shell jq -r ".cli_version" "$(ROOT_DIR)/manifest.json")
-$(CLI_DIST_DIR):
-	$(MAKE) --directory=cli all
-	mkdir -p $@
-	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark-darwin $@/
-	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark-linux $@/
-	mv $(ROOT_DIR)/cli/dcos-spark/dcos-spark.exe $@/
 
-cli: $(CLI_DIST_DIR)
+UNIVERSE_URL_PATH ?= $(ROOT_DIR)/spark-universe-url
+stub-universe-url: docker-dist
+	if [ -n "$(STUB_UNIVERSE_URL)" ]; then
+		echo "Using provided stub universe(s): $(STUB_UNIVERSE_URL)"
+		echo "$(STUB_UNIVERSE_URL)" > $(UNIVERSE_URL_PATH)
+	else
+		UNIVERSE_URL_PATH=$(ROOT_DIR)/stub-universe-url.tmp \
+		TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
+		TEMPLATE_HTTPS_PROTOCOL='https://' \
+		        $(ROOT_DIR)/tools/build_package.sh spark-history $(ROOT_DIR)/history aws
+		cat $(ROOT_DIR)/stub-universe-url.tmp > $(UNIVERSE_URL_PATH)
 
-UNIVERSE_URL_PATH ?= stub-universe-url
-HISTORY_URL_PATH := $(UNIVERSE_URL_PATH).history
-$(UNIVERSE_URL_PATH): $(CLI_DIST_DIR) docker-dist
-	UNIVERSE_URL_PATH=$(UNIVERSE_URL_PATH) \
-	TEMPLATE_CLI_VERSION=$(CLI_VERSION) \
-	TEMPLATE_DOCKER_IMAGE=`cat docker-dist` \
-		$(TOOLS_DIR)/publish_aws.py \
-		spark \
-        $(ROOT_DIR)/universe/ \
-        $(CLI_DIST_DIR)/dcos-spark-darwin \
-        $(CLI_DIST_DIR)/dcos-spark-linux \
-        $(CLI_DIST_DIR)/dcos-spark.exe; \
-    UNIVERSE_URL_PATH=$(HISTORY_URL_PATH) \
-    TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
-        $(TOOLS_DIR)/publish_aws.py \
-        spark-history \
-        $(ROOT_DIR)/history/package/; \
-    cat $(HISTORY_URL_PATH) >> $(UNIVERSE_URL_PATH);
+		$(ROOT_DIR)/cli/dcos-spark/build.sh
 
-stub-universe: $(UNIVERSE_URL_PATH)
+		UNIVERSE_URL_PATH=$(ROOT_DIR)/stub-universe-url.tmp \
+		TEMPLATE_DOCKER_IMAGE=`cat docker-dist` \
+		TEMPLATE_HTTPS_PROTOCOL='https://' \
+			$(ROOT_DIR)/tools/build_package.sh \
+			spark \
+			$(ROOT_DIR) \
+			-a $(ROOT_DIR)/cli/dcos-spark/dcos-spark-darwin \
+			-a $(ROOT_DIR)/cli/dcos-spark/dcos-spark-linux \
+			-a $(ROOT_DIR)/cli/dcos-spark/dcos-spark.exe \
+			aws
+		cat $(ROOT_DIR)/stub-universe-url.tmp >> $(UNIVERSE_URL_PATH)
+
+		rm -f $(ROOT_DIR)/stub-universe-url.tmp
+	fi
 
 DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
 $(DCOS_SPARK_TEST_JAR_PATH):
 	cd tests/jobs/scala
 	sbt assembly
-	cp $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_PATH)
-
-test-env:
-	python3 -m venv test-env
-	source test-env/bin/activate
-	pip3 install -r tests/requirements.txt
-
-CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
-config.yaml:
-	$(eval export DCOS_LAUNCH_CONFIG_BODY)
-	echo "$$DCOS_LAUNCH_CONFIG_BODY" > config.yaml
-
-cluster-url: config.yaml
-	@if [ -z $(CLUSTER_URL) ]; then \
-	  source $(ROOT_DIR)/test-env/bin/activate; \
-	  dcos-launch create; \
-	  dcos-launch wait; \
-	  echo https://`dcos-launch describe | jq -r .masters[0].public_ip` > $@; \
-	else \
-	  echo "CLUSTER_URL detected in env; not deploying a new cluster"; \
-	  echo $(CLUSTER_URL) > $@; \
-	fi; \
-
-clean-cluster:
-	@dcos-launch delete || echo "Error deleting cluster"
-	[ ! -e cluster-url ] || rm cluster-url
+	cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
@@ -171,45 +120,45 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	sbt assembly
 	cd ..
 	sbt clean compile test
-	cp test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $(MESOS_SPARK_TEST_JAR_PATH)
+	cp -v test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $@
 
-PYTEST_ARGS ?= -s -vv -m sanity
-test: test-env $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(UNIVERSE_URL_PATH) cluster-url
-	source $(ROOT_DIR)/test-env/bin/activate
-	if [ -z $(CLUSTER_URL) ]; then \
-	    if [ `cat cluster_info.json | jq .key_helper` == 'true' ]; then \
-	      cat cluster_info.json | jq -r .ssh_private_key > test_cluster_ssh_key; \
-	      chmod 600 test_cluster_ssh_key; \
-		  eval `ssh-agent -s`; \
-		  ssh-add test_cluster_ssh_key; \
-	    fi; \
-	fi; \
-	export CLUSTER_URL=`cat cluster-url`
-	$(TOOLS_DIR)/./dcos_login.py; \
-    export STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)`; \
-	SCALA_TEST_JAR_PATH=$(DCOS_SPARK_TEST_JAR_PATH) \
-	  TEST_JAR_PATH=$(MESOS_SPARK_TEST_JAR_PATH) \
-	  S3_BUCKET=$(S3_BUCKET) \
-	  S3_PREFIX=$(S3_PREFIX) \
-	  py.test $(PYTEST_ARGS) $(ROOT_DIR)/tests
+# Special directive to allow building the test jars separately from running the tests.
+test-jars: $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH)
 
-clean: clean-dist clean-cluster
-	rm -rf test-env
-	rm -rf $(CLI_DIST_DIR)
-	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "cluster-url" "$(UNIVERSE_URL_PATH)" "$(HISTORY_URL_PATH)" "docker-build" "docker-dist" ; do \
-		[ ! -e $$f ] || rm $$f; \
-	done; \
 
+CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
+config.yaml:
+	$(eval export DCOS_LAUNCH_CONFIG_BODY)
+	echo "$$DCOS_LAUNCH_CONFIG_BODY" > $@
+
+
+# We're careful to only build if they're missing.
+# This allows CI to do builds against one image (spark-build), and then tests against another image (dcos-commons)
+test: test-jars stub-universe-url config.yaml
+	if [ -z "$(CLUSTER_URL)" ]; then
+		rm -f $(ROOT_DIR)/cluster_info.json # TODO remove this when launch_cluster.sh in docker image is updated
+	fi
+	STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)` \
+	S3_BUCKET=$(S3_BUCKET) \
+	TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${DCOS_SPARK_TEST_JAR_PATH}` \
+	TEST_SH_MESOS_SPARK_TEST_JAR_PATH=/build/`basename ${MESOS_SPARK_TEST_JAR_PATH}` \
+	TEST_SH_S3_PREFIX=$(S3_PREFIX) \
+	TEST_SH_AWS_REGION=$(AWS_REGION) \
+		$(ROOT_DIR)/test.sh $(TEST_SH_ARGS)
+
+
+clean-cluster:
+	dcos-launch delete || echo "Error deleting cluster"
+
+clean: clean-dist
+	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "$(UNIVERSE_URL_PATH)" "docker-build"; do
+		[ ! -e $$f ] || rm $$f
+	done
 
 
 define spark_dist
 `cd $(DIST_DIR) && ls spark-*.tgz`
 endef
-
-define does_profile_exist
-`cd "$(SPARK_DIR)" && ./build/mvn help:all-profiles | grep $(1)`
-endef
-
 
 define DCOS_LAUNCH_CONFIG_BODY
 ---
@@ -225,5 +174,4 @@ template_parameters:
 ssh_user: core
 endef
 
-
-.PHONY: clean clean-dist clean-cluster cli manifest-dist dev-dist prod-dist docker-login test
+.PHONY: clean clean-dist cli stub-universe-url prod-dist docker-login test

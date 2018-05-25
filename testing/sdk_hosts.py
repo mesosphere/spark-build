@@ -5,6 +5,12 @@ FOR THE TIME BEING WHATEVER MODIFICATIONS ARE APPLIED TO THIS FILE
 SHOULD ALSO BE APPLIED TO sdk_hosts IN ANY OTHER PARTNER REPOS
 ************************************************************************
 '''
+import json
+import retrying
+
+import sdk_cmd
+import sdk_utils
+
 
 SYSTEM_HOST_SUFFIX = 'mesos'
 AUTOIP_HOST_SUFFIX = 'autoip.dcos.thisdcos.directory'
@@ -36,6 +42,18 @@ def autoip_host(service_name, task_name, port=-1):
         port)
 
 
+def custom_host(service_name, task_name, custom_domain, port=-1):
+    """
+    Returns a properly constructed hostname for the container of the given task using the
+    supplied custom domain.
+    """
+    return _to_host(
+        _safe_name(task_name),
+        _safe_name(service_name),
+        custom_domain,
+        port)
+
+
 def vip_host(service_name, vip_name, port=-1):
     '''Returns the hostname of a specified service VIP, with handling of foldered services.'''
     return _to_host(
@@ -64,3 +82,27 @@ def _to_host(host_first, host_second, host_third, port):
     if port != -1:
         return '{}:{}'.format(host, port)
     return host
+
+
+def get_foldered_dns_name(service_name):
+    if sdk_utils.dcos_version_less_than('1.10'):
+        return service_name
+    return sdk_utils.get_foldered_name(service_name).replace("/", "")
+
+
+@retrying.retry(
+    wait_fixed=2000,
+    stop_max_delay=5*60*1000)
+def get_crypto_id_domain():
+    """
+    Returns the cluster cryptographic ID equivalent of autoip.dcos.thisdcos.directory.
+
+    These addresses are routable within the cluster but can be used to test setting a custom
+    service domain.
+    """
+    ok, lashup_response = sdk_cmd.master_ssh("curl localhost:62080/lashup/key/")
+    assert ok
+
+    crypto_id = json.loads(lashup_response.strip())["zbase32_public_key"]
+
+    return "autoip.dcos.{}.dcos.directory".format(crypto_id)

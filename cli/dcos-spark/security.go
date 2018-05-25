@@ -304,5 +304,5 @@ func setupKerberosSecretsConfigs(args *sparkArgs) error {
 		appendToProperty(SECRET_FILENAME_PROPERTIES["driver"], "tgt.base64", args)
 		return nil
 	}
-	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %s", args))
+	return errors.New(fmt.Sprintf("Unable to add Kerberos args, got args %v", args))
 }

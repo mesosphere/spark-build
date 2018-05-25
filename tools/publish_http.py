@@ -17,8 +17,7 @@ import socket
 import subprocess
 import sys
 
-import github_update
-import universe_builder
+import universe
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -29,9 +28,9 @@ class HTTPPublisher(object):
     def __init__(
             self,
             package_name,
+            package_version,
             input_dir_path,
-            artifact_paths,
-            package_version = 'stub-universe'):
+            artifact_paths):
         self._pkg_name = package_name
         self._pkg_version = package_version
         self._input_dir_path = input_dir_path
@@ -40,21 +39,13 @@ class HTTPPublisher(object):
         self._http_host = os.environ.get('HTTP_HOST', '172.17.0.1')
         self._http_port = int(os.environ.get('HTTP_PORT', '0'))
 
-        self._github_updater = github_update.GithubStatusUpdater('upload:{}'.format(package_name))
-
         if not os.path.isdir(input_dir_path):
-            err = 'Provided package path is not a directory: {}'.format(input_dir_path)
-            self._github_updater.update('error', err)
-            raise Exception(err)
+            raise Exception('Provided package path is not a directory: {}'.format(input_dir_path))
 
         self._artifact_paths = []
         for artifact_path in artifact_paths:
             if not os.path.isfile(artifact_path):
                 err = 'Provided package path is not a file: {} (full list: {})'.format(artifact_path, artifact_paths)
-                raise Exception(err)
-            if artifact_path in self._artifact_paths:
-                err = 'Duplicate filename between "{}" and "{}". Artifact filenames must be unique.'.format(prior_path, artifact_path)
-                self._github_updater.update('error', err)
                 raise Exception(err)
             self._artifact_paths.append(artifact_path)
 
@@ -83,25 +74,11 @@ class HTTPPublisher(object):
             universe_url_file.write('{}\n'.format(universe_url))
             universe_url_file.flush()
             universe_url_file.close()
-        num_artifacts = len(self._artifact_paths)
-        if num_artifacts > 1:
-            suffix = 's'
-        else:
-            suffix = ''
-        self._github_updater.update(
-            'success',
-            'Copied stub universe and {} artifact{}'.format(num_artifacts, suffix),
-            universe_url)
 
 
     def build(self, http_url_root):
         '''copies artifacts and a new stub universe into the http root directory'''
-        try:
-            universe_path = self._package_builder.build_package()
-        except Exception as e:
-            err = 'Failed to create stub universe: {}'.format(str(e))
-            self._github_updater.update('error', err)
-            raise
+        universe_path = self._package_builder.build_package()
 
         # wipe files in dir
         if not os.path.isdir(self._http_dir):
@@ -149,8 +126,10 @@ class HTTPPublisher(object):
 
         http_url_root = 'http://{}:{}'.format(self._http_host, port)
 
-        self._package_builder = universe_builder.UniversePackageBuilder(
-            self._pkg_name, self._pkg_version,
+        package_info = universe.Package(self._pkg_name, self._pkg_version)
+        package_manager = universe.PackageManager()
+        self._package_builder = universe.UniversePackageBuilder(
+            package_info, package_manager,
             self._input_dir_path, http_url_root, self._artifact_paths)
 
         # hack: write httpd script then run it directly
@@ -160,21 +139,20 @@ from http.server import SimpleHTTPRequestHandler
 rootdir = '{}'
 host = '{}'
 port = {}
-json_content_type = '{}'
 
 class CustomTypeHandler(SimpleHTTPRequestHandler):
     def __init__(self, req, client_addr, server):
         SimpleHTTPRequestHandler.__init__(self, req, client_addr, server)
     def guess_type(self, path):
         if path.endswith('.json'):
-            return json_content_type
+            return 'application/vnd.dcos.universe.repo+json;charset=utf-8'
         return SimpleHTTPRequestHandler.guess_type(self, path)
 
 os.chdir(rootdir)
 httpd = socketserver.TCPServer((host, port), CustomTypeHandler)
 print('Serving %s at http://%s:%s' % (rootdir, host, port))
 httpd.serve_forever()
-'''.format(self._http_dir, self._http_host, port, self._package_builder.content_type())
+'''.format(self._http_dir, self._http_host, port)
 
         httpd_py_path = os.path.join(self._http_dir, procname)
         if not os.path.isdir(self._http_dir):
@@ -224,17 +202,21 @@ def main(argv):
         return 1
     # the package name:
     package_name = argv[1]
+    # the package version:
+    package_version = argv[2]
     # local path where the package template is located:
-    package_dir_path = argv[2].rstrip('/')
+    package_dir_path = argv[3].rstrip('/')
     # artifact paths (to copy along with stub universe)
-    artifact_paths = argv[3:]
+    artifact_paths = argv[4:]
     logger.info('''###
 Package:         {}
+Version:         {}
 Template path:   {}
-Artifacts:       {}
-###'''.format(package_name, package_dir_path, ', '.join(artifact_paths)))
+Artifacts:
+{}
+###'''.format(package_name, package_version, package_dir_path, '\n'.join(['- {}'.format(path) for path in artifact_paths])))
 
-    publisher = HTTPPublisher(package_name, package_dir_path, artifact_paths)
+    publisher = HTTPPublisher(package_name, package_version, package_dir_path, artifact_paths)
     http_url_root = publisher.launch_http()
     universe_url = publisher.build(http_url_root)
     repo_added = publisher.add_repo_to_cli(universe_url)
