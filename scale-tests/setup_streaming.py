@@ -22,13 +22,16 @@ Options:
                                            This is used for both Kafka and ZooKeeper [default: 0]
 
     --kafka-package-name <name>            The package name to use for Kafka [default: confluent-kafka]
+    --kafka-service-prefix <prefix>        The service prefix to use for Kafka. Defaults to package name.
     --kafka-config <file>                  path to the config.json for the Kafka installation
 
     --kafka-zookeeper-package-name <name>  The package name to use for Kafka ZooKeeper [default: confluent-zookeeper]
+    --kafka-zookeeper-service-prefix <prefix>  The service prefix to use for Kafka ZooKeeper. Defaults to package name.
     --kafka-zookeeper-config <file>        path to the config.json for the Kafka ZooKeeper installation
 
     --cassandra-cluster-count <n>          The number of Cassandra clusters to install [default: 0]
     --cassandra-package-name <name>        The package name to use for Cassandra [default: cassandra]
+    --cassandra-service-prefix <prefix>    The service prefix to use for Cassandra. Defaults to package name.
     --cassandra-config <file>              path to the config.json for the Cassandra installation
 
 TODO:
@@ -54,9 +57,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def install_package(package_name: str, index: int, service_task_count: int, config_path: str,
+def install_package(package_name: str, service_prefix: str, index: int, service_task_count: int, config_path: str,
                     additional_options: dict=None) -> dict:
-    service_name = "{}-{:0>2}".format(package_name, index)
+    service_name = "{}-{:0>2}".format(service_prefix, index)
 
     log.info("Installing %s index %s as %s", package_name, index, service_name)
 
@@ -120,11 +123,13 @@ def install_zookeeper(args: dict) -> list:
         return []
 
     kafka_zookeeper_package_name = args["--kafka-zookeeper-package-name"]
+    kafka_zookeeper_service_prefix = args.get("--kafka-zookeeper-service-prefix", kafka_zookeeper_package_name)
     kafka_zookeeper_config = args.get("--kafka-zookeeper-config", "")
 
     services = []
     for i in range(kafka_cluster_count):
-        services.append(install_package(kafka_zookeeper_package_name, i, get_expected_task_count,
+        services.append(install_package(kafka_zookeeper_package_name,
+                                        kafka_zookeeper_service_prefix, i, get_expected_task_count,
                                         kafka_zookeeper_config))
 
     return services
@@ -143,6 +148,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
         return []
 
     kafka_package_name = args["--kafka-package-name"]
+    kafka_service_prefix = args.get("--kafka-service-prefix", kafka_package_name)
     kafka_config = args.get("--kafka-config", "")
 
     services = []
@@ -159,7 +165,8 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
             }
         }
 
-        services.append(install_package(kafka_package_name, i, get_expected_task_count, kafka_config,
+        services.append(install_package(kafka_package_name, kafka_service_prefix, i,
+                                        get_expected_task_count, kafka_config,
                                         additional_options=service_options))
 
     return services
@@ -178,11 +185,13 @@ def install_cassandra(args: dict) -> list:
         return []
 
     cassandra_package_name = args["--cassandra-package-name"]
+    cassandra_service_prefix = args.get("--cassandra-service-prefix", cassandra_package_name)
     cassandra_config = args.get("--cassandra-config", "")
 
     services = []
     for i in range(cassandra_cluster_count):
-        services.append(install_package(cassandra_package_name, i, get_expected_task_count, cassandra_config))
+        services.append(install_package(cassandra_package_name, cassandra_service_prefix, i,
+                                        get_expected_task_count, cassandra_config))
 
     return services
 
