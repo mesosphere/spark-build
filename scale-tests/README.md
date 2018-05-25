@@ -42,21 +42,16 @@ This will upload the "tests assembly" JAR to S3 and output its public object URL
 
 ## Running Tests
 
-### Batch
-[To be filled in]
-
-### Streaming
-
 Cluster requirements:
 - Enough resources to run the workload given the parameters.
 - Package repository containing a version of Spark with quotas.
 
-#### 0. Getting a shell session that's able to run the scripts
+### Getting a shell session that's able to run the scripts
 
 ```bash
 your-machine $ git clone git@github.com:mesosphere/spark-build.git
 your-machine $ cd spark-build
-your-machine $ docker run -it --net=host -v (pwd):/spark-build -v </path/to/soak/key>:/ssh/key mesosphere/spark-build:latest
+your-machine $ docker run -it --net=host -v $(pwd):/spark-build -v </path/to/soak/key>:/ssh/key:ro mesosphere/spark-build:latest
 docker-container # cd /spark-build
 docker-container # pip3 install -r tests/requirements.txt
 docker-container # export PYTHONPATH=$(pwd)/testing:$(pwd)/spark-testing
@@ -64,6 +59,94 @@ docker-container # dcos cluster setup --insecure --username=<username> --passwor
 docker-container # eval "$(ssh-agent)"
 docker-container # ssh-add -k /ssh/key
 ```
+
+### Batch
+
+#### 1. Install Spark dispatchers
+
+For the next sections, tweak variables as required.
+
+Run the following command:
+
+```bash
+TEST_NAME=spark-test
+QUOTA_DRIVERS_CPUS=4
+QUOTA_DRIVERS_MEM=8192
+QUOTA_EXECUTORS_CPUS=4
+QUOTA_EXECUTORS_MEM=8192
+NUM_DISPATCHERS=1
+DISPATCHER_NAME_PREFIX="${TEST_NAME}"
+DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
+
+./scale-tests/deploy-dispatchers.py \
+  --quota-drivers-cpus $QUOTA_DRIVERS_CPUS \
+  --quota-drivers-mem $QUOTA_DRIVERS_MEM \
+  --quota-executors-cpus $QUOTA_EXECUTORS_CPUS \
+  --quota-executors-mem $QUOTA_EXECUTORS_MEM \
+  $NUM_DISPATCHERS \
+  $DISPATCHER_NAME_PREFIX \
+  $DISPATCHERS_OUTPUT_FILE
+```
+
+#### 2. Launch batch jobs from the command line
+
+Wait for Spark Dispatchers to install.
+
+Launch batch jobs from the command line:
+
+```bash
+SUBMITS_PER_MIN=1
+
+./scale-tests/batch_test.py \
+  $DISPATCHERS_OUTPUT_FILE \
+  --submits-per-min $SUBMITS_PER_MIN
+```
+
+#### 3. Alternatively, deploy a Marathon app which launches batch jobs from within the cluster [optional]
+
+First, upload the DISPATCHERS_OUTPUT_FILE created above somewhere that is accessible from the cluster -
+S3, for example.
+
+To upload to S3, run the following *outside* the container:
+
+1. Change into the spark-build path.
+
+2. Run the following command, filling in a value for the S3_BUCKET and setting the DISPATCHERS_OUTPUT_FILE
+to the same value as in the container:
+
+```bash
+S3_BUCKET=<bucket>
+S3_FOLDER=scale-tests
+DISPATCHERS_OUTPUT_FILE=<output_file>
+
+aws s3 cp --acl public-read \
+  "${DISPATCHERS_OUTPUT_FILE}" \
+  "s3://${S3_BUCKET}/${S3_FOLDER}/${DISPATCHERS_OUTPUT_FILE}"
+```
+
+Then run the following, filling in values for username, password, and S3 bucket:
+
+```bash
+DCOS_USERNAME=<username>
+DCOS_PASSWORD=<password>
+S3_BUCKET=<bucket>
+S3_FOLDER=scale-tests
+DISPATCHERS_OUTPUT_FILE_URL="https://${S3_BUCKET}.s3.amazonaws.com/${S3_FOLDER}/${DISPATCHERS_OUTPUT_FILE}"
+SCRIPT_CPUS=2
+SCRIPT_MEM=4096
+SUBMITS_PER_MIN=1
+
+./scale-tests/deploy-marathon-service.sh \
+  scale-tests/spark-batch-workload.json.template \
+  $DCOS_USERNAME \
+  $DCOS_PASSWORD \
+  $DISPATCHERS_OUTPUT_FILE_URL \
+  $SCRIPT_CPUS \
+  $SCRIPT_MEM \
+  "${DISPATCHERS_OUTPUT_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
+```
+
+### Streaming
 
 For the next sections, tweak variables as required.
 
