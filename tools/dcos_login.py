@@ -4,6 +4,7 @@ import os
 
 import dcos.cluster
 import requests
+import retrying
 
 from dcos_test_utils import logger
 
@@ -14,6 +15,7 @@ __CLI_LOGIN_EE_PASSWORD = 'deleteme'
 log = logging.getLogger(__name__)
 
 
+@retrying.retry(wait_fixed=2000, stop_max_delay=120 * 1000)
 def login(dcosurl: str, username: str, password: str, is_enterprise: bool) -> str:
     if is_enterprise:
         log.info('logging into {} as {}'.format(dcosurl, username))
@@ -69,9 +71,18 @@ def login_session() -> None:
     cluster_url = os.environ.get('CLUSTER_URL')
     if not cluster_url:
         raise Exception('Must have CLUSTER_URL set in environment!')
-    dcos_login_username = os.environ.get('DCOS_LOGIN_USERNAME', __CLI_LOGIN_EE_USERNAME)
-    dcos_login_password = os.environ.get('DCOS_LOGIN_PASSWORD', __CLI_LOGIN_EE_PASSWORD)
-    dcos_enterprise = os.environ.get('DCOS_ENTERPRISE', 'true').lower() == 'true'
+
+    def ignore_empty(envvar, default):
+        # Ignore the user passing in empty ENVVARs.
+        value = os.environ.get(envvar, "").strip()
+        if not value:
+            return default
+
+        return value
+
+    dcos_login_username = ignore_empty('DCOS_LOGIN_USERNAME', __CLI_LOGIN_EE_USERNAME)
+    dcos_login_password = ignore_empty('DCOS_LOGIN_PASSWORD', __CLI_LOGIN_EE_PASSWORD)
+    dcos_enterprise = ignore_empty('DCOS_ENTERPRISE', 'true').lower() == 'true'
     dcos_acs_token = os.environ.get('DCOS_ACS_TOKEN')
     if not dcos_acs_token:
         log.info('No ACS token provided, logging in...')

@@ -7,31 +7,51 @@ SHOULD ALSO BE APPLIED TO sdk_repository IN ANY OTHER PARTNER REPOS
 import json
 import logging
 import os
-import random
-import string
+from itertools import chain
+from typing import List
 
-import shakedown
 import sdk_cmd
+import sdk_utils
 
 log = logging.getLogger(__name__)
 
 
-def add_universe_repos():
+def flatmap(f, items):
+    """
+    lines = ["one,two", "three", "four,five"]
+    f     = lambda s: s.split(",")
+
+    >>> map(f, lines)
+    [['one', 'two'], ['three'], ['four', 'five']]
+
+    >>> flatmap(f, lines)
+    ['one', 'two', 'three', 'four', 'five']
+    """
+    return chain.from_iterable(map(f, items))
+
+
+def parse_stub_universe_url_string(stub_universe_url_string):
+    """Handles newline- and comma-separated strings."""
+    lines = stub_universe_url_string.split("\n")
+    return list(filter(None, flatmap(lambda s: s.split(","), lines)))
+
+
+def get_universe_repos() -> List:
+    # prepare needed universe repositories
+    stub_universe_url_string = os.environ.get('STUB_UNIVERSE_URL', '')
+    return parse_stub_universe_url_string(stub_universe_url_string)
+
+
+def add_stub_universe_urls(stub_universe_urls: list) -> dict:
     stub_urls = {}
 
-    log.info('Adding universe repos')
-
-    # prepare needed universe repositories
-    stub_universe_urls = os.environ.get('STUB_UNIVERSE_URL')
     if not stub_universe_urls:
         return stub_urls
 
     log.info('Adding stub URLs: {}'.format(stub_universe_urls))
-    for url in stub_universe_urls.split():
-        print('url: {}'.format(url))
-        package_name = 'testpkg-'
-        package_name += ''.join(random.choice(string.ascii_lowercase +
-                                              string.digits) for _ in range(8))
+    for idx, url in enumerate(stub_universe_urls):
+        log.info('URL {}: {}'.format(idx, repr(url)))
+        package_name = 'testpkg-{}'.format(sdk_utils.random_string())
         stub_urls[package_name] = url
 
     # clean up any duplicate repositories
@@ -43,8 +63,12 @@ def add_universe_repos():
 
     # add the needed universe repositories
     for name, url in stub_urls.items():
-        log.info('Adding stub URL: {}'.format(url))
-        sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(name, url))
+        log.info('Adding stub repo {} URL: {}'.format(name, url))
+        rc, stdout, stderr = sdk_cmd.run_raw_cli('package repo add --index=0 {} {}'.format(name, url))
+        if rc != 0 or stderr:
+            raise Exception(
+                'Failed to add stub repo {} ({}): stdout=[{}], stderr=[{}]'.format(
+                    name, url, stdout, stderr))
 
     log.info('Finished adding universe repos')
 
@@ -54,16 +78,16 @@ def add_universe_repos():
 def remove_universe_repos(stub_urls):
     log.info('Removing universe repos')
 
-    # clear out the added universe repositores at testing end
+    # clear out the added universe repositories at testing end
     for name, url in stub_urls.items():
         log.info('Removing stub URL: {}'.format(url))
-        out, err, rc = shakedown.run_dcos_command('package repo remove {}'.format(name))
-        if err:
-            if err.endswith('is not present in the list'):
+        rc, stdout, stderr = sdk_cmd.run_raw_cli('package repo remove {}'.format(name))
+        if rc != 0 or stderr:
+            if stderr.endswith('is not present in the list'):
                 # tried to remove something that wasn't there, move on.
                 pass
             else:
-                raise 'Failed to remove stub repo: stdout=[{}], stderr=[{}]'.format(out, err)
+                raise Exception('Failed to remove stub repo: stdout=[{}], stderr=[{}]'.format(stdout, stderr))
 
     log.info('Finished removing universe repos')
 
@@ -79,7 +103,7 @@ def universe_session():
     """
     stub_urls = {}
     try:
-        stub_urls = add_universe_repos()
+        stub_urls = add_stub_universe_urls(get_universe_repos())
         yield
     finally:
         remove_universe_repos(stub_urls)
