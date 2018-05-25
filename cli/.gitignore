@@ -1,8 +1,0 @@
-dist
-build
-.tox
-env
-dcos_spark.egg-info
-tests/integration/__pycache__
-dcos_spark/data/spark**
-**.pyc

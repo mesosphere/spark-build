@@ -1,147 +1,21 @@
 #!/usr/bin/env bash
 
-# Prevent jenkins from immediately killing the script when a step fails, allowing us to notify github:
-set +e
+cat <<EOF
+build_framework.sh has been replaced with build_package.sh.
 
-usage() {
-    echo "Syntax: $0 [--cli-only] <framework-name> </path/to/framework> [local|aws]"
-}
+Update your build.sh to use build_package.sh as follows. See dcos-commons/frameworks/hello-world/build.sh for an example:
+- Before calling build_package.sh, your build.sh should explicitly invoke e.g. './gradlew check distZip' to build your scheduler.zip. See dcos-commons/frameworks/hello-world/build.sh for an example.
+- Rename any '--artifact' flags to '-a'. In addition to any custom artifacts you may be building, you should now also provide the path to your scheduler.zip with e.g. '-a path/to/build/distributions/your-scheduler.zip'. See dcos-commons/frameworks/hello-world/build.sh for an example.
+- Any BOOTSTRAP_DIR/CLI_DIR settings can be removed as they are not applicable to build_package.sh.
+- If you are using build_go_exe.sh to build a binary across multiple platforms (e.g. to build a custom CLI across linux/darwin/windows), you should instead perform a single build_go_exe.sh invocation with multiple space-separated platforms. See dcos-commons/sdk/cli/build.sh for an example.
 
-cli_only=
-
-while :; do
-    case $1 in
-        --help|-h|-\?)
-            usage
-            exit
-            ;;
-        --cli-only)
-            cli_only="true"
-            ;;
-        --)
-            shift
-            break
-            ;;
-        -*)
-            echo "unknown option $1" >&2
-            exit 1
-            ;;
-        *)
-            break
-            ;;
-    esac
-
-    shift
-done
-
-
-if [ $# -lt 2 ]; then
-    exit 1
-fi
-
-PUBLISH_STEP=$1
-shift
-FRAMEWORK_NAME=$1
-shift
-FRAMEWORK_DIR=$1
-shift
-ARTIFACT_FILES=$@
-
-
-echo PUBLISH_STEP=$PUBLISH_STEP
-echo FRAMEWORK_NAME=$FRAMEWORK_NAME
-echo FRAMEWORK_DIR=$FRAMEWORK_DIR
-echo ARTIFACT_FILES=$ARTIFACT_FILES
-
-# default paths/names within a framework directory:
-CLI_DIR=${CLI_DIR:=${FRAMEWORK_DIR}/cli}
-UNIVERSE_DIR=${UNIVERSE_DIR:=${FRAMEWORK_DIR}/universe}
-CLI_EXE_NAME=${CLI_EXE_NAME:=dcos-${FRAMEWORK_NAME}}
-BUILD_BOOTSTRAP=${BUILD_BOOTSTRAP:=yes}
-
-source $TOOLS_DIR/init_paths.sh
-
-# GitHub notifier config
-_notify_github() {
-    GIT_REPOSITORY_ROOT=$REPO_ROOT_DIR ${TOOLS_DIR}/github_update.py $1 build:${FRAMEWORK_NAME} $2
-}
-
-# Used below in-order, but here for cli-only
-build_cli() {
-    # CLI (Go):
-    # /home/user/dcos-commons/frameworks/helloworld/cli => frameworks/helloworld/cli
-    REPO_CLI_RELATIVE_PATH="$(echo $CLI_DIR | cut -c $((2 + ${#REPO_ROOT_DIR}))-)"
-    ${TOOLS_DIR}/build_cli.sh ${CLI_EXE_NAME} ${CLI_DIR} ${REPO_CLI_RELATIVE_PATH}
-    if [ $? -ne 0 ]; then
-        _notify_github failure "CLI build failed"
-        exit 1
-    fi
-}
-
-if [ x"$cli_only" = xtrue ]; then
-    build_cli
-    exit
-fi
-
-_notify_github pending "Build running"
-
-# Verify airgap (except for hello world)
-if [ $FRAMEWORK_NAME != "hello-world" ];
-then
-    ${TOOLS_DIR}/airgap_linter.py ${FRAMEWORK_DIR}
-fi
-
-# Ensure executor build up to date
-${REPO_ROOT_DIR}/gradlew distZip -p ${REPO_ROOT_DIR}/sdk/executor
-
-# Service (Java):
-${REPO_ROOT_DIR}/gradlew -p ${FRAMEWORK_DIR} check distZip
-if [ $? -ne 0 ]; then
-  _notify_github failure "Gradle build failed"
-  exit 1
-fi
-
-INCLUDE_BOOTSTRAP=""
-if [ "$BUILD_BOOTSTRAP" == "yes" ]; then
-    # Executor Bootstrap (Go):
-    BOOTSTRAP_DIR=${TOOLS_DIR}/../sdk/bootstrap
-    ${BOOTSTRAP_DIR}/build.sh
-    if [ $? -ne 0 ]; then
-        _notify_github failure "Bootstrap build failed"
-        exit 1
-    fi
-    INCLUDE_BOOTSTRAP="${BOOTSTRAP_DIR}/bootstrap.zip"
-fi
-
-build_cli
-
-_notify_github success "Build succeeded"
-
-case "$PUBLISH_STEP" in
-    local)
-        echo "Launching HTTP artifact server"
-        PUBLISH_SCRIPT=${TOOLS_DIR}/publish_http.py
-        ;;
-    aws)
-        echo "Uploading to S3"
-        PUBLISH_SCRIPT=${TOOLS_DIR}/publish_aws.py
-        ;;
-    *)
-        echo "---"
-        echo "Build complete, skipping publish step."
-        echo "Use one of the following additional arguments to get something that runs on a cluster:"
-        echo "- 'local': Host the build in a local HTTP server for use by a DC/OS Vagrant cluster."
-        echo "- 'aws': Upload the build to S3."
-        ;;
-esac
-
-if [ -n "$PUBLISH_SCRIPT" ]; then
-    $PUBLISH_SCRIPT \
-        ${FRAMEWORK_NAME} \
-        ${UNIVERSE_DIR} \
-        ${INCLUDE_BOOTSTRAP} \
-        ${CLI_DIR}/dcos-*/dcos-*-linux \
-        ${CLI_DIR}/dcos-*/dcos-*-darwin \
-        ${CLI_DIR}/dcos-*/dcos-*.exe \
-        ${ARTIFACT_FILES}
-fi
+Additionally, if your service does not require a custom CLI with additional custom, you can now switch to a default CLI and forego the need to have golang to build your service.
+Update your universe/resource.json's CLI entries as follows (with correct SDKVERS and PLATFORM):
+        "x86-64": {
+          "contentHash": [ { "algo":"sha256", "value":"{{sha256:dcos-service-cli-PLATFORM@https://downloads.mesosphere.com/dcos-commons/artifacts/SDKVERS/SHA256SUMS}}" } ],
+          "kind": "executable",
+          "url": "https://downloads.mesosphere.com/dcos-commons/artifacts/SDKVERS/dcos-service-cli-PLATFORM"
+        }
+If you do require a custom CLI (rare), then you must now explicitly build it within your build.sh and pass it to build_package.sh using '-a' arguments. See dcos-commons/frameworks/kafka/build.sh for an example.
+EOF
+exit 1

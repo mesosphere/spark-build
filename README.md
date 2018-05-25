@@ -42,76 +42,35 @@ provided as an override as only the default in the manifest is built.
 ```bash
 make prod-dist
 ```
-This will build Spark from source using the slow, but production-grade
-`./dev/make-distribution.sh` script in the spark repo.
-
-```bash
-make dev-dist
-```
-This will build Spark from source using a fast `sbt` compile.  This is the
-most common way to build a Spark package during development.
+This will build Spark from source located in `./spark/` and put the result in `./build/dist/`.
+This is useful when you are testing a custom build of Spark.
 
 
 ### Package
-The above distribution needs to be bundled into a Docker image and paried with
+The above distribution needs to be bundled into a Docker image and paired with
 a CLI in order to complete the package.
-
-```bash
-make cli
-```
-Triggers the build for the binary go CLI
-
-```bash
-make docker-login
-make docker-dist
-```
-This command will build and push the Docker image that will be used by
-the package template. Use `DOCKER_DIST_IMAGE` override to set an alternative
-dockerhub repo. Addtionally, the tag for this container will be the git SHA
-unless overridden with `GIT_COMMIT`. Note: the login is a separate command
-to allow using the current Docker user session without providing parameters
 
 ```bash
 make stub-universe-url
 ```
-This will build a "stub" universe (i.e. singleton repo) containing a
-Spark package and upload it. The aforementioned build targets of docker-dist
-and cli are required by this step and will be built according to defaults if not
-explicitly built before this step is run.
+This will build and upload a "stub" universe (i.e. singleton repo) containing a Spark package.
 
 ## Test
 
 ```bash
-make cluster-url
+make test-jars
 ```
-This command will spin up a cluster unless `CLUSTER_URL` is set in the current
-environment. A cluster is required to satisfy the testing target. The URL of
-this cluster will be left in a file called `cluster-url`.
-
-```bash
-make test-env
-```
-This command will setup a virtual environment that will contain the CLI and
-other requirements for running the pytest integration suite
+This command will build the payload jars used in the integration tests. Running this command separately is optional, only needed when it's desirable to perform all build operations separately from the test run itself.
 
 ```bash
 make test
 ```
-This command will run a complete build and then run the integration test suite.
-This includes:
-```bash
-make manifest-dist
-make docker-dist
-make cli
-make stub-universe-url
-make test-env
-make cluster_info.json
-make test-cluster
-```
-Note: these steps can all be individually triggered to allow specifying
-parameters like dist type and Docker image repo
+This command will run a complete build (if needed) and then run the integration test suite.
 
-Note: the `make docker-dist` step will use Docker build and the current build
-image does not support docker-in-docker so if you are building from within
-the included docker-build image, then the `make docker-dist` step must be done
-outside the container
+It supports the following optional environment variables:
+```bash
+STUB_UNIVERSE_URL=<space-separated URLs to stub universe.json>
+CLUSTER_URL=<URL to existing cluster, otherwise one is created using dcos-launch>
+AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY=<AWS credentials, used if ~/.aws/credentials doesn't exist>
+```
+For more optional settings, take a look at `test.sh`.

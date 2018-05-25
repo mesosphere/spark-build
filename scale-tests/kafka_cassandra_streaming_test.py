@@ -4,13 +4,14 @@
 kafka_cassandra_streaming_test.py
 
 Usage:
-    ./kafka_cassandra_streaming_test.py <dispatcher_file> <infrastructure_file> [options]
+    ./kafka_cassandra_streaming_test.py <dispatcher_file> <infrastructure_file> <submissions_output_file> [options]
 
 Arguments:
     dispatcher_file                     file path to dispatchers list
     infrastructure_file                 file path to infrastructure description
                                         (contains package names, service names
                                         and their configuration)
+    submissions_output_file             file path to output `dispatcher name`,`submission ID` pairs
 
 Options:
     --jar <URL>                         hosted JAR URL
@@ -20,11 +21,14 @@ Options:
     --producer-words-per-second <n>     number of words per second published by producers [default: 1]
     --producer-spark-cores-max <n>      spark.cores.max [default: 2]
     --producer-spark-executor-cores <n> spark.executor.cores [default: 2]
+    --producer-must-fail                the producer is passed an invalid command line argument causing it to fail [default: False]
     --consumer-batch-size-seconds <n>   number seconds accumulating entries for each batch request [default: 10]
+    --consumer-write-to-cassandra       write to Cassandra [default: False]
     --consumer-spark-cores-max <n>      spark.cores.max [default: 1]
     --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
+    --consumer-must-fail                the consumer is passed an invalid command line argument causing it to fail [default: False]
 
-    --conf-spark-port-maxRetries  <n>          max number of retries for Spark to bind to a port [default: 32]
+    --conf-spark-port-maxRetries  <n>   max number of retries for Spark to bind to a port [default: 32]
 
 """
 
@@ -41,11 +45,11 @@ import spark_utils
 log = logging.getLogger(__name__)
 
 
-DEFAULT_JAR = 'https://infinity-artifacts.s3.amazonaws.com/soak/spark/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar'
+DEFAULT_JAR = 'http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar'
 PRODUCER_CLASS_NAME = 'KafkaRandomFeeder'
 CONSUMER_CLASS_NAME = 'KafkaWordCount'
+SPARK_PACKAGE_NAME = 'spark'
 COMMON_CONF = [
-    "--supervise",
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
     "--conf", "spark.mesos.executor.home=/opt/spark/dist",
@@ -101,7 +105,8 @@ def _submit_producer(spark_conf: typing.List[str],
                      number_of_words,
                      words_per_second,
                      spark_cores_max,
-                     spark_executor_cores):
+                     spark_executor_cores,
+                     must_fail: bool):
 
     if number_of_words:
         runtime_in_seconds = float(number_of_words)/float(words_per_second)
@@ -115,18 +120,29 @@ def _submit_producer(spark_conf: typing.List[str],
                 "--numberOfWords",  str(number_of_words),
                 "--wordsPerSecond", str(words_per_second)]
 
+    if must_fail:
+        app_args.extend(["--mustFailDueToInvalidArgument", ])
+
     app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
                   "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
                   "--class", PRODUCER_CLASS_NAME]
 
+    # `number_of_words == 0` means infinite stream, so we'd like to have it
+    # restarted in the case of failures.
+    if number_of_words == 0:
+        app_config.extend(["--supervise"])
+
     args = app_config + spark_conf
 
-    spark_utils.submit_job(app_url=jar,
-                           app_args=" ".join(str(a) for a in app_args),
-                           app_name=app_name,
-                           args=args,
-                           driver_role=driver_role,
-                           verbose=False)
+    submission_id = spark_utils.submit_job(
+        app_url=jar,
+        app_args=" ".join(str(a) for a in app_args),
+        app_name=app_name,
+        args=args,
+        driver_role=driver_role,
+        verbose=False)
+
+    return submission_id
 
 
 def _submit_consumer(spark_conf: typing.List[str],
@@ -136,11 +152,13 @@ def _submit_consumer(spark_conf: typing.List[str],
                      driver_role,
                      kafka_topics,
                      kafka_group_id,
+                     write_to_cassandra,
                      batch_size_seconds,
                      cassandra_keyspace,
                      cassandra_table,
                      spark_cores_max,
-                     spark_executor_cores):
+                     spark_executor_cores,
+                     must_fail: bool):
     app_args = ["--appName",           CONSUMER_CLASS_NAME,
                 "--brokers",           ",".join(kafka_broker_dns),
                 "--topics",            kafka_topics,
@@ -149,23 +167,38 @@ def _submit_consumer(spark_conf: typing.List[str],
                 "--cassandraKeyspace", cassandra_keyspace,
                 "--cassandraTable",    cassandra_table]
 
+    if must_fail:
+        app_args.extend(["--mustFailDueToInvalidArgument"])
+
+    if not write_to_cassandra:
+        app_args.extend(["--shouldNotWriteToCassandra"])
+
     cassandra_hosts = map(lambda x: x.split(':')[0], cassandra_native_client_dns)
     cassandra_port = cassandra_native_client_dns[0].split(':')[1]
 
-    app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
-                  "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
-                  "--conf",  "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
-                  "--conf",  "spark.cassandra.connection.port={}".format(cassandra_port),
-                  "--class", CONSUMER_CLASS_NAME]
+    app_config = ["--supervise",
+                  "--conf",      "spark.cores.max={}".format(spark_cores_max),
+                  "--conf",      "spark.executor.cores={}".format(spark_executor_cores),
+                  "--conf",      "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
+                  "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
+                  "--class",     CONSUMER_CLASS_NAME]
 
     args = app_config + spark_conf
 
-    spark_utils.submit_job(app_url=jar,
-                           app_args=" ".join(str(a) for a in app_args),
-                           app_name=app_name,
-                           args=args,
-                           driver_role=driver_role,
-                           verbose=False)
+    submission_id = spark_utils.submit_job(
+        app_url=jar,
+        app_args=" ".join(str(a) for a in app_args),
+        app_name=app_name,
+        args=args,
+        driver_role=driver_role,
+        verbose=False)
+
+    return submission_id
+
+
+def append_submission(output_file: str, dispatcher_app_name: str, submission_id: str):
+    with open(output_file, "a") as f:
+        f.write("{},{}\n".format(dispatcher_app_name, submission_id))
 
 
 if __name__ == "__main__":
@@ -184,6 +217,7 @@ if __name__ == "__main__":
         cassandra = infrastructure['cassandra'][0]
 
     jar                           = args["--jar"] if args["--jar"] else DEFAULT_JAR
+    submissions_output_file       = args["<submissions_output_file>"]
     kafka_package_name            = kafka['package_name']
     kafka_service_name            = kafka['service']['name']
     kafka_num_brokers             = kafka['brokers']['count']
@@ -196,17 +230,22 @@ if __name__ == "__main__":
     producer_words_per_second     = int(args['--producer-words-per-second'])
     producer_spark_cores_max      = int(args['--producer-spark-cores-max'])
     producer_spark_executor_cores = int(args['--producer-spark-executor-cores'])
+    consumer_write_to_cassandra   = args['--consumer-write-to-cassandra']
     consumer_batch_size_seconds   = int(args['--consumer-batch-size-seconds'])
     consumer_spark_cores_max      = int(args['--consumer-spark-cores-max'])
     consumer_spark_executor_cores = int(args['--consumer-spark-executor-cores'])
+
+    producer_must_fail = args['--producer-must-fail']
+    consumer_must_fail = args['--consumer-must-fail']
 
     log.info("Dispatchers: \n{}".format("\n".join(dispatchers)))
 
     _install_package_cli(kafka_package_name)
     _install_package_cli(cassandra_package_name)
+    _install_package_cli(SPARK_PACKAGE_NAME)
 
     kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, "broker")
-    cassandra_native_client_dns = ['node-1-server.cassandra-00.autoip.dcos.thisdcos.directory:9042']
+    cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
     spark_conf = get_spark_conf(args)
 
@@ -220,7 +259,7 @@ if __name__ == "__main__":
             kafka_topics = producer_name
             producer_cassandra_keyspace = producer_name.replace('-', '_')
 
-            _submit_producer(
+            producer_submission_id = _submit_producer(
                 spark_conf,
                 kafka_broker_dns,
                 dispatcher_app_name,
@@ -229,14 +268,20 @@ if __name__ == "__main__":
                 producer_number_of_words,
                 producer_words_per_second,
                 producer_spark_cores_max,
-                producer_spark_executor_cores)
+                producer_spark_executor_cores,
+                producer_must_fail)
+
+            append_submission(
+                submissions_output_file,
+                dispatcher_app_name,
+                producer_submission_id)
 
             for consumer_idx in range(0, num_consumers_per_producer):
                 consumer_name = '{}-{}'.format(producer_name, consumer_idx)
                 consumer_kafka_group_id = consumer_name
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
-                _submit_consumer(
+                consumer_submission_id = _submit_consumer(
                     spark_conf,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
@@ -244,8 +289,15 @@ if __name__ == "__main__":
                     driver_role,
                     kafka_topics,
                     consumer_kafka_group_id,
+                    consumer_write_to_cassandra,
                     consumer_batch_size_seconds,
                     producer_cassandra_keyspace,
                     consumer_cassandra_table,
                     consumer_spark_cores_max,
-                    consumer_spark_executor_cores)
+                    consumer_spark_executor_cores,
+                    consumer_must_fail)
+
+                append_submission(
+                    submissions_output_file,
+                    dispatcher_app_name,
+                    consumer_submission_id)

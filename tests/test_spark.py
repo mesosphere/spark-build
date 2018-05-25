@@ -4,17 +4,18 @@
 #   COMMONS_DIR
 #   S3_BUCKET
 #   S3_PREFIX
-#   TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
-#   SCALA_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
+#   MESOS_SPARK_TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
+#   DCOS_SPARK_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
 import logging
 import os
 import pytest
-import json
 import shakedown
 
-import sdk_utils
 import sdk_cmd
+import sdk_security
+import sdk_tasks
+import sdk_utils
 
 import spark_s3 as s3
 import spark_utils as utils
@@ -24,8 +25,6 @@ LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
-SECRET_NAME = "secret"
-SECRET_CONTENTS = "mgummelt"
 
 
 @pytest.fixture(scope='module')
@@ -36,9 +35,9 @@ def configure_security():
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(configure_security, configure_universe):
     try:
+        utils.upload_dcos_test_jar()
         utils.require_spark()
-        utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
-        shakedown.run_dcos_command('package install --cli dcos-enterprise-cli --yes')
+        sdk_cmd.run_cli('package install --cli dcos-enterprise-cli --yes')
         yield
     finally:
         utils.teardown_spark()
@@ -48,63 +47,62 @@ def setup_spark(configure_security, configure_universe):
 def test_task_not_lost():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="1500",   # Long enough to examine the Executor's task info
-                                      args=["--conf", "spark.cores.max=1",
-                                            "--class", "org.apache.spark.examples.SparkPi"])
+                                      args=["--conf spark.cores.max=1",
+                                            "--class org.apache.spark.examples.SparkPi"])
 
     # Wait until executor is running
-    utils.wait_for_executors_running(SPARK_PI_FW_NAME, 1)
+    sdk_tasks.check_running(SPARK_PI_FW_NAME, 1, timeout_seconds=600)
 
     # Check Executor task ID - should be 0, the first task.
     # If it's > 0, that means the first task was lost.
-    executor_task = shakedown.get_service_tasks(SPARK_PI_FW_NAME)[0]
-    assert executor_task['id'] == "0"
+    assert '0' == sdk_tasks.get_task_ids(SPARK_PI_FW_NAME, '')[0]
 
     # Check job output
     utils.check_job_output(driver_task_id, "Pi is roughly 3")
 
 
-@pytest.mark.xfail(utils.is_strict(), reason="Currently fails in strict mode")
+@pytest.mark.xfail(sdk_utils.is_strict_mode(), reason="Currently fails in strict mode")
 @pytest.mark.sanity
 @pytest.mark.smoke
-def test_jar(app_name=utils.SPARK_APP_NAME):
-    master_url = ("https" if utils.is_strict() else "http") + "://leader.mesos:5050"
+def test_jar(service_name=utils.SPARK_SERVICE_NAME):
+    master_url = ("https" if sdk_utils.is_strict_mode() else "http") + "://leader.mesos:5050"
     spark_job_runner_args = '{} dcos \\"*\\" spark:only 2 --auth-token={}'.format(
         master_url,
         shakedown.dcos_acs_token())
-    jar_url = utils.upload_file(os.getenv('TEST_JAR_PATH'))
-    utils.run_tests(app_url=jar_url,
+    utils.run_tests(app_url=utils.upload_mesos_test_jar(),
                     app_args=spark_job_runner_args,
                     expected_output="All tests passed",
-                    app_name=app_name,
-                    args=["--class", 'com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
+                    service_name=service_name,
+                    args=['--class com.typesafe.spark.test.mesos.framework.runners.SparkJobRunner'])
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_rpc_auth():
     secret_name = "sparkauth"
 
-    rc, stdout, stderr = sdk_cmd.run_raw_cli("{pkg} secret /{secret}".format(
-        pkg=utils.SPARK_PACKAGE_NAME, secret=secret_name))
-    assert rc == 0, "Failed to generate Spark auth secret, stderr {err} stdout {out}".format(err=stderr, out=stdout)
+    sdk_security.delete_secret(secret_name)
+    rc, _, _ = sdk_cmd.run_raw_cli("{} --verbose secret /{}".format(utils.SPARK_PACKAGE_NAME, secret_name))
+    assert rc == 0, "Failed to generate Spark auth secret"
 
-    args = ["--executor-auth-secret", secret_name,
-            "--class", "org.apache.spark.examples.SparkPi"]
-
-    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
-                    app_args="100",
-                    expected_output="Pi is roughly 3",
-                    app_name="/spark",
-                    args=args)
+    utils.run_tests(
+        app_url=utils.SPARK_EXAMPLES,
+        app_args="100",
+        expected_output="Pi is roughly 3",
+        service_name=utils.SPARK_SERVICE_NAME,
+        args=["--executor-auth-secret {}".format(secret_name),
+              "--class org.apache.spark.examples.SparkPi"])
 
 
 @pytest.mark.sanity
-def test_sparkPi(app_name=utils.SPARK_APP_NAME):
-    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
-                    app_args="100",
-                    expected_output="Pi is roughly 3",
-                    app_name=app_name,
-                    args=["--class org.apache.spark.examples.SparkPi"])
+def test_sparkPi(service_name=utils.SPARK_SERVICE_NAME):
+    utils.run_tests(
+        app_url=utils.SPARK_EXAMPLES,
+        app_args="100",
+        expected_output="Pi is roughly 3",
+        service_name=service_name,
+        args=["--class org.apache.spark.examples.SparkPi"])
 
 
 @pytest.mark.sanity
@@ -117,7 +115,7 @@ def test_python():
     utils.run_tests(app_url=python_script_url,
                     app_args="30",
                     expected_output="Pi is roughly 3",
-                    args=["--py-files", py_file_url])
+                    args=["--py-files {}".format(py_file_url)])
 
 
 @pytest.mark.sanity
@@ -135,23 +133,22 @@ def test_cni():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="",
                     expected_output="Pi is roughly 3",
-                    args=["--conf", "spark.mesos.network.name=dcos",
-                          "--class", "org.apache.spark.examples.SparkPi"])
+                    args=["--conf spark.mesos.network.name=dcos",
+                          "--class org.apache.spark.examples.SparkPi"])
 
 
-#@pytest.mark.skip("Enable when SPARK-21694 is merged and released in DC/OS Spark")
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                       app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
-                                      args=["--conf", "spark.mesos.network.name=dcos",
-                                            "--conf", "spark.mesos.network.labels=key1:val1,key2:val2",
-                                            "--conf", "spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
-                                            "--class", "org.apache.spark.examples.SparkPi"])
+                                      args=["--conf spark.mesos.network.name=dcos",
+                                            "--conf spark.mesos.network.labels=key1:val1,key2:val2",
+                                            "--conf spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
+                                            "--class org.apache.spark.examples.SparkPi"])
 
     # Wait until executors are running
-    utils.wait_for_executors_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS)
+    sdk_tasks.check_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS, timeout_seconds=600)
 
     # Check for network name / labels in Driver task info
     driver_task = shakedown.get_task(driver_task_id, completed=False)
@@ -182,82 +179,91 @@ def _check_task_network_info(task):
     assert labels[1]['value'] == "val2"
 
 
+# Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
+@pytest.mark.skipif(s3.get_credentials().token is not None, reason="Session credentials won't work")
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
-def test_s3():
-    def make_credential_secret(envvar, secret_path):
-        rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create {p} -v {e}"
-                                                 .format(p=secret_path, e=os.environ[envvar]))
-        assert rc == 0, "Failed to create secret {secret} from envvar {envvar}, stderr: {err}, stdout: {out}".format(
-            secret=secret_path, envvar=envvar, err=stderr, out=stdout)
+def test_s3_secrets():
+    linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
+    s3.upload_file(linecount_path)
 
-    LOGGER.info("Creating AWS secrets")
+    creds = s3.get_credentials()
 
-    aws_access_key_secret_path = "aws_access_key_id"
-    aws_secret_access_key_path = "aws_secret_access_key"
+    def make_credential_secret(path, val):
+        sdk_security.delete_secret(path)
+        rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create /{} -v {}".format(path, val))
+        assert rc == 0, "Failed to create secret {}, stderr: {}, stdout: {}".format(path, stderr, stdout)
+    aws_access_key_path = "aws_access_key_id"
+    make_credential_secret(aws_access_key_path, creds.access_key)
+    aws_secret_key_path = "aws_secret_access_key"
+    make_credential_secret(aws_secret_key_path, creds.secret_key)
 
-    make_credential_secret(envvar="AWS_ACCESS_KEY_ID", secret_path="/{}".format(aws_access_key_secret_path))
-    make_credential_secret(envvar="AWS_SECRET_ACCESS_KEY", secret_path="/{}".format(aws_secret_access_key_path))
+    args = ["--conf spark.mesos.containerizer=mesos",
+            "--conf spark.mesos.driver.secret.names=/{key},/{secret}".format(
+                key=aws_access_key_path, secret=aws_secret_key_path),
+            "--conf spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
+            "--class S3Job"]
+
+    try:
+        # download/read linecount.txt only
+        utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                        app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
+                        expected_output="Read 3 lines",
+                        args=args)
+        # download/read linecount.txt, reupload as linecount-secret.txt:
+        utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                        app_args="--readUrl {} --writeUrl {}".format(
+                            s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-secret.txt')),
+                        expected_output="Read 3 lines",
+                        args=args)
+        assert len(list(s3.list("linecount-secret.txt"))) > 0
+    finally:
+        sdk_security.delete_secret(aws_access_key_path)
+        sdk_security.delete_secret(aws_secret_key_path)
+
+
+# Your session credentials are tied to your IP. They work locally, but will not work from the spark job.
+@pytest.mark.skipif(s3.get_credentials().token is not None, reason="Session credentials won't work")
+@pytest.mark.sanity
+@pytest.mark.smoke
+def test_s3_env():
+    creds = s3.get_credentials()
+    args = ["--conf spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(creds.access_key),
+            "--conf spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(creds.secret_key)]
+    args.append("--class S3Job")
 
     linecount_path = os.path.join(THIS_DIR, 'resources', 'linecount.txt')
     s3.upload_file(linecount_path)
 
-    app_args = "--readUrl {} --writeUrl {}".format(
-        s3.s3n_url('linecount.txt'),
-        s3.s3n_url("linecount-out"))
-
-    args = ["--conf", "spark.mesos.containerizer=mesos",
-            "--conf",
-            "spark.mesos.driver.secret.names=/{key},/{secret}".format(
-                key=aws_access_key_secret_path, secret=aws_secret_access_key_path),
-            "--conf",
-            "spark.mesos.driver.secret.envkeys=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY",
-            "--class", "S3Job"]
-    utils.run_tests(app_url=utils.scala_test_jar_url(),
-                    app_args=app_args,
+    # download/read linecount.txt only
+    utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                    app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
-    assert len(list(s3.list("linecount-out"))) > 0
-
-    app_args = "--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt'))
-
-    args = ["--conf",
-            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
-                os.environ["AWS_ACCESS_KEY_ID"]),
-            "--conf",
-            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
-                os.environ["AWS_SECRET_ACCESS_KEY"]),
-            "--class", "S3Job"]
-    utils.run_tests(app_url=utils.scala_test_jar_url(),
-                    app_args=app_args,
+    # download/read linecount.txt, reupload as linecount-env.txt
+    utils.run_tests(app_url=utils.dcos_test_jar_url(),
+                    app_args="--readUrl {} --writeUrl {}".format(
+                        s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-env.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
-    app_args = "--countOnly --readUrl {}".format(s3.s3n_url('linecount.txt'))
-
-    args = ["--conf",
-            "spark.mesos.driverEnv.AWS_ACCESS_KEY_ID={}".format(
-                os.environ["AWS_ACCESS_KEY_ID"]),
-            "--conf",
-            "spark.mesos.driverEnv.AWS_SECRET_ACCESS_KEY={}".format(
-                os.environ["AWS_SECRET_ACCESS_KEY"]),
-            "--class", "S3Job"]
-    utils.run_tests(app_url=utils.scala_test_jar_url(),
-                    app_args=app_args,
-                    expected_output="Read 3 lines",
-                    args=args)
+    assert len(list(s3.list("linecount-env.txt"))) > 0
 
 
-# Skip DC/OS < 1.10, because it doesn't have adminrouter support for service groups.
-@pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
+@pytest.mark.dcos_min_version('1.10')
 @pytest.mark.sanity
 @pytest.mark.smoke
-def test_marathon_group():
-    app_id = utils.FOLDERED_SPARK_APP_NAME
-    utils.require_spark(service_name=app_id, marathon_group=app_id)
-    test_sparkPi(app_name=app_id)
-    LOGGER.info("Uninstalling app_id={}".format(app_id))
+def test_foldered_spark():
+    service_name = utils.FOLDERED_SPARK_SERVICE_NAME
+    zk = 'spark_mesos_dispatcher__path_to_spark'
+    utils.teardown_spark(service_name=service_name, zk=zk)
+    utils.require_spark(service_name=service_name, zk=zk)
+    test_sparkPi(service_name=service_name)
+    utils.teardown_spark(service_name=service_name, zk=zk)
+    # reinstall CLI so that it's available for the following tests:
+    sdk_cmd.run_cli('package install --cli {} --yes'.format(utils.SPARK_PACKAGE_NAME))
 
 
 @pytest.mark.sanity
@@ -265,12 +271,12 @@ def test_cli_multiple_spaces():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="30",
                     expected_output="Pi is roughly 3",
-                    args=["--conf ", "spark.cores.max=2",
-                          " --class  ", "org.apache.spark.examples.SparkPi"])
+                    args=["--conf spark.cores.max=2",
+                          "--class org.apache.spark.examples.SparkPi"])
 
 
 # Skip DC/OS < 1.10, because it doesn't have support for file-based secrets.
-@pytest.mark.skipif('shakedown.dcos_version_less_than("1.10")')
+@pytest.mark.dcos_min_version('1.10')
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
@@ -293,9 +299,9 @@ def test_driver_executor_tls():
     truststore_secret = '__dcos_base64__truststore'
     my_secret = 'mysecret'
     my_secret_content = 'secretcontent'
-    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(keystore_secret, keystore_path))
-    shakedown.run_dcos_command('security secrets create /{} --value-file {}'.format(truststore_secret, truststore_path))
-    shakedown.run_dcos_command('security secrets create /{} --value {}'.format(my_secret, my_secret_content))
+    sdk_cmd.run_cli('security secrets create /{} --value-file {}'.format(keystore_secret, keystore_path))
+    sdk_cmd.run_cli('security secrets create /{} --value-file {}'.format(truststore_secret, truststore_path))
+    sdk_cmd.run_cli('security secrets create /{} --value {}'.format(my_secret, my_secret_content))
     password = 'changeit'
     try:
         utils.run_tests(app_url=python_script_url,
@@ -311,10 +317,6 @@ def test_driver_executor_tls():
                               "--conf", "spark.mesos.driver.secret.envkeys={}".format(my_secret),
                               ])
     finally:
-        shakedown.run_dcos_command('security secrets delete /{}'.format(keystore_secret))
-        shakedown.run_dcos_command('security secrets delete /{}'.format(truststore_secret))
-        shakedown.run_dcos_command('security secrets delete /{}'.format(my_secret))
-
-
-def _scala_test_jar_url():
-    return s3.http_url(os.path.basename(os.environ["SCALA_TEST_JAR_PATH"]))
+        sdk_cmd.run_cli('security secrets delete /{}'.format(keystore_secret))
+        sdk_cmd.run_cli('security secrets delete /{}'.format(truststore_secret))
+        sdk_cmd.run_cli('security secrets delete /{}'.format(my_secret))
