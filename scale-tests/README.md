@@ -44,7 +44,11 @@ This will upload the "tests assembly" JAR to S3 and output its public object URL
 
 Cluster requirements:
 - Enough resources to run the workload given the parameters.
-- Package repository containing a version of Spark with quotas.
+- Package repository containing a version of Spark with quotas. Here are instructions for a permanent one:
+```bash
+dcos cluster setup ...
+dcos package repo add --index=0 spark-quotas https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/scale-testing/stub-universe-spark.json
+```
 
 ### Getting a shell session that's able to run the scripts
 
