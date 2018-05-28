@@ -15,7 +15,7 @@ Arguments:
 
 Options:
     --jar <URL>                         hosted JAR URL
-    --num-producers-per-dispatcher <n>  number of producers per dispatcher to create [default: 1]
+    --num-producers-per-kafka <n>       number of producers per Kafka cluster to create [default: 1]
     --num-consumers-per-producer <n>    number of consumers for producer to create [default: 1]
     --producer-number-of-words <n>      number of total words published by producers [default: 1]
     --producer-words-per-second <n>     number of words per second published by producers [default: 1]
@@ -30,15 +30,19 @@ Options:
 """
 
 
-import logging
+import itertools
 import json
+import logging
+import math
 
 from docopt import docopt
 
 import sdk_cmd
+import sdk_utils
 import spark_utils
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 DEFAULT_JAR = 'http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar'
@@ -73,8 +77,8 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
 
 
 def _submit_producer(kafka_broker_dns,
-                     app_name,
-                     driver_role,
+                     service_name,
+                     executor_role,
                      kafka_topics,
                      number_of_words,
                      words_per_second,
@@ -104,9 +108,9 @@ def _submit_producer(kafka_broker_dns,
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
-        app_name=app_name,
+        service_name=service_name,
         args=args,
-        driver_role=driver_role,
+        driver_role=executor_role,
         verbose=False)
 
     return submission_id
@@ -114,8 +118,8 @@ def _submit_producer(kafka_broker_dns,
 
 def _submit_consumer(kafka_broker_dns,
                      cassandra_native_client_dns,
-                     app_name,
-                     driver_role,
+                     service_name,
+                     executor_role,
                      kafka_topics,
                      kafka_group_id,
                      write_to_cassandra,
@@ -154,17 +158,40 @@ def _submit_consumer(kafka_broker_dns,
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
-        app_name=app_name,
+        service_name=service_name,
         args=args,
-        driver_role=driver_role,
+        driver_role=executor_role,
         verbose=False)
 
     return submission_id
 
 
-def append_submission(output_file: str, dispatcher_app_name: str, submission_id: str):
+def append_submission(output_file: str, dispatcher_service_name: str, submission_id: str):
     with open(output_file, "a") as f:
-        f.write("{},{}\n".format(dispatcher_app_name, submission_id))
+        f.write("{},{}\n".format(dispatcher_service_name, submission_id))
+
+
+def normalize_string(s: str) -> str:
+    return s.replace("/", "__").replace('-', '_')
+
+
+def make_repeater(n):
+    """
+    Returns a lambda that returns a list (an iterable really) of `n` `x`s.
+
+    >>> repeat_3 = make_repeater(3)
+    >>> list(repeat_3('foo'))
+    ['foo', 'foo', 'foo']
+    >>> list(make_repeater(2)('bar'))
+    ['bar', 'bar']
+    """
+    return lambda x: itertools.repeat(x, n)
+
+
+def get_dispatcher(dispatchers_slots):
+    dispatcher = next(dispatchers_slots)
+    dispatcher_service_name, driver_role, executor_role = dispatcher.split(',')
+    return dispatcher_service_name, driver_role, executor_role
 
 
 if __name__ == "__main__":
@@ -175,58 +202,70 @@ if __name__ == "__main__":
 
     with open(args["<infrastructure_file>"]) as f:
         infrastructure = json.loads(f.read())
-        # We might make this script handle multiple Zookeeper/Kafka/Cassandra
-        # clusters in the future. For now it only handles a single cluster of
-        # each service.
-        zookeeper = infrastructure['zookeeper'][0]
-        kafka = infrastructure['kafka'][0]
+        zookeepers = infrastructure['zookeeper']
+        kafkas = infrastructure['kafka']
         cassandra = infrastructure['cassandra'][0]
 
     jar                           = args["--jar"] if args["--jar"] else DEFAULT_JAR
     submissions_output_file       = args["<submissions_output_file>"]
-    kafka_package_name            = kafka['package_name']
-    kafka_service_name            = kafka['service']['name']
-    kafka_num_brokers             = kafka['brokers']['count']
+    kafka_package_name            = kafkas[0]['package_name']
     cassandra_package_name        = cassandra['package_name']
     cassandra_service_name        = cassandra['service']['name']
     cassandra_num_nodes           = cassandra['nodes']['count']
-    num_producers_per_dispatcher  = int(args['--num-producers-per-dispatcher'])
+    num_producers_per_kafka       = int(args['--num-producers-per-kafka'])
     num_consumers_per_producer    = int(args['--num-consumers-per-producer'])
+    producer_must_fail            = args['--producer-must-fail']
     producer_number_of_words      = int(args['--producer-number-of-words'])
     producer_words_per_second     = int(args['--producer-words-per-second'])
     producer_spark_cores_max      = int(args['--producer-spark-cores-max'])
     producer_spark_executor_cores = int(args['--producer-spark-executor-cores'])
+    consumer_must_fail            = args['--consumer-must-fail']
     consumer_write_to_cassandra   = args['--consumer-write-to-cassandra']
     consumer_batch_size_seconds   = int(args['--consumer-batch-size-seconds'])
     consumer_spark_cores_max      = int(args['--consumer-spark-cores-max'])
     consumer_spark_executor_cores = int(args['--consumer-spark-executor-cores'])
 
-    producer_must_fail = args['--producer-must-fail']
-    consumer_must_fail = args['--consumer-must-fail']
+    num_kafkas = len(kafkas)
+    num_dispatchers = len(dispatchers)
+    num_producers = num_kafkas * num_producers_per_kafka
+    num_consumers = num_producers * num_consumers_per_producer
+    num_jobs = num_producers + num_consumers
+    avg_num_jobs_per_dispatcher = num_jobs / num_dispatchers
+    max_num_jobs_per_dispatcher = math.ceil(avg_num_jobs_per_dispatcher)
 
-    log.info("Dispatchers: \n{}".format("\n".join(dispatchers)))
+    log.info('Number of Kafka clusters: {}'.format(num_kafkas))
+    log.info('Number of dispatchers: {}'.format(num_dispatchers))
+    log.info('Total number of jobs: {} ({} producers, {} consumers)'.format(
+        num_jobs, num_producers, num_consumers))
+    log.info('Average number jobs per dispatcher: {}'.format(avg_num_jobs_per_dispatcher))
+    log.info('Will run at most {} jobs per dispatcher'.format(max_num_jobs_per_dispatcher))
+    log.info("\nDispatchers: \n{}\n".format("\n".join(dispatchers)))
+
+    dispatchers_slots = sdk_utils.mapcat(make_repeater(max_num_jobs_per_dispatcher),
+                                         dispatchers)
 
     _install_package_cli(kafka_package_name)
     _install_package_cli(cassandra_package_name)
     _install_package_cli(SPARK_PACKAGE_NAME)
 
-    kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, "broker")
     cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
-    for dispatcher in dispatchers:
-        dispatcher_app_name, _, driver_role = dispatcher.split(",")
+    for kafka in kafkas:
+        kafka_num_brokers = kafka['brokers']['count']
+        kafka_service_name = kafka['service']['name']
+        kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
-        for producer_idx in range(0, num_producers_per_dispatcher):
-            producer_name = '{}-{}'.format(dispatcher_app_name.replace("/", "__"),
-                                           producer_idx)
-            # TODO: make sure Kafka topic exists?
+        for producer_idx in range(0, num_producers_per_kafka):
+            dispatcher_service_name, _, executor_role = get_dispatcher(dispatchers_slots)
+
+            producer_name = '{}-{}'.format(normalize_string(kafka_service_name), producer_idx)
             kafka_topics = producer_name
-            producer_cassandra_keyspace = producer_name.replace('-', '_')
+            producer_cassandra_keyspace = normalize_string(producer_name)
 
             producer_submission_id = _submit_producer(
                 kafka_broker_dns,
-                dispatcher_app_name,
-                driver_role,
+                dispatcher_service_name,
+                executor_role,
                 kafka_topics,
                 producer_number_of_words,
                 producer_words_per_second,
@@ -236,10 +275,12 @@ if __name__ == "__main__":
 
             append_submission(
                 submissions_output_file,
-                dispatcher_app_name,
+                dispatcher_service_name,
                 producer_submission_id)
 
             for consumer_idx in range(0, num_consumers_per_producer):
+                dispatcher_service_name, _, executor_role = get_dispatcher(dispatchers_slots)
+
                 consumer_name = '{}-{}'.format(producer_name, consumer_idx)
                 consumer_kafka_group_id = consumer_name
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
@@ -247,8 +288,8 @@ if __name__ == "__main__":
                 consumer_submission_id = _submit_consumer(
                     kafka_broker_dns,
                     cassandra_native_client_dns,
-                    dispatcher_app_name,
-                    driver_role,
+                    dispatcher_service_name,
+                    executor_role,
                     kafka_topics,
                     consumer_kafka_group_id,
                     consumer_write_to_cassandra,
@@ -261,5 +302,5 @@ if __name__ == "__main__":
 
                 append_submission(
                     submissions_output_file,
-                    dispatcher_app_name,
+                    dispatcher_service_name,
                     consumer_submission_id)

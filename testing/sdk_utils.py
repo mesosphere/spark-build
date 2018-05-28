@@ -5,6 +5,7 @@ SHOULD ALSO BE APPLIED TO sdk_utils IN ANY OTHER PARTNER REPOS
 ************************************************************************
 '''
 import functools
+import itertools
 import logging
 import operator
 import random
@@ -169,3 +170,28 @@ def sort(coll):
 def invert_dict(d: dict) -> dict:
     """ Returns a dictionary with its values being its keys and vice-versa. """
     return dict((v, k) for k, v in d.items())
+
+
+# https://github.com/pytoolz/toolz/blob/c3a62944ea9502396f24ac68d3c70d954a368c9e/toolz/itertoolz.py#L468
+def concat(seqs):
+    """ Concatenate zero or more iterables, any of which may be infinite.
+    An infinite sequence will prevent the rest of the arguments from
+    being included.
+    We use chain.from_iterable rather than ``chain(*seqs)`` so that seqs
+    can be a generator.
+    >>> list(concat([[], [1], [2, 3]]))
+    [1, 2, 3]
+    See also:
+        itertools.chain.from_iterable  equivalent
+    """
+    return itertools.chain.from_iterable(seqs)
+
+
+# https://github.com/pytoolz/toolz/blob/c3a62944ea9502396f24ac68d3c70d954a368c9e/toolz/itertoolz.py#L498
+def mapcat(func, seqs):
+    """ Apply func to each sequence in seqs, concatenating results.
+    >>> list(mapcat(lambda s: [c.upper() for c in s],
+    ...             [["a", "b"], ["c", "d", "e"]]))
+    ['A', 'B', 'C', 'D', 'E']
+    """
+    return concat(map(func, seqs))
