@@ -186,10 +186,8 @@ if __name__ == "__main__":
     submissions_output_file       = args["<submissions_output_file>"]
     kafka_package_name            = kafka['package_name']
     kafka_service_name            = kafka['service']['name']
-    kafka_num_brokers             = kafka['brokers']['count']
     cassandra_package_name        = cassandra['package_name']
     cassandra_service_name        = cassandra['service']['name']
-    cassandra_num_nodes           = cassandra['nodes']['count']
     num_producers_per_dispatcher  = int(args['--num-producers-per-dispatcher'])
     num_consumers_per_producer    = int(args['--num-consumers-per-producer'])
     producer_number_of_words      = int(args['--producer-number-of-words'])

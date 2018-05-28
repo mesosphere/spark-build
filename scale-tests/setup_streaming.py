@@ -54,21 +54,21 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def install_package(package_name: str, index: int, service_task_count: int, config_path: str,
+def install_package(package_name: str, index: int, service_task_count: int, config_file_path: str,
                     additional_options: dict=None) -> dict:
     service_name = "{}-{:0>2}".format(package_name, index)
 
     log.info("Installing %s index %s as %s", package_name, index, service_name)
 
     service_options = {}
-    if config_path:
-        if os.path.isfile(config_path):
-            with open(config_path, 'r') as fp:
-                log.info("Reading options from %s", config_path)
+    if config_file_path:
+        if os.path.isfile(config_file_path):
+            with open(config_file_path, 'r') as fp:
+                log.info("Reading options from %s", config_file_path)
                 service_options = json.load(fp)
         else:
-            log.error("Specified options file does not exits: %s", config_path)
-            # TODO: Should this terminate?
+            log.error("Specified options file does not exits: %s", config_file_path)
+            sys.exit(1)
     else:
         log.info("No options specified. Using defaults")
 
@@ -86,7 +86,9 @@ def install_package(package_name: str, index: int, service_task_count: int, conf
         expected_task_count,
         additional_options=service_options)
 
-    return {"package_name": package_name, **service_options}
+    installed_service_options = sdk_cmd.svc_cli(package_name, service_name, "describe", json=True)
+
+    return {"package_name": package_name, **installed_service_options}
 
 
 def _get_cluster_count(args: dict, service: str) -> int:
@@ -120,12 +122,12 @@ def install_zookeeper(args: dict) -> list:
         return []
 
     kafka_zookeeper_package_name = args["--kafka-zookeeper-package-name"]
-    kafka_zookeeper_config = args.get("--kafka-zookeeper-config", "")
+    kafka_zookeeper_config_file = args.get("--kafka-zookeeper-config", "")
 
     services = []
     for i in range(kafka_cluster_count):
         services.append(install_package(kafka_zookeeper_package_name, i, get_expected_task_count,
-                                        kafka_zookeeper_config))
+                                        kafka_zookeeper_config_file))
 
     return services
 
@@ -143,7 +145,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
         return []
 
     kafka_package_name = args["--kafka-package-name"]
-    kafka_config = args.get("--kafka-config", "")
+    kafka_config_file = args.get("--kafka-config", "")
 
     services = []
     for i in range(kafka_cluster_count):
@@ -159,7 +161,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
             }
         }
 
-        services.append(install_package(kafka_package_name, i, get_expected_task_count, kafka_config,
+        services.append(install_package(kafka_package_name, i, get_expected_task_count, kafka_config_file,
                                         additional_options=service_options))
 
     return services
@@ -178,11 +180,11 @@ def install_cassandra(args: dict) -> list:
         return []
 
     cassandra_package_name = args["--cassandra-package-name"]
-    cassandra_config = args.get("--cassandra-config", "")
+    cassandra_config_file = args.get("--cassandra-config", "")
 
     services = []
     for i in range(cassandra_cluster_count):
-        services.append(install_package(cassandra_package_name, i, get_expected_task_count, cassandra_config))
+        services.append(install_package(cassandra_package_name, i, get_expected_task_count, cassandra_config_file))
 
     return services
 
