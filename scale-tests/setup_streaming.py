@@ -55,6 +55,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
+SUPPORTED_MULTIPLE_CLUSTER_SERVICES = ['kafka', 'confluent-kafka', 'beta-kafka']
+
+
 def install_package(package_name: str, service_prefix: str, index: int, service_task_count: int, config_path: str,
                     additional_options: dict=None) -> dict:
     service_name = "{}-{}-{:0>2}".format(service_prefix, package_name, index)
@@ -90,10 +93,14 @@ def install_package(package_name: str, service_prefix: str, index: int, service_
     return {"package_name": package_name, **service_options}
 
 
+def _supports_multiple_clusters(service_name: str) -> bool:
+    return service_name in SUPPORTED_MULTIPLE_CLUSTER_SERVICES
+
+
 def _get_cluster_count(args: dict, service: str) -> int:
     cluster_count = int(args["--{}-cluster-count".format(service)])
 
-    if cluster_count > 1:
+    if cluster_count > 1 and not _supports_multiple_clusters(service):
         log.error("This script currently only supports a single %s cluster", service)
         cluster_count = 1
 
