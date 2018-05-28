@@ -43,6 +43,7 @@ from docopt import docopt
 import ast
 import contextlib
 import json
+import os
 import sdk_install
 import shakedown
 import sys
@@ -135,10 +136,8 @@ def deploy_dispatchers(
             outfile.write("{},{},{}\n".format(service_name, drivers_role, executors_role))
 
 
-if __name__ == "__main__":
-    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
-
-    options={
+def get_default_options(arguments: dict) -> dict:
+    options = {
         "service": {
             "cpus": int(arguments["--cpus"]),
             "mem": float(arguments["--mem"]),
@@ -165,10 +164,23 @@ if __name__ == "__main__":
             "config-url": arguments["--hdfs-config"] or ""
         }
     }
+    return options
+
+
+if __name__ == "__main__":
+    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
 
     options_file = arguments['--options-json']
     if options_file:
-        options = json.load(open(options_file, 'r'))
+        if not os.path.isfile(options_file):
+            # TODO: Replace with logging
+            print("The specified file does not exist: %s", options_file)
+            sys.exit(1)
+
+        with open(options_file, 'r') as f:
+            options = json.load(f)
+    else:
+        options = get_default_options(arguments)
 
     deploy_dispatchers(
         num_dispatchers=int(arguments['<num_dispatchers>']),
