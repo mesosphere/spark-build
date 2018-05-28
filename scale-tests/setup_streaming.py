@@ -123,7 +123,7 @@ def install_zookeeper(args: dict) -> list:
         return []
 
     kafka_zookeeper_package_name = args["--kafka-zookeeper-package-name"]
-    kafka_zookeeper_service_prefix = args.get("--kafka-zookeeper-service-prefix", kafka_zookeeper_package_name)
+    kafka_zookeeper_service_prefix = args["--kafka-zookeeper-service-prefix"] or kafka_zookeeper_package_name
     kafka_zookeeper_config = args.get("--kafka-zookeeper-config", "")
 
     services = []
@@ -148,7 +148,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
         return []
 
     kafka_package_name = args["--kafka-package-name"]
-    kafka_service_prefix = args.get("--kafka-service-prefix", kafka_package_name)
+    kafka_service_prefix = args["--kafka-service-prefix"] or kafka_package_name
     kafka_config = args.get("--kafka-config", "")
 
     services = []
@@ -185,7 +185,7 @@ def install_cassandra(args: dict) -> list:
         return []
 
     cassandra_package_name = args["--cassandra-package-name"]
-    cassandra_service_prefix = args.get("--cassandra-service-prefix", cassandra_package_name)
+    cassandra_service_prefix = args["--cassandra-service-prefix"] or cassandra_package_name
     cassandra_config = args.get("--cassandra-config", "")
 
     services = []
