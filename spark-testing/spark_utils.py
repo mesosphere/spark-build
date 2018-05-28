@@ -17,24 +17,11 @@ DCOS_SPARK_TEST_JAR_PATH_ENV = "DCOS_SPARK_TEST_JAR_PATH"
 DCOS_SPARK_TEST_JAR_PATH = os.getenv(DCOS_SPARK_TEST_JAR_PATH_ENV, None)
 DCOS_SPARK_TEST_JAR_URL_ENV = "DCOS_SPARK_TEST_JAR_URL"
 DCOS_SPARK_TEST_JAR_URL = os.getenv(DCOS_SPARK_TEST_JAR_URL_ENV, None)
-if not DCOS_SPARK_TEST_JAR_URL and not os.path.exists(DCOS_SPARK_TEST_JAR_PATH):
-    raise Exception('''Missing URL or path to file dcos-spark-scala-tests-assembly-[...].jar:
-- No URL: {}={}
-- File not found: {}={}'''.format(
-    DCOS_SPARK_TEST_JAR_URL_ENV, DCOS_SPARK_TEST_JAR_URL,
-    DCOS_SPARK_TEST_JAR_PATH_ENV, DCOS_SPARK_TEST_JAR_PATH))
 
 MESOS_SPARK_TEST_JAR_PATH_ENV = "MESOS_SPARK_TEST_JAR_PATH"
 MESOS_SPARK_TEST_JAR_PATH = os.getenv(MESOS_SPARK_TEST_JAR_PATH_ENV, None)
 MESOS_SPARK_TEST_JAR_URL_ENV = "MESOS_SPARK_TEST_JAR_URL"
 MESOS_SPARK_TEST_JAR_URL = os.getenv(MESOS_SPARK_TEST_JAR_URL_ENV, None)
-if not MESOS_SPARK_TEST_JAR_URL and not os.path.exists(MESOS_SPARK_TEST_JAR_PATH):
-    raise Exception('''Missing URL or path to file mesos-spark-integration-tests-assembly-[...].jar:
-- No URL: {}={}
-- File not found: {}={}'''.format(
-    MESOS_SPARK_TEST_JAR_URL_ENV, MESOS_SPARK_TEST_JAR_URL,
-    MESOS_SPARK_TEST_JAR_PATH_ENV, MESOS_SPARK_TEST_JAR_PATH))
-
 
 SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
@@ -48,6 +35,24 @@ LOGGER = logging.getLogger(__name__)
 
 SPARK_PACKAGE_NAME = os.getenv("SPARK_PACKAGE_NAME", "spark")
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
+
+
+def _check_tests_assembly():
+    if not DCOS_SPARK_TEST_JAR_URL and not os.path.exists(DCOS_SPARK_TEST_JAR_PATH):
+        raise Exception('''Missing URL or path to file dcos-spark-scala-tests-assembly-[...].jar:
+    - No URL: {}={}
+    - File not found: {}={}'''.format(
+        DCOS_SPARK_TEST_JAR_URL_ENV, DCOS_SPARK_TEST_JAR_URL,
+        DCOS_SPARK_TEST_JAR_PATH_ENV, DCOS_SPARK_TEST_JAR_PATH))
+
+
+def _check_mesos_integration_tests_assembly():
+    if not MESOS_SPARK_TEST_JAR_URL and not os.path.exists(MESOS_SPARK_TEST_JAR_PATH):
+        raise Exception('''Missing URL or path to file mesos-spark-integration-tests-assembly-[...].jar:
+    - No URL: {}={}
+    - File not found: {}={}'''.format(
+        MESOS_SPARK_TEST_JAR_URL_ENV, MESOS_SPARK_TEST_JAR_URL,
+        MESOS_SPARK_TEST_JAR_PATH_ENV, MESOS_SPARK_TEST_JAR_PATH))
 
 
 def hdfs_enabled():
@@ -157,6 +162,8 @@ def upload_file(file_path):
 
 
 def upload_dcos_test_jar():
+    _check_tests_assembly()
+
     global DCOS_SPARK_TEST_JAR_URL
     if DCOS_SPARK_TEST_JAR_URL is None:
         DCOS_SPARK_TEST_JAR_URL = upload_file(DCOS_SPARK_TEST_JAR_PATH)
@@ -166,6 +173,8 @@ def upload_dcos_test_jar():
 
 
 def upload_mesos_test_jar():
+    _check_mesos_integration_tests_assembly()
+
     global MESOS_SPARK_TEST_JAR_URL
     if MESOS_SPARK_TEST_JAR_URL is None:
         MESOS_SPARK_TEST_JAR_URL = upload_file(MESOS_SPARK_TEST_JAR_PATH)
@@ -175,6 +184,8 @@ def upload_mesos_test_jar():
 
 
 def dcos_test_jar_url():
+    _check_tests_assembly()
+
     if DCOS_SPARK_TEST_JAR_URL is None:
         return spark_s3.http_url(os.path.basename(DCOS_SPARK_TEST_JAR_PATH))
     return DCOS_SPARK_TEST_JAR_URL
