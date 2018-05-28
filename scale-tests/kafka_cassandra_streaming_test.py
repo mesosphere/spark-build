@@ -17,7 +17,7 @@ Options:
     --jar <URL>                         hosted JAR URL
     --num-producers-per-dispatcher <n>  number of producers per dispatcher to create [default: 1]
     --num-consumers-per-producer <n>    number of consumers for producer to create [default: 1]
-    --producer-number-of-words <n>      number of total words published by producers [default: 1]
+    --producer-number-of-words <n>      number of total words published by producers [default: 0]
     --producer-words-per-second <n>     number of words per second published by producers [default: 1]
     --producer-spark-cores-max <n>      spark.cores.max [default: 2]
     --producer-spark-executor-cores <n> spark.executor.cores [default: 2]
@@ -27,11 +27,15 @@ Options:
     --consumer-spark-cores-max <n>      spark.cores.max [default: 1]
     --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
     --consumer-must-fail                the consumer is passed an invalid command line argument causing it to fail [default: False]
+
+    --conf-spark-port-maxRetries  <n>   max number of retries for Spark to bind to a port [default: 32]
+
 """
 
 
 import logging
 import json
+import typing
 
 from docopt import docopt
 
@@ -48,17 +52,38 @@ SPARK_PACKAGE_NAME = 'spark'
 COMMON_CONF = [
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
-    "--conf", "spark.port.maxRetries=32",
-    "--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:7081f3483a0d904992994edbed07abbc5110f003-815904ac6c6604ac82368a44d69f8a7423bcb8dc",
     "--conf", "spark.mesos.executor.home=/opt/spark/dist",
     "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
     "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
 ]
 
 
+def get_spark_conf(args: dict) -> typing.List[str]:
+    """
+    Get the spark options from the command line parameter and merge it with the defaults:
+
+    Note, we could add (after removing from COMMON_CONF):
+
+    --conf-spark-mesos-containerizer <name> [default: mesos]
+    --conf-spark-mesos-driver-failoverTimeout <n> [default: 30]
+    --conf-spark-mesos-executor-home <path> [default: /opt/spark/dist]
+    --conf-spark-scheduler-maxRegisteredResourcesWaitingTime <seconds> [default: 2400s]
+    --conf-spark-scheduler-minRegisteredResourcesRatio <n> [default: 1.0]
+
+    as additional options to make the other values used here configurable.
+    """
+    spark_conf = COMMON_CONF.copy()
+    for option, value in args.items():
+        if option.startswith("--conf-"):
+            option_name = option[len("--conf-"):].replace("-", ".")
+            spark_conf.extend(["--conf", "{}={}".format(option_name, str(value))])
+
+    return spark_conf
+
+
 def _install_package_cli(package_name):
     cmd = "package install {package_name} --yes --cli".format(package_name=package_name)
-    rt, stdout, _ = sdk_cmd.run_raw_cli(cmd)
+    rt, _, _ = sdk_cmd.run_raw_cli(cmd)
     assert rt == 0, "Failed to install CLI for {package_name}"
 
 
@@ -72,7 +97,8 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
     return json.loads(stdout)["dns"]
 
 
-def _submit_producer(kafka_broker_dns,
+def _submit_producer(spark_conf: typing.List[str],
+                     kafka_broker_dns,
                      app_name,
                      driver_role,
                      kafka_topics,
@@ -81,6 +107,13 @@ def _submit_producer(kafka_broker_dns,
                      spark_cores_max,
                      spark_executor_cores,
                      must_fail: bool):
+
+    if number_of_words:
+        runtime_in_seconds = float(number_of_words)/float(words_per_second)
+        log.info("Producer will run for approximately %s minutes", round(runtime_in_seconds/60))
+    else:
+        log.info("Producer will run until explicitly terminated")
+
     app_args = ["--appName",        PRODUCER_CLASS_NAME,
                 "--brokers",        ",".join(kafka_broker_dns),
                 "--topics",         kafka_topics,
@@ -99,7 +132,7 @@ def _submit_producer(kafka_broker_dns,
     if number_of_words == 0:
         app_config.extend(["--supervise"])
 
-    args = app_config + COMMON_CONF
+    args = app_config + spark_conf
 
     submission_id = spark_utils.submit_job(
         app_url=jar,
@@ -112,7 +145,8 @@ def _submit_producer(kafka_broker_dns,
     return submission_id
 
 
-def _submit_consumer(kafka_broker_dns,
+def _submit_consumer(spark_conf: typing.List[str],
+                     kafka_broker_dns,
                      cassandra_native_client_dns,
                      app_name,
                      driver_role,
@@ -149,7 +183,7 @@ def _submit_consumer(kafka_broker_dns,
                   "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
                   "--class",     CONSUMER_CLASS_NAME]
 
-    args = app_config + COMMON_CONF
+    args = app_config + spark_conf
 
     submission_id = spark_utils.submit_job(
         app_url=jar,
@@ -213,6 +247,8 @@ if __name__ == "__main__":
     kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, "broker")
     cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
+    spark_conf = get_spark_conf(args)
+
     for dispatcher in dispatchers:
         dispatcher_app_name, _, driver_role = dispatcher.split(",")
 
@@ -224,6 +260,7 @@ if __name__ == "__main__":
             producer_cassandra_keyspace = producer_name.replace('-', '_')
 
             producer_submission_id = _submit_producer(
+                spark_conf,
                 kafka_broker_dns,
                 dispatcher_app_name,
                 driver_role,
@@ -245,6 +282,7 @@ if __name__ == "__main__":
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
                 consumer_submission_id = _submit_consumer(
+                    spark_conf,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
                     dispatcher_app_name,
