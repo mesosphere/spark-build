@@ -177,8 +177,7 @@ if __name__ == "__main__":
             print("The specified file does not exist: %s", options_file)
             sys.exit(1)
 
-        with open(options_file, 'r') as f:
-            options = json.load(f)
+        options = json.load(open(options_file, 'r'))
     else:
         options = get_default_options(arguments)
 
