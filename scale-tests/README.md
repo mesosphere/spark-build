@@ -55,10 +55,9 @@ dcos package repo add --index=0 spark-quotas https://universe-converter.mesosphe
 ```bash
 your-machine $ git clone git@github.com:mesosphere/spark-build.git
 your-machine $ cd spark-build
-your-machine $ docker run -it --net=host -v $(pwd):/spark-build -v </path/to/soak/key>:/ssh/key:ro mesosphere/spark-build:latest
-docker-container # cd /spark-build
-docker-container # pip3 install -r tests/requirements.txt
-docker-container # export PYTHONPATH=$(pwd)/testing:$(pwd)/spark-testing
+your-machine $ docker build -t mesosphere/dcos-commons:${LOGNAME}-spark scale-tests/
+your-machine $ SOAK_KEY=</path/to/soak/key>
+your-machine $ docker run -it --net=host -v $(pwd):/spark-build -v $SOAK_KEY:/ssh/key:ro mesosphere/dcos-commons:${LOGNAME}-spark
 docker-container # dcos cluster setup --insecure --username=<username> --password=<password> <cluster-url>
 docker-container # eval "$(ssh-agent)"
 docker-container # ssh-add -k /ssh/key
