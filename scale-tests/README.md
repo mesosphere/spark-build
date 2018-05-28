@@ -162,6 +162,7 @@ For example, the following command:
 
 ```bash
 TEST_NAME=dispatcher-streaming
+SERVICE_NAMES_PREFIX="${TEST_NAME}"
 INFRASTRUCTURE_OUTPUT_FILE="${TEST_NAME}-infrastructure.json"
 KAFKA_ZOOKEEPER_CONFIG=scale-tests/configs/kafka-zookeeper-options.json
 KAFKA_CLUSTER_COUNT=1
@@ -170,6 +171,7 @@ CASSANDRA_CLUSTER_COUNT=1
 CASSANDRA_CONFIG=scale-tests/configs/cassandra-options.json
 
 ./scale-tests/setup_streaming.py $INFRASTRUCTURE_OUTPUT_FILE \
+  --service-names-prefix $SERVICE_NAMES_PREFIX \
   --kafka-zookeeper-config $KAFKA_ZOOKEEPER_CONFIG \
   --kafka-cluster-count $KAFKA_CLUSTER_COUNT \
   --kafka-config $KAFKA_CONFIG \
