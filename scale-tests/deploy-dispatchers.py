@@ -43,6 +43,8 @@ from docopt import docopt
 import ast
 import contextlib
 import json
+import os
+import sdk_install
 import shakedown
 import sys
 
@@ -88,7 +90,6 @@ def deploy_dispatchers(
     service_name_base,
     output_file,
     options,
-    options_file=None,
     package_repo=None,
     create_quotas=True,
     quota_drivers_cpus=1,
@@ -125,24 +126,18 @@ def deploy_dispatchers(
             # install dispatcher with appropriate role
             options["service"]["role"] = drivers_role
 
-            if options_file is not None:
-                shakedown.install_package(
-                    package_name=arguments['--package-name'],
-                    service_name=service_name,
-                    options_file=options_file)
-            else:
-                shakedown.install_package(
-                    package_name=arguments['--package-name'],
-                    service_name=service_name,
-                    options_json=options)
+            sdk_install.install(
+                arguments['--package-name'],
+                service_name,
+                0,  # This library cannot see this non-SDK task.
+                additional_options=options,
+                wait_for_deployment=False)
 
             outfile.write("{},{},{}\n".format(service_name, drivers_role, executors_role))
 
 
-if __name__ == "__main__":
-    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
-
-    options={
+def get_default_options(arguments: dict) -> dict:
+    options = {
         "service": {
             "cpus": int(arguments["--cpus"]),
             "mem": float(arguments["--mem"]),
@@ -169,13 +164,28 @@ if __name__ == "__main__":
             "config-url": arguments["--hdfs-config"] or ""
         }
     }
+    return options
+
+
+if __name__ == "__main__":
+    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
+
+    options_file = arguments['--options-json']
+    if options_file:
+        if not os.path.isfile(options_file):
+            # TODO: Replace with logging
+            print("The specified file does not exist: %s", options_file)
+            sys.exit(1)
+
+        options = json.load(open(options_file, 'r'))
+    else:
+        options = get_default_options(arguments)
 
     deploy_dispatchers(
         num_dispatchers=int(arguments['<num_dispatchers>']),
         service_name_base=arguments['<service_name_base>'],
         output_file=arguments['<output_file>'],
         options=options,
-        options_file=arguments['--options-json'],
         package_repo=arguments['--package-repo'],
         create_quotas=ast.literal_eval(arguments.get("--create-quotas", True)),
         quota_drivers_cpus=arguments['--quota-drivers-cpus'],
