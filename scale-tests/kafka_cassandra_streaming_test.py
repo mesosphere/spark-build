@@ -294,7 +294,6 @@ if __name__ == "__main__":
 
     for kafka in kafkas:
         kafka_package_name = kafka['package_name']
-        kafka_num_brokers = kafka['brokers']['count']
         kafka_service_name = kafka['service']['name']
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
