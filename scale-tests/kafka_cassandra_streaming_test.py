@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-kafka_cassandra_streaming_test.py
+"""kafka_cassandra_streaming_test.py
 
 Usage:
     ./kafka_cassandra_streaming_test.py <dispatcher_file> <infrastructure_file> <submissions_output_file> [options]
@@ -176,8 +175,7 @@ def normalize_string(s: str) -> str:
 
 
 def make_repeater(n):
-    """
-    Returns a lambda that returns a list (an iterable really) of `n` `x`s.
+    """Returns a lambda that returns a list (an iterable really) of `n` `x`s.
 
     >>> repeat_3 = make_repeater(3)
     >>> list(repeat_3('foo'))
