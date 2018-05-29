@@ -202,13 +202,13 @@ if __name__ == "__main__":
 
     with open(args["<infrastructure_file>"]) as f:
         infrastructure = json.loads(f.read())
-        zookeepers = infrastructure['zookeeper']
         kafkas = infrastructure['kafka']
+        # Assuming only 1 Cassandra cluster.
         cassandra = infrastructure['cassandra'][0]
 
     jar                           = args["--jar"] if args["--jar"] else DEFAULT_JAR
     submissions_output_file       = args["<submissions_output_file>"]
-    kafka_package_name            = kafkas[0]['package_name']
+    kafka_package_names           = map(lambda kafka: kafka['package_name'], kafkas)
     cassandra_package_name        = cassandra['package_name']
     cassandra_service_name        = cassandra['service']['name']
     cassandra_num_nodes           = cassandra['nodes']['count']
@@ -244,13 +244,15 @@ if __name__ == "__main__":
     dispatchers_slots = sdk_utils.mapcat(make_repeater(max_num_jobs_per_dispatcher),
                                          dispatchers)
 
-    _install_package_cli(kafka_package_name)
+    for kafka_package_name in kafka_package_names:
+        _install_package_cli(kafka_package_name)
     _install_package_cli(cassandra_package_name)
     _install_package_cli(SPARK_PACKAGE_NAME)
 
     cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
     for kafka in kafkas:
+        kafka_package_name = kafka['package_name']
         kafka_num_brokers = kafka['brokers']['count']
         kafka_service_name = kafka['service']['name']
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
