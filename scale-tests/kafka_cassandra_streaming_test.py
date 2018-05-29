@@ -29,7 +29,6 @@ Options:
 """
 
 
-import itertools
 import json
 import logging
 import math
@@ -37,8 +36,8 @@ import math
 from docopt import docopt
 
 import sdk_cmd
-import sdk_utils
 import spark_utils
+from scale_tests_utils import make_repeater, mapcat, normalize_string
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -170,26 +169,72 @@ def append_submission(output_file: str, dispatcher_service_name: str, submission
         f.write("{},{}\n".format(dispatcher_service_name, submission_id))
 
 
-def normalize_string(s: str) -> str:
-    return s.replace("/", "__").replace('-', '_')
-
-
-def make_repeater(n):
-    """Returns a lambda that returns a list (an iterable really) of `n` `x`s.
-
-    >>> repeat_3 = make_repeater(3)
-    >>> list(repeat_3('foo'))
-    ['foo', 'foo', 'foo']
-    >>> list(make_repeater(2)('bar'))
-    ['bar', 'bar']
+def parse_dispatcher(dispatcher):
+    """Parses dispatcher entries, returns their attributes.
     """
-    return lambda x: itertools.repeat(x, n)
-
-
-def get_dispatcher(dispatchers_slots):
-    dispatcher = next(dispatchers_slots)
     dispatcher_service_name, driver_role, executor_role = dispatcher.split(',')
     return dispatcher_service_name, driver_role, executor_role
+
+
+class ProvidingStrategy(object):
+    def __init__(self, dispatchers, num_jobs):
+        self.dispatchers = dispatchers
+        self.num_jobs = num_jobs
+        self.slots = self.prepare()
+
+
+    def prepare(self):
+        raise NotImplementedError
+
+
+    def provide(self):
+        raise NotImplementedError
+
+
+    def report(self):
+        raise NotImplementedError
+
+
+class BlockProvidingStrategy(ProvidingStrategy):
+    """This strategy guarantees:
+
+    - Roughly the same amount of jobs will be provided to each scheduler
+    - Schedulers are "filled" serially. This increases the chance that related
+      jobs will be assigned to the same scheduler.
+    """
+
+    def prepare(self):
+        self.avg_num_jobs_per_dispatcher = self.num_jobs / len(self.dispatchers)
+        self.max_num_jobs_per_dispatcher = math.ceil(self.avg_num_jobs_per_dispatcher)
+
+        return mapcat(make_repeater(self.max_num_jobs_per_dispatcher),
+                      self.dispatchers)
+
+
+    def provide(self):
+        return next(self.slots)
+
+
+    def report(self):
+        log.info('Providing strategy: block')
+        log.info('Average number of jobs per dispatcher: %s', self.avg_num_jobs_per_dispatcher)
+        log.info('Will run at most %s jobs per dispatcher', self.max_num_jobs_per_dispatcher)
+        log.info("\nDispatchers: \n%s\n", "\n".join(dispatchers))
+
+
+class DispatcherProvider(object):
+    """Provides dispatchers for jobs in a given strategy.
+    """
+    def __init__(self, dispatchers, num_jobs, strategy=BlockProvidingStrategy):
+        self.strategy = strategy(dispatchers, num_jobs)
+
+
+    def provide(self):
+        return self.strategy.provide()
+
+
+    def report(self):
+        return self.strategy.report()
 
 
 if __name__ == "__main__":
@@ -231,16 +276,14 @@ if __name__ == "__main__":
     avg_num_jobs_per_dispatcher = num_jobs / num_dispatchers
     max_num_jobs_per_dispatcher = math.ceil(avg_num_jobs_per_dispatcher)
 
-    log.info('Number of Kafka clusters: {}'.format(num_kafkas))
-    log.info('Number of dispatchers: {}'.format(num_dispatchers))
-    log.info('Total number of jobs: {} ({} producers, {} consumers)'.format(
-        num_jobs, num_producers, num_consumers))
-    log.info('Average number jobs per dispatcher: {}'.format(avg_num_jobs_per_dispatcher))
-    log.info('Will run at most {} jobs per dispatcher'.format(max_num_jobs_per_dispatcher))
-    log.info("\nDispatchers: \n{}\n".format("\n".join(dispatchers)))
+    dispatcher_provider = DispatcherProvider(dispatchers, num_jobs)
 
-    dispatchers_slots = sdk_utils.mapcat(make_repeater(max_num_jobs_per_dispatcher),
-                                         dispatchers)
+    log.info('Number of Kafka clusters: %s', num_kafkas)
+    log.info('Number of dispatchers: %s', num_dispatchers)
+    log.info('Total number of jobs: %s (%s producers, %s consumers)',
+             num_jobs, num_producers, num_consumers)
+
+    dispatcher_provider.report()
 
     for kafka_package_name in kafka_package_names:
         _install_package_cli(kafka_package_name)
@@ -256,7 +299,7 @@ if __name__ == "__main__":
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
         for producer_idx in range(0, num_producers_per_kafka):
-            dispatcher_service_name, _, executor_role = get_dispatcher(dispatchers_slots)
+            dispatcher_service_name, _, executor_role = parse_dispatcher(dispatcher_provider.provide())
 
             producer_name = '{}-{}'.format(normalize_string(kafka_service_name), producer_idx)
             kafka_topics = producer_name
@@ -279,7 +322,7 @@ if __name__ == "__main__":
                 producer_submission_id)
 
             for consumer_idx in range(0, num_consumers_per_producer):
-                dispatcher_service_name, _, executor_role = get_dispatcher(dispatchers_slots)
+                dispatcher_service_name, _, executor_role = parse_dispatcher(dispatcher_provider.provide())
 
                 consumer_name = '{}-{}'.format(producer_name, consumer_idx)
                 consumer_kafka_group_id = consumer_name
