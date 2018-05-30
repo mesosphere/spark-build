@@ -67,6 +67,12 @@ docker-container # ssh-add -k /ssh/key
 
 #### 1. Install Spark dispatchers
 
+*Note*: If the tests are to be run against a strict mode cluster, ensure that the
+`SECURITY` environment variable is set accordingly:
+```bash
+export SECURITY="strict"
+```
+
 For the next sections, tweak variables as required.
 
 Run the following command:
@@ -158,13 +164,13 @@ For the next sections, tweak variables as required.
 In order to install the infrastructure for the streaming tests, the
 `setup_streaming.py` script can be used.
 
-For example, the following command:
-
 *Note*: If the tests are to be run against a strict mode cluster, ensure that the
 `SECURITY` environment variable is set accordingly:
 ```bash
 export SECURITY="strict"
 ```
+
+For example, the following command:
 
 ```bash
 TEST_NAME=dispatcher-streaming
