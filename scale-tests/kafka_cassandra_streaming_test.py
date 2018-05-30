@@ -273,8 +273,6 @@ if __name__ == "__main__":
     num_producers = num_kafkas * num_producers_per_kafka
     num_consumers = num_producers * num_consumers_per_producer
     num_jobs = num_producers + num_consumers
-    avg_num_jobs_per_dispatcher = num_jobs / num_dispatchers
-    max_num_jobs_per_dispatcher = math.ceil(avg_num_jobs_per_dispatcher)
 
     dispatcher_provider = DispatcherProvider(dispatchers, num_jobs)
 
