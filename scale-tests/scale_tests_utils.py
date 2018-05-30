@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 def setup_security(service_name: str, linux_user: str) -> typing.Dict:
     """
-    Adds a service account an secret for the specified service name.
+    Adds a service account and secret for the specified service name.
     """
     if not sdk_utils.is_strict_mode():
         return {}

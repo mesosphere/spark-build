@@ -337,7 +337,7 @@ def install(args):
         options=options,
         quota_options=quota_options)
 
-    output_filename = "{}-infrastrcuture.json".format(args["<output_file>"])
+    output_filename = "{}-dispatchers.json".format(args["<output_file>"])
     with open(output_filename, "w") as fp:
         log.info("Saving dispatcher info to: %s", output_filename)
         json.dump(services, fp, indent=2)
