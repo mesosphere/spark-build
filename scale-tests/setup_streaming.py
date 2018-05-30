@@ -65,7 +65,7 @@ def setup_security(service_name: str) -> typing.Dict:
     if not sdk_utils.is_strict_mode():
         return {}
 
-    service_account = "{}-service-account".format(service_name)
+    service_account = scale_tests_utils.normalize_string("{}-service-account".format(service_name))
     service_account_secret = "{}-service-account-secret".format(service_name)
     return sdk_security.setup_security(service_name,
                                        service_account, service_account_secret)
@@ -102,7 +102,7 @@ def install_package(package_name: str,
         additional_options=service_options,
         insert_strict_options=False)
 
-    return {"package_name": package_name, **service_options}
+    return {"package_name": package_name, "service_account_info": service_account_info,  **service_options}
 
 
 def _supports_multiple_clusters(service_name: str) -> bool:
@@ -245,13 +245,8 @@ def cleanup(args):
             log.info("Uninstalling %s with name %s", s["package_name"], service_name)
             sdk_install.uninstall(s["package_name"], service_name)
 
-            service_account = sdk_utils.get_in(["service", "service_account"], s)
-            service_account_secret = sdk_utils.get_in(["service", "service_account_secret"], s)
-            if service_account:
-                log.info("Removing service accounts and secrets")
-                sdk_security.cleanup_security(service_name,
-                                            service_account=service_account,
-                                            service_account_secret=service_account_secret)
+            log.info("Removing service accounts and secrets")
+            sdk_security.cleanup_security(service_name, s["service_account_info"])
 
 
 def main(args):

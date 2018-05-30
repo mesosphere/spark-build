@@ -6,8 +6,9 @@ SHOULD ALSO BE APPLIED TO sdk_security IN ANY OTHER PARTNER REPOS
 '''
 import logging
 import os
+import typing
+
 from subprocess import check_output
-from typing import List
 
 import retrying
 import sdk_cmd
@@ -70,7 +71,7 @@ def _revoke(user: str, acl: str, description: str, action: str="create") -> None
     log.info("Want to delete {user}+{acl}".format(user=user, acl=acl))
 
 
-def get_permissions(service_account_name: str, role: str, linux_user: str) -> List[dict]:
+def get_permissions(service_account_name: str, role: str, linux_user: str) -> typing.List[dict]:
     return [
         # registration permissions
         {
@@ -200,56 +201,60 @@ def delete_secret(secret: str) -> None:
     sdk_cmd.run_cli("security secrets delete {}".format(secret))
 
 
-def setup_security(framework_name: str,
+def _get_role_list(service_name: str) -> typing.List[str]:
+    role_basename = service_name.replace("/", "__")
+    return [
+        "{}-role".format(role_basename),
+        "slave_public%252F{}-role".format(role_basename),
+    ]
+
+
+def setup_security(service_name: str,
                    service_account: str="service-acct",
                    service_account_secret: str="secret") -> dict:
 
     create_service_account(service_account_name=service_account,
                            service_account_secret=service_account_secret)
 
-    service_account_info = {"name": service_account, "secret": service_account_secret}
+    service_account_info = {"name": service_account, "secret": service_account_secret, "roles": []}
 
     if not sdk_utils.is_strict_mode():
         log.info("Skipping strict-mode security setup on non-strict cluster")
         return service_account_info
 
     log.info("Setting up strict-mode security")
-    grant_permissions(
-        linux_user="nobody",
-        role_name="{}-role".format(framework_name),
-        service_account_name=service_account
-    )
-    grant_permissions(
-        linux_user="nobody",
-        role_name="slave_public%252F{}-role".format(framework_name),
-        service_account_name=service_account
-    )
-    grant_permissions(
-        linux_user="nobody",
-        role_name="test__integration__{}-role".format(framework_name),
-        service_account_name=service_account
-    )
+
+    service_account_info["roles"] = _get_role_list(service_name)
+
+    for role_name in service_account_info["roles"]:
+        grant_permissions(
+            linux_user="nobody",
+            role_name=role_name,
+            service_account_name=service_account
+        )
+
     log.info("Finished setting up strict-mode security")
 
     return service_account_info
 
 
-def cleanup_security(framework_name: str,
-                     service_account: str="service-acct",
-                     service_account_secret: str="secret") -> None:
+def cleanup_security(service_name: str,
+                     service_account_info: typing.Dict) -> None:
+
+    service_account = service_account_info.get("name", "service-acct")
+    service_account_secret = service_account_info.get("secret", "secret")
 
     if sdk_utils.is_strict_mode():
         log.info("Cleaning up strict-mode security")
-        revoke_permissions(
-            linux_user="nobody",
-            role_name="{}-role".format(framework_name),
-            service_account_name=service_account
-        )
-        revoke_permissions(
-            linux_user="nobody",
-            role_name="test__integration__{}-role".format(framework_name),
-            service_account_name=service_account
-        )
+
+        roles = service_account_info.get("roles", _get_role_list(service_name))
+
+        for role_name in roles:
+            revoke_permissions(
+                linux_user="nobody",
+                role_name=role_name,
+                service_account_name=service_account
+            )
 
     delete_service_account(service_account, service_account_secret)
 
@@ -268,11 +273,11 @@ def security_session(framework_name: str) -> None:
     try:
         is_strict = sdk_utils.is_strict_mode()
         if is_strict:
-            setup_security(framework_name)
+            service_account_info = setup_security(framework_name)
         yield
     finally:
         if is_strict:
-            cleanup_security(framework_name)
+            cleanup_security(framework_name, service_account_info)
 
 
 def openssl_ciphers():
