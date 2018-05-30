@@ -18,7 +18,7 @@ Arguments:
 Options:
     --cleanup                              Don't install the services, but clean them up as defined in in the <output_file>
 
-    --service-names-prefix <prefix>        The service prefix to use for all services. Defaults to their package names.
+    --service-names-prefix <prefix>        The service prefix to use for all services. Defaults to their package names. [default: ]
     --kafka-cluster-count <n>              The number of Kafka clusters to install.
                                            This is used for both Kafka and ZooKeeper [default: 0]
 
@@ -58,10 +58,18 @@ log = logging.getLogger(__name__)
 SUPPORTED_MULTIPLE_CLUSTER_SERVICES = ['kafka', 'confluent-kafka', 'beta-kafka']
 
 
-def install_package(package_name: str, service_prefix: str, index: int, service_task_count: int, config_path: str,
-                    additional_options: dict=None) -> dict:
-    service_name = "{}-{}-{:0>2}".format(service_prefix, package_name, index)
+def install_package(package_name: str,
+                    service_prefix: str,
+                    index: int,
+                    service_task_count: int,
+                    config_path: str,
+                    additional_options: dict = None) -> dict:
+    if package_name.startswith("beta-"):
+        basename = package_name[len("beta-"):]
+    else:
+        basename = package_name
 
+    service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
     log.info("Installing %s index %s as %s", package_name, index, service_name)
 
     service_options = {}
@@ -128,7 +136,7 @@ def install_zookeeper(args: dict) -> list:
         return []
 
     kafka_zookeeper_package_name = args["--kafka-zookeeper-package-name"]
-    kafka_zookeeper_service_prefix = args["--service-names-prefix"] or kafka_zookeeper_package_name
+    kafka_zookeeper_service_prefix = args["--service-names-prefix"]
     kafka_zookeeper_config = args.get("--kafka-zookeeper-config", "")
 
     services = []
@@ -153,7 +161,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
         return []
 
     kafka_package_name = args["--kafka-package-name"]
-    kafka_service_prefix = args["--service-names-prefix"] or kafka_package_name
+    kafka_service_prefix = args["--service-names-prefix"]
     kafka_config = args.get("--kafka-config", "")
 
     services = []
@@ -190,7 +198,7 @@ def install_cassandra(args: dict) -> list:
         return []
 
     cassandra_package_name = args["--cassandra-package-name"]
-    cassandra_service_prefix = args["--service-names-prefix"] or cassandra_package_name
+    cassandra_service_prefix = args["--service-names-prefix"]
     cassandra_config = args.get("--cassandra-config", "")
 
     services = []

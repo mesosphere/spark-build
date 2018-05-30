@@ -162,7 +162,7 @@ For example, the following command:
 
 ```bash
 TEST_NAME=dispatcher-streaming
-SERVICE_NAMES_PREFIX="${TEST_NAME}"
+SERVICE_NAMES_PREFIX="${TEST_NAME}/"
 INFRASTRUCTURE_OUTPUT_FILE="${TEST_NAME}-infrastructure.json"
 KAFKA_ZOOKEEPER_CONFIG=scale-tests/configs/kafka-zookeeper-options.json
 KAFKA_CLUSTER_COUNT=2
