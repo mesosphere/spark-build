@@ -92,7 +92,7 @@ def create_quota(
 
     # remove existing quotas matching name
     if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
-        rc, _, _ = sdk_cmd.run_cli("spark quota remove {}".format(role_name))
+        rc, _, _ = sdk_cmd.run_raw_cli("spark quota remove {}".format(role_name))
         assert rc == 0, "Error removing quota"
 
 
@@ -106,7 +106,7 @@ def create_quota(
     # create quota
     log.info("Creating quota for %s: %s", role_name, quota)
     cmd = " ".join(str(c) for c in cmd_list)
-    rc, _, _ = sdk_cmd.run_cli(cmd)
+    rc, _, _ = sdk_cmd.run_raw_cli(cmd)
     assert rc == 0, "Error creating quota"
 
 
@@ -125,7 +125,9 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
     return role_name
 
 
-def setup_spark_security(service_name: str, driver_role: str,
+def setup_spark_security(service_name: str,
+                         drivers_role: str,
+                         executors_role: str,
                          service_account_info: typing.Dict):
     """
     In strict mode, additional permissions are required for Spark.
@@ -137,25 +139,24 @@ def setup_spark_security(service_name: str, driver_role: str,
 
     log.info("Adding spark specific permissions")
 
-    sdk_security.grant_permissions(
-        linux_user=service_account_info["linux_user"],
-        role_name="*",
-        service_account_name=service_account_info["name"],
-    )
+    linux_user = service_account_info.get("linux_user", "nobody")
+    service_account = service_account_info["name"]
 
-    sdk_security.grant_permissions(
-        linux_user=service_account_info["linux_user"],
-        role_name=driver_role,
-        service_account_name=service_account_info["name"],
-    )
+    for role_name in [drivers_role, executors_role]:
+        sdk_security.grant_permissions(
+            linux_user=linux_user,
+            role_name=role_name,
+            service_account_name=service_account,
+        )
 
+    # TODO: Is this required?
     app_id = urllib.parse.quote(service_name)
     sdk_security._grant(service_account_info["name"],
                         "dcos:mesos:master:task:app_id:{}".format(app_id),
                         description="Spark drivers may execute Mesos tasks",
                         action="create")
 
-    if service_account_info.get("linux_user", "nobody") == "root":
+    if linux_user == "root":
         log.info("Marathon must be able to launch tasks as root")
         sdk_security._grant("dcos_marathon",
                             "dcos:mesos:master:task:user:root",
@@ -190,7 +191,7 @@ def install_package(package_name: str,
     drivers_role = setup_role(service_name, "drivers", quota_options)
     executors_role = setup_role(service_name, "executors", quota_options)
 
-    setup_spark_security(service_name, drivers_role, service_account_info)
+    setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
 
@@ -227,13 +228,12 @@ def deploy_dispatchers(
     linux_user: str,
     options: typing.Dict,
     quota_options: typing.Dict
-):
+) -> typing.Dict:
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
 
     with open(output_file, "w") as outfile:
-
         dispatchers = []
         for i in range(num_dispatchers):
             dispatcher_settings = install_package("spark", service_name_base, i,
@@ -247,6 +247,8 @@ def deploy_dispatchers(
                                               dispatcher_settings["roles"]["drivers"],
                                               dispatcher_settings["roles"]["executors"]))
             outfile.flush()
+
+    return dispatchers
 
 
 def get_default_options(arguments: dict) -> dict:
@@ -301,10 +303,8 @@ def get_quota_options(arguments: typing.Dict) -> typing.Dict:
     return quota_options
 
 
-if __name__ == "__main__":
-    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
-
-    options_file = arguments['--options-json']
+def install(args):
+    options_file = args['--options-json']
     if options_file:
         if not os.path.isfile(options_file):
             # TODO: Replace with logging
@@ -313,22 +313,43 @@ if __name__ == "__main__":
 
         options = json.load(open(options_file, 'r'))
     else:
-        options = get_default_options(arguments)
+        options = get_default_options(args)
 
+    if args['--package-repo']:
+        sdk_repository.add_stub_universe_urls([args['--package-repo']])
 
-    if arguments['--package-repo']:
-        sdk_repository.add_stub_universe_urls([arguments['--package-repo']])
-
-    rc, _, _ = sdk_cmd.run_cli("package install spark --cli --yes")
+    rc, _, _ = sdk_cmd.run_raw_cli("package install spark --cli --yes")
     assert rc == 0, "Error installing spark CLI"
 
+    quota_options = get_quota_options(args)
 
-    quota_options = get_quota_options(arguments)
+    services = {}
 
-    deploy_dispatchers(
-        num_dispatchers=int(arguments['<num_dispatchers>']),
-        service_name_base=arguments['<service_name_base>'],
-        output_file=arguments['<output_file>'],
-        linux_user=arguments["--user"],
+    services["spark"] = deploy_dispatchers(
+        num_dispatchers=int(args['<num_dispatchers>']),
+        service_name_base=args['<service_name_base>'],
+        output_file=args['<output_file>'],
+        linux_user=args["--user"],
         options=options,
         quota_options=quota_options)
+
+    output_filename = "{}-infrastrcuture.json".format(args["<output_file>"])
+    with open(output_filename, "w") as fp:
+        log.info("Saving dispatcher info to: %s", output_filename)
+        json.dump(services, fp, indent=2)
+
+
+def cleanup(args):
+    log.error("Cleanup mode not yet supported")
+
+
+def main(args):
+    if "--cleanup" in args and args["--cleanup"]:
+        cleanup(args)
+    else:
+        install(args)
+
+
+if __name__ == "__main__":
+    args = docopt(__doc__, version="deploy-dispatchers.py 0.0")
+    main(args)
