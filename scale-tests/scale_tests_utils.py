@@ -43,7 +43,7 @@ def get_service_options(service_name: str, service_account_info: typing.Dict,
     # Always set the service name
     service_name_options = {"service": {"name": service_name}}
 
-    return merge_service_options([get_strict_mode_options(service_name),
+    return merge_service_options([get_strict_mode_options(service_account_info),
                                   options,
                                   config_options,
                                   service_name_options, ])
