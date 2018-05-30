@@ -202,6 +202,11 @@ def delete_secret(secret: str) -> None:
 
 
 def _get_role_list(service_name: str) -> typing.List[str]:
+    # TODO: spark_utils uses:
+    # app_id_encoded = urllib.parse.quote(
+    #     urllib.parse.quote(app_id, safe=''),
+    #     safe=''
+    # )
     role_basename = service_name.replace("/", "__")
     return [
         "{}-role".format(role_basename),
@@ -210,13 +215,18 @@ def _get_role_list(service_name: str) -> typing.List[str]:
 
 
 def setup_security(service_name: str,
+                   linux_user: str="nobody",
                    service_account: str="service-acct",
                    service_account_secret: str="secret") -> dict:
 
     create_service_account(service_account_name=service_account,
                            service_account_secret=service_account_secret)
 
-    service_account_info = {"name": service_account, "secret": service_account_secret, "roles": []}
+    service_account_info = {"name": service_account,
+                            "secret": service_account_secret,
+                            "linux_user": linux_user,
+                            "roles": []
+                            }
 
     if not sdk_utils.is_strict_mode():
         log.info("Skipping strict-mode security setup on non-strict cluster")
@@ -228,7 +238,7 @@ def setup_security(service_name: str,
 
     for role_name in service_account_info["roles"]:
         grant_permissions(
-            linux_user="nobody",
+            linux_user=linux_user,
             role_name=role_name,
             service_account_name=service_account
         )
@@ -248,10 +258,11 @@ def cleanup_security(service_name: str,
         log.info("Cleaning up strict-mode security")
 
         roles = service_account_info.get("roles", _get_role_list(service_name))
+        linux_user = service_account_info.get("linux_user", "nobody")
 
         for role_name in roles:
             revoke_permissions(
-                linux_user="nobody",
+                linux_user=linux_user,
                 role_name=role_name,
                 service_account_name=service_account
             )

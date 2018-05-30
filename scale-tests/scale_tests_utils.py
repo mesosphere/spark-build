@@ -6,20 +6,51 @@ import sys
 import typing
 
 import sdk_install
+import sdk_security
 import sdk_utils
 
 
 log = logging.getLogger(__name__)
 
 
-def get_strict_mode_options(service_account_info: typing.Dict) -> typing.Dict:
-    if sdk_utils.is_strict_mode():
-        return {'service': {
-            'service_account': service_account_info["name"],
-            'service_account_secret': service_account_info["secret"],
-        }}
+def setup_security(service_name: str, linux_user: str) -> typing.Dict:
+    """
+    Adds a service account and secret for the specified service name.
+    """
+    if not sdk_utils.is_strict_mode():
+        return {}
 
-    return {}
+    service_account = normalize_string("{}-service-account".format(service_name))
+    service_account_secret = "{}-service-account-secret".format(service_name)
+    return sdk_security.setup_security(service_name,
+                                       linux_user,
+                                       service_account, service_account_secret)
+
+
+def get_strict_mode_options(service_account_info: typing.Dict) -> typing.Dict:
+
+    options = {}
+
+    if "linux_user" in service_account_info:
+        user_options = {
+            "service": {
+                "user": service_account_info["linux_user"]
+            }
+
+        }
+        options = sdk_install.merge_dictionaries(options, user_options)
+
+
+    if sdk_utils.is_strict_mode():
+        service_account_options = {
+            'service': {
+                'service_account': service_account_info["name"],
+                'service_account_secret': service_account_info["secret"],
+            }
+        }
+        options = sdk_install.merge_dictionaries(options, service_account_options)
+
+    return options
 
 
 def get_service_options(service_name: str, service_account_info: typing.Dict,

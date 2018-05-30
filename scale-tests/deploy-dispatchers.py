@@ -31,8 +31,6 @@ Options:
     --quota-executors-gpus <n>   number of GPUs to use for executors quota [default: 0]
     --quota-executors-mem <n>    amount of memory (mb) to use per executors quota [default: 1524.0]
     --role <role>                Mesos role registered by dispatcher [default: *]
-    --service-account <account>  Mesos principal registered by dispatcher
-    --service-secret <secret>    Mesos secret registered by dispatcher
     --ucr-containerizer <bool>   launch using the Universal Container Runtime [default: True]
     --user <user>                user to run dispatcher service as [default: root]
 
@@ -43,11 +41,27 @@ from docopt import docopt
 import ast
 import contextlib
 import json
+import logging
 import os
-import sdk_install
-import shakedown
 import sys
+import typing
+import urllib
 
+import sdk_cmd
+import sdk_install
+import sdk_repository
+import sdk_security
+import sdk_utils
+
+import scale_tests_utils
+
+
+logging.basicConfig(
+    format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
+    level=logging.INFO,
+    stream=sys.stdout)
+
+log = logging.getLogger(__name__)
 
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and
@@ -67,84 +81,188 @@ def no_stdout():
 
 
 def create_quota(
-    name,
-    cpus=1,
-    gpus=0,
-    mem=1024.0
+    role_name: str,
+    quota: typing.Dict
 ):
+    """
+    Create quota for the specified role.
+    """
     with no_stdout():
-        stdout, _, _ = shakedown.run_dcos_command("spark quota list --json", raise_on_error=True)
-        existing_quotas = json.loads(stdout)
+        existing_quotas = sdk_cmd.get_json_output("spark quota list --json")
 
     # remove existing quotas matching name
-    if name in [x['role'] for x in existing_quotas.get('infos', [])]:
-        shakedown.run_dcos_command("spark quota remove {}".format(name), raise_on_error=True)
+    if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
+        rc, _, _ = sdk_cmd.run_raw_cli("spark quota remove {}".format(role_name))
+        assert rc == 0, "Error removing quota"
+
+
+    cmd_list = ["spark", "quota", "create"]
+    for r in ["cpus", "mem", "gpus", ]:
+        if r in quota:
+            cmd_list.extend(["-{}".format(r[0]), quota[r],])
+
+    cmd_list.append(role_name)
 
     # create quota
-    shakedown.run_dcos_command(
-        "spark quota create -c {} -g {} -m {} {}".format(cpus, gpus, mem, name), raise_on_error=True)
+    log.info("Creating quota for %s: %s", role_name, quota)
+    cmd = " ".join(str(c) for c in cmd_list)
+    rc, _, _ = sdk_cmd.run_raw_cli(cmd)
+    assert rc == 0, "Error creating quota"
+
+
+def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
+    """
+    Set up the specified role for a service
+    """
+    quota_for_role = quota.get(role_base, {})
+
+    role_name = "{}-{}-role".format(service_name, role_base).replace("/", "__")
+    if quota_for_role:
+        create_quota(role_name, quota_for_role)
+    else:
+        log.info("No quota to assing to %s", role_name)
+
+    return role_name
+
+
+def setup_spark_security(service_name: str,
+                         drivers_role: str,
+                         executors_role: str,
+                         service_account_info: typing.Dict):
+    """
+    In strict mode, additional permissions are required for Spark.
+
+    Add the permissions for the specified service account.
+    """
+    if not sdk_utils.is_strict_mode():
+        return
+
+    log.info("Adding spark specific permissions")
+
+    linux_user = service_account_info.get("linux_user", "nobody")
+    service_account = service_account_info["name"]
+
+    for role_name in [drivers_role, executors_role]:
+        sdk_security.grant_permissions(
+            linux_user=linux_user,
+            role_name=role_name,
+            service_account_name=service_account,
+        )
+
+    # TODO: Is this required?
+    app_id = "/{}".format(service_name)
+    app_id = urllib.parse.quote(
+        urllib.parse.quote(app_id, safe=''),
+        safe=''
+    )
+    sdk_security._grant(service_account_info["name"],
+                        "dcos:mesos:master:task:app_id:{}".format(app_id),
+                        description="Spark drivers may execute Mesos tasks",
+                        action="create")
+
+    if linux_user == "root":
+        log.info("Marathon must be able to launch tasks as root")
+        sdk_security._grant("dcos_marathon",
+                            "dcos:mesos:master:task:user:root",
+                            description="Root Marathon may launch tasks as root",
+                            action="create")
+
+    return
+
+
+def install_package(package_name: str,
+                    service_prefix: str,
+                    index: int,
+                    linux_user: str,
+                    service_task_count: int,
+                    config_path: str,
+                    additional_options: typing.Dict = None,
+                    quota_options: typing.Dict = None) -> typing.Dict:
+    """
+    Deploy a single dispatcher with the specified index.
+    """
+
+    if package_name.startswith("beta-"):
+        basename = package_name[len("beta-"):]
+    else:
+        basename = package_name
+
+    service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
+
+    service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
+
+    # create drivers & executors role quotas
+    drivers_role = setup_role(service_name, "drivers", quota_options)
+    executors_role = setup_role(service_name, "executors", quota_options)
+
+    setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
+
+    service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
+
+    # create drivers & executors role quotas
+    drivers_role = setup_role(service_name, "drivers", quota_options)
+    executors_role = setup_role(service_name, "executors", quota_options)
+
+    # install dispatcher with appropriate role
+    service_options["service"]["role"] = drivers_role
+
+    expected_task_count = service_task_count(service_options)
+    log.info("Expected task count: %s", expected_task_count)
+
+    log.info("Installing %s index %s as %s", package_name, index, service_name)
+
+    sdk_install.install(
+        package_name,
+        service_name,
+        expected_task_count,
+        additional_options=service_options,
+        wait_for_deployment=False,
+        insert_strict_options=False)
+
+    return {"package_name": package_name,
+            "roles": {"drivers": drivers_role, "executors": executors_role},
+            "service_account_info": service_account_info,
+            **service_options}
 
 
 def deploy_dispatchers(
-    num_dispatchers,
-    service_name_base,
-    output_file,
-    options,
-    package_repo=None,
-    create_quotas=True,
-    quota_drivers_cpus=1,
-    quota_drivers_gpus=0,
-    quota_drivers_mem=2048.0,
-    quota_executors_cpus=1,
-    quota_executors_gpus=0,
-    quota_executors_mem=1024.0
-):
+    num_dispatchers: int,
+    service_name_base: str,
+    output_file: str,
+    linux_user: str,
+    options: typing.Dict,
+    quota_options: typing.Dict
+) -> typing.Dict:
+    """
+    Deploy the required number of dispatchers and store their information to a text file.
+    """
+
     with open(output_file, "w") as outfile:
-        shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
+        dispatchers = []
+        for i in range(num_dispatchers):
+            dispatcher_settings = install_package("spark", service_name_base, i,
+                                                linux_user,
+                                                lambda x: 0,
+                                                None,
+                                                options,
+                                                quota_options)
+            dispatchers.append(dispatcher_settings)
+            outfile.write("{},{},{}\n".format(dispatcher_settings["service"]["name"],
+                                              dispatcher_settings["roles"]["drivers"],
+                                              dispatcher_settings["roles"]["executors"]))
+            outfile.flush()
 
-        for i in range(0, num_dispatchers):
-            service_name = "{}-{}".format(service_name_base, str(i))
-
-            # set service name
-            options["service"]["name"] = service_name
-
-            if package_repo is not None:
-                if package_repo not in [x['uri'] for x in shakedown.get_package_repos()['repositories']]:
-                    shakedown.add_package_repo(
-                        repo_name="{}-repo".format(service_name_base),
-                        repo_url=package_repo)
-
-            # create drivers & executors role quotas
-            drivers_role = "{}-drivers-role".format(service_name)
-            executors_role = "{}-executors-role".format(service_name)
-            if create_quotas:
-                create_quota(name=drivers_role,
-                             cpus=quota_drivers_cpus, gpus=quota_drivers_gpus, mem=quota_drivers_mem)
-                create_quota(name=executors_role,
-                             cpus=quota_executors_cpus, gpus=quota_executors_gpus, mem=quota_executors_mem)
-
-            # install dispatcher with appropriate role
-            options["service"]["role"] = drivers_role
-
-            sdk_install.install(
-                arguments['--package-name'],
-                service_name,
-                0,  # This library cannot see this non-SDK task.
-                additional_options=options,
-                wait_for_deployment=False)
-
-            outfile.write("{},{},{}\n".format(service_name, drivers_role, executors_role))
+    return dispatchers
 
 
 def get_default_options(arguments: dict) -> dict:
+    """
+    Construct the default options from the command line arguments.
+    """
     options = {
         "service": {
             "cpus": int(arguments["--cpus"]),
             "mem": float(arguments["--mem"]),
-            "role": arguments["--role"],
-            "service_account": arguments["--service-account"] or "",
-            "service_account_secret": arguments["--service-secret"] or "",
-            "user": arguments["--user"],
             "log-level": arguments["--log-level"],
             "spark-history-server-url": arguments["--history-service"] or "",
             "UCR_containerizer": ast.literal_eval(arguments.get("--ucr-containerizer", True)),
@@ -167,30 +285,75 @@ def get_default_options(arguments: dict) -> dict:
     return options
 
 
-if __name__ == "__main__":
-    arguments = docopt(__doc__, version="deploy-dispatchers.py 0.0")
+def get_quota_options(arguments: typing.Dict) -> typing.Dict:
+    """
+    Move the quota options from the command line arguments to a dict.
+    """
+    create_quotas = ast.literal_eval(arguments.get("--create-quotas", True))
+    if not create_quotas:
+        return {}
 
-    options_file = arguments['--options-json']
+    resources = ["cpus", "mem", "gpus", ]
+    targets = ["drivers", "executors", ]
+
+    quota_options = {}
+    for t in targets:
+        quota_options[t] = {}
+        for r in resources:
+            arg_key = "--quota-{}-{}".format(t, r)
+            if arg_key in arguments:
+                quota_options[t][r] = arguments[arg_key]
+
+    return quota_options
+
+
+def install(args):
+    options_file = args['--options-json']
     if options_file:
         if not os.path.isfile(options_file):
             # TODO: Replace with logging
-            print("The specified file does not exist: %s", options_file)
+            log.error("The specified file does not exist: %s", options_file)
             sys.exit(1)
 
         options = json.load(open(options_file, 'r'))
     else:
-        options = get_default_options(arguments)
+        options = get_default_options(args)
 
-    deploy_dispatchers(
-        num_dispatchers=int(arguments['<num_dispatchers>']),
-        service_name_base=arguments['<service_name_base>'],
-        output_file=arguments['<output_file>'],
+    if args['--package-repo']:
+        sdk_repository.add_stub_universe_urls([args['--package-repo']])
+
+    rc, _, _ = sdk_cmd.run_raw_cli("package install spark --cli --yes")
+    assert rc == 0, "Error installing spark CLI"
+
+    quota_options = get_quota_options(args)
+
+    services = {}
+
+    services["spark"] = deploy_dispatchers(
+        num_dispatchers=int(args['<num_dispatchers>']),
+        service_name_base=args['<service_name_base>'],
+        output_file=args['<output_file>'],
+        linux_user=args["--user"],
         options=options,
-        package_repo=arguments['--package-repo'],
-        create_quotas=ast.literal_eval(arguments.get("--create-quotas", True)),
-        quota_drivers_cpus=arguments['--quota-drivers-cpus'],
-        quota_drivers_gpus=arguments['--quota-drivers-gpus'],
-        quota_drivers_mem=arguments['--quota-drivers-mem'],
-        quota_executors_cpus=arguments['--quota-executors-cpus'],
-        quota_executors_gpus=arguments['--quota-executors-gpus'],
-        quota_executors_mem=arguments['--quota-executors-mem'])
+        quota_options=quota_options)
+
+    output_filename = "{}-dispatchers.json".format(args["<output_file>"])
+    with open(output_filename, "w") as fp:
+        log.info("Saving dispatcher info to: %s", output_filename)
+        json.dump(services, fp, indent=2)
+
+
+def cleanup(args):
+    log.error("Cleanup mode not yet supported")
+
+
+def main(args):
+    if "--cleanup" in args and args["--cleanup"]:
+        cleanup(args)
+    else:
+        install(args)
+
+
+if __name__ == "__main__":
+    args = docopt(__doc__, version="deploy-dispatchers.py 0.0")
+    main(args)
