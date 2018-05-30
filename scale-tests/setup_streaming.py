@@ -31,21 +31,21 @@ Options:
     --cassandra-cluster-count <n>          The number of Cassandra clusters to install [default: 0]
     --cassandra-package-name <name>        The package name to use for Cassandra [default: cassandra]
     --cassandra-config <file>              path to the config.json for the Cassandra installation
-
-TODO:
-    * --producers-per-kafka-cluster
 """
 import json
 import logging
 import os
 import sys
+import typing
 
 from docopt import docopt
 
 import sdk_cmd
 import sdk_install
+import sdk_security
 import sdk_utils
 
+import scale_tests_utils
 
 logging.basicConfig(
     format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
@@ -56,6 +56,19 @@ log = logging.getLogger(__name__)
 
 
 SUPPORTED_MULTIPLE_CLUSTER_SERVICES = ['kafka', 'confluent-kafka', 'beta-kafka']
+
+
+def setup_security(service_name: str) -> typing.Dict:
+    """
+    Adds a service account an secret for the specified service name.
+    """
+    if not sdk_utils.is_strict_mode():
+        return {}
+
+    service_account = scale_tests_utils.normalize_string("{}-service-account".format(service_name))
+    service_account_secret = "{}-service-account-secret".format(service_name)
+    return sdk_security.setup_security(service_name,
+                                       service_account, service_account_secret)
 
 
 def install_package(package_name: str,
@@ -70,35 +83,26 @@ def install_package(package_name: str,
         basename = package_name
 
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
-    log.info("Installing %s index %s as %s", package_name, index, service_name)
 
-    service_options = {}
-    if config_path:
-        if os.path.isfile(config_path):
-            with open(config_path, 'r') as fp:
-                log.info("Reading options from %s", config_path)
-                service_options = json.load(fp)
-        else:
-            log.error("Specified options file does not exits: %s", config_path)
-            # TODO: Should this terminate?
-    else:
-        log.info("No options specified. Using defaults")
+    service_account_info = setup_security(service_name)
 
-    if additional_options:
-        service_options = sdk_install.merge_dictionaries(service_options, additional_options)
+    service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
 
     # Ensure that the service options are in the options
     service_options = sdk_install.merge_dictionaries(service_options, {"service": {"name": service_name}})
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
+
+    log.info("Installing %s index %s as %s", package_name, index, service_name)
     sdk_install.install(
         package_name,
         service_name,
         expected_task_count,
-        additional_options=service_options)
+        additional_options=service_options,
+        insert_strict_options=False)
 
-    return {"package_name": package_name, **service_options}
+    return {"package_name": package_name, "service_account_info": service_account_info,  **service_options}
 
 
 def _supports_multiple_clusters(service_name: str) -> bool:
@@ -235,8 +239,14 @@ def cleanup(args):
         log.info("Processing cleanup of %s", k)
 
         for s in services:
-            log.info("Uninstalling %s with name %s", s["package_name"], s["service"]["name"])
-            sdk_install.uninstall(s["package_name"], s["service"]["name"])
+
+            service_name = s["service"]["name"]
+
+            log.info("Uninstalling %s with name %s", s["package_name"], service_name)
+            sdk_install.uninstall(s["package_name"], service_name)
+
+            log.info("Removing service accounts and secrets")
+            sdk_security.cleanup_security(service_name, s["service_account_info"])
 
 
 def main(args):
