@@ -150,7 +150,11 @@ def setup_spark_security(service_name: str,
         )
 
     # TODO: Is this required?
-    app_id = urllib.parse.quote(service_name)
+    app_id = "/{}".format(service_name)
+    app_id = urllib.parse.quote(
+        urllib.parse.quote(app_id, safe=''),
+        safe=''
+    )
     sdk_security._grant(service_account_info["name"],
                         "dcos:mesos:master:task:app_id:{}".format(app_id),
                         description="Spark drivers may execute Mesos tasks",
