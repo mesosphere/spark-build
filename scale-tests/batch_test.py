@@ -69,7 +69,7 @@ def submit_job(dispatcher: str, duration: int, config: List[str]):
     app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
 
     spark_utils.submit_job(
-        app_name="/{}".format(dispatcher_name),
+        service_name=dispatcher_name,
         app_url=MONTE_CARLO_APP_URL,
         app_args=app_args,
         verbose=False,
