@@ -162,14 +162,16 @@ For example, the following command:
 
 ```bash
 TEST_NAME=dispatcher-streaming
+SERVICE_NAMES_PREFIX="${TEST_NAME}/"
 INFRASTRUCTURE_OUTPUT_FILE="${TEST_NAME}-infrastructure.json"
 KAFKA_ZOOKEEPER_CONFIG=scale-tests/configs/kafka-zookeeper-options.json
-KAFKA_CLUSTER_COUNT=1
+KAFKA_CLUSTER_COUNT=2
 KAFKA_CONFIG=scale-tests/configs/kafka-options.json
 CASSANDRA_CLUSTER_COUNT=1
 CASSANDRA_CONFIG=scale-tests/configs/cassandra-options.json
 
 ./scale-tests/setup_streaming.py $INFRASTRUCTURE_OUTPUT_FILE \
+  --service-names-prefix $SERVICE_NAMES_PREFIX \
   --kafka-zookeeper-config $KAFKA_ZOOKEEPER_CONFIG \
   --kafka-cluster-count $KAFKA_CLUSTER_COUNT \
   --kafka-config $KAFKA_CONFIG \
@@ -233,7 +235,7 @@ Wait for the dispatchers to come online and run the following command:
 ```bash
 JAR=http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar
 SUBMISSIONS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-submissions.out"
-NUM_PRODUCERS_PER_DISPATCHER=1
+NUM_PRODUCERS_PER_KAFKA=1
 NUM_CONSUMERS_PER_PRODUCER=1
 PRODUCER_NUMBER_OF_WORDS=100000
 PRODUCER_WORDS_PER_SECOND=10
@@ -248,7 +250,7 @@ CONSUMER_SPARK_EXECUTOR_CORES=1
   $INFRASTRUCTURE_OUTPUT_FILE \
   $SUBMISSIONS_OUTPUT_FILE \
   --jar $JAR \
-  --num-producers-per-dispatcher $NUM_PRODUCERS_PER_DISPATCHER \
+  --num-producers-per-kafka $NUM_PRODUCERS_PER_KAFKA \
   --num-consumers-per-producer $NUM_CONSUMERS_PER_PRODUCER \
   --producer-number-of-words $PRODUCER_NUMBER_OF_WORDS \
   --producer-words-per-second $PRODUCER_WORDS_PER_SECOND \
