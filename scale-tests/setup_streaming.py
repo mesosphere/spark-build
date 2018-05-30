@@ -58,19 +58,6 @@ log = logging.getLogger(__name__)
 SUPPORTED_MULTIPLE_CLUSTER_SERVICES = ['kafka', 'confluent-kafka', 'beta-kafka']
 
 
-def setup_security(service_name: str) -> typing.Dict:
-    """
-    Adds a service account an secret for the specified service name.
-    """
-    if not sdk_utils.is_strict_mode():
-        return {}
-
-    service_account = scale_tests_utils.normalize_string("{}-service-account".format(service_name))
-    service_account_secret = "{}-service-account-secret".format(service_name)
-    return sdk_security.setup_security(service_name,
-                                       service_account, service_account_secret)
-
-
 def install_package(package_name: str,
                     service_prefix: str,
                     index: int,
@@ -84,12 +71,9 @@ def install_package(package_name: str,
 
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
 
-    service_account_info = setup_security(service_name)
+    service_account_info = scale_tests_utils.setup_security(service_name, "nobody")
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
-
-    # Ensure that the service options are in the options
-    service_options = sdk_install.merge_dictionaries(service_options, {"service": {"name": service_name}})
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
