@@ -175,7 +175,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "# Currently launched / waiting / retry jobs by dispatcher",
+      "title": "# Currently launched by dispatcher",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -621,6 +621,86 @@
       "gridPos": {
         "h": 9,
         "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 23,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_failed) by (task_name)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Number of Job Failures by Dispatcher",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
         "x": 0,
         "y": 36
       },
@@ -964,8 +1044,8 @@
     "list": []
   },
   "time": {
-    "from": "2018-05-17T18:14:06.744Z",
-    "to": "2018-05-18T00:14:06.746Z"
+    "from": "now-1h",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
