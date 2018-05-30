@@ -5,7 +5,6 @@ SHOULD ALSO BE APPLIED TO sdk_utils IN ANY OTHER PARTNER REPOS
 ************************************************************************
 '''
 import functools
-import itertools
 import logging
 import operator
 import random
