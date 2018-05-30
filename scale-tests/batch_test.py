@@ -21,13 +21,12 @@ Options:
 
 
 import csv
-import json
 import logging
 import random
 import time
 from docopt import docopt
 from threading import Thread
-import typing
+from typing import List
 
 import spark_utils
 
@@ -63,33 +62,22 @@ def _get_duration() -> int:
     return duration
 
 
-def submit_job(dispatcher: typing.Dict, duration: int, config: typing.List[str]):
-    dispatcher_name = dispatcher["service"]["name"]
-    log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher_name, duration)
+def submit_job(dispatcher: str, duration: int, config: List[str]):
+    log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher, duration)
+    dispatcher_name, _, driver_role = dispatcher
 
     app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
 
-    if dispatcher["service"].get("service_account") is not None:  # only defined in strict mode
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=MONTE_CARLO_APP_URL,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"],
-            spark_user=dispatcher["service"]["user"],
-            principal=dispatcher["service"]["service_account"])
-    else:
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=MONTE_CARLO_APP_URL,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"])
+    spark_utils.submit_job(
+        service_name=dispatcher_name,
+        app_url=MONTE_CARLO_APP_URL,
+        app_args=app_args,
+        verbose=False,
+        args=config,
+        driver_role=driver_role)
 
 
-def submit_loop(submits_per_min: int, dispatchers: typing.List[typing.Dict], user_conf: typing.List[str]):
+def submit_loop(submits_per_min: int, dispatchers: List[str], user_conf: List[str]):
     sec_between_submits = 60 / submits_per_min
     log.info("sec_between_submits: %s", sec_between_submits)
     num_dispatchers = len(dispatchers)
@@ -110,8 +98,9 @@ if __name__ == "__main__":
 
     dispatchers = []
     with open(args["<dispatcher_file>"]) as f:
-        data = json.load(f)
-        dispatchers = data["spark"]
+        infile = csv.reader(f, delimiter=',')
+        for row in infile:
+            dispatchers.append(row)
 
     user_conf = ["--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
                  "--conf", "spark.executor.cores={}".format(args["--spark-executor-cores"]),

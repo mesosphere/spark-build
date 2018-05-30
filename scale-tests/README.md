@@ -86,7 +86,6 @@ QUOTA_EXECUTORS_MEM=8192
 NUM_DISPATCHERS=1
 DISPATCHER_NAME_PREFIX="${TEST_NAME}"
 DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
-DISPATCHERS_JSON_FILE="${DISPATCHERS_OUTPUT_FILE}-dispatchers.json"
 
 ./scale-tests/deploy-dispatchers.py \
   --quota-drivers-cpus $QUOTA_DRIVERS_CPUS \
@@ -108,7 +107,7 @@ Launch batch jobs from the command line:
 SUBMITS_PER_MIN=1
 
 ./scale-tests/batch_test.py \
-  $DISPATCHERS_JSON_FILE \
+  $DISPATCHERS_OUTPUT_FILE \
   --submits-per-min $SUBMITS_PER_MIN
 ```
 

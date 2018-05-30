@@ -122,12 +122,11 @@ def submit_job(
         args=[],
         spark_user=SPARK_USER,
         driver_role=SPARK_DRIVER_ROLE,
-        verbose=True,
-        principal=SPARK_SERVICE_ACCOUNT):
+        verbose=True):
     if sdk_utils.is_strict_mode():
         args += [
             '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user),
-            '--conf spark.mesos.principal={}'.format(principal)
+            '--conf spark.mesos.principal={}'.format(SPARK_SERVICE_ACCOUNT)
         ]
     args += [
         '--conf spark.driver.memory=2g',
