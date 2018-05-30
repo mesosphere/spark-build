@@ -239,8 +239,19 @@ def cleanup(args):
         log.info("Processing cleanup of %s", k)
 
         for s in services:
-            log.info("Uninstalling %s with name %s", s["package_name"], s["service"]["name"])
-            sdk_install.uninstall(s["package_name"], s["service"]["name"])
+
+            service_name = s["service"]["name"]
+
+            log.info("Uninstalling %s with name %s", s["package_name"], service_name)
+            sdk_install.uninstall(s["package_name"], service_name)
+
+            service_account = sdk_utils.get_in(["service", "service_account"], s)
+            service_account_secret = sdk_utils.get_in(["service", "service_account_secret"], s)
+            if service_account:
+                log.info("Removing service accounts and secrets")
+                sdk_security.cleanup_security(service_name,
+                                            service_account=service_account,
+                                            service_account_secret=service_account_secret)
 
 
 def main(args):
