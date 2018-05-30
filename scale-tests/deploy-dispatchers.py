@@ -84,6 +84,9 @@ def create_quota(
     role_name: str,
     quota: typing.Dict
 ):
+    """
+    Create quota for the specified role.
+    """
     with no_stdout():
         stdout, _, _ = shakedown.run_dcos_command("spark quota list --json", raise_on_error=True)
         existing_quotas = json.loads(stdout)
@@ -93,8 +96,10 @@ def create_quota(
         shakedown.run_dcos_command("spark quota remove {}".format(role_name), raise_on_error=True)
 
     cmd_list = ["spark", "quota", "create"]
-    for resource, value in quota.items():
-        cmd_list.extend(["-{}".format(resource[0]), value,])
+
+    for r in ["cpus", "mem", "gpus", ]:
+        if r in quota:
+            cmd_list.extend(["-{}".format(r[0]), quota[r],])
 
     cmd_list.append(role_name)
 
@@ -107,7 +112,9 @@ def create_quota(
 
 
 def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
-
+    """
+    Set up the specified role for a service
+    """
     quota_for_role = quota.get(role_base, {})
 
     role_name = "{}-{}-role".format(service_name, role_base).replace("/", "__")
@@ -121,6 +128,11 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
 
 def setup_spark_security(service_name: str, driver_role: str,
                          service_account_info: typing.Dict):
+    """
+    In strict mode, additional permissions are required for Spark.
+
+    Add the permissions for the specified service account.
+    """
     if not sdk_utils.is_strict_mode():
         return
 
@@ -215,9 +227,12 @@ def deploy_dispatchers(
     output_file: str,
     linux_user: str,
     options: typing.Dict,
-    quota_options: typing.Dict):
+    quota_options: typing.Dict
+):
+    """
+    Deploy the required number of dispatchers and store their information to a text file.
+    """
 
-    shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
     with open(output_file, "w") as outfile:
 
         dispatchers = []
@@ -236,6 +251,9 @@ def deploy_dispatchers(
 
 
 def get_default_options(arguments: dict) -> dict:
+    """
+    Construct the default options from the command line arguments.
+    """
     options = {
         "service": {
             "cpus": int(arguments["--cpus"]),
@@ -301,6 +319,8 @@ if __name__ == "__main__":
 
     if arguments['--package-repo']:
         sdk_repository.add_stub_universe_urls([arguments['--package-repo']])
+
+    shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
 
     quota_options = get_quota_options(arguments)
 
