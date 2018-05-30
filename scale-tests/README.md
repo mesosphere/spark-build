@@ -160,6 +160,12 @@ In order to install the infrastructure for the streaming tests, the
 
 For example, the following command:
 
+*Note*: If the tests are to be run against a strict mode cluster, ensure that the
+`SECURITY` environment variable is set accordingly:
+```bash
+export SECURITY="strict"
+```
+
 ```bash
 TEST_NAME=dispatcher-streaming
 SERVICE_NAMES_PREFIX="${TEST_NAME}/"
