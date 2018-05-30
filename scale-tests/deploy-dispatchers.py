@@ -43,11 +43,11 @@ import contextlib
 import json
 import logging
 import os
-import shakedown
 import sys
 import typing
 import urllib
 
+import sdk_cmd
 import sdk_install
 import sdk_repository
 import sdk_security
@@ -88,27 +88,26 @@ def create_quota(
     Create quota for the specified role.
     """
     with no_stdout():
-        stdout, _, _ = shakedown.run_dcos_command("spark quota list --json", raise_on_error=True)
-        existing_quotas = json.loads(stdout)
+        existing_quotas = sdk_cmd.get_json_output("spark quota list --json")
 
     # remove existing quotas matching name
     if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
-        shakedown.run_dcos_command("spark quota remove {}".format(role_name), raise_on_error=True)
+        rc, _, _ = sdk_cmd.run_cli("spark quota remove {}".format(role_name))
+        assert rc == 0, "Error removing quota"
+
 
     cmd_list = ["spark", "quota", "create"]
-
     for r in ["cpus", "mem", "gpus", ]:
         if r in quota:
             cmd_list.extend(["-{}".format(r[0]), quota[r],])
 
     cmd_list.append(role_name)
 
-    cmd = " ".join(str(c) for c in cmd_list)
-
     # create quota
     log.info("Creating quota for %s: %s", role_name, quota)
-
-    shakedown.run_dcos_command(cmd, raise_on_error=True)
+    cmd = " ".join(str(c) for c in cmd_list)
+    rc, _, _ = sdk_cmd.run_cli(cmd)
+    assert rc == 0, "Error creating quota"
 
 
 def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
@@ -320,7 +319,9 @@ if __name__ == "__main__":
     if arguments['--package-repo']:
         sdk_repository.add_stub_universe_urls([arguments['--package-repo']])
 
-    shakedown.run_dcos_command("package install spark --cli --yes", raise_on_error=True)
+    rc, _, _ = sdk_cmd.run_cli("package install spark --cli --yes")
+    assert rc == 0, "Error installing spark CLI"
+
 
     quota_options = get_quota_options(arguments)
 
