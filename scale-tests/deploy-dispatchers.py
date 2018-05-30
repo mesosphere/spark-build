@@ -32,7 +32,7 @@ Options:
     --quota-executors-mem <n>    amount of memory (mb) to use per executors quota [default: 1524.0]
     --role <role>                Mesos role registered by dispatcher [default: *]
     --ucr-containerizer <bool>   launch using the Universal Container Runtime [default: True]
-    --user <user>                user to run dispatcher service as [default: nobody]
+    --user <user>                user to run dispatcher service as [default: root]
 
 """
 
@@ -46,6 +46,7 @@ import os
 import shakedown
 import sys
 import typing
+import urllib
 
 import sdk_install
 import sdk_repository
@@ -137,11 +138,18 @@ def setup_spark_security(service_name: str, driver_role: str,
         service_account_name=service_account_info["name"],
     )
 
-    app_id = service_name.replace("/", "__")
+    app_id = urllib.parse.quote(service_name)
     sdk_security._grant(service_account_info["name"],
                         "dcos:mesos:master:task:app_id:{}".format(app_id),
                         description="Spark drivers may execute Mesos tasks",
                         action="create")
+
+    if service_account_info.get("linux_user", "nobody") == "root":
+        log.info("Marathon must be able to launch tasks as root")
+        sdk_security._grant("dcos_marathon",
+                            "dcos:mesos:master:task:user:root",
+                            description="Root Marathon may launch tasks as root",
+                            action="create")
 
     return
 
