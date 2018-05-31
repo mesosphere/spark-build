@@ -36,6 +36,7 @@ import math
 from docopt import docopt
 
 import sdk_cmd
+import sdk_utils
 import spark_utils
 from scale_tests_utils import make_repeater, mapcat, normalize_string
 
@@ -75,8 +76,7 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
 
 
 def _submit_producer(kafka_broker_dns,
-                     service_name,
-                     executor_role,
+                     dispatcher,
                      kafka_topics,
                      number_of_words,
                      words_per_second,
@@ -106,18 +106,19 @@ def _submit_producer(kafka_broker_dns,
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
-        service_name=service_name,
         args=args,
-        driver_role=executor_role,
-        verbose=False)
+        verbose=False,
+        service_name=dispatcher['service']['name'],
+        driver_role=dispatcher['roles']['executors'],
+        spark_user=dispatcher['service']['user'] if sdk_utils.is_strict_mode() else None,
+        principal=dispatcher['service']['service_account'] if sdk_utils.is_strict_mode() else None)
 
     return submission_id
 
 
 def _submit_consumer(kafka_broker_dns,
                      cassandra_native_client_dns,
-                     service_name,
-                     executor_role,
+                     dispatcher,
                      kafka_topics,
                      kafka_group_id,
                      write_to_cassandra,
@@ -156,31 +157,28 @@ def _submit_consumer(kafka_broker_dns,
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
-        service_name=service_name,
         args=args,
-        driver_role=executor_role,
-        verbose=False)
+        verbose=False,
+        service_name=dispatcher['service']['name'],
+        driver_role=dispatcher['roles']['executors'],
+        spark_user=dispatcher['service']['user'] if sdk_utils.is_strict_mode() else None,
+        principal=dispatcher['service']['service_account'] if sdk_utils.is_strict_mode() else None)
 
     return submission_id
 
 
-def append_submission(output_file: str, dispatcher_service_name: str, submission_id: str):
+def append_submission(output_file: str, dispatcher: dict, submission_id: str):
     with open(output_file, "a") as f:
-        f.write("{},{}\n".format(dispatcher_service_name, submission_id))
-
-
-def parse_dispatcher(dispatcher):
-    """Parses dispatcher entries, returns their attributes.
-    """
-    dispatcher_service_name, driver_role, executor_role = dispatcher.split(',')
-    return dispatcher_service_name, driver_role, executor_role
+        f.write("{},{}\n".format(dispatcher['service']['name'], submission_id))
 
 
 class ProvidingStrategy(object):
     def __init__(self, dispatchers, num_jobs):
         self.dispatchers = dispatchers
+        self.num_dispatchers = len(dispatchers)
         self.num_jobs = num_jobs
-        self.slots = self.prepare()
+
+        self.prepare()
 
 
     def prepare(self):
@@ -204,11 +202,11 @@ class BlockProvidingStrategy(ProvidingStrategy):
     """
 
     def prepare(self):
-        self.avg_num_jobs_per_dispatcher = self.num_jobs / len(self.dispatchers)
+        self.avg_num_jobs_per_dispatcher = self.num_jobs / self.num_dispatchers
         self.max_num_jobs_per_dispatcher = math.ceil(self.avg_num_jobs_per_dispatcher)
 
-        return mapcat(make_repeater(self.max_num_jobs_per_dispatcher),
-                      self.dispatchers)
+        self.slots = mapcat(make_repeater(self.max_num_jobs_per_dispatcher),
+                            self.dispatchers)
 
 
     def provide(self):
@@ -219,7 +217,8 @@ class BlockProvidingStrategy(ProvidingStrategy):
         log.info('Providing strategy: block')
         log.info('Average number of jobs per dispatcher: %s', self.avg_num_jobs_per_dispatcher)
         log.info('Will run at most %s jobs per dispatcher', self.max_num_jobs_per_dispatcher)
-        log.info("\nDispatchers: \n%s\n", "\n".join(dispatchers))
+        log.info("\n%s dispatchers: \n%s\n",
+                 self.num_dispatchers, json.dumps(self.dispatchers, indent=2, sort_keys=True))
 
 
 class DispatcherProvider(object):
@@ -241,7 +240,7 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     with open(args["<dispatcher_file>"]) as f:
-        dispatchers = f.read().splitlines()
+        dispatchers = json.load(f)['spark']
 
     with open(args["<infrastructure_file>"]) as f:
         infrastructure = json.loads(f.read())
@@ -269,18 +268,15 @@ if __name__ == "__main__":
     consumer_spark_executor_cores = int(args['--consumer-spark-executor-cores'])
 
     num_kafkas = len(kafkas)
-    num_dispatchers = len(dispatchers)
     num_producers = num_kafkas * num_producers_per_kafka
     num_consumers = num_producers * num_consumers_per_producer
     num_jobs = num_producers + num_consumers
 
-    dispatcher_provider = DispatcherProvider(dispatchers, num_jobs)
-
     log.info('Number of Kafka clusters: %s', num_kafkas)
-    log.info('Number of dispatchers: %s', num_dispatchers)
     log.info('Total number of jobs: %s (%s producers, %s consumers)',
              num_jobs, num_producers, num_consumers)
 
+    dispatcher_provider = DispatcherProvider(dispatchers, num_jobs)
     dispatcher_provider.report()
 
     for kafka_package_name in kafka_package_names:
@@ -296,7 +292,7 @@ if __name__ == "__main__":
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
         for producer_idx in range(0, num_producers_per_kafka):
-            dispatcher_service_name, _, executor_role = parse_dispatcher(dispatcher_provider.provide())
+            dispatcher = dispatcher_provider.provide()
 
             producer_name = '{}-{}'.format(normalize_string(kafka_service_name), producer_idx)
             kafka_topics = producer_name
@@ -304,8 +300,7 @@ if __name__ == "__main__":
 
             producer_submission_id = _submit_producer(
                 kafka_broker_dns,
-                dispatcher_service_name,
-                executor_role,
+                dispatcher,
                 kafka_topics,
                 producer_number_of_words,
                 producer_words_per_second,
@@ -315,11 +310,11 @@ if __name__ == "__main__":
 
             append_submission(
                 submissions_output_file,
-                dispatcher_service_name,
+                dispatcher,
                 producer_submission_id)
 
             for consumer_idx in range(0, num_consumers_per_producer):
-                dispatcher_service_name, _, executor_role = parse_dispatcher(dispatcher_provider.provide())
+                dispatcher = dispatcher_provider.provide()
 
                 consumer_name = '{}-{}'.format(producer_name, consumer_idx)
                 consumer_kafka_group_id = consumer_name
@@ -328,8 +323,7 @@ if __name__ == "__main__":
                 consumer_submission_id = _submit_consumer(
                     kafka_broker_dns,
                     cassandra_native_client_dns,
-                    dispatcher_service_name,
-                    executor_role,
+                    dispatcher,
                     kafka_topics,
                     consumer_kafka_group_id,
                     consumer_write_to_cassandra,
@@ -342,5 +336,5 @@ if __name__ == "__main__":
 
                 append_submission(
                     submissions_output_file,
-                    dispatcher_service_name,
+                    dispatcher,
                     consumer_submission_id)
