@@ -114,24 +114,24 @@ SUBMITS_PER_MIN=1
 
 #### 3. Alternatively, deploy a Marathon app which launches batch jobs from within the cluster [optional]
 
-First, upload the DISPATCHERS_OUTPUT_FILE created above somewhere that is accessible from the cluster -
+First, upload the DISPATCHERS_JSON_FILE created above somewhere that is accessible from the cluster -
 S3, for example.
 
 To upload to S3, run the following *outside* the container:
 
 1. Change into the spark-build path.
 
-2. Run the following command, filling in a value for the S3_BUCKET and setting the DISPATCHERS_OUTPUT_FILE
+2. Run the following command, filling in a value for the S3_BUCKET and setting the DISPATCHERS_JSON_FILE
 to the same value as in the container:
 
 ```bash
 S3_BUCKET=<bucket>
 S3_FOLDER=scale-tests
-DISPATCHERS_OUTPUT_FILE=<output_file>
+DISPATCHERS_JSON_FILE=<json_file>
 
 aws s3 cp --acl public-read \
-  "${DISPATCHERS_OUTPUT_FILE}" \
-  "s3://${S3_BUCKET}/${S3_FOLDER}/${DISPATCHERS_OUTPUT_FILE}"
+  "${DISPATCHERS_JSON_FILE}" \
+  "s3://${S3_BUCKET}/${S3_FOLDER}/${DISPATCHERS_JSON_FILE}"
 ```
 
 Then run the following, filling in values for username, password, and S3 bucket:
@@ -141,7 +141,7 @@ DCOS_USERNAME=<username>
 DCOS_PASSWORD=<password>
 S3_BUCKET=<bucket>
 S3_FOLDER=scale-tests
-DISPATCHERS_OUTPUT_FILE_URL="https://${S3_BUCKET}.s3.amazonaws.com/${S3_FOLDER}/${DISPATCHERS_OUTPUT_FILE}"
+DISPATCHERS_JSON_FILE_URL="https://${S3_BUCKET}.s3.amazonaws.com/${S3_FOLDER}/${DISPATCHERS_JSON_FILE}"
 SCRIPT_CPUS=2
 SCRIPT_MEM=4096
 SUBMITS_PER_MIN=1
@@ -150,10 +150,10 @@ SUBMITS_PER_MIN=1
   scale-tests/spark-batch-workload.json.template \
   $DCOS_USERNAME \
   $DCOS_PASSWORD \
-  $DISPATCHERS_OUTPUT_FILE_URL \
+  $DISPATCHERS_JSON_FILE_URL \
   $SCRIPT_CPUS \
   $SCRIPT_MEM \
-  "${DISPATCHERS_OUTPUT_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
+  "${DISPATCHERS_JSON_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
 ```
 
 ### Streaming
@@ -223,6 +223,7 @@ QUOTA_EXECUTORS_MEM=8096
 NUM_DISPATCHERS=10
 DISPATCHER_NAME_PREFIX="${TEST_NAME}"
 DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
+DISPATCHERS_JSON_FILE="${DISPATCHERS_OUTPUT_FILE}-dispatchers.json"
 
 ./scale-tests/deploy-dispatchers.py \
   --quota-drivers-cpus $QUOTA_DRIVERS_CPUS \
@@ -239,7 +240,7 @@ DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
 Depends on:
 - `$INFRASTRUCTURE_OUTPUT_FILE` exported in step #1.
 - `$DISPATCHER_NAME_PREFIX` exported in step #2.
-- `$DISPATCHER_OUTPUT_FILE` exported in step #2.
+- `$DISPATCHERS_JSON_FILE` exported in step #2.
 
 If you want to run a different JAR make sure to build, upload it and use its public object URL.
 
@@ -259,7 +260,7 @@ CONSUMER_SPARK_CORES_MAX=1
 CONSUMER_SPARK_EXECUTOR_CORES=1
 
 ./scale-tests/kafka_cassandra_streaming_test.py \
-  $DISPATCHERS_OUTPUT_FILE \
+  $DISPATCHERS_JSON_FILE \
   $INFRASTRUCTURE_OUTPUT_FILE \
   $SUBMISSIONS_OUTPUT_FILE \
   --jar $JAR \
