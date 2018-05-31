@@ -223,6 +223,7 @@ QUOTA_EXECUTORS_MEM=8096
 NUM_DISPATCHERS=10
 DISPATCHER_NAME_PREFIX="${TEST_NAME}"
 DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
+DISPATCHERS_JSON_FILE="${DISPATCHERS_OUTPUT_FILE}-dispatchers.json"
 
 ./scale-tests/deploy-dispatchers.py \
   --quota-drivers-cpus $QUOTA_DRIVERS_CPUS \
@@ -239,7 +240,7 @@ DISPATCHERS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-dispatchers.out"
 Depends on:
 - `$INFRASTRUCTURE_OUTPUT_FILE` exported in step #1.
 - `$DISPATCHER_NAME_PREFIX` exported in step #2.
-- `$DISPATCHER_OUTPUT_FILE` exported in step #2.
+- `$DISPATCHERS_JSON_FILE` exported in step #2.
 
 If you want to run a different JAR make sure to build, upload it and use its public object URL.
 
@@ -259,7 +260,7 @@ CONSUMER_SPARK_CORES_MAX=1
 CONSUMER_SPARK_EXECUTOR_CORES=1
 
 ./scale-tests/kafka_cassandra_streaming_test.py \
-  $DISPATCHERS_OUTPUT_FILE \
+  $DISPATCHERS_JSON_FILE \
   $INFRASTRUCTURE_OUTPUT_FILE \
   $SUBMISSIONS_OUTPUT_FILE \
   --jar $JAR \
