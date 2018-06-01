@@ -29,6 +29,11 @@ import sdk_marathon
 from docopt import docopt
 
 
+logging.basicConfig(
+    format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
+    level=logging.INFO,
+    stream=sys.stdout)
+
 log = logging.getLogger(__name__)
 
 
@@ -41,7 +46,7 @@ def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: st
         Construct the marathon app definition.
         """
         app_defn = {
-            "id": "/{}".format(app_id),
+            "id": app_id,
             "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r scale-tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 batch_test.py $MESOS_SANDBOX/$SCRIPT_ARGS",
             "container": {
                 "type": "DOCKER",
