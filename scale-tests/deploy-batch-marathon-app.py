@@ -73,8 +73,10 @@ def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: st
         }
         return app_defn
 
-    sdk_marathon.install_app(_get_app_defn(app_id, dcos_username, dcos_password, input_file_uri, script_cpus,
-                                           script_mem, script_args, security, spark_build_branch))
+    (success, err_msg) = sdk_marathon.install_app(_get_app_defn(app_id, dcos_username, dcos_password, input_file_uri,
+                                                                script_cpus, script_mem, script_args, security,
+                                                                spark_build_branch))
+    assert success, err_msg
 
 
 if __name__ == "__main__":
