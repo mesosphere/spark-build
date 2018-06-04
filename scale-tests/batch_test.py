@@ -87,7 +87,7 @@ def submit_job(dispatcher: typing.Dict, duration: int, config: typing.List[str])
         args=config,
         driver_role=dispatcher["roles"]["executors"],
         spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
-        principal=dispatcher["service"]["service_account"]if sdk_utils.is_strict_mode() else None)
+        principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None)
 
 
 def submit_loop(submits_per_min: int, dispatchers: typing.List[typing.Dict], user_conf: typing.List[str]):
