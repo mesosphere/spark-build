@@ -142,18 +142,21 @@ DCOS_PASSWORD=<password>
 S3_BUCKET=<bucket>
 S3_FOLDER=scale-tests
 DISPATCHERS_JSON_FILE_URL="https://${S3_BUCKET}.s3.amazonaws.com/${S3_FOLDER}/${DISPATCHERS_JSON_FILE}"
+BATCH_APP_ID="${TEST_NAME}-batch-workload"
 SCRIPT_CPUS=2
 SCRIPT_MEM=4096
 SUBMITS_PER_MIN=1
+SECURITY=permissive
 
-./scale-tests/deploy-marathon-service.sh \
-  scale-tests/spark-batch-workload.json.template \
-  $DCOS_USERNAME \
-  $DCOS_PASSWORD \
-  $DISPATCHERS_JSON_FILE_URL \
-  $SCRIPT_CPUS \
-  $SCRIPT_MEM \
-  "${DISPATCHERS_JSON_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
+./scale-tests/deploy-batch-marathon-app.py \
+  --app-id $BATCH_APP_ID \
+  --dcos-username $DCOS_USERNAME \
+  --dcos-password $DCOS_PASSWORD \
+  --security $SECURITY \
+  --input-file-uri $DISPATCHERS_JSON_FILE_URL \
+  --script-cpus $SCRIPT_CPUS \
+  --script-mem $SCRIPT_MEM \
+  --script-args "${DISPATCHERS_JSON_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
 ```
 
 ### Streaming

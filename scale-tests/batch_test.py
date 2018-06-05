@@ -23,11 +23,13 @@ Options:
 import json
 import logging
 import random
+import sys
 import time
 from docopt import docopt
 from threading import Thread
 import typing
 
+import sdk_utils
 import spark_utils
 
 
@@ -40,6 +42,11 @@ import spark_utils
 # > python deploy-dispatchers.py 1 myspark dispatchers.txt
 # > python batch_test.py dispatchers.txt
 
+
+logging.basicConfig(
+    format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
+    level=logging.INFO,
+    stream=sys.stdout)
 
 log = logging.getLogger(__name__)
 MONTE_CARLO_APP_URL = "http://xhuynh-dev.s3.amazonaws.com/monte-carlo-portfolio.py"
@@ -72,24 +79,15 @@ def submit_job(dispatcher: typing.Dict, duration: int, config: typing.List[str])
 
     app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
 
-    if _is_strict(dispatcher):
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=MONTE_CARLO_APP_URL,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"],
-            spark_user=dispatcher["service"]["user"],
-            principal=dispatcher["service"]["service_account"])
-    else:
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=MONTE_CARLO_APP_URL,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"])
+    spark_utils.submit_job(
+        service_name=dispatcher_name,
+        app_url=MONTE_CARLO_APP_URL,
+        app_args=app_args,
+        verbose=False,
+        args=config,
+        driver_role=dispatcher["roles"]["executors"],
+        spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
+        principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None)
 
 
 def submit_loop(submits_per_min: int, dispatchers: typing.List[typing.Dict], user_conf: typing.List[str]):

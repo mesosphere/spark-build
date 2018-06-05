@@ -124,16 +124,21 @@ def submit_job(
         driver_role=SPARK_DRIVER_ROLE,
         verbose=True,
         principal=SPARK_SERVICE_ACCOUNT):
-    if sdk_utils.is_strict_mode():
-        args += [
-            '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user),
-            '--conf spark.mesos.principal={}'.format(principal)
-        ]
-    args += [
+
+    conf_args = args.copy()
+
+    conf_args += [
         '--conf spark.driver.memory=2g',
         '--conf spark.mesos.role={}'.format(driver_role)
     ]
-    submit_args = ' '.join([' '.join(args), app_url, app_args])
+
+    if sdk_utils.is_strict_mode():
+        conf_args += [
+            '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user),
+            '--conf spark.mesos.principal={}'.format(principal)
+        ]
+
+    submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
     verbose_flag = "--verbose" if verbose else ""
     stdout = sdk_cmd.svc_cli(
         SPARK_PACKAGE_NAME,
