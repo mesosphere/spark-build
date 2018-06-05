@@ -1,5 +1,10 @@
 {
+    "service": {
+        "virtual_network_enabled": true,
+        "virtual_network_name": "dcos"
+    },
     "brokers": {
-        "count": 5
+        "count": 5,
+        "disk_type": "ROOT"
     }
 }

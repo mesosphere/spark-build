@@ -1,4 +1,8 @@
 {
+    "service": {
+        "virtual_network_enabled": true,
+        "virtual_network_name": "dcos"
+    },
     "nodes": {
         "count": 5
     }
