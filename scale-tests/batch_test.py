@@ -78,6 +78,33 @@ def _is_strict(dispatcher: typing.Dict) -> bool:
     return dispatcher["service"].get("service_account") is not None
 
 
+def _get_gpu_user_conf(args):
+    def _verify_required_args():
+        if not (args["--spark-mesos-max-gpus"] and
+                args["--spark-mesos-executor-gpus"] and
+                args["--docker-image"]):
+            log.error("""
+            Missing required arguments for running gpu jobs. Please include:
+            --spark-mesos-max-gpus
+            --spark-mesos-executor-gpus
+            --docker-image
+            """)
+
+    _verify_required_args()
+
+    # Based on testing, 20gb per GPU is needed to run the job successfully.
+    # This is due to memory being divvied up and allocated to each GPU device.
+    memory_multiplier = 20
+    memory = int(args["--spark-mesos-executor-gpus"]) * memory_multiplier
+    return ["--conf", "spark.driver.memory={}g".format(str(memory)),
+            "--conf", "spark.executor.memory={}g".format(str(memory)),
+            "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
+            "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
+            "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
+            "--conf", "spark.mesos.executor.docker.forcePullImage=false"
+            ]
+
+
 def submit_job(app_url: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]):
     dispatcher_name = dispatcher["service"]["name"]
     log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher_name, duration)
@@ -119,6 +146,16 @@ if __name__ == "__main__":
         data = json.load(f)
         dispatchers = data["spark"]
 
+    if args["--max-num-dispatchers"]:
+        end = int(args["--max-num-dispatchers"])
+        if end <= len(dispatchers):
+            dispatchers = dispatchers[0:end]
+        else:
+            log.warning("""
+            Specified --max-num-dispatchers is greater than actual dispatcher count in {}.
+            Using list of dispatchers from file instead.
+            """.format(args["<dispatcher_file>"]))
+
     user_conf = ["--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
                  "--conf", "spark.executor.cores={}".format(args["--spark-executor-cores"]),
                  "--conf", "spark.mesos.containerizer={}".format(args["--spark-mesos-containerizer"]),
@@ -127,27 +164,15 @@ if __name__ == "__main__":
                 ]
 
     if args["--spark-mesos-executor-gpus"]:
-        MEMORY_MULTIPLIER = 20
-        memory = int(args["--spark-mesos-executor-gpus"]) * MEMORY_MULTIPLIER
-        user_conf += ["--conf", "spark.driver.memory={}g".format(str(memory)),
-                      "--conf", "spark.executor.memory={}g".format(str(memory)),
-                      "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
-                      "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
-                      "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
-                      "--conf", "spark.mesos.executor.docker.forcePullImage=false"
-                      ]
+        user_conf += _get_gpu_user_conf(args)
         app_url = GPU_IMAGE_RECOGNITION_APP_URL
     else:
         app_url = MONTE_CARLO_APP_URL
 
-    if args["--spark-mesos-driver-labels"] is not None:
+    if args["--spark-mesos-driver-labels"]:
         user_conf += ["--conf", "spark.mesos.driver.labels={}".format(args["--spark-mesos-driver-labels"])]
 
     if not args["--no-supervise"]:
         user_conf += ["--supervise"]
-
-    if args["--max-num-dispatchers"]:
-        end = int(args["--max-num-dispatchers"])
-        dispatchers = dispatchers[0:end]
 
     submit_loop(app_url, int(args["--submits-per-min"]), dispatchers, user_conf)
