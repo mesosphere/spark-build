@@ -87,7 +87,17 @@ object KafkaWordCount extends Logging {
       ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG -> brokers,
       ConsumerConfig.GROUP_ID_CONFIG -> groupId,
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer],
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer]
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer],
+      // Values to match kafka service package server.properties
+      ConsumerConfig.METRIC_REPORTER_CLASSES_CONFIG -> "com.airbnb.kafka.kafka09.StatsdMetricsReporter",
+      "kafka.metric.reporters" -> "com.airbnb.kafka.kafka08.StatsdMetricsReporter",
+      ConsumerConfig.METRICS_NUM_SAMPLES_CONFIG -> "2",
+      ConsumerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG -> "30000",
+      "external.kafka.statsd.port" -> sys.env("STATSD_UDP_PORT"),
+      "external.kafka.statsd.host" -> sys.env("STATSD_UDP_HOST"),
+      "external.kafka.statsd.reporter.enabled" -> "true",
+      "external.kafka.statsd.tag.enabled" -> "true",
+      "external.kafka.statsd.metrics.exclude_regex" -> ""
     ) ++ (
       if (isKerberized)
         Seq(

@@ -11,7 +11,9 @@ lazy val root = (project in file("."))
       "org.apache.hadoop" % "hadoop-aws" % "2.6.0",
       "org.apache.kafka" % "kafka_2.11" % "0.10.0.1",
       "com.github.scopt" %% "scopt" % "3.7.0",
-      "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.7"
+      "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.7",
+      "com.airbnb" % "kafka-statsd-metrics2" % "0.5.3" from "http://downloads.mesosphere.com/kafka/assets/kafka-statsd-metrics2-0.5.3.jar",
+      "com.datadoghq" % "java-dogstatsd-client" % "2.5"
     )
   )
 
