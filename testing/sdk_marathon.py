@@ -132,7 +132,7 @@ def install_app(app_definition: dict) -> (bool, str):
     app_name = app_definition["id"]
 
     with tempfile.TemporaryDirectory() as d:
-        app_def_file = "{}.json".format(app_name)
+        app_def_file = "{}.json".format(app_name.replace('/', '__'))
         log.info("Launching {} marathon app".format(app_name))
 
         app_def_path = os.path.join(d, app_def_file)

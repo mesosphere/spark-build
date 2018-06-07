@@ -1,17 +1,86 @@
 #!/usr/bin/env bash
-#
-# Requirements:
-# - git
-# - docker
-# - maws
 
-# TODO: checkout the master branch (in a temporary directory?) and build the
-# docker image used below.
-# git clone git@github.com:mesosphere/spark-build.git
-# cd spark-build
-# docker build -t "mesosphere/dcos-commons:${LOGNAME}-spark" scale-tests/
+set -eu -o pipefail
 
+function usage () {
+  echo 'Usage: ./run.sh \\'
+  echo '         <path to test configuration file> \\'
+  echo '         <test name> \\'
+  echo '         <test S3 bucket> \\'
+  echo '         <test S3 folder> \\'
+  echo '         <path to cluster SSH private key> \\'
+  echo '         <cluster URL> \\'
+  echo '         <DCOS username> \\'
+  echo '         <DCOS password> \\'
+  echo '         <cluster security mode> (optional, defaults to permissive)'
+  echo
+  echo 'Example: ./run.sh \\'
+  echo '           scale-tests/configs/2018-01-01.env \\'
+  echo '           scale-tests-2018-01-01 \\'
+  echo '           infinity-artifacts \\'
+  echo '           scale-tests/2018-01-01 \\'
+  echo '           ~/.ssh/dcos \\'
+  echo '           https://scaletests.mesosphere.io \\'
+  echo '           john \\'
+  echo '           john123 \\'
+  echo '           strict'
+}
+
+if [ "${#}" -lt 8 ]; then
+  echo "run.sh needs at least 8 arguments but was given ${#}"
+  echo
+  usage
+  exit 1
+fi
+
+readonly REQUIREMENTS='git docker maws tee'
+
+for requirement in ${REQUIREMENTS}; do
+  if ! [[ -x $(command -v "${requirement}") ]]; then
+    echo "You need to install '${requirement}' to run this script"
+    exit 1
+  fi
+done
+
+readonly TEST_CONFIG="${1:-}"
+readonly TEST_NAME="${2:-}"
+readonly TEST_S3_BUCKET="${3:-}"
+readonly TEST_S3_FOLDER="${4:-}"
+readonly CLUSTER_SSH_KEY="${5:-}"
+readonly CLUSTER_URL="${6:-}"
+readonly DCOS_USERNAME="${7:-}"
+readonly DCOS_PASSWORD="${8:-}"
+readonly SECURITY="${9:-permissive}"
+
+for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
+  if ! [[ -s ${file} ]]; then
+    echo "File '${file}' doesn't exist or is empty"
+    exit 1
+  fi
+done
+
+readonly AWS_ACCOUNT='Team 10'
+readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/scale-testing/stub-universe-spark.json' # Spark with quota support.
+readonly CONTAINER_NAME="${TEST_NAME}"
+readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
+readonly CONTAINER_SSH_KEY=/ssh/key
+readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
+readonly LOG_FILE="${TEST_NAME}.log"
+readonly TEST_DIRECTORY="${TEST_NAME}"
+
+source "${TEST_CONFIG}"
+
+function log {
+  local -r message="${*-}"
+  echo "$(date "+%Y-%m-%d %H:%M:%S") | ${message}" 2>&1 | tee -a "${LOG_FILE}"
+}
+
+declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
+
+git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
+
+docker build -t "${IMAGE_NAME}" "${TEST_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
 
 docker run \
   --rm \
@@ -25,41 +94,37 @@ docker run \
   -e AWS_PROFILE="${AWS_PROFILE}" \
   -e SECURITY="${SECURITY}" \
   "${IMAGE_NAME}" \
-  bash
+  bash | tee -a "${LOG_FILE}"
 
-docker exec "${CONTAINER_NAME}" bash -c "ssh-agent | grep -v echo > ${CONTAINER_SSH_AGENT_EXPORTS}"
+docker exec "${CONTAINER_NAME}" \
+  bash -c "ssh-agent | grep -v echo > ${CONTAINER_SSH_AGENT_EXPORTS}" | tee -a "${LOG_FILE}"
 
 function container_exec () {
-  # TODO: remove this echo.
-  echo "\
+  local -r command="${*}"
+  local -r full_command="
     . ${CONTAINER_SSH_AGENT_EXPORTS}
     ssh-add -k ${CONTAINER_SSH_KEY} > /dev/null 2>&1
-    set -x
-    ${*}
-  "
-  # TODO: maybe remove the set -x?
-  docker exec "${CONTAINER_NAME}" bash -c "\
-    . ${CONTAINER_SSH_AGENT_EXPORTS}
-    ssh-add -k ${CONTAINER_SSH_KEY} > /dev/null 2>&1
-    set -x
-    ${*}
-  "
+    ${command}
+  "  
+  log "${command}"
+  docker exec "${CONTAINER_NAME}" \
+    bash -c "${full_command}" 2>&1 | tee -a "${LOG_FILE}"
 }
 
 container_exec \
   dcos cluster setup \
     --insecure \
-    --username="${CLUSTER_USERNAME}" \
-    --password="${CLUSTER_PASSWORD}" \
+    --username="${DCOS_USERNAME}" \
+    --password="${DCOS_PASSWORD}" \
     "${CLUSTER_URL}"
 
 container_exec \
   dcos package install --yes dcos-enterprise-cli
 
 container_exec \
-  dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}"
+  dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}" || true
 
-# Install infrastructure.
+log 'Installing infrastructure'
 container_exec \
   ./scale-tests/setup_streaming.py "${INFRASTRUCTURE_OUTPUT_FILE}" \
     --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
@@ -69,13 +134,19 @@ container_exec \
     --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
     --cassandra-config "${CASSANDRA_CONFIG}"
 
-# Upload infrastructure file to S3.
+read -p "\nWas the infrastructure installed correctly? Should we continue running the script? [y/N]: " ANSWER
+case "${ANSWER}" in
+  [Yy]* ) ;;
+  * ) log "Bailing, you might need to clean up manually..." && exit 1;;
+esac
+
+log 'Uploading infrastructure file to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${INFRASTRUCTURE_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Install non-GPU dispatchers.
+log 'Installing non-GPU dispatchers'
 container_exec \
   ./scale-tests/deploy-dispatchers.py \
     --quota-drivers-cpus "${NON_GPU_QUOTA_DRIVERS_CPUS}" \
@@ -86,19 +157,19 @@ container_exec \
     "${SERVICE_NAMES_PREFIX}" \
     "${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
 
-# Upload non-GPU dispatcher list to S3.
+log 'Uploading non-GPU dispatcher list to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Upload non-GPU JSON dispatcher list to S3.
+log 'Uploading non-GPU JSON dispatcher list to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Install GPU dispatchers.
+log 'Installing GPU dispatchers'
 container_exec \
   ./scale-tests/deploy-dispatchers.py \
     --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
@@ -110,19 +181,19 @@ container_exec \
     "${SERVICE_NAMES_PREFIX}gpu-" \
     "${GPU_DISPATCHERS_OUTPUT_FILE}"
 
-# Upload GPU dispatcher list to S3.
+log 'Uploading GPU dispatcher list to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${GPU_DISPATCHERS_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Upload non-GPU JSON dispatcher list to S3.
+log 'Uploading GPU JSON dispatcher list to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Merge non-GPU and GPU dispatcher list files.
+log 'Merging non-GPU and GPU dispatcher list files'
 container_exec "\
   jq -s \
     '{spark: (.[0].spark + .[1].spark)}' \
@@ -131,13 +202,13 @@ container_exec "\
     > ${DISPATCHERS_JSON_OUTPUT_FILE} \
 "
 
-# Upload merged dispatcher list file.
+log 'Uploading merged dispatcher list file'
 container_exec \
   aws s3 cp --acl public-read \
     "${DISPATCHERS_JSON_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Deploy failing jobs.
+log 'Deploying failing jobs'
 container_exec \
   ./scale-tests/kafka_cassandra_streaming_test.py \
     "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -157,13 +228,13 @@ container_exec \
     --consumer-spark-cores-max "${FAILING_CONSUMER_SPARK_CORES_MAX}" \
     --consumer-spark-executor-cores "${FAILING_CONSUMER_SPARK_EXECUTOR_CORES}"
 
-# Upload failing jobs submissions file.
+log 'Uploading failing jobs submissions file'
 container_exec \
   aws s3 cp --acl public-read \
     "${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Deploy finite jobs. Consumers write to Cassandra.
+log 'Deploying finite jobs. Consumers write to Cassandra'
 container_exec \
   ./scale-tests/kafka_cassandra_streaming_test.py \
     "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -181,13 +252,13 @@ container_exec \
     --consumer-spark-cores-max "${FINITE_CONSUMER_SPARK_CORES_MAX}" \
     --consumer-spark-executor-cores "${FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
 
-# Upload finite jobs submissions file.
+log 'Uploading finite jobs submissions file'
 container_exec \
   aws s3 cp --acl public-read \
     "${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Deploy infinite jobs. Consumers don't write to Cassandra.
+log 'Deploying infinite jobs. Consumers do not write to Cassandra'
 container_exec \
   ./scale-tests/kafka_cassandra_streaming_test.py \
     "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -204,39 +275,39 @@ container_exec \
     --consumer-spark-cores-max "${INFINITE_CONSUMER_SPARK_CORES_MAX}" \
     --consumer-spark-executor-cores "${INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
 
-# Upload infinite jobs submissions file.
+log 'Uploading infinite jobs submissions file'
 container_exec \
   aws s3 cp --acl public-read \
     "${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
     "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
-# Deploy batch jobs.
+log 'Deploying batch jobs'
 container_exec \
   ./scale-tests/deploy-batch-marathon-app.py \
     --app-id "${BATCH_APP_ID}" \
-    --dcos-username "${CLUSTER_USERNAME}" \
-    --dcos-password "${CLUSTER_PASSWORD}" \
+    --dcos-username "${DCOS_USERNAME}" \
+    --dcos-password "${DCOS_PASSWORD}" \
     --security "${SECURITY}" \
     --input-file-uri "${DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
     --script-cpus "${BATCH_SCRIPT_CPUS}" \
     --script-mem "${BATCH_SCRIPT_MEM}" \
-    --script-args "\
+    --script-args "\"\
       ${DISPATCHERS_JSON_OUTPUT_FILE} \
       --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
-    "\
+    \"" \
     --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}"
 
-# Deploy batch GPU jobs.
+log 'Deploy batch GPU jobs'
 container_exec \
   ./scale-tests/deploy-batch-marathon-app.py \
     --app-id "${GPU_APP_ID}" \
-    --dcos-username "${CLUSTER_USERNAME}" \
-    --dcos-password "${CLUSTER_PASSWORD}" \
+    --dcos-username "${DCOS_USERNAME}" \
+    --dcos-password "${DCOS_PASSWORD}" \
     --security "${SECURITY}" \
     --input-file-uri "${GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
     --script-cpus "${GPU_SCRIPT_CPUS}" \
     --script-mem "${GPU_SCRIPT_MEM}" \
-    --script-args "\
+    --script-args "\"\
       ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
       --submits-per-min ${GPU_SUBMITS_PER_MIN} \
       --docker-image ${GPU_DOCKER_IMAGE} \
@@ -245,9 +316,15 @@ container_exec \
       --spark-mesos-executor-gpus ${GPU_SPARK_MESOS_EXECUTOR_GPUS} \
       --spark-mesos-max-gpus ${GPU_SPARK_MESOS_MAX_GPUS} \
       --no-supervise \
-    "\
+    \"" \
     --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}"
 
-# List S3 artifacts.
+log 'Uploading log file to S3'
+container_exec \
+  aws s3 cp --acl public-read \
+    "${LOG_FILE}" \
+    "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+
+log 'Listing S3 artifacts'
 container_exec \
   aws s3 ls "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
