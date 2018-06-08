@@ -89,7 +89,6 @@ function container_exec () {
 declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
 
-
 declare SHOULD_INSTALL_INFRASTRUCTURE
 declare SHOULD_INSTALL_NON_GPU_DISPATCHERS
 declare SHOULD_INSTALL_GPU_DISPATCHERS
@@ -259,9 +258,6 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
     ./scale-tests/deploy-dispatchers.py \
       --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
       --quota-drivers-mem "${GPU_QUOTA_DRIVERS_MEM}" \
-      --quota-executors-cpus "${GPU_QUOTA_EXECUTORS_CPUS}" \
-      --quota-executors-mem "${GPU_QUOTA_EXECUTORS_MEM}" \
-      --quota-executors-gpus "${GPU_QUOTA_EXECUTORS_GPUS}" \
       "${GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}gpu-" \
       "${GPU_DISPATCHERS_OUTPUT_FILE}"
