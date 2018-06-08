@@ -231,12 +231,6 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
       "${SERVICE_NAMES_PREFIX}" \
       "${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
 
-  if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
-    for i in $(seq 1 "${GPU_NUM_DISPATCHERS}"); do
-      dcos spark remove quota "${TEST_NAME}__gpu-spark-0${i}-executors-role"
-    done
-  fi
-
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
@@ -261,6 +255,12 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
       "${GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}gpu-" \
       "${GPU_DISPATCHERS_OUTPUT_FILE}"
+
+  if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
+    for i in $(seq 1 "${GPU_NUM_DISPATCHERS}"); do
+      dcos spark remove quota "${TEST_NAME}__gpu-spark-0${i}-executors-role"
+    done
+  fi
 
   log 'Uploading GPU dispatcher list to S3'
   container_exec \
