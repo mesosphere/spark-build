@@ -70,7 +70,7 @@ readonly TEST_DIRECTORY="${TEST_NAME}"
 source "${TEST_CONFIG}"
 
 function log {
-  local -r message="${*-}"
+  local -r message="${*:-}"
   echo "$(date "+%Y-%m-%d %H:%M:%S") | ${message}" 2>&1 | tee -a "${LOG_FILE}"
 }
 
@@ -231,6 +231,12 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
       "${NON_GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}" \
       "${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
+
+  if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
+    for i in $(seq 1 "${GPU_NUM_DISPATCHERS}"); do
+      dcos spark remove quota "${TEST_NAME}__gpu-spark-0${i}-executors-role"
+    done
+  fi
 
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \

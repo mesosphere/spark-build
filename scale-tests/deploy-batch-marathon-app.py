@@ -61,7 +61,7 @@ def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: st
             "env": {
                 "DCOS_UID": dcos_username,
                 "DCOS_PASSWORD": dcos_password,
-                "SCRIPT_ARGS": script_args,
+                "SCRIPT_ARGS": script_args.strip(),
                 "SPARK_BUILD_BRANCH": spark_build_branch,
                 "SECURITY": security
             },
