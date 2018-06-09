@@ -90,10 +90,6 @@ def install(
         insert_strict_options=True):
     start = time.time()
 
-    # If the package is already installed at this point, fail immediately.
-    if sdk_marathon.app_exists(service_name):
-        raise dcos.errors.DCOSException('Service is already installed: {}'.format(service_name))
-
     if insert_strict_options and sdk_utils.is_strict_mode():
         # strict mode requires correct principal and secret to perform install.
         # see also: sdk_security.py

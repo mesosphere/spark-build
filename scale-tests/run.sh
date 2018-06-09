@@ -258,7 +258,7 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
 
   if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
     for i in $(seq 1 "${GPU_NUM_DISPATCHERS}"); do
-      dcos spark remove quota "${TEST_NAME}__gpu-spark-0${i}-executors-role"
+      dcos spark quota remove "${TEST_NAME}__gpu-spark-0${i}-executors-role"
     done
   fi
 
