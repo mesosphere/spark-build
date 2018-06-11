@@ -191,7 +191,6 @@ def install_package(package_name: str,
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    # create drivers & executors role quotas
     drivers_role = setup_role(service_name, "drivers", quota_options)
     executors_role = setup_role(service_name, "executors", quota_options)
 
