@@ -98,6 +98,7 @@ def _get_gpu_user_conf(args):
     memory = int(args["--spark-mesos-executor-gpus"]) * memory_multiplier
     return ["--conf", "spark.driver.memory={}g".format(str(memory)),
             "--conf", "spark.executor.memory={}g".format(str(memory)),
+            "--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
             "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
             "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
             "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
