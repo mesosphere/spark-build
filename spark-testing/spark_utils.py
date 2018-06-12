@@ -26,7 +26,7 @@ MESOS_SPARK_TEST_JAR_URL = os.getenv(MESOS_SPARK_TEST_JAR_URL_ENV, None)
 SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
 SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark")
-FOLDERED_SPARK_SERVICE_NAME = "path/to/" + SPARK_SERVICE_NAME
+FOLDERED_SPARK_SERVICE_NAME = "/path/to/" + SPARK_SERVICE_NAME
 SPARK_USER = os.getenv("SPARK_USER", "nobody")
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
 JOB_WAIT_TIMEOUT_SEC = 1800
@@ -218,7 +218,7 @@ def spark_security_session():
     secret = SPARK_SERVICE_ACCOUNT_SECRET
 
     def grant_driver_permission(service_account_name, service_name):
-        app_id = "/{}".format(service_name)
+        app_id = "/{}".format(service_name.lstrip("/"))
         # double-encoded (why?)
         app_id = urllib.parse.quote(
             urllib.parse.quote(app_id, safe=''),
