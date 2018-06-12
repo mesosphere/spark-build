@@ -66,6 +66,7 @@ readonly CONTAINER_SSH_KEY=/ssh/key
 readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
 readonly LOG_FILE="${TEST_NAME}.log"
 readonly TEST_DIRECTORY="${TEST_NAME}"
+readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
 source "${TEST_CONFIG}"
 
@@ -212,7 +213,7 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 
   echo
   read -p "Was the infrastructure installed correctly? Should we continue running the script? [y/N]: " ANSWER
@@ -240,13 +241,13 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading non-GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
       "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping non-GPU dispatchers installation'
 fi
@@ -271,13 +272,13 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${GPU_DISPATCHERS_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
       "${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping GPU dispatchers installation'
 fi
@@ -295,7 +296,7 @@ log 'Uploading merged dispatcher list file'
 container_exec \
   aws s3 cp --acl public-read \
     "${DISPATCHERS_JSON_OUTPUT_FILE}" \
-    "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+    "${TEST_S3_DIRECTORY_URL}"
 
 if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   log 'Running failing jobs'
@@ -322,7 +323,7 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of failing streaming jobs'
 fi
@@ -350,7 +351,7 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of finite streaming jobs'
 fi
@@ -377,7 +378,7 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   container_exec \
     aws s3 cp --acl public-read \
       "${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+      "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of infinite streaming jobs'
 fi
@@ -432,8 +433,8 @@ log 'Uploading log file to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${LOG_FILE}" \
-    "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+    "${TEST_S3_DIRECTORY_URL}"
 
 log 'Listing S3 artifacts'
 container_exec \
-  aws s3 ls "s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+  aws s3 ls "${TEST_S3_DIRECTORY_URL}"
