@@ -39,7 +39,6 @@ Options:
 from docopt import docopt
 
 import ast
-import contextlib
 import json
 import logging
 import os
@@ -71,15 +70,6 @@ log = logging.getLogger(__name__)
 # file.
 
 
-@contextlib.contextmanager
-def no_stdout():
-    save_stdout = sys.stdout
-    with open("/dev/null", "w") as null:
-        sys.stdout = null
-        yield
-        sys.stdout = save_stdout
-
-
 def create_quota(
     role_name: str,
     quota: typing.Dict
@@ -87,8 +77,7 @@ def create_quota(
     """
     Create quota for the specified role.
     """
-    with no_stdout():
-        existing_quotas = sdk_cmd.get_json_output("spark quota list --json")
+    existing_quotas = sdk_cmd.get_json_output("spark quota list --json", print_output=False)
 
     # remove existing quotas matching name
     if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
