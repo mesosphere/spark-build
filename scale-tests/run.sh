@@ -75,15 +75,10 @@ function log {
 }
 
 function container_exec () {
-  local -r command="${*}"
-  local -r full_command="
-    . ${CONTAINER_SSH_AGENT_EXPORTS}
-    ssh-add -k ${CONTAINER_SSH_KEY} > /dev/null 2>&1
-    ${command}
-  "  
+  local -r command="${*:-}"
   log "${command}"
   docker exec "${CONTAINER_NAME}" \
-    bash -c "${full_command}" 2>&1 | tee -a "${LOG_FILE}"
+    bash -l -c "${command}" 2>&1 | tee -a "${LOG_FILE}"
 }
 
 declare -x AWS_PROFILE
@@ -175,8 +170,18 @@ else
     "${IMAGE_NAME}" \
     bash | tee -a "${LOG_FILE}"
 
+  # This circumvents a warning shown due to container_exec running with a login bash shell.
+  docker exec "${CONTAINER_NAME}" \
+    bash -c 'sed -i "/mesg/d" ~/.profile' | tee -a "${LOG_FILE}"
+
   docker exec "${CONTAINER_NAME}" \
     bash -c "ssh-agent | grep -v echo > ${CONTAINER_SSH_AGENT_EXPORTS}" | tee -a "${LOG_FILE}"
+
+  docker exec "${CONTAINER_NAME}" \
+    bash -c "echo source ${CONTAINER_SSH_AGENT_EXPORTS} >> ~/.profile" | tee -a "${LOG_FILE}"
+
+  container_exec \
+    ssh-add -k "${CONTAINER_SSH_KEY}"
 
   container_exec \
     dcos cluster setup \
