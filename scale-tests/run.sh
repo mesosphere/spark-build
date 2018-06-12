@@ -366,7 +366,7 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-number-of-words "${INFINITE_PRODUCER_NUMBER_OF_WORDS}" \
+      --producer-number-of-words 0 \
       --producer-words-per-second "${INFINITE_PRODUCER_WORDS_PER_SECOND}" \
       --producer-spark-cores-max "${INFINITE_PRODUCER_SPARK_CORES_MAX}" \
       --producer-spark-executor-cores "${INFINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
