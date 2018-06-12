@@ -36,6 +36,7 @@ Options:
 
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from docopt import docopt
 
 import ast
@@ -61,6 +62,8 @@ logging.basicConfig(
     stream=sys.stdout)
 
 log = logging.getLogger(__name__)
+
+MAX_THREADPOOL_WORKERS = 50
 
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and
@@ -225,20 +228,24 @@ def deploy_dispatchers(
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
+    def deploy_dispatcher(i):
+        return install_package('spark',
+                               service_name_base,
+                               i,
+                               linux_user,
+                               lambda x: 0,
+                               None,
+                               options,
+                               quota_options)
 
-    with open(output_file, "w") as outfile:
-        dispatchers = []
-        for i in range(num_dispatchers):
-            dispatcher_settings = install_package("spark", service_name_base, i,
-                                                linux_user,
-                                                lambda x: 0,
-                                                None,
-                                                options,
-                                                quota_options)
-            dispatchers.append(dispatcher_settings)
-            outfile.write("{},{},{}\n".format(dispatcher_settings["service"]["name"],
-                                              dispatcher_settings["roles"]["drivers"],
-                                              dispatcher_settings["roles"]["executors"]))
+    with ThreadPoolExecutor(max_workers=MAX_THREADPOOL_WORKERS) as executor:
+        dispatchers = list(executor.map(deploy_dispatcher, range(num_dispatchers)))
+
+    with open(output_file, 'w') as outfile:
+        for dispatcher in dispatchers:
+            outfile.write('{},{},{}\n'.format(dispatcher['service']['name'],
+                                              dispatcher['roles']['drivers'],
+                                              dispatcher['roles']['executors']))
             outfile.flush()
 
     return dispatchers
