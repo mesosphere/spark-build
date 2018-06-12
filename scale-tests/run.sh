@@ -150,7 +150,7 @@ case "${ANSWER}" in
   * ) ;;
 esac
 
-if docker top "${CONTAINER_NAME}" > /dev/null 2>&1; then
+if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
   log 'Container already running'
 else
   git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
