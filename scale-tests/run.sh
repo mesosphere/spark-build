@@ -394,11 +394,11 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
       --input-file-uri "${DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
       --script-cpus "${BATCH_SCRIPT_CPUS}" \
       --script-mem "${BATCH_SCRIPT_MEM}" \
+      --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
       --script-args "\"\
         ${DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
-      \"" \
-      --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}"
+      \""
 else
   log 'Skipping running of batch jobs'
 fi
@@ -414,6 +414,7 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
       --input-file-uri "${GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
       --script-cpus "${GPU_SCRIPT_CPUS}" \
       --script-mem "${GPU_SCRIPT_MEM}" \
+      --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}" \
       --script-args "\"\
         ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${GPU_SUBMITS_PER_MIN} \
@@ -423,8 +424,7 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
         --spark-mesos-executor-gpus ${GPU_SPARK_MESOS_EXECUTOR_GPUS} \
         --spark-mesos-max-gpus ${GPU_SPARK_MESOS_MAX_GPUS} \
         --no-supervise \
-      \"" \
-      --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}"
+      \""
 else
   log 'Skipping running of GPU batch jobs'
 fi
