@@ -74,6 +74,7 @@ class Resource:
             format=self._units,
             decimals=2,
             span=1,
+            height=1,
             targets=[
                 Target(
                     expr=self._get_expression(op)
