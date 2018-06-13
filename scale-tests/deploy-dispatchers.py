@@ -228,10 +228,10 @@ def deploy_dispatchers(
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
-    def deploy_dispatcher(i):
+    def deploy_dispatcher(index: int) -> dict:
         return install_package('spark',
                                service_name_base,
-                               i,
+                               index,
                                linux_user,
                                lambda x: 0,
                                None,
