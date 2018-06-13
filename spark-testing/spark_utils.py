@@ -217,20 +217,17 @@ def spark_security_session():
     service_account = SPARK_SERVICE_ACCOUNT
     secret = SPARK_SERVICE_ACCOUNT_SECRET
 
-    def grant_driver_permission(service_account_name, app_id):
-        dcosurl, headers = sdk_security.get_dcos_credentials()
+    def grant_driver_permission(service_account_name, service_name):
+        app_id = "/{}".format(service_name.lstrip("/"))
         # double-encoded (why?)
-        app_id_encoded = urllib.parse.quote(
+        app_id = urllib.parse.quote(
             urllib.parse.quote(app_id, safe=''),
             safe=''
         )
-        sdk_security.grant(
-            dcosurl,
-            headers,
-            service_account_name,
-            "dcos:mesos:master:task:app_id:{}".format(app_id_encoded),
-            "Spark drivers may execute Mesos tasks"
-        )
+        sdk_security._grant(service_account_name,
+                            "dcos:mesos:master:task:app_id:{}".format(app_id),
+                            description="Spark drivers may execute Mesos tasks",
+                            action="create")
 
     def setup_security():
         LOGGER.info('Setting up strict-mode security for Spark')
