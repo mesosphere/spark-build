@@ -200,6 +200,7 @@ fi
 
 if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Installing infrastructure'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/setup_streaming.py "${INFRASTRUCTURE_OUTPUT_FILE}" \
       --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
@@ -208,6 +209,9 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
       --kafka-config "${KAFKA_CONFIG}" \
       --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
       --cassandra-config "${CASSANDRA_CONFIG}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Installed infrastructure in ${runtime} seconds"
 
   log 'Uploading infrastructure file to S3'
   container_exec \
@@ -227,6 +231,7 @@ fi
 
 if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   log 'Installing non-GPU dispatchers'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
       --quota-drivers-cpus "${NON_GPU_QUOTA_DRIVERS_CPUS}" \
@@ -236,6 +241,9 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
       "${NON_GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}" \
       "${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Installed non-GPU dispatchers in ${runtime} seconds"
 
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \
@@ -254,6 +262,7 @@ fi
 
 if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   log 'Installing GPU dispatchers'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
       --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
@@ -261,6 +270,9 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
       "${GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}gpu-" \
       "${GPU_DISPATCHERS_OUTPUT_FILE}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Installed GPU dispatchers in ${runtime} seconds"
 
   if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
     for i in $(seq 1 "${GPU_NUM_DISPATCHERS}"); do
@@ -299,7 +311,8 @@ container_exec \
     "${TEST_S3_DIRECTORY_URL}"
 
 if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
-  log 'Running failing jobs'
+  log 'Starting failing jobs'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
       "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -318,6 +331,9 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
       --consumer-batch-size-seconds "${FAILING_CONSUMER_BATCH_SIZE_SECONDS}" \
       --consumer-spark-cores-max "${FAILING_CONSUMER_SPARK_CORES_MAX}" \
       --consumer-spark-executor-cores "${FAILING_CONSUMER_SPARK_EXECUTOR_CORES}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Started failing jobs in ${runtime} seconds"
 
   log 'Uploading failing jobs submissions file'
   container_exec \
@@ -329,7 +345,8 @@ else
 fi
 
 if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
-  log 'Running finite jobs. Consumers write to Cassandra'
+  log 'Starting finite jobs. Consumers write to Cassandra'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
       "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -346,6 +363,9 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
       --consumer-batch-size-seconds "${FINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
       --consumer-spark-cores-max "${FINITE_CONSUMER_SPARK_CORES_MAX}" \
       --consumer-spark-executor-cores "${FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Started finite jobs in ${runtime} seconds"
 
   log 'Uploading finite jobs submissions file'
   container_exec \
@@ -357,7 +377,8 @@ else
 fi
 
 if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
-  log 'Running infinite jobs. Consumers do not write to Cassandra'
+  log 'Starting infinite jobs. Consumers do not write to Cassandra'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
       "${DISPATCHERS_JSON_OUTPUT_FILE}" \
@@ -373,6 +394,9 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
       --consumer-batch-size-seconds "${INFINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
       --consumer-spark-cores-max "${INFINITE_CONSUMER_SPARK_CORES_MAX}" \
       --consumer-spark-executor-cores "${INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Started infinite jobs in ${runtime} seconds"
 
   log 'Uploading infinite jobs submissions file'
   container_exec \
@@ -384,7 +408,8 @@ else
 fi
 
 if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
-  log 'Running batch jobs'
+  log 'Starting batch jobs'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-batch-marathon-app.py \
       --app-id "${BATCH_APP_ID}" \
@@ -399,12 +424,16 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
         ${DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
       \""
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Started batch jobs in ${runtime} seconds"
 else
   log 'Skipping running of batch jobs'
 fi
 
 if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
-  log 'Running GPU batch jobs'
+  log 'Starting GPU batch jobs'
+  start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-batch-marathon-app.py \
       --app-id "${GPU_APP_ID}" \
@@ -425,6 +454,9 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
         --spark-mesos-max-gpus ${GPU_SPARK_MESOS_MAX_GPUS} \
         --no-supervise \
       \""
+  end_time=$(date +%s)
+  runtime=$(($end_time - $start_time))
+  log "Started GPU batch jobs in ${runtime} seconds"
 else
   log 'Skipping running of GPU batch jobs'
 fi
