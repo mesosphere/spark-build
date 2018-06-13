@@ -98,7 +98,6 @@ def _get_gpu_user_conf(args):
     memory = int(args["--spark-mesos-executor-gpus"]) * memory_multiplier
     return ["--conf", "spark.driver.memory={}g".format(str(memory)),
             "--conf", "spark.executor.memory={}g".format(str(memory)),
-            "--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
             "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
             "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
             "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
@@ -106,11 +105,9 @@ def _get_gpu_user_conf(args):
             ]
 
 
-def submit_job(app_url: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]):
+def submit_job(app_url: str, app_args: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]):
     dispatcher_name = dispatcher["service"]["name"]
     log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher_name, duration)
-
-    app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
 
     spark_utils.submit_job(
         service_name=dispatcher_name,
@@ -167,8 +164,11 @@ if __name__ == "__main__":
     if args["--spark-mesos-executor-gpus"]:
         user_conf += _get_gpu_user_conf(args)
         app_url = GPU_IMAGE_RECOGNITION_APP_URL
+        app_args = "550 3" # 550 images in 3 batches
     else:
         app_url = MONTE_CARLO_APP_URL
+        app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
+
 
     if args["--spark-mesos-driver-labels"]:
         user_conf += ["--conf", "spark.mesos.driver.labels={}".format(args["--spark-mesos-driver-labels"])]
