@@ -93,8 +93,6 @@ object KafkaWordCount extends Logging {
       "kafka.metric.reporters" -> "com.airbnb.kafka.kafka08.StatsdMetricsReporter",
       ConsumerConfig.METRICS_NUM_SAMPLES_CONFIG -> "2",
       ConsumerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG -> "30000",
-      "external.kafka.statsd.port" -> sys.env("STATSD_UDP_PORT"),
-      "external.kafka.statsd.host" -> sys.env("STATSD_UDP_HOST"),
       "external.kafka.statsd.reporter.enabled" -> "true",
       "external.kafka.statsd.tag.enabled" -> "true",
       "external.kafka.statsd.metrics.exclude_regex" -> ""
