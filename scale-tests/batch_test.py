@@ -129,7 +129,13 @@ def submit_loop(app_url: str, submits_per_min: int, dispatchers: typing.List[typ
     dispatcher_index = 0
     while(True):
         duration = _get_duration()
-        t = Thread(target=submit_job, args=(app_url, dispatchers[dispatcher_index], duration, user_conf))
+
+        if app_url == MONTE_CARLO_APP_URL:
+            app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
+        else:
+            app_args = "550 3"  # 550 images in 3 batches
+
+        t = Thread(target=submit_job, args=(app_url, app_args, dispatchers[dispatcher_index], duration, user_conf))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         log.info("sleeping %s sec.", sec_between_submits)
@@ -164,11 +170,8 @@ if __name__ == "__main__":
     if args["--spark-mesos-executor-gpus"]:
         user_conf += _get_gpu_user_conf(args)
         app_url = GPU_IMAGE_RECOGNITION_APP_URL
-        app_args = "550 3" # 550 images in 3 batches
     else:
         app_url = MONTE_CARLO_APP_URL
-        app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
-
 
     if args["--spark-mesos-driver-labels"]:
         user_conf += ["--conf", "spark.mesos.driver.labels={}".format(args["--spark-mesos-driver-labels"])]
