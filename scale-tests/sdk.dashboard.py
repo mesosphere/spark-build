@@ -14,15 +14,15 @@ installed on a Cluster.
 import typing
 
 from grafanalib.core import (
-    Row,
     Dashboard,
-    Target,
     Graph,
+    Row,
+    SingleStat,
+    Table,
+    Target,
+    Templating,
     YAxes,
     YAxis,
-    Table,
-    SingleStat,
-    Templating,
 )
 
 
@@ -31,7 +31,7 @@ POD_TYPE_VARIABLE = "$pod_type"
 DCOS_SERVICE_NAME_SELECTION = {"dcos_service_name": FRAMEWORK_VARIABLE}
 
 
-def reduction(op: str, metric_definition: str, by: typing.Dict[str,str]) -> str:
+def reduction(op: str, metric_definition: str, by: typing.Dict[str, str]) -> str:
     """
     Construct a reduction string for a metric.
     """
@@ -47,14 +47,16 @@ def reduction(op: str, metric_definition: str, by: typing.Dict[str,str]) -> str:
     return "{} by ({})".format(reduced, by_string)
 
 
-def metric(name: str, selection: typing.Dict[str,str]) -> str:
+def metric(name: str, selection: typing.Dict[str, str]) -> str:
     """
     Construct a metric with a selection string.
     """
     if not selection:
         return name
 
-    selection_string = ",".join('{}="{}"'.format(k.strip(), v.strip()) for k, v in selection.items())
+    selection_string = ",".join(
+        '{}="{}"'.format(k.strip(), v.strip()) for k, v in selection.items()
+    )
 
     return "%s{%s}" % (name, selection_string)
 
@@ -73,7 +75,9 @@ def aggregate(op: str, metric: str, duration: str) -> str:
     return "{}({}[{}])".format(op, metric, duration)
 
 
-def service_metric(metric_name: str, aggregation: str=None, duration: str=None) -> str:
+def service_metric(
+    metric_name: str, aggregation: str = None, duration: str = None
+) -> str:
     """
     Construct the metric query for the specified DC/OS service.
     """
@@ -88,12 +92,13 @@ class ResourceStat:
     """
     Encapsulate a single-stat resource panel for a framework / pod.
     """
+
     def __init__(self, title, metric, units="none", pod_type=None):
         self._title = title
         self._metric = metric
         self._framework_name = FRAMEWORK_VARIABLE
         self._pod_type = pod_type
-        self._units=units
+        self._units = units
 
     def _get_expression(self, op: str) -> str:
         """
@@ -106,7 +111,7 @@ class ResourceStat:
 
         return reduction(op, metric(self._metric, selection), selection)
 
-    def to_single_stat(self, op: str="sum") -> SingleStat:
+    def to_single_stat(self, op: str = "sum") -> SingleStat:
         return SingleStat(
             title=self._title,
             dataSource="${DS_PROMETHEUS}",
@@ -114,14 +119,11 @@ class ResourceStat:
             decimals=2,
             span=1,
             height=1,
-            targets=[
-                Target(
-                    expr=self._get_expression(op)
-                )
-            ]
+            targets=[Target(expr=self._get_expression(op))],
         )
 
-def resource_row(pod_type: str=None) -> Row:
+
+def resource_row(pod_type: str = None) -> Row:
     """
     Construct a Grafana row with resource statistics.
     """
@@ -134,13 +136,27 @@ def resource_row(pod_type: str=None) -> Row:
         title=title,
         repeat=POD_TYPE_VARIABLE.lstrip("$") if pod_type else "",
         panels=[
-            ResourceStat("Pod count", "cpus_limit", pod_type=pod_type).to_single_stat("count"),
-            ResourceStat("Used memory", "mem_total", "decbytes", pod_type=pod_type).to_single_stat(),
-            ResourceStat("Available memory", "mem_limit", "decbytes", pod_type=pod_type).to_single_stat(),
+            ResourceStat("Pod count", "cpus_limit", pod_type=pod_type).to_single_stat(
+                "count"
+            ),
+            ResourceStat(
+                "Used memory", "mem_total", "decbytes", pod_type=pod_type
+            ).to_single_stat(),
+            ResourceStat(
+                "Available memory", "mem_limit", "decbytes", pod_type=pod_type
+            ).to_single_stat(),
             ResourceStat("CPU", "cpus_limit", pod_type=pod_type).to_single_stat(),
-            ResourceStat("Disk used (placeholder)", "disk_used", "decbytes", pod_type=pod_type).to_single_stat(),
-            ResourceStat("Disk available (placeholder)", "disk_limit", "decbytes", pod_type=pod_type).to_single_stat(),
-    ])
+            ResourceStat(
+                "Disk used (placeholder)", "disk_used", "decbytes", pod_type=pod_type
+            ).to_single_stat(),
+            ResourceStat(
+                "Disk available (placeholder)",
+                "disk_limit",
+                "decbytes",
+                pod_type=pod_type,
+            ).to_single_stat(),
+        ],
+    )
 
 
 def scheduler_row() -> Row:
@@ -172,25 +188,35 @@ def scheduler_row() -> Row:
                 title="cumulative offer statistics",
                 dataSource="${DS_PROMETHEUS}",
                 span=2,
-                targets=[Target(expr=sum(service_metric(m)), legendFormat=m) for m in offer_metrics],
+                targets=[
+                    Target(expr=sum(service_metric(m)), legendFormat=m)
+                    for m in offer_metrics
+                ],
                 steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0))
+                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
             ),
             Graph(
                 title="offer events per second [{} rate]".format(resolution),
                 dataSource="${DS_PROMETHEUS}",
                 span=2,
-                targets=[Target(expr=sum(service_metric(m, "rate", resolution)), legendFormat=m) for m in offer_metrics],
+                targets=[
+                    Target(
+                        expr=sum(service_metric(m, "rate", resolution)), legendFormat=m
+                    )
+                    for m in offer_metrics
+                ],
                 steppedLine=True,
             ),
             Graph(
                 title="offer processing time",
                 dataSource="${DS_PROMETHEUS}",
                 span=2,
-                targets=[Target(expr=service_metric(m), legendFormat=m) for m in offer_timers],
-                yAxes=YAxes(left=YAxis(format="ns"))
-            )
-        ]
+                targets=[
+                    Target(expr=service_metric(m), legendFormat=m) for m in offer_timers
+                ],
+                yAxes=YAxes(left=YAxis(format="ns")),
+            ),
+        ],
     )
 
 
@@ -214,66 +240,70 @@ def task_row() -> Row:
                 title="cumulative task statistics",
                 dataSource="${DS_PROMETHEUS}",
                 span=2,
-                targets=[Target(expr=sum(service_metric(m)), legendFormat=m) for m in task_metrics],
+                targets=[
+                    Target(expr=sum(service_metric(m)), legendFormat=m)
+                    for m in task_metrics
+                ],
                 steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0))
+                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
             ),
             Graph(
                 title="task events per second [{} rate]".format(resolution),
                 dataSource="${DS_PROMETHEUS}",
                 span=2,
-                targets=[Target(expr=sum(service_metric(m, "rate", resolution)), legendFormat=m) for m in task_metrics],
+                targets=[
+                    Target(
+                        expr=sum(service_metric(m, "rate", resolution)), legendFormat=m
+                    )
+                    for m in task_metrics
+                ],
                 steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0))
+                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
             ),
-        ]
+        ],
     )
 
 
 dashboard = Dashboard(
     title="Generated SDK dashboard",
-    rows=[
-        resource_row(),
-        resource_row(POD_TYPE_VARIABLE),
-        scheduler_row(),
-        task_row(),
-    ],
+    rows=[resource_row(), resource_row(POD_TYPE_VARIABLE), scheduler_row(), task_row()],
     templating=Templating(
         list=[
-                {
-                    "datasource": "${DS_PROMETHEUS}",
-                    "hide": 0,
-                    "name": FRAMEWORK_VARIABLE.lstrip("$"),
-                    "options": [],
-                    "query": "label_values(offers_received, dcos_service_name)",
-                    "refresh": 1,
-                    "regex": "",
-                    "sort": 0,
-                    "tagValuesQuery": "",
-                    "tags": [],
-                    "tagsQuery": "",
-                    "type": "query",
-                },
-                {
-                    "allValue": "*",
-                    "current": {},
-                    "datasource": "${DS_PROMETHEUS}",
-                    "hide": 2,
-                    "includeAll": True,
-                    "label": None,
-                    "multi": False,
-                    "name": POD_TYPE_VARIABLE.lstrip("$"),
-                    "options": [],
-                    "query": 'label_values(cpus_limit{framework_name="%s"}, executor_name)' % (FRAMEWORK_VARIABLE),
-                    "refresh": 1,
-                    "regex": "",
-                    "sort": 0,
-                    "tagValuesQuery": "",
-                    "tags": [],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": False
-                },
+            {
+                "datasource": "${DS_PROMETHEUS}",
+                "hide": 0,
+                "name": FRAMEWORK_VARIABLE.lstrip("$"),
+                "options": [],
+                "query": "label_values(offers_received, dcos_service_name)",
+                "refresh": 1,
+                "regex": "",
+                "sort": 0,
+                "tagValuesQuery": "",
+                "tags": [],
+                "tagsQuery": "",
+                "type": "query",
+            },
+            {
+                "allValue": "*",
+                "current": {},
+                "datasource": "${DS_PROMETHEUS}",
+                "hide": 2,
+                "includeAll": True,
+                "label": None,
+                "multi": False,
+                "name": POD_TYPE_VARIABLE.lstrip("$"),
+                "options": [],
+                "query": 'label_values(cpus_limit{framework_name="%s"}, executor_name)'
+                % (FRAMEWORK_VARIABLE),
+                "refresh": 1,
+                "regex": "",
+                "sort": 0,
+                "tagValuesQuery": "",
+                "tags": [],
+                "tagsQuery": "",
+                "type": "query",
+                "useTags": False,
+            },
         ]
     ),
     inputs=[
@@ -283,7 +313,7 @@ dashboard = Dashboard(
             "description": "",
             "type": "datasource",
             "pluginId": "prometheus",
-            "pluginName": "Prometheus"
+            "pluginName": "Prometheus",
         }
-    ]
+    ],
 ).auto_panel_ids()
