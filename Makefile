@@ -27,7 +27,7 @@ $(SPARK_DIR):
 prod-dist: $(SPARK_DIR)
 	pushd $(SPARK_DIR)
 	rm -rf spark-*.tgz
-	./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Phive -Phive-thriftserver -DskipTests
+	./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests
 	filename=`ls spark-*.tgz`
 	rm -rf $(DIST_DIR)
 	mkdir -p $(DIST_DIR)

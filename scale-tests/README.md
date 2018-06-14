@@ -250,7 +250,7 @@ If you want to run a different JAR make sure to build, upload it and use its pub
 Wait for the dispatchers to come online and run the following command:
 
 ```bash
-JAR=http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180523-fa29ab5.jar
+JAR=http://infinity-artifacts.s3.amazonaws.com/scale-tests/dcos-spark-scala-tests-assembly-20180612-5fa9420.jar
 SUBMISSIONS_OUTPUT_FILE="${DISPATCHER_NAME_PREFIX}-submissions.out"
 NUM_PRODUCERS_PER_KAFKA=1
 NUM_CONSUMERS_PER_PRODUCER=1
