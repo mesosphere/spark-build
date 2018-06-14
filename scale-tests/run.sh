@@ -416,7 +416,7 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
       --dcos-username "${DCOS_USERNAME}" \
       --dcos-password "${DCOS_PASSWORD}" \
       --security "${SECURITY}" \
-      --input-file-uri "${DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
+      --input-file-uri "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
       --script-cpus "${BATCH_SCRIPT_CPUS}" \
       --script-mem "${BATCH_SCRIPT_MEM}" \
       --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
