@@ -291,7 +291,7 @@ else
   log 'Skipping GPU dispatchers installation'
 fi
 
-if ! [[ -s ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
+if [[ -s ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
   log 'Merging non-GPU and GPU dispatcher list files'
   container_exec "\
     jq -s \
