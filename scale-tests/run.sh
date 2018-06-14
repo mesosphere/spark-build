@@ -218,13 +218,6 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
     aws s3 cp --acl public-read \
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
-
-  echo
-  read -p "Was the infrastructure installed correctly? Should we continue running the script? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) ;;
-    * ) log 'Bailing, you might need to clean up manually...' && exit 1;;
-  esac
 else
   log 'Skipping infrastructure installation' 
 fi
