@@ -298,20 +298,24 @@ else
   log 'Skipping GPU dispatchers installation'
 fi
 
-log 'Merging non-GPU and GPU dispatcher list files'
-container_exec "\
-  jq -s \
-    '{spark: (.[0].spark + .[1].spark)}' \
-    ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
-    ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
-    > ${DISPATCHERS_JSON_OUTPUT_FILE} \
-"
+if ! [[ -s ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
+  log 'Merging non-GPU and GPU dispatcher list files'
+  container_exec "\
+    jq -s \
+      '{spark: (.[0].spark + .[1].spark)}' \
+      ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      > ${DISPATCHERS_JSON_OUTPUT_FILE} \
+  "
 
-log 'Uploading merged dispatcher list file'
-container_exec \
-  aws s3 cp --acl public-read \
-    "${DISPATCHERS_JSON_OUTPUT_FILE}" \
-    "${TEST_S3_DIRECTORY_URL}"
+  log 'Uploading merged dispatcher list file'
+  container_exec \
+    aws s3 cp --acl public-read \
+      "${DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_S3_DIRECTORY_URL}"
+else
+  log 'Skipping merging of non-GPU and GPU dispatcher list files'
+fi
 
 if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   log 'Starting failing jobs'
