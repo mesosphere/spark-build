@@ -36,10 +36,10 @@ Options:
 
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from docopt import docopt
 
 import ast
-import contextlib
 import json
 import logging
 import os
@@ -63,21 +63,14 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
+MAX_THREADPOOL_WORKERS = 50
+
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and
 # append an index to generate a unique service name for each dispatcher.
 #
 # The service names of the deployed dispatchers will be written into an output
 # file.
-
-
-@contextlib.contextmanager
-def no_stdout():
-    save_stdout = sys.stdout
-    with open("/dev/null", "w") as null:
-        sys.stdout = null
-        yield
-        sys.stdout = save_stdout
 
 
 def create_quota(
@@ -87,8 +80,7 @@ def create_quota(
     """
     Create quota for the specified role.
     """
-    with no_stdout():
-        existing_quotas = sdk_cmd.get_json_output("spark quota list --json")
+    existing_quotas = sdk_cmd.get_json_output("spark quota list --json", print_output=False)
 
     # remove existing quotas matching name
     if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
@@ -236,20 +228,24 @@ def deploy_dispatchers(
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
+    def deploy_dispatcher(index: int) -> dict:
+        return install_package('spark',
+                               service_name_base,
+                               index,
+                               linux_user,
+                               lambda x: 0,
+                               None,
+                               options,
+                               quota_options)
 
-    with open(output_file, "w") as outfile:
-        dispatchers = []
-        for i in range(num_dispatchers):
-            dispatcher_settings = install_package("spark", service_name_base, i,
-                                                linux_user,
-                                                lambda x: 0,
-                                                None,
-                                                options,
-                                                quota_options)
-            dispatchers.append(dispatcher_settings)
-            outfile.write("{},{},{}\n".format(dispatcher_settings["service"]["name"],
-                                              dispatcher_settings["roles"]["drivers"],
-                                              dispatcher_settings["roles"]["executors"]))
+    with ThreadPoolExecutor(max_workers=MAX_THREADPOOL_WORKERS) as executor:
+        dispatchers = list(executor.map(deploy_dispatcher, range(num_dispatchers)))
+
+    with open(output_file, 'w') as outfile:
+        for dispatcher in dispatchers:
+            outfile.write('{},{},{}\n'.format(dispatcher['service']['name'],
+                                              dispatcher['roles']['drivers'],
+                                              dispatcher['roles']['executors']))
             outfile.flush()
 
     return dispatchers
