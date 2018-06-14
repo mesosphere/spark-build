@@ -318,7 +318,7 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
@@ -352,7 +352,7 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
@@ -384,7 +384,7 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
@@ -424,7 +424,7 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
       --script-mem "${BATCH_SCRIPT_MEM}" \
       --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
       --script-args "\"\
-        ${DISPATCHERS_JSON_OUTPUT_FILE} \
+        ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
       \""
   end_time=$(date +%s)
