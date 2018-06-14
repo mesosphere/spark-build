@@ -9,6 +9,11 @@ generate-dashboard -o sdk.generated.json sdk.dashboard.py
 
 This creates an `sdk.json` file that contains the Grafana dashboard definition for monitoring SDK-based frameworks
 installed on a Cluster.
+
+*Note*: From https://github.com/weaveworks/grafanalib#generating-dashboards
+> If you save the above as frontend.dashboard.py (the suffix must be .dashboard.py), you can then generate the JSON dashboard with:
+
+And thus the Python dashboard definition MUST end in `.dashboard.py`.
 """
 
 import typing
