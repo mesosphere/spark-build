@@ -13,12 +13,23 @@ installed on a Cluster.
 
 import typing
 
-from grafanalib.core import *
+from grafanalib.core import (
+    Row,
+    Dashboard,
+    Target,
+    Graph,
+    YAxes,
+    YAxis,
+    Table,
+    SingleStat,
+    Templating,
+)
 
 
 FRAMEWORK_VARIABLE = "$framework"
 POD_TYPE_VARIABLE = "$pod_type"
 DCOS_SERVICE_NAME_SELECTION = {"dcos_service_name": FRAMEWORK_VARIABLE}
+
 
 def reduction(op: str, metric_definition: str, by: typing.Dict[str,str]) -> str:
     """
