@@ -172,6 +172,10 @@ def append_submission(output_file: str, dispatcher: dict, submission_id: str):
         f.write("{},{}\n".format(dispatcher['service']['name'], submission_id))
 
 
+def is_valid_cassandra_keyspace_name(keyspace_name: str) -> bool:
+    return len(keyspace_name) < 48
+
+
 class ProvidingStrategy(object):
     def __init__(self, dispatchers, num_jobs):
         self.dispatchers = dispatchers
@@ -291,12 +295,17 @@ if __name__ == "__main__":
         kafka_service_name = kafka['service']['name']
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
+        kafka_service_basename = kafka_service_name.split('/')[-1]
+
         for producer_idx in range(0, num_producers_per_kafka):
             dispatcher = dispatcher_provider.provide()
 
-            producer_name = '{}-{}'.format(normalize_string(kafka_service_name), producer_idx)
+            producer_name = '{}-{}'.format(normalize_string(kafka_service_basename), producer_idx)
             kafka_topics = producer_name
-            producer_cassandra_keyspace = normalize_string(producer_name)
+            producer_cassandra_keyspace = 'keyspace_{}'.format(normalize_string(producer_name))
+            if not is_valid_cassandra_keyspace_name(producer_cassandra_keyspace):
+                raise ValueError('\'{}\' is not a valid Cassandra keyspace name'.format(
+                    producer_cassandra_keyspace))
 
             producer_submission_id = _submit_producer(
                 kafka_broker_dns,
