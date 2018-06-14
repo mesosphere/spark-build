@@ -38,6 +38,7 @@ import os
 import sys
 import typing
 
+from concurrent.futures import ThreadPoolExecutor
 from docopt import docopt
 
 import sdk_cmd
@@ -199,9 +200,11 @@ def install_cassandra(args: dict) -> list:
 
 def install(args):
     services = {}
-    services["zookeeper"] = install_zookeeper(args)
-    services["kafka"] = install_kafka(args, services["zookeeper"])
-    services["cassandra"] = install_cassandra(args)
+
+    with ThreadPoolExecutor() as executor:
+        services['cassandra'] = executor.submit(install_cassandra, args).result()
+u       services['zookeeper'] = executor.submit(install_zookeeper, args).result()
+        services['kafka'] = executor.submit(install_kafka, args, services['zookeeper'])
 
     for k, v in services.items():
         log.info("%s service(s): %s", k, v)

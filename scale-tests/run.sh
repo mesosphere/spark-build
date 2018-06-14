@@ -2,8 +2,12 @@
 
 set -eu -o pipefail
 
+readonly SCRIPT_DIRECTORY="$(dirname ${0})"
+readonly ROOT_DIRECTORY="$(readlink -f "${SCRIPT_DIRECTORY}/..")"
+
 function usage () {
   echo 'Usage: ./run.sh \\'
+  echo '         <spark-build git ref> (branch name or commit SHA) \\'
   echo '         <path to test configuration file> \\'
   echo '         <test name> \\'
   echo '         <test S3 bucket> \\'
@@ -15,6 +19,7 @@ function usage () {
   echo '         <cluster security mode> (optional, defaults to permissive)'
   echo
   echo 'Example: ./run.sh \\'
+  echo '           master \\'
   echo '           scale-tests/configs/2018-01-01.env \\'
   echo '           scale-tests-2018-01-01 \\'
   echo '           infinity-artifacts \\'
@@ -26,8 +31,8 @@ function usage () {
   echo '           strict'
 }
 
-if [ "${#}" -lt 8 ]; then
-  echo -e "run.sh needs at least 8 arguments but was given ${#}\\n"
+if [ "${#}" -lt 9 ]; then
+  echo -e "run.sh needs at least 9 arguments but was given ${#}\\n"
   usage
   exit 1
 fi
@@ -41,15 +46,16 @@ for requirement in ${REQUIREMENTS}; do
   fi
 done
 
-readonly TEST_CONFIG="${1:-}"
-readonly TEST_NAME="${2:-}"
-readonly TEST_S3_BUCKET="${3:-}"
-readonly TEST_S3_FOLDER="${4:-}"
-readonly CLUSTER_SSH_KEY="${5:-}"
-readonly CLUSTER_URL="${6:-}"
-readonly DCOS_USERNAME="${7:-}"
-readonly DCOS_PASSWORD="${8:-}"
-readonly SECURITY="${9:-permissive}"
+readonly TEST_GIT_REF="${1:-}"
+readonly TEST_CONFIG="${2:-}"
+readonly TEST_NAME="${3:-}"
+readonly TEST_S3_BUCKET="${4:-}"
+readonly TEST_S3_FOLDER="${5:-}"
+readonly CLUSTER_SSH_KEY="${6:-}"
+readonly CLUSTER_URL="${7:-}"
+readonly DCOS_USERNAME="${8:-}"
+readonly DCOS_PASSWORD="${9:-}"
+readonly SECURITY="${10:-permissive}"
 
 for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
   if ! [[ -s ${file} ]]; then
@@ -60,13 +66,25 @@ done
 
 readonly AWS_ACCOUNT='Team 10'
 readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/scale-testing/stub-universe-spark.json' # Spark with quota support.
+readonly LOG_FILE="${TEST_NAME}.log"
+readonly TEST_GIT_REF_CLEAN="$(echo ${TEST_GIT_REF} | tr '/:' _)"
+readonly TEST_DIRECTORY_BASE_NAME="/tmp/${TEST_NAME}_${TEST_GIT_REF_CLEAN}"
+readonly TEST_DIRECTORY="$(mktemp -d "${TEST_DIRECTORY_BASE_NAME}_XXXX")"
+readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 readonly CONTAINER_NAME="${TEST_NAME}"
 readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
 readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
-readonly LOG_FILE="${TEST_NAME}.log"
-readonly TEST_DIRECTORY="${TEST_NAME}"
-readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+readonly CONTAINER_TEST_DIRECTORY="/spark-build-with-ref-${TEST_GIT_REF_CLEAN}"
+
+SHOULD_INSTALL_INFRASTRUCTURE=false
+SHOULD_INSTALL_NON_GPU_DISPATCHERS=false
+SHOULD_INSTALL_GPU_DISPATCHERS=false
+SHOULD_RUN_FAILING_STREAMING_JOBS=false
+SHOULD_RUN_FINITE_STREAMING_JOBS=false
+SHOULD_RUN_INFINITE_STREAMING_JOBS=false
+SHOULD_RUN_BATCH_JOBS=false
+SHOULD_RUN_GPU_BATCH_JOBS=false
 
 source "${TEST_CONFIG}"
 
@@ -85,14 +103,63 @@ function container_exec () {
 declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
 
-SHOULD_INSTALL_INFRASTRUCTURE=false
-SHOULD_INSTALL_NON_GPU_DISPATCHERS=false
-SHOULD_INSTALL_GPU_DISPATCHERS=false
-SHOULD_RUN_FAILING_STREAMING_JOBS=false
-SHOULD_RUN_FINITE_STREAMING_JOBS=false
-SHOULD_RUN_INFINITE_STREAMING_JOBS=false
-SHOULD_RUN_BATCH_JOBS=false
-SHOULD_RUN_GPU_BATCH_JOBS=false
+git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
+
+cd "${TEST_DIRECTORY}"
+
+git reset --hard "origin/${TEST_GIT_REF}"
+
+docker build -t "${IMAGE_NAME}" "${TEST_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
+
+if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
+  log "Container '${CONTAINER_NAME}' already running. Destroying..."
+  docker kill "${CONTAINER_NAME}" | tee -a "${LOG_FILE}"
+  sleep 1
+fi
+
+docker run \
+  --rm \
+  -it \
+  -d \
+  --name="${CONTAINER_NAME}" \
+  --net=host \
+  -v "${ROOT_DIRECTORY}:/spark-build" \
+  -v "${TEST_DIRECTORY}:/${CONTAINER_TEST_DIRECTORY}" \
+  -v "${CLUSTER_SSH_KEY}:${CONTAINER_SSH_KEY}:ro" \
+  -v "${HOME}/.aws/credentials:/root/.aws/credentials:ro" \
+  -e AWS_PROFILE="${AWS_PROFILE}" \
+  -e SECURITY="${SECURITY}" \
+  "${IMAGE_NAME}" \
+  bash | tee -a "${LOG_FILE}"
+
+# This circumvents a warning shown due to container_exec running with a login bash shell.
+docker exec "${CONTAINER_NAME}" \
+  bash -c 'sed -i "/mesg/d" ~/.profile' | tee -a "${LOG_FILE}"
+
+docker exec "${CONTAINER_NAME}" \
+  bash -c "ssh-agent | grep -v echo > ${CONTAINER_SSH_AGENT_EXPORTS}" | tee -a "${LOG_FILE}"
+
+docker exec "${CONTAINER_NAME}" \
+  bash -c "echo source ${CONTAINER_SSH_AGENT_EXPORTS} >> ~/.profile" | tee -a "${LOG_FILE}"
+
+container_exec \
+  ssh-add -k "${CONTAINER_SSH_KEY}"
+
+container_exec \
+  dcos cluster setup \
+    --insecure \
+    --username="${DCOS_USERNAME}" \
+    --password="${DCOS_PASSWORD}" \
+    "${CLUSTER_URL}"
+
+container_exec \
+  dcos package install --yes dcos-enterprise-cli
+
+container_exec \
+  dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}" || true
+
+container_exec \
+  cd "${CONTAINER_TEST_DIRECTORY}"
 
 echo
 read -p "Install infrastructure? [y/N]: " ANSWER
@@ -149,54 +216,6 @@ case "${ANSWER}" in
   [Yy]* ) SHOULD_RUN_GPU_BATCH_JOBS=true;;
   * ) ;;
 esac
-
-if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
-  log 'Container already running'
-else
-  git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
-
-  docker build -t "${IMAGE_NAME}" "${TEST_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
-
-  docker run \
-    --rm \
-    -it \
-    -d \
-    --name="${CONTAINER_NAME}" \
-    --net=host \
-    -v "$(pwd):/spark-build" \
-    -v "${CLUSTER_SSH_KEY}:${CONTAINER_SSH_KEY}:ro" \
-    -v "${HOME}/.aws/credentials:/root/.aws/credentials:ro" \
-    -e AWS_PROFILE="${AWS_PROFILE}" \
-    -e SECURITY="${SECURITY}" \
-    "${IMAGE_NAME}" \
-    bash | tee -a "${LOG_FILE}"
-
-  # This circumvents a warning shown due to container_exec running with a login bash shell.
-  docker exec "${CONTAINER_NAME}" \
-    bash -c 'sed -i "/mesg/d" ~/.profile' | tee -a "${LOG_FILE}"
-
-  docker exec "${CONTAINER_NAME}" \
-    bash -c "ssh-agent | grep -v echo > ${CONTAINER_SSH_AGENT_EXPORTS}" | tee -a "${LOG_FILE}"
-
-  docker exec "${CONTAINER_NAME}" \
-    bash -c "echo source ${CONTAINER_SSH_AGENT_EXPORTS} >> ~/.profile" | tee -a "${LOG_FILE}"
-
-  container_exec \
-    ssh-add -k "${CONTAINER_SSH_KEY}"
-
-  container_exec \
-    dcos cluster setup \
-      --insecure \
-      --username="${DCOS_USERNAME}" \
-      --password="${DCOS_PASSWORD}" \
-      "${CLUSTER_URL}"
-
-  container_exec \
-    dcos package install --yes dcos-enterprise-cli
-
-  container_exec \
-    dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}" || true
-fi
 
 if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Installing infrastructure'
