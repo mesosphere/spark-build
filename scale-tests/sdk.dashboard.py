@@ -4,39 +4,55 @@ Generate a generic SDK dashboard.
 ```bash
 pip install grafanalib
 
-generate-dashboard -o sdk.json sdk.dashboard.py
+generate-dashboard -o sdk.generated.json sdk.dashboard.py
 ```
 
 This creates an `sdk.json` file that contains the Grafana dashboard definition for monitoring SDK-based frameworks
 installed on a Cluster.
 """
 
+import typing
+
 from grafanalib.core import *
 
 
-def reduction(op: str, metric_definition: str, by: str) -> str:
+FRAMEWORK_VARIABLE = "$framework"
+POD_TYPE_VARIABLE = "$pod_type"
+DCOS_SERVICE_NAME_SELECTION = {"dcos_service_name": FRAMEWORK_VARIABLE}
+
+def reduction(op: str, metric_definition: str, by: typing.Dict[str,str]) -> str:
     """
     Construct a reduction string for a metric.
     """
-    base = "{}({})".format(op, metric_definition)
-    if by:
-        return "{} by ({})".format(base, by)
+    if not op:
+        return metric_definition
 
-    return base
+    reduced = "{}({})".format(op, metric_definition)
+
+    if not by:
+        return reduced
+
+    by_string = ",".join(k.strip() for k in by.keys())
+    return "{} by ({})".format(reduced, by_string)
 
 
-def metric(name: str, selection: str) -> str:
+def metric(name: str, selection: typing.Dict[str,str]) -> str:
     """
     Construct a metric with a selection string.
     """
-    return "{}{{{}}}".format(name, selection)
+    if not selection:
+        return name
+
+    selection_string = ",".join('{}="{}"'.format(k.strip(), v.strip()) for k, v in selection.items())
+
+    return "%s{%s}" % (name, selection_string)
 
 
 def sum(metric: str) -> str:
     """
-    Construct the metric query to calculate the sum for a a framework.
+    Construct the metric query to calculate the sum for a framework.
     """
-    return reduction("sum", metric, "dcos_service_name")
+    return reduction("sum", metric, DCOS_SERVICE_NAME_SELECTION)
 
 
 def aggregate(op: str, metric: str, duration: str) -> str:
@@ -50,7 +66,7 @@ def service_metric(metric_name: str, aggregation: str=None, duration: str=None) 
     """
     Construct the metric query for the specified DC/OS service.
     """
-    metric_string = metric(metric_name, "dcos_service_name=\"$framework\"")
+    metric_string = metric(metric_name, DCOS_SERVICE_NAME_SELECTION)
     if aggregation:
         metric_string = aggregate(aggregation, metric_string, duration)
 
@@ -64,7 +80,7 @@ class ResourceStat:
     def __init__(self, title, metric, units="none", pod_type=None):
         self._title = title
         self._metric = metric
-        self._framework_name = "$framework"
+        self._framework_name = FRAMEWORK_VARIABLE
         self._pod_type = pod_type
         self._units=units
 
@@ -72,15 +88,12 @@ class ResourceStat:
         """
         Generate the metric expression for the stat.
         """
-        selections = {}
-        selections["framework_name"] = "\"{}\"".format(self._framework_name)
+        selection = {}
+        selection["framework_name"] = self._framework_name
         if self._pod_type:
-            selections["executor_name"] = "\"{}\"".format(self._pod_type)
+            selection["executor_name"] = self._pod_type
 
-        selection_string = ",".join("{}={}".format(k, v) for k, v in selections.items())
-        group_string = ",".join(k for k in selections.keys())
-
-        return reduction(op, metric(self._metric, selection_string), group_string)
+        return reduction(op, metric(self._metric, selection), selection)
 
     def to_single_stat(self, op: str="sum") -> SingleStat:
         return SingleStat(
@@ -102,13 +115,13 @@ def resource_row(pod_type: str=None) -> Row:
     Construct a Grafana row with resource statistics.
     """
     if pod_type:
-        title = "Resources for pods of type $pod_type"
+        title = "Resources for pods of type {}".format(POD_TYPE_VARIABLE)
     else:
         title = "Resources for all pod types"
 
     return Row(
         title=title,
-        repeat="pod_type" if pod_type else "",
+        repeat=POD_TYPE_VARIABLE.lstrip("$") if pod_type else "",
         panels=[
             ResourceStat("Pod count", "cpus_limit", pod_type=pod_type).to_single_stat("count"),
             ResourceStat("Used memory", "mem_total", "decbytes", pod_type=pod_type).to_single_stat(),
@@ -206,12 +219,11 @@ def task_row() -> Row:
     )
 
 
-# Generate the Grafana dashboard.
 dashboard = Dashboard(
     title="Generated SDK dashboard",
     rows=[
         resource_row(),
-        resource_row("[[pod_type]]"),
+        resource_row(POD_TYPE_VARIABLE),
         scheduler_row(),
         task_row(),
     ],
@@ -220,9 +232,9 @@ dashboard = Dashboard(
                 {
                     "datasource": "${DS_PROMETHEUS}",
                     "hide": 0,
-                    "name": "framework",
+                    "name": FRAMEWORK_VARIABLE.lstrip("$"),
                     "options": [],
-                    "query": "label_values(offers_received, dcos_service_name)\t",
+                    "query": "label_values(offers_received, dcos_service_name)",
                     "refresh": 1,
                     "regex": "",
                     "sort": 0,
@@ -239,9 +251,9 @@ dashboard = Dashboard(
                     "includeAll": True,
                     "label": None,
                     "multi": False,
-                    "name": "pod_type",
+                    "name": POD_TYPE_VARIABLE.lstrip("$"),
                     "options": [],
-                    "query": "label_values(cpus_limit{framework_name=\"$framework\"}, executor_name)",
+                    "query": 'label_values(cpus_limit{framework_name="%s"}, executor_name)' % (FRAMEWORK_VARIABLE),
                     "refresh": 1,
                     "regex": "",
                     "sort": 0,
