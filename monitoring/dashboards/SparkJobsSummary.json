@@ -340,7 +340,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_executor_count)",
+          "expr": "sum(spark_mesos_cluster_driver_launched)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -415,7 +415,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -475,7 +475,7 @@
         "x": 12,
         "y": 18
       },
-      "id": 28,
+      "id": 8,
       "legend": {
         "avg": false,
         "current": false,
@@ -499,24 +499,16 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_executor_count)",
+          "expr": "avg(spark_mesos_cluster_driver_launched)",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "Number of drivers reporting",
           "refId": "A"
-        },
-        {
-          "expr": "sum(spark_mesos_cluster_driver_launched)",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "Number of jobs reported by dispatchers",
-          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Number of Drivers Reporting Metrics vs. Jobs Reported by Dispatchers",
+      "title": "Avg. Number of Jobs per Dispatcher",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -641,7 +633,7 @@
         "x": 12,
         "y": 27
       },
-      "id": 8,
+      "id": 12,
       "legend": {
         "avg": false,
         "current": false,
@@ -665,7 +657,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_launched)",
+          "expr": "avg(spark_mesos_cluster_driver_launch_to_finish_state_finished_mean) / 60000",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -674,7 +666,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg. Number of Jobs per Dispatcher",
+      "title": "Avg. Job Duration",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -792,6 +784,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Driver start to all executors launched",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -799,7 +792,7 @@
         "x": 12,
         "y": 36
       },
-      "id": 12,
+      "id": 16,
       "legend": {
         "avg": false,
         "current": false,
@@ -823,7 +816,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_launch_to_finish_state_finished_mean) / 60000",
+          "expr": "avg(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -832,7 +825,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg. Job Duration",
+      "title": "Avg. Job Launch Time (sec.)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -952,7 +945,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Driver start to all executors launched",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -960,7 +952,7 @@
         "x": 12,
         "y": 45
       },
-      "id": 16,
+      "id": 20,
       "legend": {
         "avg": false,
         "current": false,
@@ -984,16 +976,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
+          "expr": "stddev(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
           "format": "time_series",
           "intervalFactor": 1,
+          "legendFormat": "",
           "refId": "A"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg. Job Launch Time (sec.)",
+      "title": "Job Launch Time Std. Dev. (sec.)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1104,89 +1097,9 @@
           "show": true
         }
       ]
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 54
-      },
-      "id": 20,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "stddev(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Job Launch Time Std. Dev. (sec.)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ]
     }
   ],
-  "refresh": "1m",
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -1194,7 +1107,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -1225,5 +1138,5 @@
   "timezone": "",
   "title": "Spark: Jobs Summary",
   "uid": "2TeZ5sniz",
-  "version": 4
+  "version": 3
 }

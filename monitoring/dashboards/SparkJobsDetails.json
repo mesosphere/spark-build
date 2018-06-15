@@ -1194,7 +1194,7 @@
       ]
     }
   ],
-  "refresh": "1m",
+  "refresh": false,
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -1202,8 +1202,8 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
-    "to": "now"
+    "from": "2018-06-05T20:43:00.385Z",
+    "to": "2018-06-05T21:43:00.385Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -1233,5 +1233,5 @@
   "timezone": "",
   "title": "Spark: Jobs Details",
   "uid": "ztz-KNnmz",
-  "version": 1
+  "version": 7
 }
