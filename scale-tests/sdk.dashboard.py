@@ -18,18 +18,7 @@ And thus the Python dashboard definition MUST end in `.dashboard.py`.
 
 import typing
 
-from grafanalib.core import (
-    Dashboard,
-    Graph,
-    Row,
-    SingleStat,
-    Table,
-    Target,
-    Templating,
-    YAxes,
-    YAxis,
-)
-
+import grafanalib.core as G
 import grafanalib.weave as W
 
 
@@ -122,19 +111,19 @@ class ResourceStat:
 
         return reduction(op, metric(self._metric, selection), selection)
 
-    def to_single_stat(self, op: str = "sum") -> SingleStat:
-        return SingleStat(
+    def to_single_stat(self, op: str = "sum") -> G.SingleStat:
+        return G.SingleStat(
             title=self._title,
             dataSource="${DS_PROMETHEUS}",
             format=self._units,
             decimals=2,
             span=1,
             height=1,
-            targets=[Target(expr=self._get_expression(op))],
+            targets=[G.Target(expr=self._get_expression(op))],
         )
 
 
-def resource_row(pod_type: str = None) -> Row:
+def resource_row(pod_type: str = None) -> G.Row:
     """
     Construct a Grafana row with resource statistics.
     """
@@ -143,7 +132,7 @@ def resource_row(pod_type: str = None) -> Row:
     else:
         title = "Resources for all pod types"
 
-    return Row(
+    return G.Row(
         title=title,
         repeat=POD_TYPE_VARIABLE.lstrip("$") if pod_type else "",
         panels=[
@@ -170,7 +159,7 @@ def resource_row(pod_type: str = None) -> Row:
     )
 
 
-def scheduler_row() -> Row:
+def scheduler_row() -> G.Row:
     """
     Construct a Grafana row containing scheduler offer statistics
     """
@@ -192,7 +181,7 @@ def scheduler_row() -> Row:
         "offers_process_max",
     ]
 
-    return Row(
+    return G.Row(
         title="Scheduler statistics",
         panels=[
             W.prometheus.PromGraph(
@@ -203,7 +192,7 @@ def scheduler_row() -> Row:
                     ],
                     span=2,
                     steppedLine=True,
-                    yAxes=YAxes(left=YAxis(format="short", decimals=0)),
+                    yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
             W.prometheus.PromGraph(
                     data_source=PROMETHEUS_DATA_SOURCE,
@@ -221,13 +210,13 @@ def scheduler_row() -> Row:
                         {"expr": sum(service_metric(m)), "legendFormat": m} for m in offer_timers
                     ],
                     span=2,
-                    yAxes=YAxes(left=YAxis(format="ns")),
+                    yAxes=G.YAxes(left=G.YAxis(format="ns")),
             ),
         ],
     )
 
 
-def task_row() -> Row:
+def task_row() -> G.Row:
     """
     Construct a Grafana row containing scheduler task statistics
     """
@@ -240,7 +229,7 @@ def task_row() -> Row:
 
     resolution = "1m"
 
-    return Row(
+    return G.Row(
         title="Task statistics",
         panels=[
             W.prometheus.PromGraph(
@@ -251,7 +240,7 @@ def task_row() -> Row:
                     ],
                     span=2,
                     steppedLine=True,
-                    yAxes=YAxes(left=YAxis(format="short", decimals=0)),
+                    yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
             W.prometheus.PromGraph(
                     data_source=PROMETHEUS_DATA_SOURCE,
@@ -266,10 +255,10 @@ def task_row() -> Row:
     )
 
 
-dashboard = Dashboard(
+dashboard = G.Dashboard(
     title="Generated SDK dashboard",
     rows=[resource_row(), resource_row(POD_TYPE_VARIABLE), scheduler_row(), task_row()],
-    templating=Templating(
+    templating=G.Templating(
         list=[
             {
                 "datasource": PROMETHEUS_DATA_SOURCE,
