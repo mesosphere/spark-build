@@ -183,17 +183,12 @@ def install_package(package_name: str,
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    # create drivers & executors role quotas
     drivers_role = setup_role(service_name, "drivers", quota_options)
     executors_role = setup_role(service_name, "executors", quota_options)
 
     setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
-
-    # create drivers & executors role quotas
-    drivers_role = setup_role(service_name, "drivers", quota_options)
-    executors_role = setup_role(service_name, "executors", quota_options)
 
     # install dispatcher with appropriate role
     service_options["service"]["role"] = drivers_role
