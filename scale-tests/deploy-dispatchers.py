@@ -44,6 +44,7 @@ import json
 import logging
 import os
 import sys
+import time
 import typing
 import urllib
 
@@ -63,7 +64,7 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-MAX_THREADPOOL_WORKERS = 50
+MAX_THREADPOOL_WORKERS = 10
 
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and
@@ -204,7 +205,8 @@ def install_package(package_name: str,
         expected_task_count,
         additional_options=service_options,
         wait_for_deployment=False,
-        insert_strict_options=False)
+        insert_strict_options=False,
+        install_cli=False)
 
     return {"package_name": package_name,
             "roles": {"drivers": drivers_role, "executors": executors_role},
