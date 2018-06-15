@@ -1007,7 +1007,7 @@
               "intervalFactor": 2,
               "legendFormat": "offers_processed",
               "metric": "",
-              "refId": "",
+              "refId": "A",
               "step": 10
             },
             {
@@ -1018,7 +1018,7 @@
               "intervalFactor": 2,
               "legendFormat": "offers_received",
               "metric": "",
-              "refId": "",
+              "refId": "B",
               "step": 10
             },
             {
@@ -1029,7 +1029,7 @@
               "intervalFactor": 2,
               "legendFormat": "declines_long",
               "metric": "",
-              "refId": "",
+              "refId": "C",
               "step": 10
             },
             {
@@ -1040,7 +1040,7 @@
               "intervalFactor": 2,
               "legendFormat": "revives",
               "metric": "",
-              "refId": "",
+              "refId": "D",
               "step": 10
             },
             {
@@ -1051,7 +1051,7 @@
               "intervalFactor": 2,
               "legendFormat": "revives_throttles",
               "metric": "",
-              "refId": "",
+              "refId": "E",
               "step": 10
             },
             {
@@ -1062,13 +1062,13 @@
               "intervalFactor": 2,
               "legendFormat": "declines_short",
               "metric": "",
-              "refId": "",
+              "refId": "F",
               "step": 10
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "cumulative offer statistics",
+          "title": "cumulative offer statistic",
           "tooltip": {
             "msResolution": true,
             "shared": true,
@@ -1152,7 +1152,7 @@
               "intervalFactor": 2,
               "legendFormat": "offers_processed",
               "metric": "",
-              "refId": "",
+              "refId": "A",
               "step": 10
             },
             {
@@ -1163,7 +1163,7 @@
               "intervalFactor": 2,
               "legendFormat": "offers_received",
               "metric": "",
-              "refId": "",
+              "refId": "B",
               "step": 10
             },
             {
@@ -1174,7 +1174,7 @@
               "intervalFactor": 2,
               "legendFormat": "declines_long",
               "metric": "",
-              "refId": "",
+              "refId": "C",
               "step": 10
             },
             {
@@ -1185,7 +1185,7 @@
               "intervalFactor": 2,
               "legendFormat": "revives",
               "metric": "",
-              "refId": "",
+              "refId": "D",
               "step": 10
             },
             {
@@ -1196,7 +1196,7 @@
               "intervalFactor": 2,
               "legendFormat": "revives_throttles",
               "metric": "",
-              "refId": "",
+              "refId": "E",
               "step": 10
             },
             {
@@ -1207,7 +1207,7 @@
               "intervalFactor": 2,
               "legendFormat": "declines_short",
               "metric": "",
-              "refId": "",
+              "refId": "F",
               "step": 10
             }
           ],
@@ -1290,47 +1290,47 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "offers_process_p50{dcos_service_name=\"$framework\"}",
+              "expr": "sum(offers_process_p50{dcos_service_name=\"$framework\"}) by (dcos_service_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "offers_process_p50",
               "metric": "",
-              "refId": "",
+              "refId": "A",
               "step": 10
             },
             {
-              "expr": "offers_process_p90{dcos_service_name=\"$framework\"}",
+              "expr": "sum(offers_process_p90{dcos_service_name=\"$framework\"}) by (dcos_service_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "offers_process_p90",
               "metric": "",
-              "refId": "",
+              "refId": "B",
               "step": 10
             },
             {
-              "expr": "offers_process_p99{dcos_service_name=\"$framework\"}",
+              "expr": "sum(offers_process_p99{dcos_service_name=\"$framework\"}) by (dcos_service_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "offers_process_p99",
               "metric": "",
-              "refId": "",
+              "refId": "C",
               "step": 10
             },
             {
-              "expr": "offers_process_max{dcos_service_name=\"$framework\"}",
+              "expr": "sum(offers_process_max{dcos_service_name=\"$framework\"}) by (dcos_service_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "offers_process_max",
               "metric": "",
-              "refId": "",
+              "refId": "D",
               "step": 10
             }
           ],
@@ -1430,7 +1430,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_running",
               "metric": "",
-              "refId": "",
+              "refId": "A",
               "step": 10
             },
             {
@@ -1441,7 +1441,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_finished",
               "metric": "",
-              "refId": "",
+              "refId": "B",
               "step": 10
             },
             {
@@ -1452,7 +1452,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_lost",
               "metric": "",
-              "refId": "",
+              "refId": "C",
               "step": 10
             },
             {
@@ -1463,13 +1463,13 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_failed",
               "metric": "",
-              "refId": "",
+              "refId": "D",
               "step": 10
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "cumulative task statistics",
+          "title": "cumulative task statistic",
           "tooltip": {
             "msResolution": true,
             "shared": true,
@@ -1553,7 +1553,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_running",
               "metric": "",
-              "refId": "",
+              "refId": "A",
               "step": 10
             },
             {
@@ -1564,7 +1564,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_finished",
               "metric": "",
-              "refId": "",
+              "refId": "B",
               "step": 10
             },
             {
@@ -1575,7 +1575,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_lost",
               "metric": "",
-              "refId": "",
+              "refId": "C",
               "step": 10
             },
             {
@@ -1586,7 +1586,7 @@
               "intervalFactor": 2,
               "legendFormat": "task_status_task_failed",
               "metric": "",
-              "refId": "",
+              "refId": "D",
               "step": 10
             }
           ],
@@ -1606,7 +1606,7 @@
           },
           "yaxes": [
             {
-              "decimals": 0,
+              "decimals": null,
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -1643,7 +1643,7 @@
         "name": "framework",
         "options": [],
         "query": "label_values(offers_received, dcos_service_name)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",
@@ -1662,7 +1662,7 @@
         "name": "pod_type",
         "options": [],
         "query": "label_values(cpus_limit{framework_name=\"$framework\"}, executor_name)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",

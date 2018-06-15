@@ -30,10 +30,16 @@ from grafanalib.core import (
     YAxis,
 )
 
+import grafanalib.weave as W
+
+
+REFRESH_ON_TIMERANGE_CHANGE = 2
 
 FRAMEWORK_VARIABLE = "$framework"
 POD_TYPE_VARIABLE = "$pod_type"
 DCOS_SERVICE_NAME_SELECTION = {"dcos_service_name": FRAMEWORK_VARIABLE}
+
+PROMETHEUS_DATA_SOURCE = "${DS_PROMETHEUS}"
 
 
 def reduction(op: str, metric_definition: str, by: typing.Dict[str, str]) -> str:
@@ -189,37 +195,33 @@ def scheduler_row() -> Row:
     return Row(
         title="Scheduler statistics",
         panels=[
-            Graph(
-                title="cumulative offer statistics",
-                dataSource="${DS_PROMETHEUS}",
-                span=2,
-                targets=[
-                    Target(expr=sum(service_metric(m)), legendFormat=m)
-                    for m in offer_metrics
-                ],
-                steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
+            W.prometheus.PromGraph(
+                    data_source=PROMETHEUS_DATA_SOURCE,
+                    title="cumulative offer statistic",
+                    expressions=[
+                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in offer_metrics
+                    ],
+                    span=2,
+                    steppedLine=True,
+                    yAxes=YAxes(left=YAxis(format="short", decimals=0)),
             ),
-            Graph(
-                title="offer events per second [{} rate]".format(resolution),
-                dataSource="${DS_PROMETHEUS}",
-                span=2,
-                targets=[
-                    Target(
-                        expr=sum(service_metric(m, "rate", resolution)), legendFormat=m
-                    )
-                    for m in offer_metrics
-                ],
-                steppedLine=True,
+            W.prometheus.PromGraph(
+                    data_source=PROMETHEUS_DATA_SOURCE,
+                    title="offer events per second [{} rate]".format(resolution),
+                    expressions=[
+                        {"expr": sum(service_metric(m, "rate", resolution)), "legendFormat": m} for m in offer_metrics
+                    ],
+                    span=2,
+                    steppedLine=True,
             ),
-            Graph(
-                title="offer processing time",
-                dataSource="${DS_PROMETHEUS}",
-                span=2,
-                targets=[
-                    Target(expr=service_metric(m), legendFormat=m) for m in offer_timers
-                ],
-                yAxes=YAxes(left=YAxis(format="ns")),
+            W.prometheus.PromGraph(
+                    data_source=PROMETHEUS_DATA_SOURCE,
+                    title="offer processing time",
+                    expressions=[
+                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in offer_timers
+                    ],
+                    span=2,
+                    yAxes=YAxes(left=YAxis(format="ns")),
             ),
         ],
     )
@@ -241,29 +243,24 @@ def task_row() -> Row:
     return Row(
         title="Task statistics",
         panels=[
-            Graph(
-                title="cumulative task statistics",
-                dataSource="${DS_PROMETHEUS}",
-                span=2,
-                targets=[
-                    Target(expr=sum(service_metric(m)), legendFormat=m)
-                    for m in task_metrics
-                ],
-                steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
+            W.prometheus.PromGraph(
+                    data_source=PROMETHEUS_DATA_SOURCE,
+                    title="cumulative task statistic",
+                    expressions=[
+                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in task_metrics
+                    ],
+                    span=2,
+                    steppedLine=True,
+                    yAxes=YAxes(left=YAxis(format="short", decimals=0)),
             ),
-            Graph(
-                title="task events per second [{} rate]".format(resolution),
-                dataSource="${DS_PROMETHEUS}",
-                span=2,
-                targets=[
-                    Target(
-                        expr=sum(service_metric(m, "rate", resolution)), legendFormat=m
-                    )
-                    for m in task_metrics
-                ],
-                steppedLine=True,
-                yAxes=YAxes(left=YAxis(format="short", decimals=0)),
+            W.prometheus.PromGraph(
+                    data_source=PROMETHEUS_DATA_SOURCE,
+                    title="task events per second [{} rate]".format(resolution),
+                    expressions=[
+                        {"expr": sum(service_metric(m, "rate", resolution)), "legendFormat": m} for m in task_metrics
+                    ],
+                    span=2,
+                    steppedLine=True,
             ),
         ],
     )
@@ -275,12 +272,12 @@ dashboard = Dashboard(
     templating=Templating(
         list=[
             {
-                "datasource": "${DS_PROMETHEUS}",
+                "datasource": PROMETHEUS_DATA_SOURCE,
                 "hide": 0,
                 "name": FRAMEWORK_VARIABLE.lstrip("$"),
                 "options": [],
                 "query": "label_values(offers_received, dcos_service_name)",
-                "refresh": 1,
+                "refresh": REFRESH_ON_TIMERANGE_CHANGE,
                 "regex": "",
                 "sort": 0,
                 "tagValuesQuery": "",
@@ -291,7 +288,7 @@ dashboard = Dashboard(
             {
                 "allValue": "*",
                 "current": {},
-                "datasource": "${DS_PROMETHEUS}",
+                "datasource": PROMETHEUS_DATA_SOURCE,
                 "hide": 2,
                 "includeAll": True,
                 "label": None,
@@ -300,7 +297,7 @@ dashboard = Dashboard(
                 "options": [],
                 "query": 'label_values(cpus_limit{framework_name="%s"}, executor_name)'
                 % (FRAMEWORK_VARIABLE),
-                "refresh": 1,
+                "refresh": REFRESH_ON_TIMERANGE_CHANGE,
                 "regex": "",
                 "sort": 0,
                 "tagValuesQuery": "",
