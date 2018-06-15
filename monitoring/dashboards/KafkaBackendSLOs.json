@@ -368,6 +368,217 @@
           "show": true
         }
       ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Shows the number of kafka clusters which have all 5 or brokers in state 3 (running as broker).\n\nIn steady state, the line for 5 brokers must be equal to 25. During fault injection, the line for \"4 or 5 brokers\" must be equal to 25.",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 9,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [
+        {
+          "title": "Documentation for this SLO",
+          "type": "absolute",
+          "url": "https://docs.google.com/document/d/1_Z1eHO_IU3aEz3GPsE4tf3i4aJbPNbJ2aJP8e34sUuc/edit#heading=h.d024e28nhm65"
+        }
+      ],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(sum(kafka_server_kafkaserver_brokerstate == bool 3) by (framework_id) == bool 5)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "5 brokers",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(sum(kafka_server_kafkaserver_brokerstate == bool 3) by (framework_id) >= bool 4)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "4 or 5 brokers",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "ok",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 24.5
+        },
+        {
+          "colorMode": "warning",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 24.5
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Number of Healthy Kafka Clusters (by Broker State)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Here a broker is considered healthy if its request rate differs from median request rate for all brokers in a cluster by no more than 40%.\n\nIn steady state, the line for 5 healthy brokers should equal 25. During fault injection it can go down and the line for 4 healthy brokers can go up to 25, but no other line should change from 0.",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 7,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [
+        {
+          "title": "Documentation for this SLO",
+          "type": "absolute",
+          "url": "https://docs.google.com/document/d/1_Z1eHO_IU3aEz3GPsE4tf3i4aJbPNbJ2aJP8e34sUuc/edit#heading=h.d024e28nhm65"
+        }
+      ],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "count_values(\"healthy brokers\", count(abs(kafka_socket_server_metrics_request_rate / on(framework_id) group_left(index) (quantile(0.5, kafka_socket_server_metrics_request_rate) by (framework_id)) - 1) < 0.4) by (framework_id))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "ok",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 24.5
+        },
+        {
+          "colorMode": "warning",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 24.5
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Number of clusters with N healthy brokers (by request traffic)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
     }
   ],
   "refresh": false,
@@ -409,5 +620,5 @@
   "timezone": "",
   "title": "kafka backend SLOs",
   "uid": "AFTts3Siz",
-  "version": 9
+  "version": 6
 }
