@@ -185,32 +185,38 @@ def scheduler_row() -> G.Row:
         title="Scheduler statistics",
         panels=[
             W.prometheus.PromGraph(
-                    data_source=PROMETHEUS_DATA_SOURCE,
-                    title="cumulative offer statistic",
-                    expressions=[
-                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in offer_metrics
-                    ],
-                    span=2,
-                    steppedLine=True,
-                    yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="cumulative offer statistic",
+                expressions=[
+                    {"expr": sum(service_metric(m)), "legendFormat": m}
+                    for m in offer_metrics
+                ],
+                span=2,
+                steppedLine=True,
+                yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
             W.prometheus.PromGraph(
-                    data_source=PROMETHEUS_DATA_SOURCE,
-                    title="offer events per second [{} rate]".format(resolution),
-                    expressions=[
-                        {"expr": sum(service_metric(m, "rate", resolution)), "legendFormat": m} for m in offer_metrics
-                    ],
-                    span=2,
-                    steppedLine=True,
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="offer events per second [{} rate]".format(resolution),
+                expressions=[
+                    {
+                        "expr": sum(service_metric(m, "rate", resolution)),
+                        "legendFormat": m,
+                    }
+                    for m in offer_metrics
+                ],
+                span=2,
+                steppedLine=True,
             ),
             W.prometheus.PromGraph(
-                    data_source=PROMETHEUS_DATA_SOURCE,
-                    title="offer processing time",
-                    expressions=[
-                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in offer_timers
-                    ],
-                    span=2,
-                    yAxes=G.YAxes(left=G.YAxis(format="ns")),
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="offer processing time",
+                expressions=[
+                    {"expr": sum(service_metric(m)), "legendFormat": m}
+                    for m in offer_timers
+                ],
+                span=2,
+                yAxes=G.YAxes(left=G.YAxis(format="ns")),
             ),
         ],
     )
@@ -233,23 +239,28 @@ def task_row() -> G.Row:
         title="Task statistics",
         panels=[
             W.prometheus.PromGraph(
-                    data_source=PROMETHEUS_DATA_SOURCE,
-                    title="cumulative task statistic",
-                    expressions=[
-                        {"expr": sum(service_metric(m)), "legendFormat": m} for m in task_metrics
-                    ],
-                    span=2,
-                    steppedLine=True,
-                    yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="cumulative task statistic",
+                expressions=[
+                    {"expr": sum(service_metric(m)), "legendFormat": m}
+                    for m in task_metrics
+                ],
+                span=2,
+                steppedLine=True,
+                yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
             W.prometheus.PromGraph(
-                    data_source=PROMETHEUS_DATA_SOURCE,
-                    title="task events per second [{} rate]".format(resolution),
-                    expressions=[
-                        {"expr": sum(service_metric(m, "rate", resolution)), "legendFormat": m} for m in task_metrics
-                    ],
-                    span=2,
-                    steppedLine=True,
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="task events per second [{} rate]".format(resolution),
+                expressions=[
+                    {
+                        "expr": sum(service_metric(m, "rate", resolution)),
+                        "legendFormat": m,
+                    }
+                    for m in task_metrics
+                ],
+                span=2,
+                steppedLine=True,
             ),
         ],
     )
