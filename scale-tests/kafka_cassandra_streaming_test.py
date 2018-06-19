@@ -75,7 +75,8 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
     return json.loads(stdout)["dns"]
 
 
-def _submit_producer(jar,
+def _submit_producer(name,
+                     jar,
                      kafka_broker_dns,
                      dispatcher,
                      kafka_topics,
@@ -84,7 +85,7 @@ def _submit_producer(jar,
                      spark_cores_max,
                      spark_executor_cores,
                      must_fail: bool):
-    app_args = ["--appName",        PRODUCER_CLASS_NAME,
+    app_args = ["--appName",        name,
                 "--brokers",        ",".join(kafka_broker_dns),
                 "--topics",         kafka_topics,
                 "--numberOfWords",  str(number_of_words),
@@ -95,6 +96,7 @@ def _submit_producer(jar,
 
     app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
                   "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
+                  "--name",  name,
                   "--class", PRODUCER_CLASS_NAME]
 
     # `number_of_words == 0` means infinite stream, so we'd like to have it
@@ -117,7 +119,8 @@ def _submit_producer(jar,
     return submission_id
 
 
-def _submit_consumer(jar,
+def _submit_consumer(name,
+                     jar,
                      kafka_broker_dns,
                      cassandra_native_client_dns,
                      dispatcher,
@@ -130,7 +133,7 @@ def _submit_consumer(jar,
                      spark_cores_max,
                      spark_executor_cores,
                      must_fail: bool):
-    app_args = ["--appName",           CONSUMER_CLASS_NAME,
+    app_args = ["--appName",           name,
                 "--brokers",           ",".join(kafka_broker_dns),
                 "--topics",            kafka_topics,
                 "--groupId",           kafka_group_id,
@@ -152,6 +155,7 @@ def _submit_consumer(jar,
                   "--conf",      "spark.executor.cores={}".format(spark_executor_cores),
                   "--conf",      "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
                   "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
+                  "--name",      name,
                   "--class",     CONSUMER_CLASS_NAME]
 
     args = app_config + COMMON_CONF
@@ -289,7 +293,7 @@ def main(args):
 
     cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
-    for kafka in kafkas:
+    for kafka_idx, kafka in enumerate(kafkas):
         kafka_package_name = kafka['package_name']
         kafka_service_name = kafka['service']['name']
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
@@ -307,6 +311,7 @@ def main(args):
                     producer_cassandra_keyspace))
 
             producer_submission_id = _submit_producer(
+                '{}-k{:02d}-p{:02d}'.format(PRODUCER_CLASS_NAME, kafka_idx, producer_idx),
                 jar,
                 kafka_broker_dns,
                 dispatcher,
@@ -330,6 +335,7 @@ def main(args):
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
                 consumer_submission_id = _submit_consumer(
+                    '{}-k{:02d}-p{:02d}-c{:02d}'.format(CONSUMER_CLASS_NAME, kafka_idx, producer_idx, consumer_idx),
                     jar,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
