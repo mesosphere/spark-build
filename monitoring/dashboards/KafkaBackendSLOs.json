@@ -490,7 +490,7 @@
       "gridPos": {
         "h": 9,
         "w": 12,
-        "x": 12,
+        "x": 0,
         "y": 18
       },
       "id": 7,
@@ -579,6 +579,226 @@
           "show": true
         }
       ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of zookeeper ensembles which have at least N healthy nodes (where a  node is considered healthy if it has at least one alive connection).\n\nLine for at least 5 healthy nodes should be equal to 25 except maybe during failure injection.\n\nLine for at least 4 healthy nodes should be equal to 25 at all times.",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 11,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [
+        {
+          "title": "Documentation for this SLO",
+          "type": "absolute",
+          "url": "https://docs.google.com/document/d/1_Z1eHO_IU3aEz3GPsE4tf3i4aJbPNbJ2aJP8e34sUuc/edit#heading=h.osl0x2l0cb54"
+        }
+      ],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(count(zk_num_alive_connections > 0) by (framework_id) >= bool 5)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "At least 5 healthy nodes",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(count(zk_num_alive_connections > 0) by (framework_id) >= bool 4)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "At least 4 healthy nodes",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "ok",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 24.5
+        },
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 24.5
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Healthy ZooKeeper Ensembles",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Shows number of healthy kafka and zookeeper schedulers. Should equal 25 for each, except maybe during fault injection.",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [
+        {
+          "title": "Documentation for this SLO",
+          "type": "absolute",
+          "url": "https://docs.google.com/document/d/1_Z1eHO_IU3aEz3GPsE4tf3i4aJbPNbJ2aJP8e34sUuc/edit#heading=h.a213tyvku26t"
+        }
+      ],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(count(offers_processed{task_name=~\".*zookeeper-[0-9][0-9].*\"}) by (task_name) == bool 1)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Zookeeper",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(count(offers_processed{task_name=~\".*kafka-[0-9][0-9].*\"}) by (task_name) == bool 1)  ",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Kafka",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "ok",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 24.5
+        },
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 24.5
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Kafka and Zookeeper scheduler health",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
     }
   ],
   "refresh": false,
@@ -620,5 +840,5 @@
   "timezone": "",
   "title": "kafka backend SLOs",
   "uid": "AFTts3Siz",
-  "version": 6
+  "version": 11
 }
