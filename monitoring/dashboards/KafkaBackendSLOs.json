@@ -624,7 +624,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(zk_num_alive_connections > 0) by (framework_id) >= bool 5",
+          "expr": "sum(count(zk_num_alive_connections > 0) by (framework_id) >= bool 5)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -632,7 +632,7 @@
           "refId": "A"
         },
         {
-          "expr": "count(zk_num_alive_connections > 0) by (framework_id) >= bool 4",
+          "expr": "sum(count(zk_num_alive_connections > 0) by (framework_id) >= bool 4)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -840,5 +840,5 @@
   "timezone": "",
   "title": "kafka backend SLOs",
   "uid": "AFTts3Siz",
-  "version": 10
+  "version": 11
 }
