@@ -42,6 +42,8 @@ from docopt import docopt
 
 import sdk_cmd
 import sdk_install
+import sdk_marathon
+import sdk_plan
 import sdk_security
 import sdk_utils
 
@@ -78,15 +80,21 @@ def install_package(package_name: str,
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
 
-    log.info("Installing %s index %s as %s", package_name, index, service_name)
-    sdk_install.install(
-        package_name,
-        service_name,
-        expected_task_count,
-        additional_options=service_options,
-        insert_strict_options=False)
+    if not sdk_marathon.app_exists(service_name):
+        log.info("Installing %s index %s as %s", package_name, index, service_name)
+        sdk_install.install(
+            package_name,
+            service_name,
+            expected_task_count,
+            additional_options=service_options,
+            insert_strict_options=False)
+    else:
+        log.warn("Skipping installation of %s as it already exists", service_name)
+        sdk_plan.wait_for_completed_deployment(service_name)
 
-    return {"package_name": package_name, "service_account_info": service_account_info,  **service_options}
+    installed_service_options = sdk_cmd.svc_cli(package_name, service_name, "describe", json=True)
+
+    return {"package_name": package_name, "service_account_info": service_account_info,  **installed_service_options}
 
 
 def _supports_multiple_clusters(service_name: str) -> bool:
@@ -199,9 +207,10 @@ def install_cassandra(args: dict) -> list:
 
 def install(args):
     services = {}
+    services["cassandra"] = install_cassandra(args)
+
     services["zookeeper"] = install_zookeeper(args)
     services["kafka"] = install_kafka(args, services["zookeeper"])
-    services["cassandra"] = install_cassandra(args)
 
     for k, v in services.items():
         log.info("%s service(s): %s", k, v)
