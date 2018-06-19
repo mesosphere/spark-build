@@ -204,7 +204,8 @@ def install_package(package_name: str,
         expected_task_count,
         additional_options=service_options,
         wait_for_deployment=False,
-        insert_strict_options=False)
+        insert_strict_options=False,
+        install_cli=False)
 
     return {"package_name": package_name,
             "roles": {"drivers": drivers_role, "executors": executors_role},

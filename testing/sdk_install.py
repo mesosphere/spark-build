@@ -45,7 +45,8 @@ def _retried_install_impl(
         expected_running_tasks,
         options={},
         package_version=None,
-        timeout_seconds=TIMEOUT_SECONDS):
+        timeout_seconds=TIMEOUT_SECONDS,
+        install_cli=True):
     '''Cleaned up version of shakedown's package_install().'''
     package_manager = dcos.packagemanager.PackageManager(dcos.cosmos.get_cosmos_url())
     pkg = package_manager.get_package_version(package_name, package_version)
@@ -65,7 +66,7 @@ def _retried_install_impl(
         package_manager.install_app(pkg, options)
 
     # Install CLI while package starts to install
-    if pkg.cli_definition():
+    if install_cli and pkg.cli_definition():
         log.info('Installing CLI for package={}'.format(package_name))
         dcos.subcommand.install(pkg)
 
@@ -87,7 +88,8 @@ def install(
         package_version=None,
         timeout_seconds=TIMEOUT_SECONDS,
         wait_for_deployment=True,
-        insert_strict_options=True):
+        insert_strict_options=True,
+        install_cli=True):
     start = time.time()
 
     # If the package is already installed at this point, fail immediately.
@@ -115,7 +117,8 @@ def install(
         expected_running_tasks,
         options,
         package_version,
-        timeout_seconds)
+        timeout_seconds,
+        install_cli)
 
     # 2. Wait for the scheduler to be idle (as implied by deploy plan completion and suppressed bit)
     # This should be skipped ONLY when it's known that the scheduler will be stuck in an incomplete
