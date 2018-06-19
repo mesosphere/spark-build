@@ -4,6 +4,8 @@
         "virtual_network_name": "dcos"
     },
     "node": {
-        "count": 5
+        "count": 5,
+        "data_disk_type": "MOUNT",
+        "log_disk_type": "ROOT"
     }
 }

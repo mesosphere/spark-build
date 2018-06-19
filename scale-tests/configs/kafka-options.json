@@ -5,6 +5,6 @@
     },
     "brokers": {
         "count": 5,
-        "disk_type": "ROOT"
+        "disk_type": "MOUNT"
     }
 }

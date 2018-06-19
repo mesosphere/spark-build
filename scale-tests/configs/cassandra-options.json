@@ -4,6 +4,7 @@
         "virtual_network_name": "dcos"
     },
     "nodes": {
-        "count": 5
+        "count": 5,
+        "disk_type": "ROOT"
     }
 }
