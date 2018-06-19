@@ -75,7 +75,8 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
     return json.loads(stdout)["dns"]
 
 
-def _submit_producer(kafka_broker_dns,
+def _submit_producer(jar,
+                     kafka_broker_dns,
                      dispatcher,
                      kafka_topics,
                      number_of_words,
@@ -116,7 +117,8 @@ def _submit_producer(kafka_broker_dns,
     return submission_id
 
 
-def _submit_consumer(kafka_broker_dns,
+def _submit_consumer(jar,
+                     kafka_broker_dns,
                      cassandra_native_client_dns,
                      dispatcher,
                      kafka_topics,
@@ -240,9 +242,7 @@ class DispatcherProvider(object):
         return self.strategy.report()
 
 
-if __name__ == "__main__":
-    args = docopt(__doc__)
-
+def main(args):
     with open(args["<dispatcher_file>"]) as f:
         dispatchers = json.load(f)['spark']
 
@@ -257,7 +257,6 @@ if __name__ == "__main__":
     kafka_package_names           = map(lambda kafka: kafka['package_name'], kafkas)
     cassandra_package_name        = cassandra['package_name']
     cassandra_service_name        = cassandra['service']['name']
-    cassandra_num_nodes           = cassandra['nodes']['count']
     num_producers_per_kafka       = int(args['--num-producers-per-kafka'])
     num_consumers_per_producer    = int(args['--num-consumers-per-producer'])
     producer_must_fail            = args['--producer-must-fail']
@@ -308,6 +307,7 @@ if __name__ == "__main__":
                     producer_cassandra_keyspace))
 
             producer_submission_id = _submit_producer(
+                jar,
                 kafka_broker_dns,
                 dispatcher,
                 kafka_topics,
@@ -330,6 +330,7 @@ if __name__ == "__main__":
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
                 consumer_submission_id = _submit_consumer(
+                    jar,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
                     dispatcher,
@@ -347,3 +348,7 @@ if __name__ == "__main__":
                     submissions_output_file,
                     dispatcher,
                     consumer_submission_id)
+
+
+if __name__ == "__main__":
+    main(docopt(__doc__))
