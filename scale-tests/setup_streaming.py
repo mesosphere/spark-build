@@ -73,14 +73,14 @@ def install_package(package_name: str,
 
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
 
-    service_account_info = scale_tests_utils.setup_security(service_name, "nobody")
-
-    service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
-
-    expected_task_count = service_task_count(service_options)
-    log.info("Expected task count: %s", expected_task_count)
-
     if not sdk_marathon.app_exists(service_name):
+        service_account_info = scale_tests_utils.setup_security(service_name, "nobody")
+
+        service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
+
+        expected_task_count = service_task_count(service_options)
+        log.info("Expected task count: %s", expected_task_count)
+
         log.info("Installing %s index %s as %s", package_name, index, service_name)
         sdk_install.install(
             package_name,
