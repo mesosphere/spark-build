@@ -43,7 +43,7 @@ def reduction(op: str, metric_definition: str, by: typing.Dict[str, str]) -> str
     if not by:
         return reduced
 
-    by_string = ",".join(k.strip() for k in by.keys())
+    by_string = ",".join(k.strip() for k in sorted(by.keys()))
     return "{} by ({})".format(reduced, by_string)
 
 
@@ -55,7 +55,7 @@ def metric(name: str, selection: typing.Dict[str, str]) -> str:
         return name
 
     selection_string = ",".join(
-        '{}="{}"'.format(k.strip(), v.strip()) for k, v in selection.items()
+        '{}="{}"'.format(k.strip(), v.strip()) for k, v in sorted(selection.items())
     )
 
     return "%s{%s}" % (name, selection_string)

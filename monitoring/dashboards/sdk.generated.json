@@ -546,7 +546,7 @@
           },
           "targets": [
             {
-              "expr": "count(cpus_limit{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "count(cpus_limit{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -622,7 +622,7 @@
           },
           "targets": [
             {
-              "expr": "sum(mem_total{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "sum(mem_total{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -698,7 +698,7 @@
           },
           "targets": [
             {
-              "expr": "sum(mem_limit{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "sum(mem_limit{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -774,7 +774,7 @@
           },
           "targets": [
             {
-              "expr": "sum(cpus_limit{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "sum(cpus_limit{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -850,7 +850,7 @@
           },
           "targets": [
             {
-              "expr": "sum(disk_used{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "sum(disk_used{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -926,7 +926,7 @@
           },
           "targets": [
             {
-              "expr": "sum(disk_limit{framework_name=\"$framework\",executor_name=\"$pod_type\"}) by (framework_name,executor_name)",
+              "expr": "sum(disk_limit{executor_name=\"$pod_type\",framework_name=\"$framework\"}) by (executor_name,framework_name)",
               "format": "time_series",
               "instant": false,
               "interval": "",
