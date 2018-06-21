@@ -74,10 +74,6 @@ def _get_duration() -> int:
     return duration
 
 
-def _is_strict(dispatcher: typing.Dict) -> bool:
-    return dispatcher["service"].get("service_account") is not None
-
-
 def _get_gpu_user_conf(args):
     def _verify_required_args():
         if not (args["--spark-mesos-max-gpus"] and
@@ -169,14 +165,27 @@ if __name__ == "__main__":
 
     if args["--spark-mesos-executor-gpus"]:
         user_conf += _get_gpu_user_conf(args)
+        MEMORY_MULTIPLIER = 20
+        memory = int(args["--spark-mesos-executor-gpus"]) * MEMORY_MULTIPLIER
+        user_conf += ["--conf", "spark.driver.memory={}g".format(str(memory)),
+                      "--conf", "spark.executor.memory={}g".format(str(memory)),
+                      "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
+                      "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
+                      "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
+                      "--conf", "spark.mesos.executor.docker.forcePullImage=false"
+                      ]
         app_url = GPU_IMAGE_RECOGNITION_APP_URL
     else:
         app_url = MONTE_CARLO_APP_URL
 
-    if args["--spark-mesos-driver-labels"]:
+    if args["--spark-mesos-driver-labels"] is not None:
         user_conf += ["--conf", "spark.mesos.driver.labels={}".format(args["--spark-mesos-driver-labels"])]
 
     if not args["--no-supervise"]:
         user_conf += ["--supervise"]
+
+    if args["--max-num-dispatchers"]:
+        end = int(args["--max-num-dispatchers"])
+        dispatchers = dispatchers[0:end]
 
     submit_loop(app_url, int(args["--submits-per-min"]), dispatchers, user_conf)

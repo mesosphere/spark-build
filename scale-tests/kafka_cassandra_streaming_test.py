@@ -75,7 +75,9 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
     return json.loads(stdout)["dns"]
 
 
-def _submit_producer(kafka_broker_dns,
+def _submit_producer(name,
+                     jar,
+                     kafka_broker_dns,
                      dispatcher,
                      kafka_topics,
                      number_of_words,
@@ -83,7 +85,7 @@ def _submit_producer(kafka_broker_dns,
                      spark_cores_max,
                      spark_executor_cores,
                      must_fail: bool):
-    app_args = ["--appName",        PRODUCER_CLASS_NAME,
+    app_args = ["--appName",        name,
                 "--brokers",        ",".join(kafka_broker_dns),
                 "--topics",         kafka_topics,
                 "--numberOfWords",  str(number_of_words),
@@ -94,6 +96,7 @@ def _submit_producer(kafka_broker_dns,
 
     app_config = ["--conf",  "spark.cores.max={}".format(spark_cores_max),
                   "--conf",  "spark.executor.cores={}".format(spark_executor_cores),
+                  "--name",  name,
                   "--class", PRODUCER_CLASS_NAME]
 
     # `number_of_words == 0` means infinite stream, so we'd like to have it
@@ -116,7 +119,9 @@ def _submit_producer(kafka_broker_dns,
     return submission_id
 
 
-def _submit_consumer(kafka_broker_dns,
+def _submit_consumer(name,
+                     jar,
+                     kafka_broker_dns,
                      cassandra_native_client_dns,
                      dispatcher,
                      kafka_topics,
@@ -128,7 +133,7 @@ def _submit_consumer(kafka_broker_dns,
                      spark_cores_max,
                      spark_executor_cores,
                      must_fail: bool):
-    app_args = ["--appName",           CONSUMER_CLASS_NAME,
+    app_args = ["--appName",           name,
                 "--brokers",           ",".join(kafka_broker_dns),
                 "--topics",            kafka_topics,
                 "--groupId",           kafka_group_id,
@@ -150,6 +155,7 @@ def _submit_consumer(kafka_broker_dns,
                   "--conf",      "spark.executor.cores={}".format(spark_executor_cores),
                   "--conf",      "spark.cassandra.connection.host={}".format(",".join(cassandra_hosts)),
                   "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
+                  "--name",      name,
                   "--class",     CONSUMER_CLASS_NAME]
 
     args = app_config + COMMON_CONF
@@ -170,6 +176,10 @@ def _submit_consumer(kafka_broker_dns,
 def append_submission(output_file: str, dispatcher: dict, submission_id: str):
     with open(output_file, "a") as f:
         f.write("{},{}\n".format(dispatcher['service']['name'], submission_id))
+
+
+def is_valid_cassandra_keyspace_name(keyspace_name: str) -> bool:
+    return len(keyspace_name) < 48
 
 
 class ProvidingStrategy(object):
@@ -236,9 +246,7 @@ class DispatcherProvider(object):
         return self.strategy.report()
 
 
-if __name__ == "__main__":
-    args = docopt(__doc__)
-
+def main(args):
     with open(args["<dispatcher_file>"]) as f:
         dispatchers = json.load(f)['spark']
 
@@ -253,7 +261,6 @@ if __name__ == "__main__":
     kafka_package_names           = map(lambda kafka: kafka['package_name'], kafkas)
     cassandra_package_name        = cassandra['package_name']
     cassandra_service_name        = cassandra['service']['name']
-    cassandra_num_nodes           = cassandra['nodes']['count']
     num_producers_per_kafka       = int(args['--num-producers-per-kafka'])
     num_consumers_per_producer    = int(args['--num-consumers-per-producer'])
     producer_must_fail            = args['--producer-must-fail']
@@ -286,19 +293,26 @@ if __name__ == "__main__":
 
     cassandra_native_client_dns = _service_endpoint_dns(cassandra_package_name, cassandra_service_name, "native-client")
 
-    for kafka in kafkas:
+    for kafka_idx, kafka in enumerate(kafkas):
         kafka_package_name = kafka['package_name']
         kafka_service_name = kafka['service']['name']
         kafka_broker_dns = _service_endpoint_dns(kafka_package_name, kafka_service_name, 'broker')
 
+        kafka_service_basename = kafka_service_name.split('/')[-1]
+
         for producer_idx in range(0, num_producers_per_kafka):
             dispatcher = dispatcher_provider.provide()
 
-            producer_name = '{}-{}'.format(normalize_string(kafka_service_name), producer_idx)
+            producer_name = '{}-{}'.format(normalize_string(kafka_service_basename), producer_idx)
             kafka_topics = producer_name
-            producer_cassandra_keyspace = normalize_string(producer_name)
+            producer_cassandra_keyspace = 'keyspace_{}'.format(normalize_string(producer_name))
+            if not is_valid_cassandra_keyspace_name(producer_cassandra_keyspace):
+                raise ValueError('\'{}\' is not a valid Cassandra keyspace name'.format(
+                    producer_cassandra_keyspace))
 
             producer_submission_id = _submit_producer(
+                '{}-k{:02d}-p{:02d}'.format(PRODUCER_CLASS_NAME, kafka_idx, producer_idx),
+                jar,
                 kafka_broker_dns,
                 dispatcher,
                 kafka_topics,
@@ -321,6 +335,8 @@ if __name__ == "__main__":
                 consumer_cassandra_table = 'table_{}'.format(consumer_idx)
 
                 consumer_submission_id = _submit_consumer(
+                    '{}-k{:02d}-p{:02d}-c{:02d}'.format(CONSUMER_CLASS_NAME, kafka_idx, producer_idx, consumer_idx),
+                    jar,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
                     dispatcher,
@@ -338,3 +354,7 @@ if __name__ == "__main__":
                     submissions_output_file,
                     dispatcher,
                     consumer_submission_id)
+
+
+if __name__ == "__main__":
+    main(docopt(__doc__))

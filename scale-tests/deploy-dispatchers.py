@@ -36,10 +36,10 @@ Options:
 
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from docopt import docopt
 
 import ast
-import contextlib
 import json
 import logging
 import os
@@ -63,21 +63,14 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
+MAX_THREADPOOL_WORKERS = 50
+
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and
 # append an index to generate a unique service name for each dispatcher.
 #
 # The service names of the deployed dispatchers will be written into an output
 # file.
-
-
-@contextlib.contextmanager
-def no_stdout():
-    save_stdout = sys.stdout
-    with open("/dev/null", "w") as null:
-        sys.stdout = null
-        yield
-        sys.stdout = save_stdout
 
 
 def create_quota(
@@ -87,8 +80,7 @@ def create_quota(
     """
     Create quota for the specified role.
     """
-    with no_stdout():
-        existing_quotas = sdk_cmd.get_json_output("spark quota list --json")
+    existing_quotas = sdk_cmd.get_json_output("spark quota list --json", print_output=False)
 
     # remove existing quotas matching name
     if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
@@ -191,17 +183,12 @@ def install_package(package_name: str,
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    # create drivers & executors role quotas
     drivers_role = setup_role(service_name, "drivers", quota_options)
     executors_role = setup_role(service_name, "executors", quota_options)
 
     setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
-
-    # create drivers & executors role quotas
-    drivers_role = setup_role(service_name, "drivers", quota_options)
-    executors_role = setup_role(service_name, "executors", quota_options)
 
     # install dispatcher with appropriate role
     service_options["service"]["role"] = drivers_role
@@ -217,7 +204,8 @@ def install_package(package_name: str,
         expected_task_count,
         additional_options=service_options,
         wait_for_deployment=False,
-        insert_strict_options=False)
+        insert_strict_options=False,
+        install_cli=False)
 
     return {"package_name": package_name,
             "roles": {"drivers": drivers_role, "executors": executors_role},
@@ -236,20 +224,24 @@ def deploy_dispatchers(
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
+    def deploy_dispatcher(index: int) -> dict:
+        return install_package('spark',
+                               service_name_base,
+                               index,
+                               linux_user,
+                               lambda x: 0,
+                               None,
+                               options,
+                               quota_options)
 
-    with open(output_file, "w") as outfile:
-        dispatchers = []
-        for i in range(num_dispatchers):
-            dispatcher_settings = install_package("spark", service_name_base, i,
-                                                linux_user,
-                                                lambda x: 0,
-                                                None,
-                                                options,
-                                                quota_options)
-            dispatchers.append(dispatcher_settings)
-            outfile.write("{},{},{}\n".format(dispatcher_settings["service"]["name"],
-                                              dispatcher_settings["roles"]["drivers"],
-                                              dispatcher_settings["roles"]["executors"]))
+    with ThreadPoolExecutor(max_workers=MAX_THREADPOOL_WORKERS) as executor:
+        dispatchers = list(executor.map(deploy_dispatcher, range(num_dispatchers)))
+
+    with open(output_file, 'w') as outfile:
+        for dispatcher in dispatchers:
+            outfile.write('{},{},{}\n'.format(dispatcher['service']['name'],
+                                              dispatcher['roles']['drivers'],
+                                              dispatcher['roles']['executors']))
             outfile.flush()
 
     return dispatchers

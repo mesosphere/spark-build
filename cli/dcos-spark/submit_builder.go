@@ -403,7 +403,7 @@ func fetchMarathonConfig() (map[string]interface{}, error) {
 		if err != nil {
 			log.Fatalf("Failed to prettify json (%s): %s", err, responseJson)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s\n", string(prettyJson))
+			client.PrintMessage("%s\n", string(prettyJson))
 		}
 	}
 	return responseJson, nil
