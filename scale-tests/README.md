@@ -159,6 +159,34 @@ SECURITY=permissive
   --script-args "${DISPATCHERS_JSON_FILE} --submits-per-min ${SUBMITS_PER_MIN}"
 ```
 
+### GPU 
+Much like with the batch marathon app, you can submit an app to launch GPU jobs over time. 
+
+
+#### Configure
+```bash
+GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL="https://${TEST_S3_BUCKET}.s3.amazonaws.com/${TEST_S3_FOLDER}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE}"
+GPU_BATCH_APP_ID="${TEST_NAME}-gpu-batch-workload"
+SCRIPT_CPUS=2
+SCRIPT_MEM=4096
+GPU_DOCKER_IMAGE="samvantran/spark-dcos-gpu:minpatch-nv390-cuda9-cudnn7115-tf15"
+SUBMITS_PER_MIN=3
+```
+
+#### Deploy
+```bash
+./scale-tests/deploy-batch-marathon-app.py \
+  --app-id "$GPU_BATCH_APP_ID" \
+  --dcos-username "$DCOS_LOGIN_USERNAME" \
+  --dcos-password "$DCOS_LOGIN_PASSWORD" \
+  --security "$SECURITY" \
+  --input-file-uri "$GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL" \
+  --script-cpus "$SCRIPT_CPUS" \
+  --script-mem "$SCRIPT_MEM" \
+  --script-args "${GPU_DISPATCHERS_JSON_OUTPUT_FILE} --submits-per-min ${SUBMITS_PER_MIN} --docker-image $GPU_DOCKER_IMAGE --max-num-dispatchers 2 --spark-cores-max 4 --spark-mesos-executor-gpus 4 --spark-mesos-max-gpus 4 --no-supervise" \
+  --spark-build-branch master
+```
+
 ### Streaming
 
 For the next sections, tweak variables as required.
