@@ -127,10 +127,10 @@ def submit_job(
 
     conf_args = args.copy()
 
-    conf_args += [
-        '--conf spark.driver.memory=2g',
-        '--conf spark.mesos.role={}'.format(driver_role)
-    ]
+    conf_args += ['--conf', 'spark.mesos.role={}'.format(driver_role)]
+
+    if not list(filter(lambda x: x.startswith("spark.driver.memory="), conf_args)):
+      conf_args += ['--conf', 'spark.driver.memory=2g']
 
     if sdk_utils.is_strict_mode():
         conf_args += [

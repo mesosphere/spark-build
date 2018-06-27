@@ -74,30 +74,46 @@ def _get_duration() -> int:
     return duration
 
 
-def submit_job(app_url: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]):
+def _get_gpu_user_conf(args):
+    def _verify_required_args():
+        if not (args["--spark-mesos-max-gpus"] and
+                args["--spark-mesos-executor-gpus"] and
+                args["--docker-image"]):
+            log.error("""
+            Missing required arguments for running gpu jobs. Please include:
+            --spark-mesos-max-gpus
+            --spark-mesos-executor-gpus
+            --docker-image
+            """)
+
+    _verify_required_args()
+
+    # Based on testing, 20gb per GPU is needed to run the job successfully.
+    # This is due to memory being divvied up and allocated to each GPU device.
+    memory_multiplier = 20
+    memory = int(args["--spark-mesos-executor-gpus"]) * memory_multiplier
+    return ["--conf", "spark.driver.memory={}g".format(str(memory)),
+            "--conf", "spark.executor.memory={}g".format(str(memory)),
+            "--conf", "spark.mesos.gpus.max={}".format(args["--spark-mesos-max-gpus"]),
+            "--conf", "spark.mesos.executor.gpus={}".format(args["--spark-mesos-executor-gpus"]),
+            "--conf", "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
+            "--conf", "spark.mesos.executor.docker.forcePullImage=false"
+            ]
+
+
+def submit_job(app_url: str, app_args: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]):
     dispatcher_name = dispatcher["service"]["name"]
     log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher_name, duration)
 
-    app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
-
-    if dispatcher["service"].get("service_account") is not None:  # only defined in strict mode
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=app_url,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"],
-            spark_user=dispatcher["service"]["user"],
-            principal=dispatcher["service"]["service_account"])
-    else:
-        spark_utils.submit_job(
-            service_name=dispatcher_name,
-            app_url=app_url,
-            app_args=app_args,
-            verbose=False,
-            args=config,
-            driver_role=dispatcher["roles"]["executors"])
+    spark_utils.submit_job(
+        service_name=dispatcher_name,
+        app_url=app_url,
+        app_args=app_args,
+        verbose=False,
+        args=config,
+        driver_role=dispatcher["roles"]["executors"],
+        spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
+        principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None)
 
 
 def submit_loop(app_url: str, submits_per_min: int, dispatchers: typing.List[typing.Dict], user_conf: typing.List[str]):
@@ -109,7 +125,13 @@ def submit_loop(app_url: str, submits_per_min: int, dispatchers: typing.List[typ
     dispatcher_index = 0
     while(True):
         duration = _get_duration()
-        t = Thread(target=submit_job, args=(app_url, dispatchers[dispatcher_index], duration, user_conf))
+
+        if app_url == MONTE_CARLO_APP_URL:
+            app_args = "100000 {}".format(str(duration * 30))  # about 30 iterations per min.
+        else:
+            app_args = "550 3"  # 550 images in 3 batches
+
+        t = Thread(target=submit_job, args=(app_url, app_args, dispatchers[dispatcher_index], duration, user_conf))
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
         log.info("sleeping %s sec.", sec_between_submits)
@@ -124,6 +146,16 @@ if __name__ == "__main__":
         data = json.load(f)
         dispatchers = data["spark"]
 
+    if args["--max-num-dispatchers"]:
+        end = int(args["--max-num-dispatchers"])
+        if end <= len(dispatchers):
+            dispatchers = dispatchers[0:end]
+        else:
+            log.warning("""
+            Specified --max-num-dispatchers is greater than actual dispatcher count in {}.
+            Using list of dispatchers from file instead.
+            """.format(args["<dispatcher_file>"]))
+
     user_conf = ["--conf", "spark.cores.max={}".format(args["--spark-cores-max"]),
                  "--conf", "spark.executor.cores={}".format(args["--spark-executor-cores"]),
                  "--conf", "spark.mesos.containerizer={}".format(args["--spark-mesos-containerizer"]),
@@ -132,6 +164,7 @@ if __name__ == "__main__":
                 ]
 
     if args["--spark-mesos-executor-gpus"]:
+        user_conf += _get_gpu_user_conf(args)
         MEMORY_MULTIPLIER = 20
         memory = int(args["--spark-mesos-executor-gpus"]) * MEMORY_MULTIPLIER
         user_conf += ["--conf", "spark.driver.memory={}g".format(str(memory)),
