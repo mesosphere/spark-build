@@ -41,7 +41,7 @@ RUN mkdir -p /opt/mesosphere/ && \
     curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
     tar zxf libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
     rm libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
-    curl -L -O https://downloads.mesosphere.com/dcos-commons/artifacts/0.30.0/bootstrap.zip && \
+    curl -L -O https://downloads.mesosphere.com/dcos-commons/artifacts/0.50.0/bootstrap.zip && \
     unzip bootstrap.zip && \
     rm bootstrap.zip
 
