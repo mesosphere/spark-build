@@ -5,7 +5,7 @@ prometheus="prometheus"
 proxy_port="8080"
 job="ds-streaming"
 
-TEMP=$(getopt -o 's:p:' --long 'prometheus-service:,proxy-port:' -n "$0" -- "$@")
+TEMP=$(getopt -o 's:p:' --long 'prometheus-service:,proxy-port:,job:' -n "$0" -- "$@")
 eval set -- "$TEMP"
 unset TEMP
 while true; do
