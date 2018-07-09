@@ -4,7 +4,7 @@ Generate a generic SDK dashboard.
 ```bash
 pip install grafanalib
 
-generate-dashboard -o sdk.generated.json sdk.dashboard.py
+generate-dashboard -o ../monitoring/dashboards/sdk.generated.json sdk.dashboard.py
 ```
 
 This creates an `sdk.json` file that contains the Grafana dashboard definition for monitoring SDK-based frameworks
@@ -88,41 +88,6 @@ def service_metric(
     return metric_string
 
 
-class ResourceStat:
-    """
-    Encapsulate a single-stat resource panel for a framework / pod.
-    """
-
-    def __init__(self, title, metric, units="none", pod_type=None):
-        self._title = title
-        self._metric = metric
-        self._framework_name = FRAMEWORK_VARIABLE
-        self._pod_type = pod_type
-        self._units = units
-
-    def _get_expression(self, op: str) -> str:
-        """
-        Generate the metric expression for the stat.
-        """
-        selection = {}
-        selection["framework_name"] = self._framework_name
-        if self._pod_type:
-            selection["executor_name"] = self._pod_type
-
-        return reduction(op, metric(self._metric, selection), selection)
-
-    def to_single_stat(self, op: str = "sum") -> G.SingleStat:
-        return G.SingleStat(
-            title=self._title,
-            dataSource="${DS_PROMETHEUS}",
-            format=self._units,
-            decimals=2,
-            span=1,
-            height=1,
-            targets=[G.Target(expr=self._get_expression(op))],
-        )
-
-
 def resource_row(pod_type: str = None) -> G.Row:
     """
     Construct a Grafana row with resource statistics.
@@ -132,29 +97,52 @@ def resource_row(pod_type: str = None) -> G.Row:
     else:
         title = "Resources for all pod types"
 
+    selection = dict(framework_name=FRAMEWORK_VARIABLE)
+    if pod_type:
+        selection["executor_name"] = pod_type
+
     return G.Row(
         title=title,
         repeat=POD_TYPE_VARIABLE.lstrip("$") if pod_type else "",
         panels=[
-            ResourceStat("Pod count", "cpus_limit", pod_type=pod_type).to_single_stat(
-                "count"
+            W.prometheus.PromGraph(
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="CPU",
+                expressions=[
+                    dict(expr=reduction('sum', metric(m, selection), selection),
+                         legendFormat=title)
+                    for m, title in [('cpus_limit', 'Available')]
+                ],
+                span=3,
+                steppedLine=True,
+                yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
-            ResourceStat(
-                "Used memory", "mem_total", "decbytes", pod_type=pod_type
-            ).to_single_stat(),
-            ResourceStat(
-                "Available memory", "mem_limit", "decbytes", pod_type=pod_type
-            ).to_single_stat(),
-            ResourceStat("CPU", "cpus_limit", pod_type=pod_type).to_single_stat(),
-            ResourceStat(
-                "Disk used (placeholder)", "disk_used", "decbytes", pod_type=pod_type
-            ).to_single_stat(),
-            ResourceStat(
-                "Disk available (placeholder)",
-                "disk_limit",
-                "decbytes",
-                pod_type=pod_type,
-            ).to_single_stat(),
+            W.prometheus.PromGraph(
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="Memory",
+                expressions=[
+                    dict(expr=reduction('sum', metric(m, selection), selection),
+                         legendFormat=title)
+                    for m, title in [('mem_total', 'Used'),
+                                     ('mem_limit', 'Available')]
+                ],
+                span=3,
+                steppedLine=True,
+                yAxes=G.YAxes(left=G.YAxis(format=G.BYTES_FORMAT, decimals=0)),
+            ),
+            W.prometheus.PromGraph(
+                data_source=PROMETHEUS_DATA_SOURCE,
+                title="Disk [PLACEHOLDER]",
+                expressions=[
+                    dict(expr=reduction('sum', metric(m, selection), selection),
+                         legendFormat=title)
+                    for m, title in [('disk_used', 'Used'),
+                                     ('disk_limit', 'Available')]
+                ],
+                span=3,
+                steppedLine=True,
+                yAxes=G.YAxes(left=G.YAxis(format=G.BYTES_FORMAT, decimals=0)),
+            ),
         ],
     )
 
@@ -191,7 +179,7 @@ def scheduler_row() -> G.Row:
                     {"expr": sum(service_metric(m)), "legendFormat": m}
                     for m in offer_metrics
                 ],
-                span=2,
+                span=3,
                 steppedLine=True,
                 yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
@@ -205,7 +193,7 @@ def scheduler_row() -> G.Row:
                     }
                     for m in offer_metrics
                 ],
-                span=2,
+                span=3,
                 steppedLine=True,
             ),
             W.prometheus.PromGraph(
@@ -215,7 +203,7 @@ def scheduler_row() -> G.Row:
                     {"expr": sum(service_metric(m)), "legendFormat": m}
                     for m in offer_timers
                 ],
-                span=2,
+                span=3,
                 yAxes=G.YAxes(left=G.YAxis(format="ns")),
             ),
         ],
@@ -245,7 +233,7 @@ def task_row() -> G.Row:
                     {"expr": sum(service_metric(m)), "legendFormat": m}
                     for m in task_metrics
                 ],
-                span=2,
+                span=3,
                 steppedLine=True,
                 yAxes=G.YAxes(left=G.YAxis(format="short", decimals=0)),
             ),
@@ -259,7 +247,7 @@ def task_row() -> G.Row:
                     }
                     for m in task_metrics
                 ],
-                span=2,
+                span=3,
                 steppedLine=True,
             ),
         ],
