@@ -1,0 +1,89 @@
+groups:
+- name: SDK_Streaming_Alerts
+  rules:
+  # See /scale-tests/declare_test_phase.sh for the canonical definition of the
+  # test_status metric values.
+  # Quick cheat sheet: 0==not (yet) in progress, 1==in steady state, 2==fault injection in progress
+
+  - alert: SDK_Streaming_Test_Phase_Undeclared
+    expr: absent(test_status{job="ds-streaming"})
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Please run spark-build/scale-tests/declare_test_phase.sh.'
+
+  # The following reminders are in case someone forgets to declare the phase accurately.
+
+  - alert: SDK_Streaming_Test_Inactive
+    expr: test_status{job="ds-streaming"} == 0
+    for: 30m
+    labels:
+      severity: informational
+    annotations:
+      description: 'This is a reminder that SDK streaming test is currently declared as NOT in progress.'
+
+  - alert: SDK_Streaming_Test_Inactive
+    expr: test_status{job="ds-streaming"} == 2
+    for: 60m
+    labels:
+      severity: informational
+    annotations:
+      description: 'This is a reminder that SDK streaming test is currently declared as "fault injection in progress".'
+
+  # 1Gbps in steady state, (100%-35%) of that during fault-injection.
+  - record: kafka_ingress_threshold_bytespersec
+    expr: 125000000 * (test_status{job="ds-streaming"} == bool 1) + 81250000 * (test_status{job="ds-streaming"} == bool 2)
+  - record: kafka_egress_threshold_bytespersec
+    expr: 10 * kafka_ingress_threshold_bytespersec
+
+  # Default 25 kafka clusters.
+  - record: computed_kafka_or_zk_cluster_count
+    expr: 25 * absent(set_kafka_or_zk_cluster_count{job="ds-streaming"}) or set_kafka_or_zk_cluster_count{job="ds-streaming"}
+
+  - alert: SDK_Streaming_Ingress_Traffic_Too_Low
+    expr: sum(sum(kafka_server_brokertopicmetrics_bytesinpersec_1minuterate{topic!~"_.*"}) by (framework_id) >= bool on() kafka_ingress_threshold_bytespersec) < bool on() computed_kafka_or_zk_cluster_count and on() test_status{job="ds-streaming"} > 0
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Fewer than expected number of kafka clusters receive expected level of of traffic from producers.'
+
+  - alert: SDK_Streaming_Egress_Traffic_Too_Low
+    expr: sum(sum(kafka_server_brokertopicmetrics_bytesoutpersec_1minuterate{topic!~"_.*"}) by (framework_id) >= bool on() kafka_egress_threshold_bytespersec) < bool on() computed_kafka_or_zk_cluster_count and on() test_status{job="ds-streaming"} > 0
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Fewer than expected number of kafka clusters send expected level of of traffic to consumers.'
+
+  - alert: SDK_Streaming_Kafka_Consumer_Lag_Too_High
+    expr: quantile(0.99,kafka_consumer_fetch_manager_metrics_records_lag_max{task_name!~"Driver.*"}) / max(kafka_server_brokertopicmetrics_messagesinpersec_1minuterate{topic!~"_.*"}) > 10
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Kafka consumer lag at 99th percentile exceeds 10 seconds.'
+
+  # TODO: add alert for scheduler health here.
+
+  # 1Gbps in steady state, (100%-35%) of that during fault-injection.
+  - record: kafka_or_zk_node_count_threshold
+    expr: 5 * (test_status{job="ds-streaming"} == bool 1) + 4 * (test_status{job="ds-streaming"} == bool 2)
+
+  - alert: SDK_Streaming_Kafka_Brokers_Unhealthy
+    expr: sum(sum(kafka_server_kafkaserver_brokerstate == bool 3) by (framework_id) == bool on() kafka_or_zk_node_count_threshold) < bool on() computed_kafka_or_zk_cluster_count and on() test_status{job="ds-streaming"} > 0
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Fewer than expected number of kafka clusters have expected number of healthy brokers.'
+
+  - alert: SDK_Streaming_ZK_Nodes_Unhealthy
+    expr: sum(count(zk_num_alive_connections > 0) by (framework_id) >= bool on () kafka_or_zk_node_count_threshold) < on() computed_kafka_or_zk_cluster_count and on() test_status{job="ds-streaming"} > 0
+    for: 150s
+    labels:
+      severity: major
+    annotations:
+      description: 'Fewer than expected number of ZK ensembles have expected number of healthy nodes.'
+
