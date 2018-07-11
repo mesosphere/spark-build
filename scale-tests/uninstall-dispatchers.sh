@@ -52,11 +52,12 @@ run_janitor () {
     local service_name="${1}"
     local role="${2}"
     local principal="${3}"
+    local unslashed_service_name="$(echo ${service_name} | sed 's/\//__/g')"
 
     if [ "${role}" = "spark" ]
        local zknode="spark_mesos_dispatcher"
     then
-       local zknode="spark_mesos_dispatcher${service_name}"
+       local zknode="spark_mesos_dispatcher${unslashed_service_name}"
     fi
 
     local cmd="$(janitor_cmd "${service_name}" "${role}" "${principal}" "${zknode}")"
