@@ -45,7 +45,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": null,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -176,12 +176,14 @@
       "steppedLine": false,
       "targets": [
         {
+          "$$hashKey": "object:2896",
           "expr": "mesos_master_allocator_role_quota_offered_or_allocated{resource=\"cpus\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
         },
         {
+          "$$hashKey": "object:2897",
           "expr": "mesos_master_allocator_role_quota_guarantee{resource=\"cpus\"}",
           "format": "time_series",
           "intervalFactor": 1,
@@ -408,7 +410,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
+      "nullPointMode": "null as zero",
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -419,10 +421,27 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_executor_count) by (task_name)",
+          "$$hashKey": "object:2704",
+          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*Kafka.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "Spark-Streaming Kafka",
+          "refId": "B"
+        },
+        {
+          "$$hashKey": "object:2725",
+          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*monte.*\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Monte-Carlo batch",
+          "refId": "C"
+        },
+        {
+          "$$hashKey": "object:2746",
+          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*image.*\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Image-Recognition GPU",
           "refId": "A"
         }
       ],
@@ -445,6 +464,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:3234",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -453,6 +473,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:3235",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -499,6 +520,7 @@
       "steppedLine": false,
       "targets": [
         {
+          "$$hashKey": "object:3053",
           "expr": "count(spark_mesos_cluster_executor_count)",
           "format": "time_series",
           "intervalFactor": 1,
@@ -506,6 +528,7 @@
           "refId": "A"
         },
         {
+          "$$hashKey": "object:3054",
           "expr": "sum(spark_mesos_cluster_driver_launched)",
           "format": "time_series",
           "intervalFactor": 1,
@@ -1225,5 +1248,5 @@
   "timezone": "",
   "title": "Spark: Jobs Summary",
   "uid": "2TeZ5sniz",
-  "version": 4
+  "version": 2
 }
