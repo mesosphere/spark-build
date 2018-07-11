@@ -1,4 +1,34 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "5.0.1"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "5.0.0"
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -15,7 +45,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -378,7 +408,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "null as zero",
+      "nullPointMode": "null",
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -389,39 +419,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:3814",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*Kafka.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "Kafka Spark-Streaming",
-          "refId": "B"
-        },
-        {
-          "$$hashKey": "object:3815",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*monte.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "Batch Monte-Carlo",
-          "refId": "C"
-        },
-        {
-          "$$hashKey": "object:3816",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*image.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "Batch GPU Image-Recognition",
-          "refId": "A"
-        },
-        {
-          "$$hashKey": "object:3962",
           "expr": "count(spark_mesos_cluster_executor_count) by (task_name)",
           "format": "time_series",
-          "hide": true,
           "intervalFactor": 1,
-          "refId": "D"
+          "legendFormat": "",
+          "refId": "A"
         }
       ],
       "thresholds": [],
@@ -1223,5 +1225,5 @@
   "timezone": "",
   "title": "Spark: Jobs Summary",
   "uid": "2TeZ5sniz",
-  "version": 3
+  "version": 4
 }
