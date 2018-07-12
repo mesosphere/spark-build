@@ -43,12 +43,7 @@ type SparkCommand struct {
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	marathonConfig, err := fetchMarathonConfig()
-	if err != nil {
-		return err
-	}
-
-	jsonPayload, err := buildSubmitJson(cmd, marathonConfig)
+	jsonPayload, err := buildSubmitJson(cmd)
 	if err != nil {
 		return err
 	}

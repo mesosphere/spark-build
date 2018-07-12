@@ -155,7 +155,7 @@ func GetRandomStringSecret() (string, error) {
 }
 
 // KERBEROS
-func SetupKerberos(args *sparkArgs, marathonConfig map[string]interface{}) error {
+func SetupKerberos(args *sparkArgs) error {
 	kerberosPrincipal := getPrincipal(args)
 	if kerberosPrincipal != "" {
 		err := validateKerberosInputs(args)
@@ -168,9 +168,6 @@ func SetupKerberos(args *sparkArgs, marathonConfig map[string]interface{}) error
 
 		// re-assign if the user used spark.yarn.principal
 		args.properties["spark.yarn.principal"] = args.kerberosPrincipal
-
-		// krb5.conf forwarding of environment variables:
-		forwardEnvironmentVariablesFromMarathonConfig(args, marathonConfig)
 
 		// mesos secrets
 		err = setupKerberosSecretsConfigs(args)
@@ -203,79 +200,6 @@ func validateKerberosInputs(args *sparkArgs) error {
 		return errors.New("cannot use a TGT-by-value and a TGT-by-secret at the same time")
 	}
 	return nil
-}
-
-func propertyGiven(marathonJson map[string]interface{}) func(path []string) (bool, string) {
-	_marathonJson := marathonJson
-	return func(_path []string) (bool, string) {
-		value, err := getStringFromTree(_marathonJson, _path)
-		if value == "" && err != nil {
-			return false, value
-		}
-		return true, value
-	}
-}
-
-func addEnvvarToDriverAndExecutor(args *sparkArgs, key, value string) {
-	driverProp := fmt.Sprintf("spark.mesos.driverEnv.%s", key)
-	executorProp := fmt.Sprintf("spark.executorEnv.%s", key)
-	_, contains := args.properties[driverProp]
-	if !contains {
-		args.properties[driverProp] = value
-	}
-	_, contains = args.properties[executorProp]
-	if !contains {
-		args.properties[executorProp] = value
-	}
-}
-
-func forwardEnvironmentVariablesFromMarathonConfig(args *sparkArgs, marathonJson map[string]interface{}) {
-	propertyChecker := propertyGiven(marathonJson)
-	// We allow the user to set SPARK_SECURITY_KERBEROS_KDC_HOSTNAME and SPARK_SECURITY_KERBEROS_KDC_PORT, and
-	// SPARK_SECURITY_KERBEROS_REALM, these values will be used to template a krb5.conf. If the user sets
-	// SPARK_MESOS_KRB5_CONF_BASE64 it will be overwritten, but log a warning to be sure.
-	kdcPropCount := 0
-	given, value := propertyChecker([]string{"app", "env", SPARK_KDC_HOSTNAME_KEY})
-	if given {
-		client.PrintMessage("Using KDC hostname '%s' from dispatcher env:%s", value, SPARK_KDC_HOSTNAME_KEY)
-		addEnvvarToDriverAndExecutor(args, SPARK_KDC_HOSTNAME_KEY, value)
-		kdcPropCount += 1
-	}
-
-	given, value = propertyChecker([]string{"app", "env", SPARK_KDC_PORT_KEY})
-	if given {
-		client.PrintMessage("Using KDC port '%s' from dispatcher env:%s", value, SPARK_KDC_PORT_KEY)
-		addEnvvarToDriverAndExecutor(args, SPARK_KDC_PORT_KEY, value)
-		kdcPropCount += 1
-	}
-
-	given, value = propertyChecker([]string{"app", "env", SPARK_KERBEROS_REALM_KEY})
-	if given {
-		client.PrintMessage("Using KDC realm '%s' from dispatcher env:%s", value, SPARK_KERBEROS_REALM_KEY)
-		addEnvvarToDriverAndExecutor(args, SPARK_KERBEROS_REALM_KEY, value)
-		kdcPropCount += 1
-	}
-
-	if kdcPropCount > 0 && kdcPropCount != 3 {
-		client.PrintMessage(
-			"WARNING: Missing some of the 3 dispatcher environment variables (%s, %s, %s) " +
-			"required for templating krb5.conf",
-			SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
-	}
-
-	given, value = propertyChecker([]string{"app", "env", SPARK_KERBEROS_KRB5_BLOB})
-	if given {
-		if kdcPropCount > 0 {
-			client.PrintMessage(
-				"WARNING: Found base64-encoded krb5.conf in dispatcher env:%s, ignoring %s, %s, and %s",
-				SPARK_KERBEROS_KRB5_BLOB, SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
-		}
-		addEnvvarToDriverAndExecutor(args, SPARK_KERBEROS_KRB5_BLOB, value)
-	} else {
-		if kdcPropCount == 0 {
-			client.PrintMessage("No KDC krb5.conf parameters were found in the dispatcher Marathon configuration")
-		}
-	}
 }
 
 func addConfigForKerberosKeytabs(args *sparkArgs, secretPath, property string) {

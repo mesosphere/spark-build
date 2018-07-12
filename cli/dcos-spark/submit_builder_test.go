@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mesosphere/dcos-commons/cli/config"
 	"github.com/stretchr/testify/suite"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -19,7 +21,6 @@ const keytabPrefixed = "__dcos_base64__keytab"
 const keytab = "keytab"
 const sparkAuthSecret = "spark-auth-secret"
 const marathonAppId = "spark-app"
-var marathonConfig = map[string]interface{}{ "app": map[string]interface{}{ "id": marathonAppId }}
 
 type CliTestSuite struct {
 	suite.Suite
@@ -30,7 +31,10 @@ func (suite *CliTestSuite) SetupSuite() {
 	os.Setenv("DCOS_SSL_VERIFY", "false")
 	// buildSubmitJson also fetches the service URL to configure spark.master:
 	os.Setenv("DCOS_URL", "https://fake-url")
+	// buildSubmitJson uses the service name to figure out the DCOS_SPACE value:
+    config.ServiceName = marathonAppId
 }
+
 func TestCliTestSuite(t *testing.T) {
 	suite.Run(t, new(CliTestSuite))
 }
@@ -53,7 +57,7 @@ func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
 func (suite *CliTestSuite) TestScoptAppArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := `--driver-cores 1 --conf spark.cores.max=1 --driver-memory 512M
-  --class org.apache.spark.examples.SparkPi http://spark-example.jar --input1 value1 --input2 value2`
+    --class org.apache.spark.examples.SparkPi http://spark-example.jar --input1 value1 --input2 value2`
 	submitArgs, appFlags := cleanUpSubmitArgs(inputArgs, args.boolVals)
 
 	if "--input1" != appFlags[0] {
@@ -69,6 +73,39 @@ func (suite *CliTestSuite) TestScoptAppArgs() {
 	if "http://spark-example.jar" != submitArgs[4] {
 		suite.T().Errorf("Failed to parse submit args..")
 	}
+}
+
+func (suite *CliTestSuite) testLongArgInternal(inputArgs string, expectedArgs []string) {
+       _, args := sparkSubmitArgSetup()  // setup
+       submitargs, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+       if len(submitargs) != 2 {  // should have 1 arg that's all the java options and one that's the spark cores config
+               suite.T().Errorf("Failed to parse %s, should have 2 args, got %d", inputArgs, len(submitargs))
+       }
+       java_options_arg := submitargs[0]
+       for i, a := range expectedArgs {
+               if !strings.Contains(java_options_arg, a) {
+                       suite.T().Errorf("Expected to find %s at index %d", a, i)
+               }
+       }
+}
+
+// test long args
+func (suite *CliTestSuite) TestStringLongArgs() {
+       java_options := []string{"-Djava.firstConfig=firstSetting", "-Djava.secondConfig=secondSetting"}
+       inputArgs := "--driver-java-options '-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
+       inputArgs = "--driver-java-options='-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
+       inputArgs = "--conf spark.driver.extraJavaOptions='-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
+       inputArgs = "--executor-java-options '-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
+       inputArgs = "--conf spark.executor.extraJavaOptions='-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
+
+       java_options = append(java_options, "-Djava.thirdConfig=thirdSetting")
+       inputArgs = "--driver-java-option='-Djava.firstConfig=firstSetting -Djava.secondConfig=secondSetting -Djava.thirdConfig=thirdSetting' --conf spark.cores.max=8"
+       suite.testLongArgInternal(inputArgs, java_options)
 }
 
 func createCommand(inputArgs, dockerImage string) SparkCommand {
@@ -100,7 +137,7 @@ func (suite *CliTestSuite) TestPayloadSimple() {
 			"%s --input1 value1 --input2 value2", driverCores, maxCores, driverMemory, mainClass, appJar)
 
 	cmd := createCommand(inputArgs, image)
-	payload, err := buildSubmitJson(&cmd, marathonConfig)
+	payload, err := buildSubmitJson(&cmd)
 
 	m := make(map[string]interface{})
 
@@ -123,11 +160,11 @@ func (suite *CliTestSuite) TestPayloadSimple() {
 		"spark.cores.max": maxCores,
 		"spark.mesos.executor.docker.forcePullImage": "true",
 		"spark.mesos.executor.docker.image": image,
-		"spark.mesos.task.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.mesos.task.labels": fmt.Sprintf("DCOS_SPACE:%s", "/" + marathonAppId),
 		"spark.ssl.noCertVerification": "true",
 		"spark.executor.memory": "1G", // default
 		"spark.submit.deployMode": "cluster",
-		"spark.mesos.driver.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.mesos.driver.labels": fmt.Sprintf("DCOS_SPACE:%s", "/" + marathonAppId),
 		"spark.driver.memory": driverMemory,
 		"spark.jars": appJar,
 	}
@@ -151,7 +188,7 @@ func (suite *CliTestSuite) TestPayloadCustomImageNoExecutor() {
 			"%s --input1 value1 --input2 value2", driverCores, maxCores, driverMemory, mainClass, appJar)
 
 	cmd := createCommand(inputArgs, "")
-	payload, err := buildSubmitJson(&cmd, marathonConfig)
+	payload, err := buildSubmitJson(&cmd)
 
 	m := make(map[string]interface{})
 
@@ -174,11 +211,11 @@ func (suite *CliTestSuite) TestPayloadCustomImageNoExecutor() {
 		"spark.cores.max": maxCores,
 		"spark.mesos.executor.docker.forcePullImage": "false",
 		"spark.mesos.executor.docker.image": "other",
-		"spark.mesos.task.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.mesos.task.labels": fmt.Sprintf("DCOS_SPACE:%s", "/" + marathonAppId),
 		"spark.ssl.noCertVerification": "true",
 		"spark.executor.memory": "1G", // default
 		"spark.submit.deployMode": "cluster",
-		"spark.mesos.driver.labels": fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
+		"spark.mesos.driver.labels": fmt.Sprintf("DCOS_SPACE:%s", "/" + marathonAppId),
 		"spark.driver.memory": driverMemory,
 		"spark.jars": appJar,
 	}
@@ -215,7 +252,7 @@ func (suite *CliTestSuite) checkSecret(secretPath, secretFile string) {
 		driverCores, principal, secretPath, maxCores, driverMemory, mainClass, appJar)
 
 	cmd := createCommand(inputArgs, image)
-	payload, err := buildSubmitJson(&cmd, marathonConfig)
+	payload, err := buildSubmitJson(&cmd)
 
 	m := make(map[string]interface{})
 
@@ -252,7 +289,7 @@ func (suite *CliTestSuite) TestSaslSecret() {
 
 
 	cmd := createCommand(inputArgs, image)
-	payload, err := buildSubmitJson(&cmd, marathonConfig)
+	payload, err := buildSubmitJson(&cmd)
 
 	m := make(map[string]interface{})
 
