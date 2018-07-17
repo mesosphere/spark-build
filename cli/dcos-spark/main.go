@@ -8,8 +8,6 @@ import (
 	"github.com/mesosphere/dcos-commons/cli/client"
 	"gopkg.in/alecthomas/kingpin.v3-unstable"
 	"log"
-	"net/http"
-	"path"
 	"strings"
 )
 
@@ -25,21 +23,11 @@ type SparkCommand struct {
 	submitArgs        string
 	submitDockerImage string
 	submitEnv         map[string]string
-
+	secretPath 		  string
 	statusSkipMessage bool
-
-	logFollow bool
-	logLines  uint
-	logFile   string
-
-	secretPath string
-
-	quotaRole  string
-	quotaCpus  float64
-	quotaMem   float64
-	quotaGpus  int
-	quotaForce bool
-	quotaJson  bool
+	logFollow 		  bool
+	logLines  		  uint
+	logFile   		  string
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
@@ -178,135 +166,6 @@ func (cmd *SparkCommand) runGenerateSecret(a *kingpin.Application, e *kingpin.Pa
 	return err
 }
 
-type quotaScalar struct {
-	Value float64 `json:"value"`
-}
-
-func createMesosQuotaRequest(method, quotaName string, jsonPayload []byte) *http.Request {
-	// Get Mesos Quota URL: http://<dcos_url>/mesos/quota[/quotaName]
-	var urlPath string
-	if len(quotaName) != 0 {
-		urlPath = path.Join("mesos", "quota", quotaName)
-	} else {
-		urlPath = path.Join("mesos", "quota")
-	}
-	mesosUrl := client.CreateURL(client.GetDCOSURL(), urlPath, "")
-	return client.CreateHTTPRawRequest(method, mesosUrl, jsonPayload, "", "")
-}
-
-type quotaCreateGuarantee struct {
-	Name   string      `json:"name"`
-	Type   string      `json:"type"`
-	Scalar quotaScalar `json:"scalar"`
-}
-
-type quotaCreateRequest struct {
-	Role      string                 `json:"role"`
-	Guarantee []quotaCreateGuarantee `json:"guarantee"`
-	Force     bool                   `json:"force"`
-}
-
-func (cmd *SparkCommand) runQuotaCreate(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	requestValues := make([]quotaCreateGuarantee, 0)
-	if cmd.quotaCpus != 0 {
-		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "cpus",
-			Type: "SCALAR",
-			Scalar: quotaScalar{Value: cmd.quotaCpus},
-		})
-	}
-	if cmd.quotaMem != 0 {
-		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "mem",
-			Type: "SCALAR",
-			Scalar: quotaScalar{Value: cmd.quotaMem},
-		})
-	}
-	if cmd.quotaGpus != 0 {
-		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "gpus",
-			Type: "SCALAR",
-			Scalar: quotaScalar{Value: float64(cmd.quotaGpus)},
-		})
-	}
-	if len(requestValues) == 0 {
-		return fmt.Errorf("No quota resources were provided. Please specify resources to be assigned to this quota")
-	}
-	requestPayload := quotaCreateRequest{Role: cmd.quotaRole, Guarantee: requestValues, Force: cmd.quotaForce}
-	requestBytes, err := json.Marshal(requestPayload)
-	if err != nil {
-		return err
-	}
-	// Ignore response content: If the command succeeded, the response is empty
-	_, err = client.CheckHTTPResponse(client.HTTPQuery(createMesosQuotaRequest("POST", "", requestBytes)))
-	if err != nil {
-		return err
-	}
-	client.PrintMessage(`The requested quota for role '%s' has been successfully configured. This quota may be used in your Spark configuration:
-- In the Dispatcher: 'dcos package install spark' with 'service.role' option configured
-- In the Executors: 'dcos spark run' with '--conf spark.cores.max' and '--conf spark.mesos.role' options configured
-For more information, see the Job Scheduling section of the documentation at http://docs.mesosphere.com/services/spark/`, cmd.quotaRole)
-	return err
-}
-
-func (cmd *SparkCommand) runQuotaRemove(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	// Ignore response content: If the command succeeded, the response is empty
-	_, err := client.CheckHTTPResponse(client.HTTPQuery(createMesosQuotaRequest("DELETE", cmd.quotaRole, nil)))
-	if err != nil {
-		return err
-	}
-	client.PrintMessage(`The quota for role '%s' has been successfully removed.`, cmd.quotaRole)
-	return err
-}
-
-type quotaListGuarantee struct {
-	Name   string      `json:"name"`
-	Scalar quotaScalar `json:"scalar"`
-	Type   string      `json:"type"` // not printed
-}
-
-type quotaListInfo struct {
-	Guarantees []quotaListGuarantee `json:"guarantee"`
-	Principal  string               `json:"principal"`
-	Role       string               `json:"role"`
-}
-
-type quotaListResponse struct {
-	Infos []quotaListInfo `json:"infos"`
-}
-
-func (cmd *SparkCommand) runQuotaList(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	responseBytes, err := client.CheckHTTPResponse(client.HTTPQuery(createMesosQuotaRequest("GET", "", nil)))
-	if err != nil {
-		return err
-	}
-	if cmd.quotaJson {
-		client.PrintJSONBytes(responseBytes)
-		return nil
-	}
-	var response quotaListResponse
-	err = json.Unmarshal(responseBytes, &response)
-	if err != nil {
-		return err
-	}
-	switch len(response.Infos) {
-	case 0:
-		client.PrintMessage("No quotas are configured.")
-	case 1:
-		client.PrintMessage("1 quota entry:")
-	default:
-		client.PrintMessage("%d quota entries:", len(response.Infos))
-	}
-	for _, info := range response.Infos {
-		resources := ""
-		for _, guarantee := range info.Guarantees {
-			resources += fmt.Sprintf(" %s=%g", guarantee.Name, guarantee.Scalar.Value)
-		}
-		client.PrintMessage("- role=%s:%s (principal=%s)", info.Role, resources, info.Principal)
-	}
-	return err
-}
-
 func handleCommands(app *kingpin.Application) {
 	cmd := &SparkCommand{submitEnv: make(map[string]string)}
 
@@ -341,19 +200,7 @@ func handleCommands(app *kingpin.Application) {
 
 	secret := app.Command("secret", "Make a shared secret, used for RPC authentication").
 		Action(cmd.runGenerateSecret)
-	secret.Arg("secret-path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
-
-	quota := app.Command("quota", "Manage service quotas with Mesos")
-	quotaCreate := quota.Command("create", "Create a resource quota for a given role").Action(cmd.runQuotaCreate)
-	quotaCreate.Arg("role", "Mesos role to create the quota against").Required().StringVar(&cmd.quotaRole)
-	quotaCreate.Flag("cpus", "Amount of CPUs").Short('c').PlaceHolder("float").Float64Var(&cmd.quotaCpus)
-	quotaCreate.Flag("mem", "Amount of Memory, in MB").Short('m').PlaceHolder("float").Float64Var(&cmd.quotaMem)
-	quotaCreate.Flag("gpus", "Amount of GPUs").Short('g').PlaceHolder("int").IntVar(&cmd.quotaGpus)
-	quotaCreate.Flag("force", "Force the role to be created, even if it doesn't fit").BoolVar(&cmd.quotaForce)
-	quotaRemove := quota.Command("remove", "Remove a previously created quota for a given role").Action(cmd.runQuotaRemove)
-	quotaRemove.Arg("role", "Mesos role to remove the quota from").Required().StringVar(&cmd.quotaRole)
-	list := quota.Command("list", "List all currently assigned quotas").Alias("ls").Action(cmd.runQuotaList)
-	list.Flag("json", "Show raw JSON response instead of user-friendly list").BoolVar(&cmd.quotaJson)
+	secret.Arg("secret_path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
 
 	app.Command("webui", "Returns the Spark Web UI URL").Action(cmd.runWebui)
 }

@@ -77,17 +77,11 @@ func createCommand(inputArgs, dockerImage string) SparkCommand {
 		inputArgs,
 		dockerImage,
 		make(map[string]string),
+		"",
 		false,
 		false,
 		0,
 		"",
-		"",
-		"",
-		0.0,
-		0.0,
-		0,
-		false,
-		false,
 	}
 }
 
