@@ -3,7 +3,8 @@ import logging
 import os
 import pytest
 
-from tests import s3, utils
+import spark_s3 as s3
+import spark_utils as utils
 
 import sdk_auth
 import sdk_cmd

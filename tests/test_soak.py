@@ -7,7 +7,7 @@ import shakedown
 import sdk_cmd
 import sdk_jobs
 
-from tests import utils
+import spark_utils as utils
 from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
 
 LOGGER = logging.getLogger(__name__)

@@ -109,7 +109,7 @@ DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.1-SNAP
 $(DCOS_SPARK_TEST_JAR_PATH):
 	cd tests/jobs/scala
 	sbt assembly
-	cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
+	cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar $@
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests

@@ -17,8 +17,8 @@ import sdk_security
 import sdk_tasks
 import sdk_utils
 
-from tests import s3
-from tests import utils
+import spark_s3 as s3
+import spark_utils as utils
 
 
 LOGGER = logging.getLogger(__name__)
