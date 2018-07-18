@@ -200,7 +200,7 @@ func handleCommands(app *kingpin.Application) {
 
 	secret := app.Command("secret", "Make a shared secret, used for RPC authentication").
 		Action(cmd.runGenerateSecret)
-	secret.Arg("secret_path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
+	secret.Arg("secret-path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
 
 	app.Command("webui", "Returns the Spark Web UI URL").Action(cmd.runWebui)
 }
