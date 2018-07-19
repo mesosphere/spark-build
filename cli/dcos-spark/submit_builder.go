@@ -509,7 +509,7 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 	} else {
 		client.PrintMessage("Using image '%s' for the driver and the executors (from %s).",
 			args.properties["spark.mesos.executor.docker.image"], imageSource)
-		client.PrintMessage("To disable this image on executors, set "+
+		client.PrintMessage("To disable this image on executors, set " +
 			"spark.mesos.executor.docker.forcePullImage=false")
 		args.properties["spark.mesos.executor.docker.forcePullImage"] = "true"
 	}

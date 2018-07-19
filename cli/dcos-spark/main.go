@@ -23,11 +23,11 @@ type SparkCommand struct {
 	submitArgs        string
 	submitDockerImage string
 	submitEnv         map[string]string
-	secretPath 		  string
+	secretPath        string
 	statusSkipMessage bool
-	logFollow 		  bool
-	logLines  		  uint
-	logFile   		  string
+	logFollow         bool
+	logLines          uint
+	logFile           string
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
