@@ -44,8 +44,8 @@
                 },
                 "docker-image": {
                     "type": "string",
-                    "description": "The docker image used to run the dispatcher, drivers, and executors.  If, for example, you need a Spark built with a specific Hadoop version, set this variable to one of the images here: {{https-protocol}}hub.docker.com/r/mesosphere/spark/tags/",
-                    "default": "{{docker-image}}"
+                    "description": "The docker image used to run the dispatcher, drivers, and executors. If no image is specified {{docker-image}} will be used. If, for example, you need a Spark built with a specific Hadoop version, set this variable to one of the images here: {{https-protocol}}hub.docker.com/r/mesosphere/spark/tags/",
+                    "default": ""
                 },
                 "log-level": {
                     "type": "string",
