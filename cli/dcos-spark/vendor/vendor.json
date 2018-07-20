@@ -3,76 +3,118 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "Pc2ORQp+VY3Un/dkh4QwLC7R6lE=",
+			"path": "github.com/BurntSushi/toml",
+			"revision": "a368813c5e648fee92e5f6c30e3944ff9d5e8895",
+			"revisionTime": "2017-06-26T11:06:00Z"
+		},
+		{
 			"checksumSHA1": "fCc3grA7vIxfBru7R3SqjcW+oLI=",
 			"path": "github.com/alecthomas/units",
 			"revision": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a",
 			"revisionTime": "2015-10-22T06:55:26Z"
 		},
 		{
-			"checksumSHA1": "MRsJpsz9OQ3usGH3WKrAmHmbpB0=",
+			"checksumSHA1": "CSPbwbyzqA6sfORicn4HFtIhF/c=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "8991bc29aa16c548c550c7ff78260e27b9ab7c73",
+			"revisionTime": "2018-02-21T22:46:20Z"
+		},
+		{
+			"checksumSHA1": "kbCt1P08/QIAaOSjF/DTvflwsHQ=",
 			"path": "github.com/mesosphere/dcos-commons/cli",
-			"revision": "de898c865fcb3ad0fa97e282a6c7636f3f4c6443",
-			"revisionTime": "2017-09-11T17:38:25Z"
+			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
+			"revisionTime": "2018-04-24T03:33:12Z"
 		},
 		{
-			"checksumSHA1": "1TPyjYCV9ngJzNkeEpoIPiGmUWg=",
+			"checksumSHA1": "RtIxmUnHx4wIXNSZA/bMA3jo1ik=",
 			"path": "github.com/mesosphere/dcos-commons/cli/client",
-			"revision": "de898c865fcb3ad0fa97e282a6c7636f3f4c6443",
-			"revisionTime": "2017-09-11T17:38:25Z"
+			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
+			"revisionTime": "2018-04-24T03:33:12Z"
 		},
 		{
-			"checksumSHA1": "b61KHv29q/yJQiuGrH9avUqA/3E=",
+			"checksumSHA1": "QDiOJgnY42uMi15mdpWTQC+XWOE=",
 			"path": "github.com/mesosphere/dcos-commons/cli/commands",
-			"revision": "de898c865fcb3ad0fa97e282a6c7636f3f4c6443",
-			"revisionTime": "2017-09-11T17:38:25Z"
+			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
+			"revisionTime": "2018-04-24T03:33:12Z"
 		},
 		{
-			"checksumSHA1": "8WVsFuHHeNyqHoZof+6yjmPeUgU=",
+			"checksumSHA1": "y/MfA7he+pywk7ADfefLAHZJiWs=",
 			"path": "github.com/mesosphere/dcos-commons/cli/config",
-			"revision": "de898c865fcb3ad0fa97e282a6c7636f3f4c6443",
-			"revisionTime": "2017-09-11T17:38:25Z"
+			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
+			"revisionTime": "2018-04-24T03:33:12Z"
+		},
+		{
+			"checksumSHA1": "Bes2UqmiEf0QOkK3QsieyNjfdSc=",
+			"path": "github.com/mesosphere/dcos-commons/cli/queries",
+			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
+			"revisionTime": "2018-04-24T03:33:12Z"
 		},
 		{
 			"checksumSHA1": "uEc9/1HbYGeK7wPStF6FmUlfzGE=",
 			"path": "github.com/nicksnyder/go-i18n/i18n",
-			"revision": "3e70a1a463008cea6726380c908b1a6a8bdf7b24",
-			"revisionTime": "2017-05-12T15:20:54Z"
+			"revision": "072fa6e5a102f3efe8770dc04cbe2f1ca4753819",
+			"revisionTime": "2018-04-19T05:09:40Z"
 		},
 		{
-			"checksumSHA1": "gDe7nlx3FyCVxLkARgl0VAntDRk=",
+			"checksumSHA1": "o/4Fy7/+tzNeueNBThMfD1F94PI=",
 			"path": "github.com/nicksnyder/go-i18n/i18n/bundle",
-			"revision": "3e70a1a463008cea6726380c908b1a6a8bdf7b24",
-			"revisionTime": "2017-05-12T15:20:54Z"
+			"revision": "072fa6e5a102f3efe8770dc04cbe2f1ca4753819",
+			"revisionTime": "2018-04-19T05:09:40Z"
 		},
 		{
-			"checksumSHA1": "+XOg99I1zdmBRUb04ZswvzQ2WS0=",
+			"checksumSHA1": "AdAaAicrUl+1k0wHNsjLU1c6z9A=",
 			"path": "github.com/nicksnyder/go-i18n/i18n/language",
-			"revision": "3e70a1a463008cea6726380c908b1a6a8bdf7b24",
-			"revisionTime": "2017-05-12T15:20:54Z"
+			"revision": "072fa6e5a102f3efe8770dc04cbe2f1ca4753819",
+			"revisionTime": "2018-04-19T05:09:40Z"
 		},
 		{
-			"checksumSHA1": "WZOU406In2hs8FJOHWqV8PWkJKs=",
+			"checksumSHA1": "XfE9yMmmRqZQGbtIP7f6F63Zx0w=",
 			"path": "github.com/nicksnyder/go-i18n/i18n/translation",
-			"revision": "3e70a1a463008cea6726380c908b1a6a8bdf7b24",
-			"revisionTime": "2017-05-12T15:20:54Z"
+			"revision": "072fa6e5a102f3efe8770dc04cbe2f1ca4753819",
+			"revisionTime": "2018-04-19T05:09:40Z"
 		},
 		{
-			"checksumSHA1": "zZg0J0MqvnqXVYo644QDvnUinrc=",
+			"checksumSHA1": "qF0v8XQ53MGp26VQBaIu1mpfb14=",
 			"path": "github.com/pelletier/go-toml",
-			"revision": "1d6b12b7cb290426e27e6b4e38b89fcda3aeef03",
-			"revisionTime": "2017-09-04T19:58:09Z"
+			"revision": "66540cf1fcd2c3aee6f6787dfa32a6ae9a870f12",
+			"revisionTime": "2018-03-23T18:52:43Z"
 		},
 		{
-			"checksumSHA1": "bUYoCYF3EthTFbXZl89tRxOWBNk=",
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "6LwXZI7kXm1C0h4Ui0Y52p9uQhk=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "c679ae2cc0cb27ec3293fea7e254e47386f05d69",
+			"revisionTime": "2018-03-14T08:05:35Z"
+		},
+		{
+			"checksumSHA1": "KqYmXUcuGwsvBL6XVsQnXsFb3LI=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "c679ae2cc0cb27ec3293fea7e254e47386f05d69",
+			"revisionTime": "2018-03-14T08:05:35Z"
+		},
+		{
+			"checksumSHA1": "uefllr2OtKBGo/kQSAPbW3w6p0A=",
+			"path": "github.com/stretchr/testify/suite",
+			"revision": "c679ae2cc0cb27ec3293fea7e254e47386f05d69",
+			"revisionTime": "2018-03-14T08:05:35Z"
+		},
+		{
+			"checksumSHA1": "Ee7T/R2MkaOUE2RG7umlQCrWmcc=",
 			"path": "gopkg.in/alecthomas/kingpin.v3-unstable",
-			"revision": "23bcc3c4eae3c47e1384a1aef1d611e5603b8dfc",
-			"revisionTime": "2017-07-27T04:10:45Z"
+			"revision": "737cdbd3ff5e748fdf6525de68233d0c1f78e5a0",
+			"revisionTime": "2017-06-27T23:50:45Z"
 		},
 		{
-			"checksumSHA1": "RDJpJQwkF012L6m/2BJizyOksNw=",
+			"checksumSHA1": "ZSWoOPUNRr5+3dhkLK3C4cZAQPk=",
 			"path": "gopkg.in/yaml.v2",
-			"revision": "eb3733d160e74a9c7e442f435eb3bea458e1d19f",
-			"revisionTime": "2017-08-12T16:00:11Z"
+			"revision": "5420a8b6744d3b0345ab293f6fcba19c978f1183",
+			"revisionTime": "2018-03-28T19:50:20Z"
 		}
 	],
 	"rootPath": "github.com/mesosphere/spark-build/cli/dcos-spark"

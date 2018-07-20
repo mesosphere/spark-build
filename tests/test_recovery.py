@@ -5,8 +5,9 @@ import re
 import shakedown
 import time
 
-from tests import utils
+import spark_utils as utils
 
+import sdk_tasks
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +35,7 @@ def test_disconnect_from_master():
                      "--conf", "spark.cores.max=1"])
 
     # Wait until executor is running
-    utils.wait_for_executors_running(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS)
+    sdk_tasks.check_running(LONG_RUNNING_FW_NAME, LONG_RUNNING_FW_NUM_TASKS, timeout_seconds=600)
 
     # Block the driver's connection to Mesos master
     framework_info = shakedown.get_service(LONG_RUNNING_FW_NAME)
@@ -56,7 +57,10 @@ def test_disconnect_from_master():
     # Due to https://issues.apache.org/jira/browse/MESOS-5180, the driver does not re-register, so
     # teardown won't occur until the failover_timeout period ends. The framework remains "Inactive".
     # Uncomment when the bug is fixed:
-    #_wait_for_completed_framework(LONG_RUNNING_FW_NAME, 60)
+    #                           The framework is not Active or Inactive
+    #shakedown.wait_for(lambda: shakedown.get_service(fw_name, True) is None,
+    #                   ignore_exceptions=False,
+    #                   timeout_seconds=timeout_seconds)
 
 
 def _parse_fw_pid_host_port(pid):
@@ -76,9 +80,3 @@ def _block_master_connection(host, port):
 def _unblock_master_connection(host):
     LOGGER.info("Unblocking connection with master")
     shakedown.network.restore_iptables(host)
-
-
-def _wait_for_completed_framework(fw_name, timeout_seconds):
-    shakedown.wait_for(lambda: utils.is_framework_completed(fw_name),
-                       ignore_exceptions=False,
-                       timeout_seconds=timeout_seconds)

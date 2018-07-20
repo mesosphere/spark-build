@@ -1,15 +1,16 @@
+import base64
 import logging
 import os
 import pytest
-import json
-import shakedown
 
-from tests import s3, utils
+import spark_s3 as s3
+import spark_utils as utils
 
 import sdk_auth
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_tasks
 import sdk_security
 
 
@@ -20,11 +21,17 @@ PRODUCER_SERVICE_NAME = "Spark->Kafka Producer"
 
 DEFAULT_KAFKA_TASK_COUNT=3
 KERBERIZED_KAFKA = True
-KAFKA_KRB5="W2xpYmRlZmF1bHRzXQpkZWZhdWx0X3JlYWxtID0gTE9DQUwKCltyZW" \
-           "FsbXNdCiAgTE9DQUwgPSB7CiAgICBrZGMgPSBrZGMubWFyYXRob24u" \
-           "YXV0b2lwLmRjb3MudGhpc2Rjb3MuZGlyZWN0b3J5OjI1MDAKICB9Cg=="
-# Currently using stub-universe so it's beta-kafka
-KAFKA_PACKAGE_NAME = os.getenv("KAFKA_PACKAGE_NAME", "beta-kafka")
+KAFKA_KRB5_ORIG = b'''[libdefaults]
+default_realm = LOCAL
+
+[realms]
+  LOCAL = {
+    kdc = kdc.marathon.autoip.dcos.thisdcos.directory:2500
+  }
+'''
+KAFKA_KRB5 = base64.b64encode(KAFKA_KRB5_ORIG).decode('utf8')
+
+KAFKA_PACKAGE_NAME = os.getenv("KAFKA_PACKAGE_NAME", "kafka")
 KAFKA_SERVICE_NAME = os.getenv("KAFKA_SERVICE_NAME", ("secure-kafka" if KERBERIZED_KAFKA else "kafka"))
 
 
@@ -36,11 +43,6 @@ def configure_security_kafka():
 @pytest.fixture(scope='module')
 def kerberized_kafka(configure_security_kafka):
     try:
-        LOGGER.warning('Temporarily using Kafka stub universe until kerberos is released')
-        sdk_cmd.run_cli('package repo add --index=0 {} {}'.format(
-        'kafka-aws',
-        'https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/beta-kafka/20171122-111649-IS0bqbN6pR4Jibu2/stub-universe-beta-kafka.json'))
-
         fqdn = "{service_name}.{host_suffix}".format(service_name=KAFKA_SERVICE_NAME,
                                                      host_suffix=sdk_hosts.AUTOIP_HOST_SUFFIX)
 
@@ -65,9 +67,12 @@ def kerberized_kafka(configure_security_kafka):
                 "security": {
                     "kerberos": {
                         "enabled": True,
-                        "kdc_host_name": kerberos_env.get_host(),
-                        "kdc_host_port": int(kerberos_env.get_port()),
+                        "kdc": {
+                            "hostname": kerberos_env.get_host(),
+                            "port": int(kerberos_env.get_port())
+                        },
                         "keytab_secret": kerberos_env.get_keytab_path(),
+                        "realm": kerberos_env.get_realm()
                     }
                 }
             }
@@ -85,8 +90,7 @@ def kerberized_kafka(configure_security_kafka):
 
     finally:
         sdk_install.uninstall(KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME)
-        if kerberos_env:
-            kerberos_env.cleanup()
+        kerberos_env.cleanup()
 
 
 @pytest.fixture(scope='module')
@@ -97,9 +101,7 @@ def configure_security_spark():
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
     try:
-        # need to do this here also in case this test is run first
-        # and the jar hasn't been updated
-        utils.upload_file(os.environ["SCALA_TEST_JAR_PATH"])
+        utils.upload_dcos_test_jar()
         utils.require_spark()
         yield
     finally:
@@ -114,16 +116,16 @@ def test_spark_and_kafka():
     stop_count = "48"  # some reasonable number
     test_pipeline(
         kerberos_flag=kerberos_flag,
-        jar_uri=utils._scala_test_jar_url(),
+        jar_uri=utils.dcos_test_jar_url(),
         keytab_secret="__dcos_base64___keytab",
         stop_count=stop_count,
-        spark_app_name=utils.SPARK_APP_NAME)
+        spark_service_name=utils.SPARK_SERVICE_NAME)
 
 
-def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_name, jaas_uri=None):
+def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_service_name, jaas_uri=None):
     stop_count = str(stop_count)
     kerberized = True if kerberos_flag == "true" else False
-    broker_dns = _kafka_broker_dns()
+    broker_dns = sdk_cmd.svc_cli(KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME, 'endpoints broker', json=True)['dns'][0]
     topic = "top1"
 
     big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
@@ -131,12 +133,12 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_n
     # arguments to the application
     producer_args = " ".join([broker_dns, big_file, topic, kerberos_flag])
 
-    uris = "spark.mesos.uris=http://norvig.com/big.txt"
+    uris = "spark.mesos.uris={}".format(big_file_url)
 
     if kerberized and jaas_uri is None:
         jaas_path = os.path.join(THIS_DIR, "resources", "spark-kafka-client-jaas.conf")
         s3.upload_file(jaas_path)
-        _uri = s3.s3_http_url("spark-kafka-client-jaas.conf")
+        _uri = s3.http_url("spark-kafka-client-jaas.conf")
         uris += ",{}".format(_uri)
     else:
         uris += ",{}".format(jaas_uri)
@@ -153,7 +155,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_n
         "--conf", "spark.mesos.driver.secret.filenames=kafka-client.keytab",
         "--conf", "spark.mesos.executor.secret.names={}".format(keytab_secret),
         "--conf", "spark.mesos.executor.secret.filenames=kafka-client.keytab",
-        "--conf", "spark.mesos.task.labels=DCOS_SPACE:{}".format(utils.SPARK_APP_NAME),
+        "--conf", "spark.mesos.task.labels=DCOS_SPACE:/{}".format(spark_service_name),
         "--conf", "spark.executorEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.mesos.driverEnv.KRB5_CONFIG_BASE64={}".format(KAFKA_KRB5),
         "--conf", "spark.driver.extraJavaOptions=-Djava.security.auth.login.config="
@@ -170,12 +172,10 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_n
 
     producer_id = utils.submit_job(app_url=jar_uri,
                                    app_args=producer_args,
-                                   app_name=spark_app_name,
+                                   service_name=spark_service_name,
                                    args=producer_config)
 
-    shakedown.wait_for(lambda: _producer_launched(), ignore_exceptions=False, timeout_seconds=600)
-    shakedown.wait_for(lambda: utils.is_service_ready(KAFKA_SERVICE_NAME, 1),
-                       ignore_exceptions=False, timeout_seconds=600)
+    sdk_tasks.check_running(KAFKA_SERVICE_NAME, 1, timeout_seconds=600)
 
     consumer_config = ["--conf", "spark.cores.max=4", "--class", "KafkaConsumer"] + common_args
 
@@ -187,23 +187,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_app_n
     utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
-                    app_name=spark_app_name,
+                    service_name=spark_service_name,
                     args=consumer_config)
 
-    utils.kill_driver(producer_id, spark_app_name)
-
-
-def _producer_launched():
-    return utils.streaming_job_launched(PRODUCER_SERVICE_NAME)
-
-
-def _producer_started():
-    return utils.streaming_job_running(PRODUCER_SERVICE_NAME)
-
-
-def _kafka_broker_dns():
-    cmd = "{package_name} --name={service_name} endpoints broker".format(
-        package_name=KAFKA_PACKAGE_NAME, service_name=KAFKA_SERVICE_NAME)
-    rt, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
-    assert rt == 0, "Failed to get broker endpoints"
-    return json.loads(stdout)["dns"][0]
+    utils.kill_driver(producer_id, spark_service_name)

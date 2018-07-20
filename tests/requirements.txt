@@ -1,6 +1,0 @@
-boto
-git+https://github.com/dcos/dcos-cli.git@14f97067d971b6daa9aa67f5a876c99741a321b2#egg=dcoscli&subdirectory=cli
-git+https://github.com/dcos/dcos-cli.git@14f97067d971b6daa9aa67f5a876c99741a321b2
-dcos-shakedown==1.4.8
-teamcity-messages
-git+https://github.com/dcos/dcos-test-utils@f7c1446b86349ac07693d279a4db0d5d6238a1c3

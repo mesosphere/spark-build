@@ -1,8 +1,10 @@
+import base64
 import itertools
+import json
 import logging
 import os
 import pytest
-import json
+import retrying
 
 import shakedown
 
@@ -15,17 +17,42 @@ import sdk_security
 import sdk_tasks
 
 from tests import hdfs_auth
-from tests import utils
+import spark_utils as utils
 
 
 log = logging.getLogger(__name__)
-DEFAULT_HDFS_TASK_COUNT=10
+
+DEFAULT_HDFS_TASK_COUNT = 10
 GENERIC_HDFS_USER_PRINCIPAL = "hdfs@{realm}".format(realm=sdk_auth.REALM)
-ALICE_PRINCIPAL = "alice@{realm}".format(realm=sdk_auth.REALM)
+ALICE_USER = "alice"
+ALICE_PRINCIPAL = "{user}@{realm}".format(user=ALICE_USER, realm=sdk_auth.REALM)
 KEYTAB_SECRET_PATH = os.getenv("KEYTAB_SECRET_PATH", "__dcos_base64___keytab")
-# To do: change when no longer using HDFS stub universe
-HDFS_PACKAGE_NAME='beta-hdfs'
-HDFS_SERVICE_NAME='hdfs'
+
+HDFS_PACKAGE_NAME = 'hdfs'
+HDFS_SERVICE_NAME = 'hdfs'
+HISTORY_PACKAGE_NAME = os.getenv("HISTORY_PACKAGE_NAME", "spark-history")
+HISTORY_SERVICE_NAME = os.getenv("HISTORY_SERVICE_NAME", "spark-history")
+
+HDFS_DATA_DIR = '/users/{}'.format(ALICE_USER)
+HDFS_HISTORY_DIR = '/history'
+
+HDFS_KRB5_CONF_ORIG = '''[libdefaults]
+default_realm = %(realm)s
+dns_lookup_realm = true
+dns_lookup_kdc = true
+udp_preference_limit = 1
+
+[realms]
+  %(realm)s = {
+    kdc = kdc.marathon.mesos:2500
+  }
+
+[domain_realm]
+  .hdfs.dcos = %(realm)s
+  hdfs.dcos = %(realm)s
+''' % {"realm": sdk_auth.REALM} # avoid format() due to problems with "{" in string
+HDFS_KRB5_CONF = base64.b64encode(HDFS_KRB5_CONF_ORIG.encode('utf8')).decode('utf8')
+
 KERBEROS_ARGS = ["--kerberos-principal", ALICE_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(KEYTAB_SECRET_PATH),
                  "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(utils.SPARK_USER)]
@@ -74,6 +101,7 @@ def hdfs_with_kerberos(configure_security_hdfs):
         kerberos_env.finalize()
         service_kerberos_options = {
             "service": {
+                "name": HDFS_SERVICE_NAME,
                 "security": {
                     "kerberos": {
                         "enabled": True,
@@ -103,9 +131,7 @@ def hdfs_with_kerberos(configure_security_hdfs):
 
     finally:
         sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
-        sdk_cmd.run_cli('package repo remove hdfs-aws')
-        if kerberos_env:
-            kerberos_env.cleanup()
+        kerberos_env.cleanup()
 
 
 @pytest.fixture(scope='module')
@@ -125,8 +151,9 @@ def setup_hdfs_client(hdfs_with_kerberos):
         sdk_marathon.install_app(hdfsclient_app_def)
 
         sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-        hdfs_cmd("mkdir -p /users/alice")
-        hdfs_cmd("chown alice:users /users/alice")
+        hdfs_cmd("rm -r -skipTrash {}".format(HDFS_DATA_DIR))
+        hdfs_cmd("mkdir -p {}".format(HDFS_DATA_DIR))
+        hdfs_cmd("chown {}:users {}".format(ALICE_USER, HDFS_DATA_DIR))
         yield
 
     finally:
@@ -134,45 +161,71 @@ def setup_hdfs_client(hdfs_with_kerberos):
 
 
 def hdfs_cmd(cmd):
-    sdk_tasks.task_exec(HDFS_CLIENT_ID, "bin/hdfs dfs -{}".format(cmd))
+    rc, _, _ = sdk_cmd.marathon_task_exec(HDFS_CLIENT_ID, "bin/hdfs dfs -{}".format(cmd))
+    if rc != 0:
+        raise Exception("HDFS command failed with code {}: {}".format(rc, cmd))
 
 
 @pytest.fixture(scope='module')
 def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_universe):
     try:
         sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-        hdfs_cmd("mkdir /history")
-        hdfs_cmd("chmod 1777 /history")
+        hdfs_cmd("rm -r -skipTrash {}".format(HDFS_HISTORY_DIR))
+        hdfs_cmd("mkdir {}".format(HDFS_HISTORY_DIR))
+        hdfs_cmd("chmod 1777 {}".format(HDFS_HISTORY_DIR))
 
-        shakedown.install_package(
-            package_name=utils.HISTORY_PACKAGE_NAME,
-            options_json={
+        sdk_install.uninstall(HISTORY_PACKAGE_NAME, HISTORY_SERVICE_NAME)
+        sdk_install.install(
+            HISTORY_PACKAGE_NAME,
+            HISTORY_SERVICE_NAME,
+            0,
+            additional_options={
                 "service": {
+                    "name": HISTORY_SERVICE_NAME,
                     "user": SPARK_HISTORY_USER,
+                    "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
                     "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
                         .format(HDFS_SERVICE_NAME)
                 },
                 "security": {
                     "kerberos": {
                         "enabled": True,
-                        "krb5conf": utils.HDFS_KRB5_CONF,
+                        "krb5conf": HDFS_KRB5_CONF,
                         "principal": GENERIC_HDFS_USER_PRINCIPAL,
                         "keytab": KEYTAB_SECRET_PATH
                     }
                 }
             },
-            wait_for_completion=True  # wait for it to become healthy
-        )
+            wait_for_deployment=False, # no deploy plan
+            insert_strict_options=False) # no standard service_account/etc options
         yield
 
     finally:
-        sdk_marathon.destroy_app(utils.HISTORY_SERVICE_NAME)
+        sdk_install.uninstall(HISTORY_PACKAGE_NAME, HISTORY_SERVICE_NAME)
 
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(hdfs_with_kerberos, setup_history_server, configure_security_spark, configure_universe):
     try:
-        utils.require_spark(use_hdfs=True, use_history=True)
+        additional_options = {
+            "hdfs": {
+                "config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints".format(HDFS_SERVICE_NAME)
+            },
+            "security": {
+                "kerberos": {
+                    "enabled": True,
+                    "realm": sdk_auth.REALM,
+                    "kdc": {
+                        "hostname": hdfs_with_kerberos.get_host(),
+                        "port": int(hdfs_with_kerberos.get_port())
+                    }
+                }
+            },
+            "service": {
+                "spark-history-server-url": shakedown.dcos_url_path("/service/{}".format(HISTORY_SERVICE_NAME))
+            }
+        }
+        utils.require_spark(additional_options=additional_options)
         yield
     finally:
         utils.teardown_spark()
@@ -190,7 +243,7 @@ def _run_terasort_job(terasort_class, app_args, expected_output):
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_terasort_suite():
-    data_dir = "hdfs:///users/alice"
+    data_dir = "hdfs://{}".format(HDFS_DATA_DIR)
     terasort_in = "{}/{}".format(data_dir, "terasort_in")
     terasort_out = "{}/{}".format(data_dir, "terasort_out")
     terasort_validate = "{}/{}".format(data_dir, "terasort_validate")
@@ -211,18 +264,16 @@ def test_terasort_suite():
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_supervise():
-    def streaming_job_registered():
-        return shakedown.get_service(JOB_SERVICE_NAME) is not None
-
-    def streaming_job_is_not_running():
-        return not streaming_job_registered()
-
-    def has_running_executors():
-        f = shakedown.get_service(JOB_SERVICE_NAME)
-        if f is None:
-            return False
+    @retrying.retry(
+        wait_fixed=1000,
+        stop_max_delay=600*1000,
+        retry_on_result=lambda res: not res)
+    def wait_job_present(present):
+        svc = shakedown.get_service(JOB_SERVICE_NAME)
+        if present:
+            return svc is not None
         else:
-            return len([x for x in f.dict()["tasks"] if x["state"] == "TASK_RUNNING"]) > 0
+            return svc is None
 
     JOB_SERVICE_NAME = "RecoverableNetworkWordCount"
 
@@ -231,41 +282,30 @@ def test_supervise():
                 "--conf", "spark.cores.max=8",
                 "--conf", "spark.executors.cores=4"]
 
-    data_dir = "hdfs:///users/alice"
+    data_dir = "hdfs://{}".format(HDFS_DATA_DIR)
     driver_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                                  app_args="10.0.0.1 9090 {dir}/netcheck {dir}/outfile".format(dir=data_dir),
-                                 app_name=utils.SPARK_APP_NAME,
+                                 service_name=utils.SPARK_SERVICE_NAME,
                                  args=(KERBEROS_ARGS + job_args))
     log.info("Started supervised driver {}".format(driver_id))
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    wait_job_present(True)
     log.info("Job has registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    sdk_tasks.check_running(JOB_SERVICE_NAME, 1)
     log.info("Job has running executors")
 
-    host = shakedown.get_service(JOB_SERVICE_NAME).dict()["hostname"]
-    id = shakedown.get_service(JOB_SERVICE_NAME).dict()["id"]
-    driver_regex = "spark.mesos.driver.frameworkId={}".format(id)
-    shakedown.kill_process_on_host(hostname=host, pattern=driver_regex)
+    service_info = shakedown.get_service(JOB_SERVICE_NAME).dict()
+    driver_regex = "spark.mesos.driver.frameworkId={}".format(service_info['id'])
+    shakedown.kill_process_on_host(hostname=service_info['hostname'], pattern=driver_regex)
 
-    shakedown.wait_for(lambda: streaming_job_registered(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    wait_job_present(True)
     log.info("Job has re-registered")
-    shakedown.wait_for(lambda: has_running_executors(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    sdk_tasks.check_running(JOB_SERVICE_NAME, 1)
     log.info("Job has re-started")
-    out = utils.kill_driver(driver_id, utils.SPARK_APP_NAME)
+    out = utils.kill_driver(driver_id, utils.SPARK_SERVICE_NAME)
     log.info("{}".format(out))
     out = json.loads(out)
     assert out["success"], "Failed to kill spark streaming job"
-    shakedown.wait_for(lambda: streaming_job_is_not_running(),
-                       ignore_exceptions=False,
-                       timeout_seconds=600)
+    wait_job_present(False)
 
 
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
@@ -273,11 +313,11 @@ def test_supervise():
 def test_history():
     job_args = ["--class", "org.apache.spark.examples.SparkPi",
                 "--conf", "spark.eventLog.enabled=true",
-                "--conf", "spark.eventLog.dir=hdfs://hdfs/history"]
+                "--conf", "spark.eventLog.dir=hdfs://hdfs{}".format(HDFS_HISTORY_DIR)]
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
                     app_args="100",
                     expected_output="Pi is roughly 3",
-                    app_name="/spark",
+                    service_name="spark",
                     args=(job_args + KERBEROS_ARGS))
 
 
@@ -287,12 +327,16 @@ def test_history_kdc_config(hdfs_with_kerberos):
     history_service_with_kdc_config = "spark-history-with-kdc-config"
     try:
         # This deployment will fail if kerberos is not configured properly.
-        shakedown.install_package(
-            package_name=utils.HISTORY_PACKAGE_NAME,
-            options_json={
+        sdk_install.uninstall(HISTORY_PACKAGE_NAME, history_service_with_kdc_config)
+        sdk_install.install(
+            HISTORY_PACKAGE_NAME,
+            history_service_with_kdc_config,
+            0,
+            additional_options={
                 "service": {
                     "name": history_service_with_kdc_config,
                     "user": SPARK_HISTORY_USER,
+                    "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
                     "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
                         .format(HDFS_SERVICE_NAME)
                 },
@@ -309,9 +353,8 @@ def test_history_kdc_config(hdfs_with_kerberos):
                     }
                 }
             },
-            wait_for_completion=True,  # wait for it to become healthy
-            timeout_sec=240
-        )
+            wait_for_deployment=False, # no deploy plan
+            insert_strict_options=False) # no standard service_account/etc options
 
     finally:
         sdk_marathon.destroy_app(history_service_with_kdc_config)

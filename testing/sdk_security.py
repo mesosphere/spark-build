@@ -6,56 +6,73 @@ SHOULD ALSO BE APPLIED TO sdk_security IN ANY OTHER PARTNER REPOS
 '''
 import logging
 import os
-from typing import List, Tuple
+from subprocess import check_output
+from typing import List
 
-import requests
-import shakedown
+import retrying
 import sdk_cmd
 import sdk_utils
 
 log = logging.getLogger(__name__)
 
 
-def grant(dcosurl: str, headers: dict, user: str, acl: str, description: str, action: str="create") -> None:
+def install_enterprise_cli(force=False):
+    """ Install the enterprise CLI if required """
+
+    log.info("Installing DC/OS enterprise CLI")
+    if not force:
+        cmd = "security --version"
+        _, stdout, _ = sdk_cmd.run_raw_cli(cmd, print_output=False)
+        if stdout:
+            log.info("DC/OS enterprise version %s CLI already installed", stdout.strip())
+            return
+
+    cmd = "package install --yes --cli dcos-enterprise-cli"
+
+    @retrying.retry(stop_max_attempt_number=3,
+                    wait_fixed=2000,
+                    retry_on_result=lambda result: result)
+    def _install_impl():
+        rc, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
+        if rc:
+            log.error("rc=%s stdout=%s stderr=%s", rc, stdout, stderr)
+
+        return rc
+
+    try:
+        _install_impl()
+    except Exception as e:
+        raise RuntimeError("Failed to install the dcos-enterprise-cli: {}".format(repr(e)))
+
+
+def _grant(user: str, acl: str, description: str, action: str="create") -> None:
     log.info('Granting permission to {user} for {acl}/{action} ({description})'.format(
         user=user, acl=acl, action=action, description=description))
 
-    # TODO(kwood): INFINITY-2066 - Use dcos_test_utils instead of raw requests
-
     # Create the ACL
-    create_endpoint = '{dcosurl}/acs/api/v1/acls/{acl}'.format(dcosurl=dcosurl, acl=acl)
-    r = requests.put(create_endpoint, headers=headers, json={'description': description}, verify=False)
+    r = sdk_cmd.cluster_request(
+        'PUT', '/acs/api/v1/acls/{acl}'.format(acl=acl),
+        raise_on_error=False,
+        json={'description': description})
     # 201=created, 409=already exists
-    assert r.status_code == 201 or r.status_code == 409, '{} failed {}: {}'.format(
-        create_endpoint, r.status_code, r.text)
+    assert r.status_code in [201, 409, ], '{} failed {}: {}'.format(r.url, r.status_code, r.text)
 
     # Assign the user to the ACL
-    assign_endpoint = '{dcosurl}/acs/api/v1/acls/{acl}/users/{user}/{action}'.format(
-        dcosurl=dcosurl, acl=acl, user=user, action=action)
-    r = requests.put(assign_endpoint, headers=headers, verify=False)
+    r = sdk_cmd.cluster_request(
+        'PUT', '/acs/api/v1/acls/{acl}/users/{user}/{action}'.format(acl=acl, user=user, action=action),
+        raise_on_error=False)
     # 204=success, 409=already exists
-    assert r.status_code == 204 or r.status_code == 409, '{} failed {}: {}'.format(
-        create_endpoint, r.status_code, r.text)
+    assert r.status_code in [204, 409, ], '{} failed {}: {}'.format(r.url, r.status_code, r.text)
 
 
-def revoke(dcosurl: str, headers: dict, user: str, acl: str, description: str, action: str="create") -> None:
+def _revoke(user: str, acl: str, description: str, action: str="create") -> None:
     # TODO(kwood): INFINITY-2065 - implement security cleanup
     log.info("Want to delete {user}+{acl}".format(user=user, acl=acl))
 
 
-def get_dcos_credentials() -> Tuple[str, dict]:
-    dcosurl = sdk_cmd.run_cli('config show core.dcos_url', print_output=False)
-    token = sdk_cmd.run_cli('config show core.dcos_acs_token', print_output=False)
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'token={}'.format(token.strip()),
-    }
-    return dcosurl.strip(), headers
-
-
 def get_permissions(service_account_name: str, role: str, linux_user: str) -> List[dict]:
     return [
-        ## registration permissions
+        # registration permissions
         {
             'user': service_account_name,
             'acl': "dcos:mesos:master:framework:role:{}".format(role),
@@ -63,7 +80,7 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> Li
                 service_account_name, role),
         },
 
-        ## task execution permissions
+        # task execution permissions
         {
             'user': service_account_name,
             'acl': "dcos:mesos:master:task:user:{}".format(linux_user),
@@ -71,7 +88,7 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> Li
                 service_account_name, linux_user)
         },
 
-        # XXX 1.10 curerrently requires this mesos:agent permission as well as
+        # XXX 1.10 currently requires this mesos:agent permission as well as
         # mesos:task permission.  unclear if this will be ongoing requirement.
         # See DCOS-15682
         {
@@ -81,7 +98,7 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> Li
                 service_account_name, linux_user)
         },
 
-        ## resource permissions
+        # resource permissions
         {
             'user': service_account_name,
             'acl': "dcos:mesos:master:reservation:role:{}".format(role),
@@ -96,7 +113,7 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> Li
             'action': "delete",
         },
 
-        ## volume permissions
+        # volume permissions
         {
             'user': service_account_name,
             'acl': "dcos:mesos:master:volume:role:{}".format(role),
@@ -113,30 +130,30 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> Li
 
 
 def grant_permissions(linux_user: str, role_name: str, service_account_name: str) -> None:
-    dcosurl, headers = get_dcos_credentials()
     log.info("Granting permissions to {account}".format(account=service_account_name))
     permissions = get_permissions(service_account_name, role_name, linux_user)
     for permission in permissions:
-        grant(dcosurl, headers, **permission)
+        _grant(**permission)
     log.info("Permission setup completed for {account}".format(account=service_account_name))
 
 
 def revoke_permissions(linux_user: str, role_name: str, service_account_name: str) -> None:
-    dcosurl, headers = get_dcos_credentials()
-    # log.info("Revoking permissions to {account}".format(account=service_account_nae))
+    log.info("Revoking permissions to {account}".format(account=service_account_name))
     permissions = get_permissions(service_account_name, role_name, linux_user)
     for permission in permissions:
-        revoke(dcosurl, headers, **permission)
-    # log.info("Permission cleanup completed for {account}".format(account=service_account_name))
+        _revoke(**permission)
+    log.info("Permission cleanup completed for {account}".format(account=service_account_name))
 
 
 def create_service_account(service_account_name: str, service_account_secret: str) -> None:
+    """
+    Creates a service account. If it already exists, it is deleted.
+    """
+    install_enterprise_cli()
+
     log.info('Creating service account for account={account} secret={secret}'.format(
         account=service_account_name,
         secret=service_account_secret))
-
-    log.info('Install cli necessary for security')
-    sdk_cmd.run_cli('package install dcos-enterprise-cli --yes')
 
     log.info('Remove any existing service account and/or secret')
     delete_service_account(service_account_name, service_account_secret)
@@ -145,9 +162,8 @@ def create_service_account(service_account_name: str, service_account_secret: st
     sdk_cmd.run_cli('security org service-accounts keypair private-key.pem public-key.pem')
 
     log.info('Create service account')
-    sdk_cmd.run_cli(
-        'security org service-accounts create -p public-key.pem -d "Service account for integration tests" "{account}"'.format(
-            account=service_account_name))
+    sdk_cmd.run_cli('security org service-accounts create -p public-key.pem '
+                    '-d "Service account for integration tests" "{account}"'.format(account=service_account_name))
 
     log.info('Create secret')
     sdk_cmd.run_cli(
@@ -164,7 +180,7 @@ def delete_service_account(service_account_name: str, service_account_secret: st
     Deletes service account with private key that belongs to the service account.
     """
     # ignore any failures:
-    shakedown.run_dcos_command("security org service-accounts delete {name}".format(name=service_account_name))
+    sdk_cmd.run_cli("security org service-accounts delete {name}".format(name=service_account_name))
 
     # Files generated by service-accounts keypair command should get removed
     for keypair_file in ['private-key.pem', 'public-key.pem']:
@@ -181,39 +197,63 @@ def delete_secret(secret: str) -> None:
     Deletes a given secret.
     """
     # ignore any failures:
-    shakedown.run_dcos_command("security secrets delete {}".format(secret))
+    sdk_cmd.run_cli("security secrets delete {}".format(secret))
 
 
-def setup_security(framework_name: str) -> None:
-    log.info('Setting up strict-mode security')
-    create_service_account(service_account_name='service-acct', service_account_secret='secret')
+def setup_security(framework_name: str,
+                   service_account: str="service-acct",
+                   service_account_secret: str="secret") -> dict:
+
+    create_service_account(service_account_name=service_account,
+                           service_account_secret=service_account_secret)
+
+    service_account_info = {"name": service_account, "secret": service_account_secret}
+
+    if not sdk_utils.is_strict_mode():
+        log.info("Skipping strict-mode security setup on non-strict cluster")
+        return service_account_info
+
+    log.info("Setting up strict-mode security")
     grant_permissions(
-        linux_user='nobody',
-        role_name='{}-role'.format(framework_name),
-        service_account_name='service-acct'
+        linux_user="nobody",
+        role_name="{}-role".format(framework_name),
+        service_account_name=service_account
     )
     grant_permissions(
-        linux_user='nobody',
-        role_name='test__integration__{}-role'.format(framework_name),
-        service_account_name='service-acct'
+        linux_user="nobody",
+        role_name="slave_public%252F{}-role".format(framework_name),
+        service_account_name=service_account
     )
-    log.info('Finished setting up strict-mode security')
+    grant_permissions(
+        linux_user="nobody",
+        role_name="test__integration__{}-role".format(framework_name),
+        service_account_name=service_account
+    )
+    log.info("Finished setting up strict-mode security")
+
+    return service_account_info
 
 
-def cleanup_security(framework_name: str) -> None:
-    log.info('Cleaning up strict-mode security')
-    revoke_permissions(
-        linux_user='nobody',
-        role_name='{}-role'.format(framework_name),
-        service_account_name='service-acct'
-    )
-    revoke_permissions(
-        linux_user='nobody',
-        role_name='test__integration__{}-role'.format(framework_name),
-        service_account_name='service-acct'
-    )
-    delete_service_account('service-acct', 'secret')
-    log.info('Finished cleaning up strict-mode security')
+def cleanup_security(framework_name: str,
+                     service_account: str="service-acct",
+                     service_account_secret: str="secret") -> None:
+
+    if sdk_utils.is_strict_mode():
+        log.info("Cleaning up strict-mode security")
+        revoke_permissions(
+            linux_user="nobody",
+            role_name="{}-role".format(framework_name),
+            service_account_name=service_account
+        )
+        revoke_permissions(
+            linux_user="nobody",
+            role_name="test__integration__{}-role".format(framework_name),
+            service_account_name=service_account
+        )
+
+    delete_service_account(service_account, service_account_secret)
+
+    log.info("Finished cleaning up strict-mode security")
 
 
 def security_session(framework_name: str) -> None:
@@ -233,3 +273,31 @@ def security_session(framework_name: str) -> None:
     finally:
         if is_strict:
             cleanup_security(framework_name)
+
+
+def openssl_ciphers():
+    return set(
+        check_output(['openssl', 'ciphers',
+                      'ALL:eNULL']).decode('utf-8').rstrip().split(':'))
+
+
+def is_cipher_enabled(service_name: str,
+                      task_name: str,
+                      cipher: str,
+                      endpoint: str,
+                      openssl_timeout: str = '1') -> bool:
+    @retrying.retry(stop_max_attempt_number=3,
+                    wait_fixed=2000,
+                    retry_on_result=lambda result: 'Failed to enter mount namespace' in result)
+    def run_openssl_command() -> str:
+        command = ' '.join([
+            'timeout', openssl_timeout,
+            'openssl', 's_client', '-cipher', cipher, '-connect', endpoint
+        ])
+
+        _, output = sdk_cmd.service_task_exec(service_name, task_name, command, True)
+        return output
+
+    output = run_openssl_command()
+
+    return "Cipher is {}".format(cipher) in output

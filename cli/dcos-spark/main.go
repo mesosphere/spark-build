@@ -23,22 +23,25 @@ type SparkCommand struct {
 	submitArgs        string
 	submitDockerImage string
 	submitEnv         map[string]string
-	secretPath		  string
-
+	secretPath        string
 	statusSkipMessage bool
-
-	logFollow bool
-	logLines  uint
-	logFile   string
+	logFollow         bool
+	logLines          uint
+	logFile           string
 }
 
 func (cmd *SparkCommand) runSubmit(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
-	jsonPayload, err := buildSubmitJson(cmd)
+	marathonConfig, err := fetchMarathonConfig()
+	if err != nil {
+		return err
+	}
+
+	jsonPayload, err := buildSubmitJson(cmd, marathonConfig)
 	if err != nil {
 		return err
 	}
 	responseBytes, err := client.HTTPServicePostJSON(
-		fmt.Sprintf("/v1/submissions/create/%s", cmd.submissionId), jsonPayload)
+		fmt.Sprintf("/v1/submissions/create/%s", cmd.submissionId), []byte(jsonPayload))
 	if err != nil {
 		log.Fatalf("Failed to create submission with error %s", err)
 		//return err
@@ -165,15 +168,15 @@ func (cmd *SparkCommand) runGenerateSecret(a *kingpin.Application, e *kingpin.Pa
 
 func handleCommands(app *kingpin.Application) {
 	cmd := &SparkCommand{submitEnv: make(map[string]string)}
-	run := app.Command("run", "Submit a job to the Spark Mesos Dispatcher").Action(cmd.runSubmit)
 
+	run := app.Command("run", "Submit a job to the Spark Mesos Dispatcher").Action(cmd.runSubmit)
 	run.Flag("submit-args", fmt.Sprintf("Arguments matching what would be sent to 'spark-submit': %s",
 		sparkSubmitHelp())).Required().PlaceHolder("ARGS").StringVar(&cmd.submitArgs)
 	// TODO this should be moved to submit args
 	run.Flag("docker-image", "Docker image to run the job within").
 		Default("").
 		StringVar(&cmd.submitDockerImage)
-	run.Flag("env", "Environment variable(s) to pass into the Spark job.").
+	run.Flag("env", "Environment variable(s) to pass into the Spark job").
 		Short('E').
 		PlaceHolder("ENVKEY=ENVVAL").
 		StringMapVar(&cmd.submitEnv)
@@ -186,9 +189,9 @@ func handleCommands(app *kingpin.Application) {
 
 	log := app.Command("log", "Retrieves a log file from a submitted Spark job").Action(cmd.runLog)
 	log.Flag("follow", "Dynamically update the log").BoolVar(&cmd.logFollow)
-	log.Flag("lines_count", "Print the last N lines.").
+	log.Flag("lines_count", "Print the last N lines").
 		Default("10").UintVar(&cmd.logLines) //TODO "lines"?
-	log.Flag("file", "Specify the sandbox file to print.").
+	log.Flag("file", "Specify the sandbox file to print").
 		Default("stdout").StringVar(&cmd.logFile)
 	log.Arg("submission-id", "The ID of the Spark job").Required().StringVar(&cmd.submissionId)
 
@@ -197,7 +200,7 @@ func handleCommands(app *kingpin.Application) {
 
 	secret := app.Command("secret", "Make a shared secret, used for RPC authentication").
 		Action(cmd.runGenerateSecret)
-	secret.Arg("secret_path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
+	secret.Arg("secret-path", "path and name for the secret").Required().StringVar(&cmd.secretPath)
 
 	app.Command("webui", "Returns the Spark Web UI URL").Action(cmd.runWebui)
 }
