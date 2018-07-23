@@ -19,7 +19,6 @@ cd $MESOS_SANDBOX
 MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
 # Unless explicitly directed, use bootstrap (defined on L55 of Dockerfile) to lookup the IP of the driver agent
-# this should be LIBPROCESS_IP iff the driver is on the host network, $(hostname) when it's not (e.g. CNI).
 if [ -z ${SKIP_BOOTSTRAP_IP_DETECT} ]; then
     if [ -f ${BOOTSTRAP} ]; then
         SPARK_LOCAL_IP=$($BOOTSTRAP --get-task-ip)
