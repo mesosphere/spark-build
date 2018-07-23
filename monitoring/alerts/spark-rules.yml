@@ -10,7 +10,7 @@ groups:
         description: 'Spark has reached desired number of dispatchers'
 
     - alert: Spark_Dispatcher_Count_Decreasing
-      expr: count(spark_mesos_cluster_driver_launched offset 5m) - count(spark_mesos_cluster_driver_launched) > 0
+      expr: rate(spark_mesos_cluster_driver_launched[5m]) < 0
       for: 1m
       labels:
         severity: major
@@ -23,15 +23,15 @@ groups:
       labels:
         severity: informational
       annotations:
-        description: 'Spark has reached desired number of jobs'
+        description: 'Spark has reached desired number of concurrent jobs'
 
-    - alert: Spark_Job_Count_Decreasing
+    - alert: Spark_Concurrent_Job_Count_Decreasing
       expr: count(spark_mesos_cluster_executor_count offset 5m) - count(spark_mesos_cluster_executor_count) > 0
       for: 1m
       labels:
         severity: major
       annotations:
-        description: 'Spark job count unexpectedly decreasing'
+        description: 'The number of concurrent spark jobs are decreasing. This number should be gradually increasing'
 
     - alert: Spark_CPU_Job
       expr: count(spark_mesos_cluster_executor_count{task_name=~".*monte.*"}) >= 750
@@ -89,10 +89,10 @@ groups:
       annotations:
         description: 'Spark job's launch rate has unusually high standard deviation'
 
-    - alert: Spark_Job_Success_Rate
-      expr: (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) / (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_lost) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_failed))) >= 99.0
+    - alert: Spark_Jobs_Have_Failed
+      expr: (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) / (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_lost) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_failed))) < 0.999
       for: 1m
       labels:
         severity: informational
       annotations:
-        description: 'Spark has reached desired success rate'
+        description: 'Spark job success rate is below 99.9%. Please investigate failed jobs.'
