@@ -975,7 +975,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Driver start to all executors launched",
+      "description": "The average of how long it takes for a Spark driver to launch all its executors",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -1016,7 +1016,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg. Job Launch Time (sec.)",
+      "title": "Avg. Job Launch Latency",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1033,7 +1033,7 @@
       "yaxes": [
         {
           "format": "short",
-          "label": null,
+          "label": "Time (sec)",
           "logBase": 1,
           "max": null,
           "min": null,
