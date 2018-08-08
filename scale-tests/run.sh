@@ -452,7 +452,6 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
         --spark-cores-max ${GPU_SPARK_CORES_MAX} \
         --spark-mesos-executor-gpus ${GPU_SPARK_MESOS_EXECUTOR_GPUS} \
         --spark-mesos-max-gpus ${GPU_SPARK_MESOS_MAX_GPUS} \
-        --no-supervise \
       \""
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
