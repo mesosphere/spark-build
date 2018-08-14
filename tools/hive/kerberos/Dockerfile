@@ -17,4 +17,4 @@ ADD conf/krb5.conf /etc/
 RUN apt-get install -y krb5-user
 
 # run bootstrap script
-ENTRYPOINT ["/etc/hive-bootstrap.sh", "-d"]
+CMD ["/etc/hive-bootstrap.sh", "-d"]

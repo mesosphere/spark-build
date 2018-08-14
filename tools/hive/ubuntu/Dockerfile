@@ -57,4 +57,4 @@ RUN chmod 700 /etc/ubuntu-bootstrap.sh
 
 EXPOSE 22
 
-ENTRYPOINT ["/etc/ubuntu-bootstrap.sh", "-bash"]
+CMD ["/etc/ubuntu-bootstrap.sh", "-bash"]

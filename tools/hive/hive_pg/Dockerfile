@@ -75,4 +75,4 @@ RUN chmod 700 /etc/hive-bootstrap.sh
 EXPOSE 10000 10001 10002 10003 9083 50111 5432
 
 # run bootstrap script
-ENTRYPOINT ["/etc/hive-bootstrap.sh", "-d"]
+CMD ["/etc/hive-bootstrap.sh", "-d"]

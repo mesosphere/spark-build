@@ -39,7 +39,12 @@ cd ../kerberos
 docker build -t cdh5-hive-kerberos .
 ```
 
-## Run the Kerberos image in DC/OS
+## Run the Hive image interactively
+```
+docker run -it cdh5-hive:latest /etc/hive-bootstrap.sh -bash
+```
+
+## Run the Kerberized Hive image in DC/OS
 First, deploy a KDC via the dcos-commons kdc.py utility. See [the kdc README](https://github.com/mesosphere/dcos-commons/tree/master/tools/kdc) for details.
 
 From the dcos-commons repo:
