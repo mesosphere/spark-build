@@ -60,12 +60,12 @@ ENV PATH $PATH:$JAVA_HOME/bin
 ADD ./deps/hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION}.tar.gz /usr/local
 RUN cd /usr/local && ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
 
-RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\nexport HADOOP_PREFIX=/usr/local/hadoop\nexport HADOOP_HOME=/usr/local/hadoop\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
-RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+#RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
 # copy hadoop site xml files
-RUN mkdir $HADOOP_PREFIX/input
-RUN cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
+#RUN mkdir $HADOOP_PREFIX/input
+#RUN cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
 
 # pseudo distributed configurations
 ADD templates/core-site.xml.template $HADOOP_PREFIX/etc/hadoop/core-site.xml.template
@@ -73,12 +73,9 @@ ADD templates/hdfs-site.xml.template $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml.tem
 ADD conf/mapred-site.xml $HADOOP_PREFIX/etc/hadoop/mapred-site.xml
 ADD templates/yarn-site.xml.template $HADOOP_PREFIX/etc/hadoop/yarn-site.xml.template
 
-# format namenode
-RUN $HADOOP_PREFIX/bin/hdfs namenode -format
-
 # fixing the libhadoop.so
-RUN rm -rf /usr/local/hadoop/lib/native/*
-ADD ./deps/hadoop-native-64-2.6.0.tar /usr/local/hadoop/lib/native/
+#RUN rm -rf /usr/local/hadoop/lib/native/*
+#ADD ./deps/hadoop-native-64-2.6.0.tar /usr/local/hadoop/lib/native/
 
 # add and set permissions for bootstrap script
 ADD scripts/bootstrap.sh /etc/hadoop-bootstrap.sh
