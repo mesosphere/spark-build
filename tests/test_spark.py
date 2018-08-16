@@ -113,7 +113,7 @@ def test_spark_with_multi_configs(service_name=utils.SPARK_SERVICE_NAME):
         app_args="",
         expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
         service_name=service_name,
-        args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"'",
+        args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
               "--conf spark.mesos.containerizer=mesos",
               "--class MultiConfs"], 
         write_conf_to_temp_file=True)

@@ -148,13 +148,23 @@ def submit_job(
     verbose_flag = "--verbose" if verbose else ""
 
     if write_conf_to_temp_file:
-        args_file = tempfile.NamedTemporaryFile("w")
+        args_file = tempfile.NamedTemporaryFile("w", delete=False)
+        LOGGER.info("chmod'ing file")
+        os.chmod(args_file.name, 0o777)
         args_file.write('dcos spark run {} --submit-args="{}"'.format(verbose_flag, submit_args))
         args_file.flush() # Ensure content is available for CLI to read
-        os.chmod(args_file.name, 0o777)
-        time.sleep(1) # Past docker bug recommends sleep/sync (https://github.com/moby/moby/issues/9547)
-        LOGGER.info("Running subprocess on file {}".format(args_file.name))
+        LOGGER.info("Closing file")
+        args_file.close()
+        LOGGER.info("Syncing file")
+        os.sync()
+        # LOGGER.info("Sleeping for 5s")
+        # time.sleep(5) # Past docker bug recommends sleep/sync (https://github.com/moby/moby/issues/9547)
+        LOGGER.info("Catting internal file info")
+        result = subprocess.run(["cat {}".format(args_file.name)], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        LOGGER.info(result.stdout.decode('utf-8').strip())
+        LOGGER.info(result.stderr.decode('utf-8').strip())
         
+        LOGGER.info("Running subprocess on file {}".format(args_file.name))
         result = subprocess.run(args_file.name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout = ""
         stderr = ""
