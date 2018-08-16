@@ -113,10 +113,8 @@ def _get_spark_options(service_name, additional_options):
     return sdk_install.merge_dictionaries(options, additional_options)
 
 
-def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, args=[], 
-              write_conf_to_temp_file=False):
-    task_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args,
-                         write_conf_to_temp_file=write_conf_to_temp_file)
+def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, args=[]):
+    task_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args)
     check_job_output(task_id, expected_output)
 
 
@@ -128,8 +126,7 @@ def submit_job(
         spark_user=SPARK_USER,
         driver_role=SPARK_DRIVER_ROLE,
         verbose=True,
-        principal=SPARK_SERVICE_ACCOUNT,
-        write_conf_to_temp_file=False):
+        principal=SPARK_SERVICE_ACCOUNT):
 
     conf_args = args.copy()
 
@@ -146,43 +143,11 @@ def submit_job(
 
     submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
     verbose_flag = "--verbose" if verbose else ""
-
-    if write_conf_to_temp_file:
-        args_file = tempfile.NamedTemporaryFile("w", delete=False)
-        LOGGER.info("chmod'ing file")
-        os.chmod(args_file.name, 0o777)
-        args_file.write('dcos spark run {} --submit-args="{}"'.format(verbose_flag, submit_args))
-        args_file.flush() # Ensure content is available for CLI to read
-        LOGGER.info("Closing file")
-        args_file.close()
-        LOGGER.info("Syncing file")
-        os.sync()
-        # LOGGER.info("Sleeping for 5s")
-        # time.sleep(5) # Past docker bug recommends sleep/sync (https://github.com/moby/moby/issues/9547)
-        LOGGER.info("Catting internal file info")
-        result = subprocess.run(["cat {}".format(args_file.name)], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        LOGGER.info(result.stdout.decode('utf-8').strip())
-        LOGGER.info(result.stderr.decode('utf-8').strip())
-        
-        LOGGER.info("Running subprocess on file {}".format(args_file.name))
-        result = subprocess.run(args_file.name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout = ""
-        stderr = ""
-
-        if result.stdout:
-            stdout = result.stdout.decode('utf-8').strip()
-            LOGGER.info("STDOUT:\n{}".format(stdout))
-
-        if result.stderr:
-            stderr = result.stderr.decode('utf-8').strip()
-            LOGGER.info("STDERR:\n{}".format(stderr))
-            
-        result = re.search(r"Submission id: (\S+)", stdout)
-    else:
-        service_cmd = 'run {} --submit-args="{}"'.format(verbose_flag, submit_args)
-        stdout = sdk_cmd.svc_cli(SPARK_PACKAGE_NAME, service_name, service_cmd)
-        result = re.search(r"Submission id: (\S+)", stdout)
-    
+    stdout = sdk_cmd.svc_cli(
+        SPARK_PACKAGE_NAME,
+        service_name,
+        'run {} --submit-args="{}"'.format(verbose_flag, submit_args))
+    result = re.search(r"Submission id: (\S+)", stdout)
     if not result:
         raise Exception("Unable to find submission ID in stdout:\n{}".format(stdout))
     return result.group(1)

@@ -10,7 +10,9 @@
 import logging
 import os
 import pytest
+import re
 import shakedown
+import subprocess
 import tempfile
 
 import sdk_cmd
@@ -108,15 +110,53 @@ def test_sparkPi(service_name=utils.SPARK_SERVICE_NAME):
 
 @pytest.mark.sanity
 def test_spark_with_multi_configs(service_name=utils.SPARK_SERVICE_NAME):
-    utils.run_tests(
-        app_url=utils.dcos_test_jar_url(),
-        app_args="",
-        expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
-        service_name=service_name,
-        args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
-              "--conf spark.mesos.containerizer=mesos",
-              "--class MultiConfs"], 
-        write_conf_to_temp_file=True)
+    """
+    This test requires writing the entire 'dcos spark run --submit-args' CLI command to a tempfile in order 
+    for subprocess.run() to behave correctly 
+    """
+    app_url = utils.dcos_test_jar_url()
+    conf_args = [
+        "--conf spark.driver.memory=2g",
+        "--conf spark.mesos.role={}".format(utils.SPARK_DRIVER_ROLE),
+        "--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
+        "--conf spark.mesos.containerizer=mesos",
+        "--class MultiConfs"]
+    
+    if sdk_utils.is_strict_mode():
+        conf_args += [
+            '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(utils.SPARK_USER),
+            '--conf spark.mesos.principal={}'.format(utils.SPARK_SERVICE_ACCOUNT)
+        ]
+
+    submit_args = ' '.join([' '.join(conf_args), app_url])
+    
+    args_file = tempfile.NamedTemporaryFile("w", delete=False)
+    os.chmod(args_file.name, 0o777) # make file executable
+    args_file.write('dcos spark run -v --submit-args="{}"'.format(submit_args))
+    args_file.flush()
+    args_file.close()         
+
+    result = subprocess.run(args_file.name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = ""
+    stderr = ""
+
+    if result.stdout:
+        stdout = result.stdout.decode('utf-8').strip()
+        LOGGER.info("STDOUT:\n{}".format(stdout))
+
+    if result.stderr:
+        stderr = result.stderr.decode('utf-8').strip()
+        LOGGER.info("STDERR:\n{}".format(stderr))
+        
+    result = re.search(r"Submission id: (\S+)", stdout)
+
+    if not result:
+        raise Exception("Unable to find submission ID in stdout:\n{}".format(stdout))
+    
+    task_id = result.group(1)
+    
+    expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\""
+    utils.check_job_output(task_id, expected_output)
 
 
 @pytest.mark.sanity
