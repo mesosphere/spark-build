@@ -16,5 +16,5 @@ ADD conf/krb5.conf /etc/
 # install kinit, used in bootstrap script
 RUN apt-get install -y krb5-user
 
-# run bootstrap script
+# run bootstrap script which starts hadoop and hive servers
 CMD ["/etc/hive-bootstrap.sh", "-d"]

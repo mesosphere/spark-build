@@ -16,8 +16,6 @@ RUN apt-get install -y curl wget tar openssh-server openssh-client rsync python-
 RUN mkdir /var/run/sshd
 RUN echo 'root:secretpasswd' | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-RUN sed -i 's/Listen 80/Listen 9999/g' /etc/apache2/ports.conf
 
 # passwordless ssh
 RUN yes | ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
@@ -50,11 +48,4 @@ RUN apt-get install -y oracle-java8-installer
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV PATH $PATH:$JAVA_HOME/bin
 
-# set permissions for bootstrap file
-ADD scripts/bootstrap.sh /etc/ubuntu-bootstrap.sh
-RUN chown root:root /etc/ubuntu-bootstrap.sh
-RUN chmod 700 /etc/ubuntu-bootstrap.sh
-
 EXPOSE 22
-
-CMD ["/etc/ubuntu-bootstrap.sh", "-bash"]
