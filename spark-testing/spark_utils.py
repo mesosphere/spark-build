@@ -3,9 +3,6 @@ import shakedown
 import logging
 import os
 import re
-import subprocess
-import tempfile
-import time
 import urllib
 import urllib.parse
 
