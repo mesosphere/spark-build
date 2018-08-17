@@ -14,6 +14,13 @@ ENV HADOOP_MAPRED_HOME /usr/local/hadoop
 ENV HADOOP_YARN_HOME /usr/local/hadoop
 ENV HADOOP_CONF_DIR /usr/local/hadoop/etc/hadoop
 ENV HIVE_HOME /usr/local/hive
+ENV HIVE_CONF /usr/local/hive/conf
+ENV HIVE_VERSION 1.1.0
+ENV POSTGRES_VERSION 9.5
+ENV POSTGRESQL_MAIN /var/lib/postgresql/9.5/main/
+ENV POSTGRESQL_CONFIG_FILE /var/lib/postgresql/9.5/main/postgresql.conf
+ENV POSTGRESQL_BIN /usr/lib/postgresql/9.5/bin/postgres
+ENV PGPASSWORD hive
 
 # install dev tools
 RUN apt-get update
@@ -57,8 +64,11 @@ RUN apt-get install -y oracle-java8-installer
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV PATH $PATH:$JAVA_HOME/bin
 
-ADD ./deps/hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION}.tar.gz /usr/local
-RUN cd /usr/local && ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
+# download cdh hadoop
+RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION}.tar.gz \
+    | tar -xzC /usr/local && \
+    cd /usr/local && \
+    ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
 
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 #RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
@@ -78,7 +88,7 @@ ADD templates/yarn-site.xml.template $HADOOP_PREFIX/etc/hadoop/yarn-site.xml.tem
 #ADD ./deps/hadoop-native-64-2.6.0.tar /usr/local/hadoop/lib/native/
 
 # add and set permissions for bootstrap script
-ADD scripts/bootstrap.sh /etc/hadoop-bootstrap.sh
+ADD scripts/hadoop-bootstrap.sh /etc/hadoop-bootstrap.sh
 RUN chown root:root /etc/hadoop-bootstrap.sh
 RUN chmod 700 /etc/hadoop-bootstrap.sh
 
@@ -91,5 +101,60 @@ ENV PATH $PATH:$HADOOP_HOME:$HADOOP_HOME/bin
 #https://www.cloudera.com/documentation/enterprise/5-4-x/topics/cdh_ig_ports_cdh5.html
 EXPOSE 50010 50020 50070 50075 50090 8020 9000 10020 19888 8030 8031 8032 8033 8040 8042 8088
 
+# download cdh hive
+RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/hive-1.1.0-cdh${CDH_EXACT_VERSION}.tar.gz \
+    | tar -xzC /usr/local && \
+    cd /usr/local && \
+    mv hive-1.1.0-cdh${CDH_EXACT_VERSION} hive
+
 # add hive to path
 ENV PATH $PATH:$HIVE_HOME/bin
+
+# add postgresql jdbc jar to classpath
+RUN ln -s /usr/share/java/postgresql-jdbc4.jar $HIVE_HOME/lib/postgresql-jdbc4.jar
+
+# to configure postgres as hive metastore backend
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+RUN wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
+RUN apt-get update -y
+RUN apt-get -yq install vim postgresql-9.5 libpostgresql-jdbc-java
+
+USER postgres
+# initialize hive metastore db
+# create metastore db, hive user and assign privileges
+RUN cd $HIVE_HOME/scripts/metastore/upgrade/postgres/ &&\
+     /etc/init.d/postgresql start &&\
+     psql --command "CREATE DATABASE metastore;" &&\
+     psql --command "CREATE USER hive WITH PASSWORD 'hive';" && \
+     psql --command "ALTER USER hive WITH SUPERUSER;" && \
+     psql --command "GRANT ALL PRIVILEGES ON DATABASE metastore TO hive;" && \
+     psql -U hive -d metastore -h localhost -f hive-schema-${HIVE_VERSION}.postgres.sql
+
+
+# revert back to default user
+USER root
+
+# disable ssl in postgres.conf
+ADD conf/postgresql.conf $POSTGRESQL_MAIN
+RUN echo $POSTGRESQL_MAIN
+RUN echo $POSTGRESQL_CONFIG_FILE
+RUN chown postgres:postgres $POSTGRESQL_CONFIG_FILE
+RUN sed -i -e 's/peer/md5/g' /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
+
+# copy config, sql, data files to /opt/files
+RUN mkdir /opt/files
+RUN echo $HIVE_CONF
+ADD templates/hive-site.xml.template /opt/files/
+ADD conf/hive-log4j.properties /opt/files/
+ADD templates/hive-site.xml.template $HIVE_CONF/hive-site.xml.template
+ADD conf/hive-log4j.properties $HIVE_CONF/hive-log4j.properties
+
+# set permissions for hive bootstrap file
+ADD scripts/hive-bootstrap.sh /etc/hive-bootstrap.sh
+RUN chown root:root /etc/hive-bootstrap.sh
+RUN chmod 700 /etc/hive-bootstrap.sh
+
+EXPOSE 10000 10001 10002 10003 9083 50111 5432
+
+# run bootstrap script
+CMD ["/etc/hive-bootstrap.sh", "-d"]
