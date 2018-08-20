@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/mattn/go-shellwords"
@@ -287,7 +288,7 @@ func parseApplicationFile(args *sparkArgs) error {
 // we use Kingpin to parse CLI commands and options
 // spark-submit by convention uses '--arg val' while kingpin only supports --arg=val
 // cleanUpSubmitArgs transforms the former to the latter
-func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
+func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
 	argsStr = strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
 	// collapse two or more spaces to one
@@ -302,19 +303,21 @@ LOOP:
 	for i := 0; i < len(args); {
 		current := strings.TrimSpace(args[i])
 		switch {
+		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
 		// if current is a spark jar/app, we've processed all flags
 		case isSparkApp(current):
 			sparkArgs = append(sparkArgs, args[i])
 			appArgs = append(appArgs, args[i+1:]...)
 			break LOOP
 		case strings.HasPrefix(current, "--"):
-			// if current is a boolean flag, no merge required; eg --supervise
-			for _, boolVal := range boolVals {
-				if boolVal.flagName == current[2:] {
-					sparkArgs = append(sparkArgs, current)
+			isBool, skipNext := checkIfBooleanFlag(boolVals, args, current, i)
+			if isBool {
+				sparkArgs = append(sparkArgs, current)
+				i++
+				if skipNext {
 					i++
-					continue LOOP
 				}
+				continue LOOP
 			}
 			if strings.Contains(current, "=") {
 				// already in the form arg=val, no merge required
@@ -344,8 +347,22 @@ LOOP:
 func isSparkApp(str string) bool {
 	if strings.HasSuffix(str, ".jar") || strings.HasSuffix(str, ".R") || strings.HasSuffix(str, ".py") {
 		return true
-	} 
+	}
 	return false
+}
+
+func checkIfBooleanFlag(boolVals []*sparkVal, args []string, current string, idx int) (isBool, skipNext bool) {
+	// check if current is a boolean flag (eg --supervise) but skip any accompanying boolean values (eg --supervise true)
+	for _, boolVal := range boolVals {
+		if boolVal.flagName == current[2:] {
+			isBool = true
+			next := args[idx+1]
+			if _, err := strconv.ParseBool(next); err == nil {
+				skipNext = true
+			}
+		}
+	}
+	return
 }
 
 func getValsFromPropertiesFile(path string) map[string]string {
@@ -413,7 +430,7 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 	// then map flags
 	submit, args := sparkSubmitArgSetup() // setup
 	// convert and get application flags, add them to the args passed to the spark app
-	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
+	submitArgs, appFlags := transformSubmitArgs(cmd.submitArgs, args.boolVals)
 	args.appArgs = append(args.appArgs, appFlags...)
 	_, err := submit.Parse(submitArgs)
 

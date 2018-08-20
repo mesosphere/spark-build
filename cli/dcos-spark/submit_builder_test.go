@@ -38,10 +38,10 @@ func TestCliTestSuite(t *testing.T) {
 }
 
 // test spaces
-func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
+func (suite *CliTestSuite) TestTransformSubmitArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf    spark.app.name=kerberosStreaming   --conf spark.cores.max=8 main.jar 100"
-	submitArgs, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	submitArgs, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	if "--conf=spark.app.name=kerberosStreaming" != submitArgs[0] {
 		suite.T().Errorf("Failed to reduce spaces while cleaning submit args.")
 	}
@@ -51,37 +51,37 @@ func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
 	}
 }
 
-func (suite *CliTestSuite) TestCleanUpSubmitArgsWithMulitpleValues() {
+func (suite *CliTestSuite) TestTransformSubmitArgsWithMulitpleValues() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf spark.driver.extraJavaOptions='-XX:+PrintGC -Dparam1=val1 -Dparam2=val2' main.py 100"
 	expected := "--conf=spark.driver.extraJavaOptions=-XX:+PrintGC -Dparam1=val1 -Dparam2=val2"
-	actual, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual[0])
 }
 
-func (suite *CliTestSuite) TestCleanUpSubmitArgsWithSpecialCharacters() {
+func (suite *CliTestSuite) TestTransformSubmitArgsWithSpecialCharacters() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf spark.driver.extraJavaOptions='-Dparam1=\"val 1?\" -Dparam2=val\\ 2! -Dmulti.dot.param3=\"val\\ 3\" -Dpath=$PATH' main.py 100"
 	expected := "--conf=spark.driver.extraJavaOptions=-Dparam1=\"val 1?\" -Dparam2=val\\ 2! -Dmulti.dot.param3=\"val\\ 3\" -Dpath=$PATH"
-	actual, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual[0])
 }
 
-func (suite *CliTestSuite) TestCleanUpSubmitArgsConfsAlreadyHasEquals() {
+func (suite *CliTestSuite) TestTransformSubmitArgsConfsAlreadyHasEquals() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf=spark.driver.extraJavaOptions='-Dparam1=val1' main.py 100"
 	expected := "--conf=spark.driver.extraJavaOptions=-Dparam1=val1"
-	actual, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual[0])
 }
 
-func (suite *CliTestSuite) TestCleanUpSubmitArgsMultilines() {
+func (suite *CliTestSuite) TestTransformSubmitArgsMultilines() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := `--conf spark.driver.extraJavaOptions='-XX:+PrintGC -XX:+PrintGCTimeStamps' \
 	--supervise --driver-memory 1g \
 	main.py 100`
 	expected := []string{"--conf=spark.driver.extraJavaOptions=-XX:+PrintGC -XX:+PrintGCTimeStamps", "--supervise", "--driver-memory=1g", "main.py"}
-	actual, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)
 }
 
@@ -93,12 +93,47 @@ func (suite *CliTestSuite) TestIsSparkApp() {
 	assert.False(suite.T(), isSparkApp("randomFlag"))
 }
 
+func (suite *CliTestSuite) TestCheckIfBooleanFlag() {
+	_, args := sparkSubmitArgSetup()
+	idx := 0
+
+	inputArgs := []string{"--supervise", "--conf", "spark.mesos.containerizer=mesos"}
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
+	assert.False(suite.T(), skipNext, "--conf is not a Boolean value")
+}
+
+func (suite *CliTestSuite) TestCheckIfBooleanFlagWithBooleanValue() {
+	_, args := sparkSubmitArgSetup()
+	idx := 0
+
+	inputArgs := []string{"--supervise", "true", "--conf", "spark.mesos.containerizer=mesos"}
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
+	assert.True(suite.T(), skipNext, "skipNext should be true since 'true' is a Boolean value")
+
+	inputArgs = []string{"--supervise", "false", "--conf", "spark.mesos.containerizer=mesos"}
+	isBool, skipNext = checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
+	assert.True(suite.T(), skipNext, "skipNext should be true since 'false' is a Boolean value")
+}
+
+func (suite *CliTestSuite) TestCheckIfBooleanFlagWithNoBooleans() {
+	_, args := sparkSubmitArgSetup()
+	idx := 0
+
+	inputArgs := []string{"--conf", "spark.mesos.containerizer=mesos"}
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	assert.False(suite.T(), isBool, "isBool should be false since no boolean flags were passed")
+	assert.False(suite.T(), skipNext, "No boolean flags means skipNext should also be false")
+}
+
 // test scopts pattern for app args when have full submit args
 func (suite *CliTestSuite) TestScoptAppArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := `--driver-cores 1 --conf spark.cores.max=1 --driver-memory 512M
   --class org.apache.spark.examples.SparkPi http://spark-example.jar --input1 value1 --input2 value2`
-	submitArgs, appFlags := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	submitArgs, appFlags := transformSubmitArgs(inputArgs, args.boolVals)
 
 	if "--input1" != appFlags[0] {
 		suite.T().Errorf("Failed to parse app args.")
