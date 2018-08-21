@@ -98,7 +98,7 @@ func (suite *CliTestSuite) TestCheckIfBooleanFlag() {
 	idx := 0
 
 	inputArgs := []string{"--supervise", "--conf", "spark.mesos.containerizer=mesos"}
-	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, idx)
 	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
 	assert.False(suite.T(), skipNext, "--conf is not a Boolean value")
 }
@@ -108,12 +108,12 @@ func (suite *CliTestSuite) TestCheckIfBooleanFlagWithBooleanValue() {
 	idx := 0
 
 	inputArgs := []string{"--supervise", "true", "--conf", "spark.mesos.containerizer=mesos"}
-	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, idx)
 	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
 	assert.True(suite.T(), skipNext, "skipNext should be true since 'true' is a Boolean value")
 
 	inputArgs = []string{"--supervise", "false", "--conf", "spark.mesos.containerizer=mesos"}
-	isBool, skipNext = checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	isBool, skipNext = checkIfBooleanFlag(args.boolVals, inputArgs, idx)
 	assert.True(suite.T(), isBool, "isBool should be true since --supervise is a Boolean flag")
 	assert.True(suite.T(), skipNext, "skipNext should be true since 'false' is a Boolean value")
 }
@@ -123,7 +123,7 @@ func (suite *CliTestSuite) TestCheckIfBooleanFlagWithNoBooleans() {
 	idx := 0
 
 	inputArgs := []string{"--conf", "spark.mesos.containerizer=mesos"}
-	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, inputArgs[idx], idx)
+	isBool, skipNext := checkIfBooleanFlag(args.boolVals, inputArgs, idx)
 	assert.False(suite.T(), isBool, "isBool should be false since no boolean flags were passed")
 	assert.False(suite.T(), skipNext, "No boolean flags means skipNext should also be false")
 }

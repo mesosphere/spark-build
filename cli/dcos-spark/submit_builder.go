@@ -23,6 +23,13 @@ var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 
+// AcceptedSparkAppExtensions lists the accepted extensions for Spark application artifacts
+var AcceptedSparkAppExtensions = []string{
+	".jar",
+	".py",
+	".R",
+}
+
 type sparkVal struct {
 	flagName string
 	propName string
@@ -310,7 +317,7 @@ LOOP:
 			appArgs = append(appArgs, args[i+1:]...)
 			break LOOP
 		case strings.HasPrefix(current, "--"):
-			isBool, skipNext := checkIfBooleanFlag(boolVals, args, current, i)
+			isBool, skipNext := checkIfBooleanFlag(boolVals, args, i)
 			if isBool {
 				sparkArgs = append(sparkArgs, current)
 				i++
@@ -345,14 +352,17 @@ LOOP:
 }
 
 func isSparkApp(str string) bool {
-	if strings.HasSuffix(str, ".jar") || strings.HasSuffix(str, ".R") || strings.HasSuffix(str, ".py") {
-		return true
+	for _, ext := range AcceptedSparkAppExtensions {
+		if strings.HasSuffix(str, ext) {
+			return true
+		}
 	}
 	return false
 }
 
-func checkIfBooleanFlag(boolVals []*sparkVal, args []string, current string, idx int) (isBool, skipNext bool) {
+func checkIfBooleanFlag(boolVals []*sparkVal, args []string, idx int) (isBool, skipNext bool) {
 	// check if current is a boolean flag (eg --supervise) but skip any accompanying boolean values (eg --supervise true)
+	current := args[idx]
 	for _, boolVal := range boolVals {
 		if boolVal.flagName == current[2:] {
 			isBool = true
