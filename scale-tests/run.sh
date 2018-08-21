@@ -77,7 +77,7 @@ readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 source "${TEST_CONFIG}"
 
 if [ "${SECURITY}" != "permissive" ] && [ "${SECURITY}" != "strict" ]; then
-  echo "SECURITY must be either 'permissve' or 'strict', is '${SECURITY}'"
+  echo "SECURITY must be either 'permissive' or 'strict', is '${SECURITY}'"
   exit 1
 fi
 
@@ -110,76 +110,22 @@ function container_exec () {
 declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
 
-if is_interactive && ! [ -z "${SHOULD_INSTALL_INFRASTRUCTURE}" ]; then
-  echo
-  read -p "Install infrastructure? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_INSTALL_INFRASTRUCTURE=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" ]; then
-  echo
-  read -p "Install non-GPU dispatchers? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_INSTALL_NON_GPU_DISPATCHERS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_INSTALL_GPU_DISPATCHERS}" ]; then
-  echo
-  read -p "Install GPU dispatchers? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_INSTALL_GPU_DISPATCHERS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_RUN_FAILING_STREAMING_JOBS}" ]; then
-  echo
-  read -p "Run failing streaming jobs? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_RUN_FAILING_STREAMING_JOBS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_RUN_FINITE_STREAMING_JOBS}" ]; then
-  echo
-  read -p "Run finite streaming jobs? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_RUN_FINITE_STREAMING_JOBS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" ]; then
-  echo
-  read -p "Run infinite streaming jobs? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_RUN_INFINITE_STREAMING_JOBS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_RUN_BATCH_JOBS}" ]; then
-  echo
-  read -p "Run batch jobs? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_RUN_BATCH_JOBS=true;;
-    * ) ;;
-  esac
-fi
-
-if is_interactive && ! [ -z "${SHOULD_RUN_GPU_BATCH_JOBS}" ]; then
-  echo
-  read -p "Run GPU batch jobs? [y/N]: " ANSWER
-  case "${ANSWER}" in
-    [Yy]* ) SHOULD_RUN_GPU_BATCH_JOBS=true;;
-    * ) ;;
-  esac
+if is_interactive; then
+  for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
+                          SHOULD_INSTALL_NON_GPU_DISPATCHERS \
+                          SHOULD_INSTALL_GPU_DISPATCHERS \
+                          SHOULD_RUN_FAILING_STREAMING_JOBS \
+                          SHOULD_RUN_FINITE_STREAMING_JOBS \
+                          SHOULD_RUN_INFINITE_STREAMING_JOBS \
+                          SHOULD_RUN_BATCH_JOBS \
+                          SHOULD_RUN_GPU_BATCH_JOBS; do
+    echo
+    read -p "${boolean_option}? [y/N]: " ANSWER
+    case "${ANSWER}" in
+      [Yy]* ) eval "${boolean_option}"=true;;
+      * )     eval "${boolean_option}"=false;;
+    esac
+  done
 fi
 
 if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
