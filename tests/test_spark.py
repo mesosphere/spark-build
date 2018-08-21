@@ -108,7 +108,7 @@ def test_sparkPi(service_name=utils.SPARK_SERVICE_NAME):
 @pytest.mark.sanity
 def test_multi_arg_confs(service_name=utils.SPARK_SERVICE_NAME):
     utils.run_tests(
-        app_url=utils.SPARK_EXAMPLES,
+        app_url=utils.dcos_test_jar_url(),
         app_args="",
         expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
         service_name=service_name,
