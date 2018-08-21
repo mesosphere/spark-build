@@ -139,9 +139,7 @@ RUN sed -i -e 's/peer/md5/g' /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
 RUN mkdir /opt/files
 RUN echo $HIVE_CONF
 ADD templates/hive-site.xml.template /opt/files/
-ADD conf/hive-log4j.properties /opt/files/
 ADD templates/hive-site.xml.template $HIVE_CONF/hive-site.xml.template
-ADD conf/hive-log4j.properties $HIVE_CONF/hive-log4j.properties
 
 # set permissions for hive bootstrap file
 ADD scripts/hive-bootstrap.sh /etc/hive-bootstrap.sh

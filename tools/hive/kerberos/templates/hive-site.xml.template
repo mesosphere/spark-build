@@ -1,40 +1,25 @@
 <configuration>
+  <!-- Postgres connection -->
   <property>
-      <name>javax.jdo.option.ConnectionDriverName</name>
-      <value>org.postgresql.Driver</value>
-    </property>
-    <property>
-      <name>javax.jdo.option.ConnectionUserName</name>
-      <value>hive</value>
-    </property>
-    <property>
-      <name>hive.metastore.warehouse.dir</name>
-      <value>/apps/hive/warehouse</value>
-    </property>
-    <property>
-      <name>hive.metastore.client.socket.timeout</name>
-      <value>60</value>
-    </property>
-    <property>
-      <name>hive.server2.enable.doAs</name>
-      <value>true</value>
-    </property>
-    <property>
-      <name>javax.jdo.option.ConnectionURL</name>
-      <value>jdbc:postgresql://localhost/metastore</value>
-    </property>
-    <property>
-      <name>hive.metastore.execute.setugi</name>
-      <value>true</value>
-    </property>
-    <property>
-      <name>hive.input.format</name>
-      <value>org.apache.hadoop.hive.ql.io.HiveInputFormat</value>
-    </property>
-    <property>
-      <name>javax.jdo.option.ConnectionPassword</name>
-      <value>hive</value>
-    </property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://localhost/metastore</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>hive</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>hive</value>
+  </property>
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/apps/hive/warehouse</value>
+  </property>
 
   <!-- Authentication -->
   <property>
