@@ -23,8 +23,9 @@ ENV POSTGRESQL_BIN /usr/lib/postgresql/9.5/bin/postgres
 ENV PGPASSWORD hive
 
 # install dev tools
-RUN apt-get update
-RUN apt-get install -y curl wget tar openssh-server openssh-client rsync python-software-properties apt-file apache2
+RUN apt-get update && \
+    apt-get install -y curl wget tar openssh-server openssh-client rsync python-software-properties apt-file apache2 && \
+    rm -rf /var/lib/apt/lists/*
 
 # for running sshd in ubuntu trusty. https://github.com/docker/docker/issues/5704
 RUN mkdir /var/run/sshd
@@ -51,14 +52,15 @@ RUN chown root:root /root/.ssh/config
 EXPOSE 22
 
 # oracle jdk 8
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:webupd8team/java
-RUN apt-get update
-
-# to accept license agreement automatically
-RUN echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
-RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
-RUN apt-get install -y oracle-java8-installer
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:webupd8team/java && \
+    apt-get update && \
+    # to accept license agreement automatically
+    echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+    echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections && \
+    apt-get install -y oracle-java8-installer && \
+    rm -rf /var/lib/apt/lists/*
 
 # java env setup
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
@@ -71,21 +73,12 @@ RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/had
     ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
 
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
-#RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
-
-# copy hadoop site xml files
-#RUN mkdir $HADOOP_PREFIX/input
-#RUN cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
 
 # pseudo distributed configurations
 ADD templates/core-site.xml.template $HADOOP_PREFIX/etc/hadoop/core-site.xml.template
 ADD templates/hdfs-site.xml.template $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml.template
 ADD conf/mapred-site.xml $HADOOP_PREFIX/etc/hadoop/mapred-site.xml
 ADD templates/yarn-site.xml.template $HADOOP_PREFIX/etc/hadoop/yarn-site.xml.template
-
-# fixing the libhadoop.so
-#RUN rm -rf /usr/local/hadoop/lib/native/*
-#ADD ./deps/hadoop-native-64-2.6.0.tar /usr/local/hadoop/lib/native/
 
 # add and set permissions for bootstrap script
 ADD scripts/hadoop-bootstrap.sh /etc/hadoop-bootstrap.sh
@@ -116,8 +109,9 @@ RUN ln -s /usr/share/java/postgresql-jdbc4.jar $HIVE_HOME/lib/postgresql-jdbc4.j
 # to configure postgres as hive metastore backend
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
 RUN wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add -
-RUN apt-get update -y
-RUN apt-get -yq install vim postgresql-9.5 libpostgresql-jdbc-java
+RUN apt-get update -y && \
+    apt-get -yq install vim postgresql-9.5 libpostgresql-jdbc-java && \
+    rm -rf /var/lib/apt/lists/*
 
 USER postgres
 # initialize hive metastore db
