@@ -3,33 +3,20 @@
 
 This is a Hadoop Docker image running CDH5 versions of Hadoop and Hive, all in one container. There is a separate Kerberos image in which Hadoop and Hive use Kerberos for authentication. Adapted from https://github.com/tilakpatidar/cdh5_hive_postgres and based on Ubuntu (trusty).
 
+Postgres is also installed so that Hive can use it for its Metastore backend and run in remote mode.
+
 ## Current Version
 * Hadoop 2.6.0
+* Hive 1.1.0
 
 ## Dependencies
 The Kerberos image assumes that a KDC has been launched by the dcos-commons kdc.py script.
 
 ## Build the image
-Download dependencies:
-```
-./download_deps.sh
-```
-
-Build the Ubuntu base image:
-```
-cd ubuntu
-docker build -t cdh5-ubuntu .
-```
-
-Build the Hadoop image:
-```
-cd ../hadoop-2.6.0
-docker build -t cdh5-hadoop .
-```
 
 Build the Hadoop + Hive image:
 ```
-cd ../hive_pg
+cd hadoop-hive
 docker build -t cdh5-hive .
 ```
 
