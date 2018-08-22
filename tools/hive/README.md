@@ -14,15 +14,21 @@ The Kerberos image assumes that a KDC has been launched by the dcos-commons kdc.
 
 ## Build the image
 
-Build the Hadoop + Hive image:
+### Build the Hadoop + Hive image:
 ```
 cd hadoop-hive
 docker build -t cdh5-hive .
 ```
 
-Build the Kerberized Hadoop + Hive image:
+### Build the Kerberized Hadoop + Hive image:
+First, autogenerate the Hadoop config files.
 ```
 cd ../kerberos
+scripts/generate_configs.sh
+```
+
+Then build the image:
+```
 docker build -t cdh5-hive-kerberos .
 ```
 

@@ -1,9 +1,4 @@
 <configuration>
-    <property>
-        <name>dfs.replication</name>
-        <value>1</value>
-    </property>
-
     <!-- General HDFS security config -->
     <property>
         <name>dfs.block.access.token.enable</name>
