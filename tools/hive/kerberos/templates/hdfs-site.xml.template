@@ -17,7 +17,7 @@
     </property>
     <property>
         <name>dfs.namenode.kerberos.principal</name>
-        <value>hdfs/HOSTNAME@LOCAL</value>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
     </property>
 
     <!-- Secondary NameNode security config -->
@@ -27,7 +27,7 @@
     </property>
     <property>
         <name>dfs.secondary.namenode.kerberos.principal</name>
-        <value>hdfs/HOSTNAME@LOCAL</value>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
     </property>
 
     <!-- DataNode security config -->
@@ -37,13 +37,13 @@
     </property>
     <property>
         <name>dfs.datanode.kerberos.principal</name>
-        <value>hdfs/HOSTNAME@LOCAL</value>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
     </property>
 
     <!-- Web Authentication config -->
     <property>
         <name>dfs.web.authentication.kerberos.principal</name>
-        <value>HTTP/HOSTNAME@LOCAL</value>
+        <value>HTTP/{{HOSTNAME}}@LOCAL</value>
     </property>
 
     <property>

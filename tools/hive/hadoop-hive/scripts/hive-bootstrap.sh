@@ -7,7 +7,7 @@ printenv | cat >> /root/.bashrc
 /etc/hadoop-bootstrap.sh -d
 
 # restart postgresql
-sudo /etc/init.d/postgresql restart
+/etc/init.d/postgresql restart
 
 # kinit for kerberos mode
 if command -v kinit 2>/dev/null; then
@@ -28,8 +28,8 @@ hdfs dfs -chown -R hive:supergroup /apps/hive
 hdfs dfs -chmod 777 /apps/hive/warehouse
 
 # altering the hive-site configuration
-sed s/HOSTNAME/$HOSTNAME/ /usr/local/hive/conf/hive-site.xml.template > /usr/local/hive/conf/hive-site.xml
-sed s/HOSTNAME/$HOSTNAME/ /opt/files/hive-site.xml.template > /opt/files/hive-site.xml
+sed s/{{HOSTNAME}}/$HOSTNAME/ /usr/local/hive/conf/hive-site.xml.template > /usr/local/hive/conf/hive-site.xml
+sed s/{{HOSTNAME}}/$HOSTNAME/ /opt/files/hive-site.xml.template > /opt/files/hive-site.xml
 
 # start hive metastore server
 $HIVE_HOME/bin/hive --service metastore &

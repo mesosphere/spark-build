@@ -29,7 +29,7 @@
 
   <property>
     <name>hive.server2.authentication.kerberos.principal</name>
-    <value>hive/HOSTNAME@LOCAL</value>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
   </property>
 
   <property>
@@ -49,7 +49,7 @@
 
   <property>
     <name>hive.metastore.kerberos.principal</name>
-    <value>hive/HOSTNAME@LOCAL</value>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
   </property>
 
   <property>

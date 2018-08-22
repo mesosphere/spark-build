@@ -6,7 +6,6 @@ ADD templates/hdfs-site.xml.template $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml.tem
 ADD templates/yarn-site.xml.template $HADOOP_PREFIX/etc/hadoop/yarn-site.xml.template
 
 # copy kerberized hive config file
-RUN echo $HIVE_CONF
 ADD templates/hive-site.xml.template /opt/files/
 ADD templates/hive-site.xml.template $HIVE_CONF/hive-site.xml.template
 

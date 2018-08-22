@@ -8,10 +8,6 @@ ENV CDH_VERSION 5
 ENV CDH_EXACT_VERSION 5.11.0
 ENV HADOOP_HOME /usr/local/hadoop
 ENV HADOOP_PREFIX /usr/local/hadoop
-ENV HADOOP_COMMON_HOME /usr/local/hadoop
-ENV HADOOP_HDFS_HOME /usr/local/hadoop
-ENV HADOOP_MAPRED_HOME /usr/local/hadoop
-ENV HADOOP_YARN_HOME /usr/local/hadoop
 ENV HADOOP_CONF_DIR /usr/local/hadoop/etc/hadoop
 ENV HIVE_HOME /usr/local/hive
 ENV HIVE_CONF /usr/local/hive/conf
@@ -72,9 +68,10 @@ RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/had
     cd /usr/local && \
     ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
 
+# need to define JAVA_HOME inside hadoop-env.sh
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
-# pseudo distributed configurations
+# pseudo distributed configurations of hadoop
 ADD templates/core-site.xml.template $HADOOP_PREFIX/etc/hadoop/core-site.xml.template
 ADD templates/hdfs-site.xml.template $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml.template
 ADD conf/mapred-site.xml $HADOOP_PREFIX/etc/hadoop/mapred-site.xml

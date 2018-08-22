@@ -7,7 +7,7 @@
 
     <property>
         <name>yarn.resourcemanager.principal</name>
-        <value>yarn/HOSTNAME@LOCAL</value>
+        <value>yarn/{{HOSTNAME}}@LOCAL</value>
     </property>
 
     <!-- NodeManager security configs -->
@@ -18,6 +18,6 @@
 
     <property>
         <name>yarn.nodemanager.principal</name>
-        <value>yarn/HOSTNAME@LOCAL</value>
+        <value>yarn/{{HOSTNAME}}@LOCAL</value>
     </property>
 </configuration>
