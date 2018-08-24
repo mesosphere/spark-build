@@ -1,0 +1,98 @@
+groups:
+- name: Spark_Alerts
+  rules:
+    - alert: Spark_Dispatcher_Count
+      expr: count(spark_mesos_cluster_driver_launched) >= 50
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark has reached desired number of dispatchers'
+
+    - alert: Spark_Dispatcher_Count_Decreasing
+      expr: rate(spark_mesos_cluster_driver_launched[5m]) < 0
+      for: 1m
+      labels:
+        severity: major
+      annotations:
+        description: 'Spark dispatcher count unexpectedly decreasing'
+
+    - alert: Spark_Job_Count
+      expr: count(spark_mesos_cluster_executor_count) >= 1000
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark has reached desired number of concurrent jobs'
+
+    - alert: Spark_Concurrent_Job_Count_Decreasing
+      expr: count(spark_mesos_cluster_executor_count offset 5m) - count(spark_mesos_cluster_executor_count) > 0
+      for: 1m
+      labels:
+        severity: major
+      annotations:
+        description: 'The number of concurrent spark jobs are decreasing. This number should be gradually increasing'
+
+    - alert: Spark_CPU_Job
+      expr: count(spark_mesos_cluster_executor_count{task_name=~".*monte.*"}) >= 750
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark has reached desired number of CPU jobs'
+
+    - alert: Spark_GPU_Jobs
+      expr: count(spark_mesos_cluster_executor_count{task_name=~".*image.*"}) >= 10
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark has reached desired number of GPU jobs'
+
+    - alert: Spark_Streaming_Jobs
+      expr: count(spark_mesos_cluster_executor_count{task_name=~".*Kafka.*"}) >= 250
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark has reached desired number of Streaming jobs'
+    
+    - alert: Spark_Dispatcher_Queue_Depth
+      expr: count(spark_mesos_cluster_driver_waiting > 200) > 0
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        description: 'Spark dispatcher queue depth is beyond allowed product requirement. Please investigate why Spark jobs are not finishing at the same rate of launch or discontinue launching new Spark jobs.'
+
+    - alert: Spark_Average_Job_Duration
+      expr: (avg(spark_mesos_cluster_driver_launch_to_finish_state_finished_mean) / 60000) >= 75
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        description: 'Spark jobs taking longer to complete than expected'
+
+    - alert: Spark_Average_Launch_Time
+      expr: count(spark_mesos_cluster_executor_start_to_all_launched_p99 > 30000) > 0
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        description: 'Spark jobs have a p99 launch rate greater than product requirement of 30 seconds. Generally, this indicates the overall health of the cluster is suffering and that frameworks (not just Spark) are processing fewer acceptable offers from Mesos.'
+
+    - alert: Spark_Launch_Time_High_Stdev
+      expr: (stddev(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000) > 20.0
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        description: 'Spark job's launch rate has unusually high standard deviation'
+
+    - alert: Spark_Jobs_Have_Failed
+      expr: (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) / (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_lost) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_failed))) < 0.999
+      for: 1m
+      labels:
+        severity: informational
+      annotations:
+        description: 'Spark job success rate is below 99.9%. Please investigate failed jobs.'
