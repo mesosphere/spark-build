@@ -17,7 +17,6 @@ ENV POSTGRESQL_MAIN /var/lib/postgresql/9.5/main/
 ENV POSTGRESQL_CONFIG_FILE /var/lib/postgresql/9.5/main/postgresql.conf
 ENV POSTGRESQL_BIN /usr/lib/postgresql/9.5/bin/postgres
 ENV PGPASSWORD hive
-ENV SENTRY_HOME /usr/local/sentry
 
 # install dev tools
 RUN apt-get update && \
@@ -145,15 +144,6 @@ RUN chown root:root /etc/hive-bootstrap.sh
 RUN chmod 700 /etc/hive-bootstrap.sh
 
 EXPOSE 10000 10001 10002 10003 9083 50111 5432
-
-# sentry
-RUN curl -L http://archive.cloudera.com/cdh5/cdh/5/sentry-1.5.1-cdh5.11.0.tar.gz | tar -xzC /usr/local && \
-    cd /usr/local && \
-    ln -s apache-sentry-1.5.1-cdh5.11.0-bin/ sentry
-ADD templates/sentry-site.xml.hive-client.template /usr/local/hive/conf/sentry-site.xml.template
-ADD templates/sentry-site.xml.server.template /usr/local/sentry/conf/sentry-site.xml.template
-ADD scripts/test-hive-sentry.sh /etc/test-hive-sentry.sh
-RUN chmod 700 /etc/test-hive-sentry.sh
 
 # run bootstrap script
 CMD ["/etc/hive-bootstrap.sh", "-d"]
