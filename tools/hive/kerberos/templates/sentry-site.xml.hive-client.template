@@ -1,0 +1,44 @@
+<configuration>
+    <property>
+        <name>sentry.hive.provider</name>
+        <value>org.apache.sentry.provider.file.HadoopGroupResourceAuthorizationProvider</value>
+    </property>
+    <property>
+        <name>sentry.hive.server</name>
+        <value>server1</value>
+    </property>
+    <property>
+        <name>sentry.hive.testing.mode</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>sentry.service.client.server.rpc-port</name>
+        <value>8038</value>
+    </property>
+    <property>
+        <name>sentry.service.client.server.rpc-address</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>sentry.service.client.server.rpc-connection-timeout</name>
+        <value>200000</value>
+    </property>
+
+    <!-- Properties required for setting the DB provider -->
+    <property>
+        <name>sentry.hive.provider.backend</name>
+        <value>org.apache.sentry.provider.db.SimpleDBProviderBackend</value>
+    </property>
+    <property>
+        <name>sentry.service.security.mode</name>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>sentry.service.server.principal</name>
+        <value>sentry/{{HOSTNAME}}@LOCAL</value>
+    </property>
+    <property>
+        <name>sentry.metastore.service.users</name>
+        <value>hive</value>
+    </property>
+</configuration>

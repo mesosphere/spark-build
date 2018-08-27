@@ -9,6 +9,14 @@ ADD templates/yarn-site.xml.template $HADOOP_PREFIX/etc/hadoop/yarn-site.xml.tem
 ADD templates/hive-site.xml.template /opt/files/
 ADD templates/hive-site.xml.template $HIVE_CONF/hive-site.xml.template
 
+# kerberized sentry config files
+ADD templates/sentry-site.xml.hive-client.template /usr/local/hive/conf/sentry-site.xml.template
+ADD templates/sentry-site.xml.server.template /usr/local/sentry/conf/sentry-site.xml.template
+
+# hive / sentry test script
+ADD scripts/test-hive-sentry.sh /etc/test-hive-sentry.sh
+RUN chmod 700 /etc/test-hive-sentry.sh
+
 # krb5.conf
 ADD conf/krb5.conf /etc/
 

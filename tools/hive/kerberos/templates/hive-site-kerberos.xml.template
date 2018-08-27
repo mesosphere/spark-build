@@ -38,11 +38,11 @@
 
   <property>
     <name>hive.users.in.admin.role</name>
-    <value>hdfs,hive</value>
+    <value>hive</value>
   </property>
 
-  <property>
+  <!-- property>
     <name>hive.security.authorization.manager</name>
     <value>org.apache.hadoop.hive.ql.security.authorization.DefaultHiveAuthorizationProvider</value>
-  </property>
+  </property -->
 </configuration>

@@ -6,6 +6,12 @@ printenv | cat >> /root/.bashrc
 # hadoop bootstrap
 /etc/hadoop-bootstrap.sh -d
 
+# init and start sentry
+SENTRY_CONF_FILE=$SENTRY_HOME/conf/sentry-site.xml
+sed s/{{HOSTNAME}}/$HOSTNAME/ $SENTRY_HOME/conf/sentry-site.xml.template > $SENTRY_HOME/conf/sentry-site.xml
+$SENTRY_HOME/bin/sentry --command schema-tool --conffile $SENTRY_CONF_FILE --dbType derby --initSchema
+$SENTRY_HOME/bin/sentry --command service --conffile $SENTRY_CONF_FILE &
+
 # restart postgresql
 /etc/init.d/postgresql restart
 
@@ -19,16 +25,23 @@ do
     echo "waiting for hdfs to be ready"; sleep 10;
 done
 
+# create hive user
+useradd hive
+
 # create hdfs directories
-$HADOOP_PREFIX/bin/hdfs dfs -mkdir -p /user/root
+hdfs dfs -mkdir -p /user/root
 hdfs dfs -chown -R hdfs:supergroup /user
 
-$HADOOP_PREFIX/bin/hdfs dfs -mkdir -p /apps/hive/warehouse
+hdfs dfs -mkdir -p /apps/hive/warehouse
 hdfs dfs -chown -R hive:supergroup /apps/hive
 hdfs dfs -chmod 777 /apps/hive/warehouse
 
+hdfs dfs -mkdir -p /tmp/hive
+hdfs dfs -chmod 777 /tmp/hive
+
 # altering the hive-site configuration
-sed s/{{HOSTNAME}}/$HOSTNAME/ /usr/local/hive/conf/hive-site.xml.template > /usr/local/hive/conf/hive-site.xml
+sed s/{{HOSTNAME}}/$HOSTNAME/ $HIVE_CONF/hive-site.xml.template > $HIVE_CONF/hive-site.xml
+sed s/{{HOSTNAME}}/$HOSTNAME/ $HIVE_CONF/sentry-site.xml.template > $HIVE_CONF/sentry-site.xml
 sed s/{{HOSTNAME}}/$HOSTNAME/ /opt/files/hive-site.xml.template > /opt/files/hive-site.xml
 
 # start hive metastore server
