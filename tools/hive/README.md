@@ -1,7 +1,10 @@
-# Cloudera Hadoop and Hive Docker Image with Kerberos
+# Cloudera Hadoop and Hive Docker Image with Kerberos, Sentry
 
 
-This is a Hadoop Docker image running CDH5 versions of Hadoop and Hive, all in one container. There is a separate Kerberos image in which Hadoop and Hive use Kerberos for authentication. Adapted from https://github.com/tilakpatidar/cdh5_hive_postgres and based on Ubuntu (trusty).
+This is a Hadoop Docker image running CDH5 versions of Hadoop and Hive, all in one container.
+There is a separate Kerberos image in which Hadoop and Hive use Kerberos for authentication,
+and Sentry for authorization.
+Adapted from https://github.com/tilakpatidar/cdh5_hive_postgres and based on Ubuntu (trusty).
 
 Postgres is also installed so that Hive can use it for its Metastore backend and run in remote mode.
 

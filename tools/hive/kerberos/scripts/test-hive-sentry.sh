@@ -16,16 +16,6 @@ GRANT ALL on DATABASE default to ROLE test_role WITH GRANT OPTION;
 EOF
 beeline -u "jdbc:hive2://localhost:10000/default;principal=hive/${HOSTNAME}@LOCAL" -f grant_alice.sql
 
-# Test Hive / Sentry
-#echo "Create a table in Hive with Sentry as alice ..."
-#kdestroy
-#kinit -k -t /usr/local/hadoop/etc/hadoop/hdfs.keytab alice/${HOSTNAME}@LOCAL
-#cat <<EOF >create_table.sql
-#CREATE TABLE test1 (col1 INT);
-#SHOW TABLES;
-#EOF
-#beeline -u "jdbc:hive2://localhost:10000/default;principal=alice/${HOSTNAME}@LOCAL" -f create_table.sql
-
 # Log back in as hdfs
 kdestroy
 kinit -k -t /usr/local/hadoop/etc/hadoop/hdfs.keytab hdfs@LOCAL

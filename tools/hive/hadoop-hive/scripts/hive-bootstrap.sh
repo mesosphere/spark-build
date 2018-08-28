@@ -7,10 +7,14 @@ printenv | cat >> /root/.bashrc
 /etc/hadoop-bootstrap.sh -d
 
 # init and start sentry
+SENTRY_CONF_TEMPLATE=$SENTRY_HOME/conf/sentry-site.xml.template
 SENTRY_CONF_FILE=$SENTRY_HOME/conf/sentry-site.xml
-sed s/{{HOSTNAME}}/$HOSTNAME/ $SENTRY_HOME/conf/sentry-site.xml.template > $SENTRY_HOME/conf/sentry-site.xml
-$SENTRY_HOME/bin/sentry --command schema-tool --conffile $SENTRY_CONF_FILE --dbType derby --initSchema
-$SENTRY_HOME/bin/sentry --command service --conffile $SENTRY_CONF_FILE &
+if [ -f "$SENTRY_CONF_TEMPLATE" ]; then
+    sed s/{{HOSTNAME}}/$HOSTNAME/ $SENTRY_HOME/conf/sentry-site.xml.template > $SENTRY_HOME/conf/sentry-site.xml
+    sed s/{{HOSTNAME}}/$HOSTNAME/ $HIVE_CONF/sentry-site.xml.template > $HIVE_CONF/sentry-site.xml
+    $SENTRY_HOME/bin/sentry --command schema-tool --conffile $SENTRY_CONF_FILE --dbType derby --initSchema
+    $SENTRY_HOME/bin/sentry --command service --conffile $SENTRY_CONF_FILE &
+fi
 
 # restart postgresql
 /etc/init.d/postgresql restart
@@ -41,7 +45,6 @@ hdfs dfs -chmod 777 /tmp/hive
 
 # altering the hive-site configuration
 sed s/{{HOSTNAME}}/$HOSTNAME/ $HIVE_CONF/hive-site.xml.template > $HIVE_CONF/hive-site.xml
-sed s/{{HOSTNAME}}/$HOSTNAME/ $HIVE_CONF/sentry-site.xml.template > $HIVE_CONF/sentry-site.xml
 sed s/{{HOSTNAME}}/$HOSTNAME/ /opt/files/hive-site.xml.template > /opt/files/hive-site.xml
 
 # start hive metastore server

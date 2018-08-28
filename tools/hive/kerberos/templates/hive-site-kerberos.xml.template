@@ -57,11 +57,6 @@
     <value>org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook</value>
   </property>
 
-  <property>
-    <name>hive.sentry.conf.url</name>
-    <value>file:///usr/local/hive/conf/sentry-site.xml</value>
-  </property>
-
   <!-- Metastore, Sentry -->
   <property>
     <name>hive.metastore.filter.hook</name>
