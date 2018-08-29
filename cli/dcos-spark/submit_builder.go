@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/mattn/go-shellwords"
@@ -294,7 +293,7 @@ func parseApplicationFile(args *sparkArgs) error {
 
 // we use Kingpin to parse CLI commands and options
 // spark-submit by convention uses '--arg val' while kingpin only supports --arg=val
-// cleanUpSubmitArgs transforms the former to the latter
+// transformSubmitArgs turns the former into the latter
 func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
 	argsStr = strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
@@ -317,13 +316,9 @@ LOOP:
 			appArgs = append(appArgs, args[i+1:]...)
 			break LOOP
 		case strings.HasPrefix(current, "--"):
-			isBool, skipNext := checkIfBooleanFlag(boolVals, args, i)
-			if isBool {
+			if isBoolFlag(boolVals, current) {	
 				sparkArgs = append(sparkArgs, current)
 				i++
-				if skipNext {
-					i++
-				}
 				continue LOOP
 			}
 			if strings.Contains(current, "=") {
@@ -360,19 +355,14 @@ func isSparkApp(str string) bool {
 	return false
 }
 
-func checkIfBooleanFlag(boolVals []*sparkVal, args []string, idx int) (isBool, skipNext bool) {
-	// check if current is a boolean flag (eg --supervise) but skip any accompanying boolean values (eg --supervise true)
-	current := args[idx]
+// check if string is a boolean flag (eg --supervise)
+func isBoolFlag(boolVals []*sparkVal, str string) bool {
 	for _, boolVal := range boolVals {
-		if boolVal.flagName == current[2:] {
-			isBool = true
-			next := args[idx+1]
-			if _, err := strconv.ParseBool(next); err == nil {
-				skipNext = true
-			}
+		if boolVal.flagName == str[2:] {
+			return true
 		}
 	}
-	return
+	return false
 }
 
 func getValsFromPropertiesFile(path string) map[string]string {
