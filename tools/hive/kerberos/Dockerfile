@@ -23,8 +23,8 @@ ADD templates/sentry-site.xml.hive-client.template /usr/local/hive/conf/sentry-s
 ADD templates/sentry-site.xml.server.template /usr/local/sentry/conf/sentry-site.xml.template
 
 # hive / sentry test script
-ADD scripts/test-hive-sentry.sh /etc/test-hive-sentry.sh
-RUN chmod 700 /etc/test-hive-sentry.sh
+ADD scripts/grant-hive-privileges.sh /etc/grant-hive-privileges.sh
+RUN chmod 700 /etc/grant-hive-privileges.sh
 
 # krb5.conf
 ADD conf/krb5.conf /etc/
