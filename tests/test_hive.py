@@ -87,6 +87,10 @@ def _upload_hdfs_config(file_name):
 @pytest.fixture(scope='module')
 def setup_hadoop_hive(setup_kdc_kerberos):
     try:
+        # TODO: replace with Marathon readiness check in kdc app
+        log.info("Waiting for kdc.marathon.mesos to resolve ...")
+        time.sleep(30)
+
         # Run the Hive Docker image in Marathon
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         app_def_path = "{}/resources/hadoop-hive-kerberos.json".format(curr_dir)
@@ -142,7 +146,7 @@ def setup_spark(setup_kdc_kerberos, setup_hadoop_hive, configure_security_spark)
 
 
 def _grant_hive_privileges():
-    rc, _, err = sdk_cmd.marathon_task_exec(HIVE_APP_ID, "/etc/test-hive-sentry.sh")
+    rc, _, err = sdk_cmd.marathon_task_exec(HIVE_APP_ID, "/etc/grant-hive-privileges.sh")
     if rc != 0:
         raise Exception("Hive script failed with code {}: {}".format(rc, err))
 
@@ -154,13 +158,14 @@ def test_hive(setup_hadoop_hive, setup_spark):
 
     _grant_hive_privileges()
 
+    jar_url = 'https://s3-eu-west-1.amazonaws.com/fdp-stavros-test/hive-on-spark-test-assembly-1.0-SNAPSHOT.jar'
+    app_args = "thrift://{}:9083".format(hive_agent_hostname)
     keytab_secret_path = "__dcos_base64___keytab"
     kerberos_args = ["--kerberos-principal", ALICE_PRINCIPAL,
                      "--keytab-secret-path", "/{}".format(keytab_secret_path),
                      "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
-    jar_url = 'https://s3-eu-west-1.amazonaws.com/fdp-stavros-test/hive-on-spark-test-assembly-1.0-SNAPSHOT.jar'
-    submit_args = ["--class", "com.lightbend.fdp.spark.test.hive.HiveFull"] + kerberos_args
-    app_args = "thrift://{}:9083".format(hive_agent_hostname)
+    submit_args = ["--class", "com.lightbend.fdp.spark.test.hive.HiveFull"] + kerberos_args \
+                  + ["--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:081e586fa721ccb2f41d9f38c0b87d324a6caca4-67fa977eef418bb9d6a3f234b1191c558ab2b264"]
 
     expected_output = "500"
     spark_utils.run_tests(app_url=jar_url,
