@@ -1,0 +1,111 @@
+<configuration>
+  <property>
+    <name>dfs.namenode.servicerpc-address</name>
+    <value>{{HOSTNAME}}:8022</value>
+  </property>
+  <property>
+    <name>dfs.https.address</name>
+    <value>{{HOSTNAME}}:50470</value>
+  </property>
+  <property>
+    <name>dfs.https.port</name>
+    <value>50470</value>
+  </property>
+  <property>
+    <name>dfs.namenode.http-address</name>
+    <value>{{HOSTNAME}}:50070</value>
+  </property>
+  <property>
+    <name>dfs.client.use.datanode.hostname</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>dfs.client.read.shortcircuit</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>dfs.client.read.shortcircuit.skip.checksum</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>dfs.client.domain.socket.data.traffic</name>
+    <value>false</value>
+  </property>
+  
+  <!-- General HDFS security config -->
+    <property>
+        <name>dfs.block.access.token.enable</name>
+        <value>true</value>
+    </property>
+
+    <!-- NameNode security config -->
+    <property>
+        <name>dfs.namenode.keytab.file</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
+    </property>
+    <property>
+        <name>dfs.namenode.kerberos.principal</name>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
+    </property>
+
+    <!-- Secondary NameNode security config -->
+    <property>
+        <name>dfs.secondary.namenode.keytab.file</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
+    </property>
+    <property>
+        <name>dfs.secondary.namenode.kerberos.principal</name>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
+    </property>
+
+    <!-- DataNode security config -->
+    <property>
+        <name>dfs.datanode.keytab.file</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
+    </property>
+    <property>
+        <name>dfs.datanode.kerberos.principal</name>
+        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
+    </property>
+
+    <!-- Web Authentication config -->
+    <property>
+        <name>dfs.web.authentication.kerberos.principal</name>
+        <value>HTTP/{{HOSTNAME}}@LOCAL</value>
+    </property>
+
+    <property>
+        <name>dfs.web.authentication.kerberos.keytab</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HTTP keytab -->
+    </property>
+
+    <property>
+        <name>ignore.secure.ports.for.testing</name>
+        <value>true</value>
+    </property>
+
+    <property>
+      <name>hive.metastore.uris</name>
+      <value>thrift://{{HOSTNAME}}:9083</value>
+    </property>
+
+  <property>
+    <name>hive.server2.authentication</name>
+    <value>KERBEROS</value>
+  </property>
+
+  <property>
+    <name>hive.server2.authentication.kerberos.principal</name>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.sasl.enabled</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.kerberos.principal</name>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
+  </property>
+</configuration>
