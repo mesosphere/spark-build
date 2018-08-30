@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 hive_agent_ip = ""
 hive_agent_hostname = ""
 hdfs_base_url = ""
+hive_config_url = ""
 
 GENERIC_HDFS_USER_PRINCIPAL = "hdfs@{realm}".format(realm=sdk_auth.REALM)
 ALICE_USER = "alice"
@@ -61,8 +62,7 @@ def setup_kdc_kerberos():
         yield kerberos_env
 
     finally:
-        #kerberos_env.cleanup()
-        log.info("kerberos_env cleanup")
+        kerberos_env.cleanup()
 
 
 def _hdfs_cmd(cmd):
@@ -71,7 +71,7 @@ def _hdfs_cmd(cmd):
         raise Exception("HDFS command failed with code {}: {}".format(rc, cmd))
 
 
-def _upload_hdfs_config(file_name):
+def _upload_hadoop_config(file_name):
     template_local_path = os.path.join(THIS_DIR, 'resources', "{}.template".format(file_name))
     with open(template_local_path, 'r') as f:
         template_contents = f.read()
@@ -105,15 +105,16 @@ def setup_hadoop_hive(setup_kdc_kerberos):
         time.sleep(120)
 
         # HDFS client configuration
-        core_site_url = _upload_hdfs_config("core-site.xml")
-        _upload_hdfs_config("hdfs-site.xml")
+        core_site_url = _upload_hadoop_config("core-site.xml")
+        _upload_hadoop_config("hdfs-site.xml")
+        global hive_config_url
+        hive_config_url = _upload_hadoop_config("hive-site.xml")
         global hdfs_base_url
         hdfs_base_url = os.path.dirname(core_site_url)
         yield
 
     finally:
-        #sdk_marathon.destroy_app(HIVE_APP_ID)
-        log.info("setup_hive cleanup")
+        sdk_marathon.destroy_app(HIVE_APP_ID)
 
 
 @pytest.fixture(scope='module')
@@ -165,7 +166,8 @@ def test_hive(setup_hadoop_hive, setup_spark):
                      "--keytab-secret-path", "/{}".format(keytab_secret_path),
                      "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
     submit_args = ["--class", "HiveFull"] + kerberos_args \
-                  + ["--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:081e586fa721ccb2f41d9f38c0b87d324a6caca4-67fa977eef418bb9d6a3f234b1191c558ab2b264"]
+                  + ["--conf", "spark.mesos.executor.docker.image=susanxhuynh/spark:sentry-hive-test"] \
+                  + ["--conf", "spark.mesos.uris={}".format(hive_config_url)]
 
     expected_output = "Test completed successfully"
     spark_utils.run_tests(app_url=jar_url,

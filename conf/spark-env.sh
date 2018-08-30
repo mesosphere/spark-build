@@ -11,6 +11,7 @@
 mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
+[ -f "${MESOS_SANDBOX}/hive-site.xml" ] && cp "${MESOS_SANDBOX}/hive-site.xml" "${HADOOP_CONF_DIR}"
 
 
 cd $MESOS_SANDBOX

@@ -55,28 +55,4 @@
         <value>true</value>
     </property>
 
-    <property>
-      <name>hive.metastore.uris</name>
-      <value>thrift://{{HOSTNAME}}:9083</value>
-    </property>
-
-  <property>
-    <name>hive.server2.authentication</name>
-    <value>KERBEROS</value>
-  </property>
-
-  <property>
-    <name>hive.server2.authentication.kerberos.principal</name>
-    <value>hive/{{HOSTNAME}}@LOCAL</value>
-  </property>
-
-  <property>
-    <name>hive.metastore.sasl.enabled</name>
-    <value>true</value>
-  </property>
-
-  <property>
-    <name>hive.metastore.kerberos.principal</name>
-    <value>hive/{{HOSTNAME}}@LOCAL</value>
-  </property>
 </configuration>
