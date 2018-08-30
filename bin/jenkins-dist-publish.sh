@@ -59,7 +59,7 @@ function publish_dist() {
 }
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SPARK_DIR="${DIR}/../spark"
+SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 DIST_DIR="${DIR}/../build/dist"
 SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.0.2"
