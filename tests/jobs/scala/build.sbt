@@ -6,6 +6,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % "2.2.0" % "provided",
       "org.apache.spark" % "spark-streaming_2.11" % "2.2.0" % "provided",
+      "org.apache.spark" %% "spark-sql" % "2.2.0" % "provided",
+      "org.apache.spark" %% "spark-hive" % "2.2.0" % "provided",
       "org.apache.spark" %% "spark-mllib" % "2.2.0" % "provided",
       "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % "2.2.0",
       "org.apache.hadoop" % "hadoop-aws" % "2.6.0",

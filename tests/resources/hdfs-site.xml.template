@@ -40,31 +40,7 @@
 
     <!-- NameNode security config -->
     <property>
-        <name>dfs.namenode.keytab.file</name>
-        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
-    </property>
-    <property>
         <name>dfs.namenode.kerberos.principal</name>
-        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
-    </property>
-
-    <!-- Secondary NameNode security config -->
-    <property>
-        <name>dfs.secondary.namenode.keytab.file</name>
-        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
-    </property>
-    <property>
-        <name>dfs.secondary.namenode.kerberos.principal</name>
-        <value>hdfs/{{HOSTNAME}}@LOCAL</value>
-    </property>
-
-    <!-- DataNode security config -->
-    <property>
-        <name>dfs.datanode.keytab.file</name>
-        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HDFS keytab -->
-    </property>
-    <property>
-        <name>dfs.datanode.kerberos.principal</name>
         <value>hdfs/{{HOSTNAME}}@LOCAL</value>
     </property>
 
@@ -72,11 +48,6 @@
     <property>
         <name>dfs.web.authentication.kerberos.principal</name>
         <value>HTTP/{{HOSTNAME}}@LOCAL</value>
-    </property>
-
-    <property>
-        <name>dfs.web.authentication.kerberos.keytab</name>
-        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value> <!-- path to the HTTP keytab -->
     </property>
 
     <property>

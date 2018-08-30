@@ -158,16 +158,16 @@ def test_hive(setup_hadoop_hive, setup_spark):
 
     _grant_hive_privileges()
 
-    jar_url = 'https://s3-eu-west-1.amazonaws.com/fdp-stavros-test/hive-on-spark-test-assembly-1.0-SNAPSHOT.jar'
+    jar_url = spark_utils.dcos_test_jar_url()
     app_args = "thrift://{}:9083".format(hive_agent_hostname)
     keytab_secret_path = "__dcos_base64___keytab"
     kerberos_args = ["--kerberos-principal", ALICE_PRINCIPAL,
                      "--keytab-secret-path", "/{}".format(keytab_secret_path),
                      "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
-    submit_args = ["--class", "com.lightbend.fdp.spark.test.hive.HiveFull"] + kerberos_args \
+    submit_args = ["--class", "HiveFull"] + kerberos_args \
                   + ["--conf", "spark.mesos.executor.docker.image=mesosphere/spark-dev:081e586fa721ccb2f41d9f38c0b87d324a6caca4-67fa977eef418bb9d6a3f234b1191c558ab2b264"]
 
-    expected_output = "500"
+    expected_output = "Test completed successfully"
     spark_utils.run_tests(app_url=jar_url,
                           app_args=app_args,
                           expected_output=expected_output,
