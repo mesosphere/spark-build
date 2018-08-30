@@ -1,8 +1,10 @@
 #!/bin/bash
 set -x
 
+export HADOOP_HOME=/usr/local/hadoop
+
 # Create a user "alice" since Sentry authorization relies on the Linux user and group information
-useradd alice
+/usr/sbin/useradd alice
 
 # Grant permissions to user “alice”
 echo "Grant permissions to user alice ..."
@@ -14,7 +16,7 @@ GRANT ROLE test_role to GROUP alice;
 GRANT ROLE test_role to GROUP root;
 GRANT ALL on DATABASE default to ROLE test_role WITH GRANT OPTION;
 EOF
-beeline -u "jdbc:hive2://localhost:10000/default;principal=hive/${HOSTNAME}@LOCAL" -f grant_alice.sql
+/usr/local/hive/bin/beeline -u "jdbc:hive2://localhost:10000/default;principal=hive/${HOSTNAME}@LOCAL" -f grant_alice.sql
 
 # Log back in as hdfs
 kdestroy
