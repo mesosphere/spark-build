@@ -22,13 +22,6 @@ var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 
-// AcceptedSparkAppExtensions lists the accepted extensions for Spark application artifacts
-var AcceptedSparkAppExtensions = []string{
-	".jar",
-	".py",
-	".R",
-}
-
 type sparkVal struct {
 	flagName string
 	propName string
@@ -346,8 +339,14 @@ LOOP:
 	return sparkArgs, appArgs
 }
 
+var acceptedSparkAppExtensions = []string{
+	".jar",
+	".py",
+	".R",
+}
+
 func isSparkApp(str string) bool {
-	for _, ext := range AcceptedSparkAppExtensions {
+	for _, ext := range acceptedSparkAppExtensions {
 		if strings.HasSuffix(str, ext) {
 			return true
 		}
