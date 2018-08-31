@@ -13,16 +13,26 @@ import spark_utils
 
 
 log = logging.getLogger(__name__)
-hive_agent_ip = ""
-hive_agent_hostname = ""
-hdfs_base_url = ""
-hive_config_url = ""
 
 GENERIC_HDFS_USER_PRINCIPAL = "hdfs@{realm}".format(realm=sdk_auth.REALM)
 ALICE_USER = "alice"
 ALICE_PRINCIPAL = "{user}@{realm}".format(user=ALICE_USER, realm=sdk_auth.REALM)
 HIVE_APP_ID = "cdh5-hadoop-hive-kerberos"
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+class KerberosSetup:
+    def __init__(self, kerberos_env, hive_agent_ip, hive_agent_hostname):
+        self.kerberos_env = kerberos_env
+        self.hive_agent_ip = hive_agent_ip
+        self.hive_agent_hostname = hive_agent_hostname
+
+
+class HadoopSetup:
+    def __init__(self, kerberos_setup, hdfs_base_url, hive_config_url):
+        self.kerberos_setup = kerberos_setup
+        self.hdfs_base_url = hdfs_base_url
+        self.hive_config_url = hive_config_url
 
 
 def _get_agent_ip():
@@ -35,16 +45,14 @@ def _get_agent_ip():
 
 
 @pytest.fixture(scope='module')
-def setup_kdc_kerberos():
+def kerberos_setup():
     try:
-        global hive_agent_ip
         hive_agent_ip = _get_agent_ip()
 
         ok, stdout = sdk_cmd.agent_ssh(hive_agent_ip, "echo $HOSTNAME")
         if not ok:
             raise Exception("Failed to get agent hostname, stdout: {}".format(stdout))
         log.info("got hostname: '{}'".format(stdout))
-        global hive_agent_hostname
         hive_agent_hostname = stdout.rstrip()
 
         primaries = ["alice", "hdfs", "HTTP", "yarn", "hive", "sentry"]
@@ -59,7 +67,7 @@ def setup_kdc_kerberos():
         kerberos_env = sdk_auth.KerberosEnvironment()
         kerberos_env.add_principals(principals)
         kerberos_env.finalize()
-        yield kerberos_env
+        yield KerberosSetup(kerberos_env, hive_agent_ip, hive_agent_hostname)
 
     finally:
         kerberos_env.cleanup()
@@ -71,7 +79,7 @@ def _hdfs_cmd(cmd):
         raise Exception("HDFS command failed with code {}: {}".format(rc, cmd))
 
 
-def _upload_hadoop_config(file_name):
+def _upload_hadoop_config(file_name, hive_agent_hostname):
     template_local_path = os.path.join(THIS_DIR, 'resources', "{}.template".format(file_name))
     with open(template_local_path, 'r') as f:
         template_contents = f.read()
@@ -85,11 +93,11 @@ def _upload_hadoop_config(file_name):
 
 
 @pytest.fixture(scope='module')
-def setup_hadoop_hive(setup_kdc_kerberos):
+def hadoop_setup(kerberos_setup):
     try:
-        # TODO: replace with Marathon readiness check in kdc app
-        log.info("Waiting for kdc.marathon.mesos to resolve ...")
-        time.sleep(30)
+        # TODO: replace with Marathon readiness check in kdc app?
+        #log.info("Waiting for kdc.marathon.mesos to resolve ...")
+        #time.sleep(10)
 
         # Run the Hive Docker image in Marathon
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -97,21 +105,19 @@ def setup_hadoop_hive(setup_kdc_kerberos):
         with open(app_def_path) as f:
             hive_app_def = json.load(f)
         hive_app_def["id"] = HIVE_APP_ID
-        hive_app_def["constraints"] = [["hostname", "IS", hive_agent_ip]]
+        hive_app_def["constraints"] = [["hostname", "IS", kerberos_setup.hive_agent_ip]]
         sdk_marathon.install_app(hive_app_def)
         # Wait for Sentry and Hive to be ready
-        # TODO: replace with Marathon readiness check
+        # TODO: replace with Marathon health check
         log.info("Sleeping 120s ...")
         time.sleep(120)
 
         # HDFS client configuration
-        core_site_url = _upload_hadoop_config("core-site.xml")
-        _upload_hadoop_config("hdfs-site.xml")
-        global hive_config_url
-        hive_config_url = _upload_hadoop_config("hive-site.xml")
-        global hdfs_base_url
+        core_site_url = _upload_hadoop_config("core-site.xml", kerberos_setup.hive_agent_hostname)
+        _upload_hadoop_config("hdfs-site.xml", kerberos_setup.hive_agent_hostname)
+        hive_config_url = _upload_hadoop_config("hive-site.xml", kerberos_setup.hive_agent_hostname)
         hdfs_base_url = os.path.dirname(core_site_url)
-        yield
+        yield HadoopSetup(kerberos_setup, hdfs_base_url, hive_config_url)
 
     finally:
         sdk_marathon.destroy_app(HIVE_APP_ID)
@@ -123,19 +129,19 @@ def configure_security_spark():
 
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(setup_kdc_kerberos, setup_hadoop_hive, configure_security_spark):
+def setup_spark(kerberos_setup, hadoop_setup, configure_security_spark):
     try:
         additional_options = {
             "hdfs": {
-                "config-url": hdfs_base_url
+                "config-url": hadoop_setup.hdfs_base_url
             },
             "security": {
                 "kerberos": {
                     "enabled": True,
                     "realm": sdk_auth.REALM,
                     "kdc": {
-                        "hostname": setup_kdc_kerberos.get_host(),
-                        "port": int(setup_kdc_kerberos.get_port())
+                        "hostname": kerberos_setup.kerberos_env.get_host(),
+                        "port": int(kerberos_setup.kerberos_env.get_port())
                     }
                 }
             }
@@ -153,21 +159,21 @@ def _grant_hive_privileges():
 
 
 @pytest.mark.sanity
-def test_hive(setup_hadoop_hive, setup_spark):
+def test_hive(hadoop_setup, setup_spark):
     # Job writes to this hdfs directory
     _hdfs_cmd("chmod a+w /")
 
     _grant_hive_privileges()
 
     jar_url = spark_utils.dcos_test_jar_url()
-    app_args = "thrift://{}:9083".format(hive_agent_hostname)
+    app_args = "thrift://{}:9083".format(hadoop_setup.kerberos_setup.hive_agent_hostname)
     keytab_secret_path = "__dcos_base64___keytab"
     kerberos_args = ["--kerberos-principal", ALICE_PRINCIPAL,
                      "--keytab-secret-path", "/{}".format(keytab_secret_path),
                      "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
     submit_args = ["--class", "HiveFull"] + kerberos_args \
                   + ["--conf", "spark.mesos.executor.docker.image=susanxhuynh/spark:sentry-hive-test"] \
-                  + ["--conf", "spark.mesos.uris={}".format(hive_config_url)]
+                  + ["--conf", "spark.mesos.uris={}".format(hadoop_setup.hive_config_url)]
 
     expected_output = "Test completed successfully"
     spark_utils.run_tests(app_url=jar_url,
