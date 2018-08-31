@@ -12,7 +12,7 @@ function does_profile_exist() {
 
 # uploads build/spark/spark-*.tgz to S3
 function upload_to_s3 {
-    aws s3 cp --acl public-read "${SPARK_DIST_DIR}/${SPARK_DIST}" "${S3_URL}"
+    aws s3 cp --acl public-read "${DIST_DIR}/${SPARK_DIST}" "${S3_URL}"
 }
 
 function set_hadoop_versions {
@@ -59,7 +59,7 @@ function publish_dist() {
 }
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SPARK_DIR="${DIR}/../spark"
+SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 DIST_DIR="${DIR}/../build/dist"
 SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.0.2"
