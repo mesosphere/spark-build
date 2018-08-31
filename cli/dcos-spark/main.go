@@ -209,22 +209,22 @@ func (cmd *SparkCommand) runQuotaCreate(a *kingpin.Application, e *kingpin.Parse
 	requestValues := make([]quotaCreateGuarantee, 0)
 	if cmd.quotaCpus != 0 {
 		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "cpus",
-			Type: "SCALAR",
+			Name:   "cpus",
+			Type:   "SCALAR",
 			Scalar: quotaScalar{Value: cmd.quotaCpus},
 		})
 	}
 	if cmd.quotaMem != 0 {
 		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "mem",
-			Type: "SCALAR",
+			Name:   "mem",
+			Type:   "SCALAR",
 			Scalar: quotaScalar{Value: cmd.quotaMem},
 		})
 	}
 	if cmd.quotaGpus != 0 {
 		requestValues = append(requestValues, quotaCreateGuarantee{
-			Name: "gpus",
-			Type: "SCALAR",
+			Name:   "gpus",
+			Type:   "SCALAR",
 			Scalar: quotaScalar{Value: float64(cmd.quotaGpus)},
 		})
 	}
@@ -311,7 +311,7 @@ func handleCommands(app *kingpin.Application) {
 
 	run := app.Command("run", "Submit a job to the Spark Mesos Dispatcher").Action(cmd.runSubmit)
 	run.Flag("submit-args", fmt.Sprintf("Arguments matching what would be sent to 'spark-submit': %s",
-		sparkSubmitHelp())).Required().PlaceHolder("ARGS").StringVar(&cmd.submitArgs)
+		sparkSubmitHelp())).Required().PlaceHolder("\"ARGS\"").StringVar(&cmd.submitArgs)
 	// TODO this should be moved to submit args
 	run.Flag("docker-image", "Docker image to run the job within").
 		Default("").
