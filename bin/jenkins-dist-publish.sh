@@ -12,7 +12,7 @@ function does_profile_exist() {
 
 # uploads build/spark/spark-*.tgz to S3
 function upload_to_s3 {
-    aws s3 cp --acl public-read "${SPARK_DIST_DIR}/${SPARK_DIST}" "${S3_URL}"
+    aws s3 cp --acl public-read "${SPARK_DIST}" "${S3_URL}"
 }
 
 function set_hadoop_versions {
