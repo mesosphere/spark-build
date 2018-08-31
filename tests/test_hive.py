@@ -131,6 +131,7 @@ def configure_security_spark():
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(kerberos_setup, hadoop_setup, configure_security_spark):
     try:
+        spark_utils.upload_dcos_test_jar()
         additional_options = {
             "hdfs": {
                 "config-url": hadoop_setup.hdfs_base_url
@@ -171,6 +172,7 @@ def test_hive(hadoop_setup, setup_spark):
     kerberos_args = ["--kerberos-principal", ALICE_PRINCIPAL,
                      "--keytab-secret-path", "/{}".format(keytab_secret_path),
                      "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
+    # TODO: remove the following docker image once the fix is in the Spark distribution
     submit_args = ["--class", "HiveFull"] + kerberos_args \
                   + ["--conf", "spark.mesos.executor.docker.image=susanxhuynh/spark:sentry-hive-test"] \
                   + ["--conf", "spark.mesos.uris={}".format(hadoop_setup.hive_config_url)]
