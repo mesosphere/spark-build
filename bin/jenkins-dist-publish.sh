@@ -49,13 +49,13 @@ function publish_dists() {
 
 # $1: hadoop version (e.g. "2.6")
 function publish_dist() {
-    echo "Spark dir set to: ${SPARK_DIR}"
-    SPARK_DIR=$SPARK_DIR make prod-dist -e HADOOP_VERSION=$1
+    SPARK_DIR=$SPARK_DIR \
+        make prod-dist -e HADOOP_VERSION=$1
     rename_dist
     AWS_ACCESS_KEY_ID=${PROD_AWS_ACCESS_KEY_ID} \
-                     AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY} \
-                     S3_URL="s3://${PROD_S3_BUCKET}/${PROD_S3_PREFIX}/" \
-                     upload_to_s3
+        AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY} \
+        S3_URL="s3://${PROD_S3_BUCKET}/${PROD_S3_PREFIX}/" \
+        upload_to_s3
     make clean-dist
 }
 
