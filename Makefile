@@ -31,8 +31,8 @@ prod-dist: $(SPARK_DIR)
 	filename=`ls spark-*.tgz`
 	rm -rf $(DIST_DIR)
 	mkdir -p $(DIST_DIR)
-	mv ${filename} $(DIST_DIR)
-	echo "Built: ${DIST_DIR}/${filename}"
+	mv $${filename} $(DIST_DIR)
+	echo "Built: $(DIST_DIR)/$${filename}"
 
 # If build/dist/ doesn't exist, creates it and downloads the spark build in manifest.json.
 # To instead use a locally built version of spark, you must run "make prod-dist".
