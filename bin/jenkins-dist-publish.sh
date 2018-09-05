@@ -63,7 +63,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SPARK_DIR="${DIR}/../../spark"
 SPARK_BUILD_DIR="${DIR}/.."
 DIST_DIR="${SPARK_BUILD_DIR}/build/dist"
-SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.0.2"
+SPARK_VERSION=${GIT_BRANCH#origin/tags/custom-} # e.g. "2.2.1"
+
 pushd "${SPARK_BUILD_DIR}"
 publish_dists
 popd
