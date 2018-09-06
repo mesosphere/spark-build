@@ -25,14 +25,14 @@ function rename_dist {
     SPARK_DIST_DIR="spark-${SPARK_VERSION}-bin-${HADOOP_VERSION}"
     SPARK_DIST="${SPARK_DIST_DIR}.tgz"
 
-    mkdir -p $SPARK_DIST_DIR
+    mkdir -p "${SPARK_DIST_DIR}"
 
-    pushd $DIST_DIR
+    pushd "${DIST_DIR}"
     tar xvf spark-*.tgz
     rm spark-*.tgz
-    mv spark-* $SPARK_DIST_DIR
-    tar czf $SPARK_DIST $SPARK_DIST_DIR
-    rm -rf $SPARK_DIST_DIR
+    mv spark-* "${SPARK_DIST_DIR}"
+    tar czf "${SPARK_DIST}" "${SPARK_DIST_DIR}"
+    rm -rf "${SPARK_DIST_DIR}"
     popd
 }
 
@@ -49,7 +49,7 @@ function publish_dists() {
 
 # $1: hadoop version (e.g. "2.6")
 function publish_dist() {
-    SPARK_DIR=$SPARK_DIR \
+    SPARK_DIR=${SPARK_DIR} \
         make prod-dist -e HADOOP_VERSION=$1
     rename_dist
     AWS_ACCESS_KEY_ID=${PROD_AWS_ACCESS_KEY_ID} \
