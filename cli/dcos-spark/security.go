@@ -1,31 +1,30 @@
 package main
 
 import (
-	"fmt"
-	"errors"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/mesosphere/dcos-commons/cli/client"
 	"strings"
 )
-
 
 const KEYLENGTH = 128
 
 var TASK_TYPES = []string{"driver", "executor"}
 
 var SECRET_REFERENCE_PROPERTIES = map[string]string{
-	"driver": "spark.mesos.driver.secret.names",
+	"driver":   "spark.mesos.driver.secret.names",
 	"executor": "spark.mesos.executor.secret.names",
 }
 
 var SECRET_FILENAME_PROPERTIES = map[string]string{
-	"driver": "spark.mesos.driver.secret.filenames",
+	"driver":   "spark.mesos.driver.secret.filenames",
 	"executor": "spark.mesos.executor.secret.filenames",
 }
 
 var SECRET_ENVKEY_PROPERTIES = map[string]string{
-	"driver": "spark.mesos.driver.secret.envkeys",
+	"driver":   "spark.mesos.driver.secret.envkeys",
 	"executor": "spark.mesos.executor.secret.envkeys",
 }
 
@@ -33,7 +32,6 @@ const SPARK_KDC_HOSTNAME_KEY = "SPARK_SECURITY_KERBEROS_KDC_HOSTNAME"
 const SPARK_KDC_PORT_KEY = "SPARK_SECURITY_KERBEROS_KDC_PORT"
 const SPARK_KERBEROS_REALM_KEY = "SPARK_SECURITY_KERBEROS_REALM"
 const SPARK_KERBEROS_KRB5_BLOB = "SPARK_MESOS_KRB5_CONF_BASE64"
-
 
 // utility function used by SASL and Kerberos for user-defined secrets that may be base64 encoded blobs
 // basically removes the prefix while ignoring the secret directory structure
@@ -44,7 +42,7 @@ func prepareBase64Secret(secretPath string) string {
 	}
 
 	absoluteSecretPath := strings.Split(secretPath, "/")
-	filename := absoluteSecretPath[len(absoluteSecretPath) - 1]
+	filename := absoluteSecretPath[len(absoluteSecretPath)-1]
 	// secrets with __dcos_base64__ will be decoded by Mesos, but remove the prefix here
 	if strings.HasPrefix(filename, "__dcos_base64__") {
 		return strings.TrimPrefix(filename, "__dcos_base64__")
@@ -92,7 +90,7 @@ func setupTLSArgs(args *sparkArgs) {
 	filenames := []string{keyStoreFileName}
 	envkeys := []string{"DCOS_SPARK_KEYSTORE"}
 
-	if args.truststoreSecretPath != "" {  // optionally add the truststore configs also
+	if args.truststoreSecretPath != "" { // optionally add the truststore configs also
 		addPropertyAndWarn(args, "spark.ssl.trustStore", trustStoreFileName)
 		setPropertyToDefaultIfNotSet(args, "spark.ssl.trustStorePassword", args.truststorePassword)
 		paths = append(paths, args.truststoreSecretPath)
@@ -258,8 +256,8 @@ func forwardEnvironmentVariablesFromMarathonConfig(args *sparkArgs, marathonJson
 
 	if kdcPropCount > 0 && kdcPropCount != 3 {
 		client.PrintMessage(
-			"WARNING: Missing some of the 3 dispatcher environment variables (%s, %s, %s) " +
-			"required for templating krb5.conf",
+			"WARNING: Missing some of the 3 dispatcher environment variables (%s, %s, %s) "+
+				"required for templating krb5.conf",
 			SPARK_KDC_HOSTNAME_KEY, SPARK_KDC_PORT_KEY, SPARK_KERBEROS_REALM_KEY)
 	}
 
