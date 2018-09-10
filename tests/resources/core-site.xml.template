@@ -1,0 +1,17 @@
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://{{HOSTNAME}}:9000</value>
+  </property>
+
+  <!-- Authentication -->
+  <property>
+    <name>hadoop.security.authentication</name>
+    <value>kerberos</value>
+  </property>
+
+  <property>
+      <name>hadoop.security.authorization</name>
+      <value>true</value>
+  </property>
+</configuration>

@@ -1,0 +1,31 @@
+{
+  "instances": 1,
+  "cpus": 1,
+  "mem": 4096,
+  "user": "root",
+  "container": {
+    "type": "MESOS",
+    "docker": {
+      "image": "susanxhuynh/cdh5-hive-kerberos:latest",
+      "forcePullImage": true
+    },
+    "volumes": [
+      {
+        "containerPath": "/usr/local/hadoop/etc/hadoop/hdfs.keytab",
+        "secret": "keytab",
+        "hostPath": ""
+      }
+    ]
+  },
+  "secrets": {
+    "keytab": {
+      "source": "__dcos_base64___keytab"
+    }
+  },
+  "networks": [
+    {
+      "mode": "host"
+    }
+  ],
+  "requirePorts": false
+}
