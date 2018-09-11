@@ -8,6 +8,7 @@ import time
 import sdk_auth
 import sdk_cmd
 import sdk_marathon
+import sdk_utils
 
 import spark_utils
 
@@ -159,6 +160,8 @@ def _grant_hive_privileges():
         raise Exception("Hive script failed with code {}: {}".format(rc, err))
 
 
+@pytest.mark.xfail(sdk_utils.is_strict_mode(),
+    reason="hadoop_setup requires root access; won't work in strict mode")
 @pytest.mark.sanity
 def test_hive(hadoop_setup, setup_spark):
     # Job writes to this hdfs directory
