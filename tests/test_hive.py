@@ -169,19 +169,17 @@ def test_hive(hadoop_setup, setup_spark):
 
     _grant_hive_privileges()
 
-    jar_url = spark_utils.dcos_test_jar_url()
-    app_args = "thrift://{}:9083".format(hadoop_setup.kerberos_setup.hive_agent_hostname)
-    keytab_secret_path = "__dcos_base64___keytab"
-    kerberos_args = ["--kerberos-principal", ALICE_PRINCIPAL,
-                     "--keytab-secret-path", "/{}".format(keytab_secret_path),
-                     "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
-    # TODO: remove the following docker image once the fix is in the Spark distribution
-    submit_args = ["--class", "HiveFull"] + kerberos_args \
-                  + ["--conf", "spark.mesos.executor.docker.image=susanxhuynh/spark:sentry-hive-test"] \
-                  + ["--conf", "spark.mesos.uris={}".format(hadoop_setup.hive_config_url)]
+    kerberos_args = [
+        "--kerberos-principal", ALICE_PRINCIPAL,
+        "--keytab-secret-path", "/__dcos_base64___keytab",
+        "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(spark_utils.SPARK_USER)]
 
-    expected_output = "Test completed successfully"
-    spark_utils.run_tests(app_url=jar_url,
-                          app_args=app_args,
-                          expected_output=expected_output,
+    submit_args = [
+        "--class", "HiveFull",
+        "--conf", "spark.mesos.uris={}".format(hadoop_setup.hive_config_url),
+        ] + kerberos_args
+
+    spark_utils.run_tests(app_url=spark_utils.dcos_test_jar_url(),
+                          app_args="thrift://{}:9083".format(hadoop_setup.kerberos_setup.hive_agent_hostname),
+                          expected_output="Test completed successfully",
                           args=submit_args)
