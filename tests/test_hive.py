@@ -37,9 +37,14 @@ class HadoopSetup:
 
 
 def _get_agent_ip():
+    
+    def _is_private_agent(node):
+        return node["type"] == "agent" and not node["attributes"]
+
     nodes = sdk_cmd.get_json_output("node --json")
+    
     for node in nodes:
-        if node["type"] == "agent":
+        if _is_private_agent(node):
             agent_ip = node["hostname"]
             break
     return agent_ip
