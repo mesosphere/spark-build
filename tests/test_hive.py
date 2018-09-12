@@ -182,6 +182,8 @@ def test_hive(hadoop_setup, setup_spark):
     submit_args = [
         "--class", "HiveFull",
         "--conf", "spark.mesos.uris={}".format(hadoop_setup.hive_config_url),
+        # TODO: remove the following docker image once the fix is in the Spark distribution
+        "--conf", "spark.mesos.executor.docker.image=susanxhuynh/spark:sentry-hive-test",
         ] + kerberos_args
 
     spark_utils.run_tests(app_url=spark_utils.dcos_test_jar_url(),
