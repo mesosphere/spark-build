@@ -10,12 +10,13 @@
 # Exit immediately on errors
 set -e
 
+timestamp="$(date +%y%m%d-%H%M%S)"
 # Create a temp file for docker env.
 # When the script exits (successfully or otherwise), clean up the file automatically.
-credsfile=$(mktemp /tmp/sdk-test-creds-XXXXX.tmp)
-envfile=$(mktemp /tmp/sdk-test-env-XXXXX.tmp)
+tmp_aws_creds_path="$(mktemp /tmp/sdk-test-creds-${timestamp}-XXXX.tmp)"
+envfile="$(mktemp /tmp/sdk-test-env-${timestamp}-XXXX.tmp)"
 function cleanup {
-    rm -f ${credsfile}
+    rm -f ${tmp_aws_creds_path}
     rm -f ${envfile}
 }
 trap cleanup EXIT
@@ -51,12 +52,16 @@ else
 fi
 gradle_cache="${REPO_ROOT_DIR}/.gradle_cache"
 ssh_path="${HOME}/.ssh/ccm.pem"
+ssh_user="core"
 aws_creds_path="${HOME}/.aws/credentials"
 enterprise="true"
 headless="false"
 interactive="false"
 package_registry="false"
 docker_command=${DOCKER_COMMAND:="bash /build-tools/test_runner.sh $WORK_DIR"}
+docker_image=${DOCKER_IMAGE:-"mesosphere/dcos-commons:latest"}
+env_passthrough=
+envfile_input=
 
 function usage()
 {
@@ -72,6 +77,12 @@ function usage()
     echo "    Using an Open DC/OS cluster: skip Enterprise-only features."
     echo "  -p $ssh_path"
     echo "    Path to cluster SSH key."
+    echo "  -l $ssh_user"
+    echo "    Username to use for SSH commands into the cluster."
+    echo "  -e $env_passthrough"
+    echo "    A comma-separated list of environment variables to pass through to the running docker container"
+    echo "  --envfile $envfile_input"
+    echo "    A path to an envfile to pass to the docker container in addition to those required by the test scripts"
     echo "  -i/--interactive"
     echo "    Open a shell prompt in the docker container, without actually running any tests. Equivalent to DOCKER_COMMAND=bash"
     echo "  --headless"
@@ -138,6 +149,19 @@ case $key in
     ssh_path="$2"
     shift
     ;;
+    -l)
+    ssh_user="$2"
+    shift
+    ;;
+    -e)
+    env_passthrough="$2"
+    shift
+    ;;
+    --envfile)
+    if [[ ! -f "$2" ]]; then echo "File not found: $key $2"; exit 1; fi
+    envfile_input="$2"
+    shift
+    ;;
     -i|--interactive)
     if [[ x"$headless" == x"true" ]]; then echo "Cannot enable both --headless and --interactive: Disallowing background prompt that runs forever."; exit 1; fi
     interactive="true"
@@ -182,7 +206,7 @@ esac
 shift # past argument or value
 done
 
-if [ -z "$framework" ]; then
+if [ -z "$framework" -a x"$interactive" != x"true" ]; then
     # If FRAMEWORK_LIST only has one option, use that. Otherwise complain.
     if [ $(echo $FRAMEWORK_LIST | wc -w) == 1 ]; then
         framework=$FRAMEWORK_LIST
@@ -196,6 +220,11 @@ elif [ "$framework" = "all" ]; then
 fi
 
 volume_args="-v ${REPO_ROOT_DIR}:$WORK_DIR"
+
+if [ -z "$CLUSTER_URL" -a x"$interactive" == x"true" ]; then
+    CLUSTER_URL="$(dcos config show core.dcos_url)"
+    echo "CLUSTER_URL not specified. Using attached cluster ${CLUSTER_URL} in interactive mode"
+fi
 
 # Configure SSH key for getting into the cluster during tests
 if [ -f "$ssh_path" ]; then
@@ -235,17 +264,17 @@ fi
 
 # Write the AWS credential file (deleted on script exit)
 if [ -f "${aws_creds_path}" ]; then
-    cat $aws_creds_path > $credsfile
+    aws_credential_file_mount_target="${aws_creds_path}"
 else
     # CI environments may have creds in AWS_DEV_* envvars, map them to AWS_*:
     if [ -n "${AWS_DEV_ACCESS_KEY_ID}" -a -n "${AWS_DEV_SECRET_ACCESS_KEY}}" ]; then
-	AWS_ACCESS_KEY_ID=${AWS_DEV_ACCESS_KEY_ID}
-        AWS_SECRET_ACCESS_KEY=${AWS_DEV_SECRET_ACCESS_KEY}
+        AWS_ACCESS_KEY_ID="${AWS_DEV_ACCESS_KEY_ID}"
+        AWS_SECRET_ACCESS_KEY="${AWS_DEV_SECRET_ACCESS_KEY}"
     fi
     # Check AWS_* envvars for credentials, create temp creds file using those credentials:
     if [ -n "${AWS_ACCESS_KEY_ID}" -a -n "${AWS_SECRET_ACCESS_KEY}}" ]; then
-	echo "Writing AWS env credentials to temporary file: $credsfile"
-        cat > $credsfile <<EOF
+        echo "Writing AWS env credentials to temporary file: $tmp_aws_creds_path"
+        cat > $tmp_aws_creds_path <<EOF
 [${aws_profile}]
 aws_access_key_id = ${AWS_ACCESS_KEY_ID}
 aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}
@@ -254,8 +283,9 @@ EOF
         echo "Missing AWS credentials file (${aws_creds_path}) and AWS env (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)"
         exit 1
     fi
+    aws_credential_file_mount_target="${tmp_aws_creds_path}"
 fi
-volume_args="$volume_args -v $credsfile:/root/.aws/credentials:ro"
+volume_args="$volume_args -v $aws_credential_file_mount_target:/root/.aws/credentials:ro"
 
 if [ -n "$gradle_cache" ]; then
     echo "Setting Gradle cache to ${gradle_cache}"
@@ -292,7 +322,7 @@ if [ x"$package_registry" == x"true" ]; then
 fi
 
 if [ -n "$dcos_files_path" ]; then
-    volume_args="$volume_args -v \"${dcos_files_path}\":\"${dcos_files_path}\""
+    volume_args="$volume_args -v ${dcos_files_path}:${dcos_files_path}"
 fi
 
 if [ -n "$TEAMCITY_VERSION" ]; then
@@ -318,6 +348,7 @@ DCOS_ENTERPRISE=$enterprise
 DCOS_FILES_PATH=$dcos_files_path
 DCOS_LOGIN_PASSWORD=$DCOS_LOGIN_PASSWORD
 DCOS_LOGIN_USERNAME=$DCOS_LOGIN_USERNAME
+DCOS_SSH_USERNAME=$ssh_user
 FRAMEWORK=$framework
 PACKAGE_REGISTRY_ENABLED=$package_registry
 PACKAGE_REGISTRY_STUB_URL=$PACKAGE_REGISTRY_STUB_URL
@@ -334,13 +365,25 @@ while read line; do
     fi
 done < <(env)
 
+if [ -n "$env_passthrough" ]; then
+    # If the -e flag is specified, add the ENVVAR lines for the
+    # comma-separated list of envvars
+    for envvar_name in ${env_passthrough//,/ }; do
+        echo "$envvar_name" >> $envfile
+    done
+fi
+
+if [ -n "$envfile_input" ]; then
+    cat "${envfile_input}" >> $envfile
+fi
+
 CMD="docker run --rm \
 -t \
 ${docker_interactive_arg} \
 --env-file $envfile \
 ${volume_args} \
 -w $WORK_DIR \
-mesosphere/dcos-commons:latest \
+${docker_image} \
 ${docker_command}"
 
 echo "==="
