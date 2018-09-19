@@ -114,7 +114,8 @@ def test_multi_arg_confs(service_name=utils.SPARK_SERVICE_NAME):
         expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
         service_name=service_name,
         args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
-              "--class MultiConfs"])
+              "--class MultiConfs",
+              "--name appName"])
 
 
 @pytest.mark.sanity
