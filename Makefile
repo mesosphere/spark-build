@@ -19,6 +19,14 @@ docker-build:
 	docker build -t $(DOCKER_BUILD_IMAGE) .
 	echo $(DOCKER_BUILD_IMAGE) > $@
 
+# Pulls the spark distribution listed in the manifest as default
+SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
+manifest-dist:
+	mkdir -p $(DIST_DIR)
+	pushd $(DIST_DIR)
+	wget $(SPARK_DIST_URI)
+	popd
+
 HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
 SPARK_DIR ?= $(ROOT_DIR)/spark
 $(SPARK_DIR):
