@@ -9,10 +9,9 @@ function usage () {
   echo '         <test S3 bucket> \\'
   echo '         <test S3 folder> \\'
   echo '         <path to cluster SSH private key> \\'
-  echo '         <cluster URL> \\'
   echo '         <DCOS username> \\'
   echo '         <DCOS password> \\'
-  echo '         <cluster security mode> (optional, defaults to permissive)'
+  echo '         [<non interactive>] (optional, defaults to "interactive")'
   echo
   echo 'Example: ./run.sh \\'
   echo '           scale-tests/configs/2018-01-01.env \\'
@@ -20,14 +19,13 @@ function usage () {
   echo '           infinity-artifacts \\'
   echo '           scale-tests/2018-01-01 \\'
   echo '           ~/.ssh/dcos \\'
-  echo '           https://scaletests.mesosphere.io \\'
   echo '           john \\'
   echo '           john123 \\'
-  echo '           strict'
+  echo '           non-interactive \\'
 }
 
-if [ "${#}" -lt 8 ]; then
-  echo -e "run.sh needs at least 8 arguments but was given ${#}\\n"
+if [ "${#}" -lt 7 ]; then
+  echo -e "run.sh needs at least 7 arguments but was given ${#}\\n"
   usage
   exit 1
 fi
@@ -46,10 +44,9 @@ readonly TEST_NAME="${2:-}"
 readonly TEST_S3_BUCKET="${3:-}"
 readonly TEST_S3_FOLDER="${4:-}"
 readonly CLUSTER_SSH_KEY="${5:-}"
-readonly CLUSTER_URL="${6:-}"
-readonly DCOS_USERNAME="${7:-}"
-readonly DCOS_PASSWORD="${8:-}"
-readonly SECURITY="${9:-permissive}"
+readonly DCOS_USERNAME="${6:-}"
+readonly DCOS_PASSWORD="${7:-}"
+readonly MODE="${8:-interactive}"
 
 for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
   if ! [[ -s ${file} ]]; then
@@ -57,6 +54,15 @@ for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
     exit 1
   fi
 done
+
+if [ "${MODE}" != "interactive" ] && [ "${MODE}" != "non-interactive" ]; then
+  echo "MODE must be either 'interactive' or 'non-interactive', is '${MODE}'"
+  exit 1
+fi
+
+function is_interactive () {
+  [ "${MODE}" = "interactive" ]
+}
 
 readonly AWS_ACCOUNT='Team 10'
 readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/scale-testing/stub-universe-spark.json' # Spark with quota support.
@@ -69,6 +75,25 @@ readonly TEST_DIRECTORY="${TEST_NAME}"
 readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
 source "${TEST_CONFIG}"
+
+if [ "${SECURITY}" != "permissive" ] && [ "${SECURITY}" != "strict" ]; then
+  echo "SECURITY must be either 'permissive' or 'strict', is '${SECURITY}'"
+  exit 1
+fi
+
+for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
+                        SHOULD_INSTALL_NON_GPU_DISPATCHERS \
+                        SHOULD_INSTALL_GPU_DISPATCHERS \
+                        SHOULD_RUN_FAILING_STREAMING_JOBS \
+                        SHOULD_RUN_FINITE_STREAMING_JOBS \
+                        SHOULD_RUN_INFINITE_STREAMING_JOBS \
+                        SHOULD_RUN_BATCH_JOBS \
+                        SHOULD_RUN_GPU_BATCH_JOBS; do
+  if [ "${!boolean_option}" != "true" ] && [ "${!boolean_option}" != "false" ]; then
+    echo "${boolean_option} must be either 'true' or 'false', is '${!boolean_option}'"
+    exit 1
+  fi
+done
 
 function log {
   local -r message="${*:-}"
@@ -85,70 +110,23 @@ function container_exec () {
 declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
 
-SHOULD_INSTALL_INFRASTRUCTURE=false
-SHOULD_INSTALL_NON_GPU_DISPATCHERS=false
-SHOULD_INSTALL_GPU_DISPATCHERS=false
-SHOULD_RUN_FAILING_STREAMING_JOBS=false
-SHOULD_RUN_FINITE_STREAMING_JOBS=false
-SHOULD_RUN_INFINITE_STREAMING_JOBS=false
-SHOULD_RUN_BATCH_JOBS=false
-SHOULD_RUN_GPU_BATCH_JOBS=false
-
-echo
-read -p "Install infrastructure? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_INSTALL_INFRASTRUCTURE=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Install non-GPU dispatchers? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_INSTALL_NON_GPU_DISPATCHERS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Install GPU dispatchers? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_INSTALL_GPU_DISPATCHERS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Run failing streaming jobs? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_RUN_FAILING_STREAMING_JOBS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Run finite streaming jobs? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_RUN_FINITE_STREAMING_JOBS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Run infinite streaming jobs? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_RUN_INFINITE_STREAMING_JOBS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Run batch jobs? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_RUN_BATCH_JOBS=true;;
-  * ) ;;
-esac
-
-echo
-read -p "Run GPU batch jobs? [y/N]: " ANSWER
-case "${ANSWER}" in
-  [Yy]* ) SHOULD_RUN_GPU_BATCH_JOBS=true;;
-  * ) ;;
-esac
+if is_interactive; then
+  for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
+                          SHOULD_INSTALL_NON_GPU_DISPATCHERS \
+                          SHOULD_INSTALL_GPU_DISPATCHERS \
+                          SHOULD_RUN_FAILING_STREAMING_JOBS \
+                          SHOULD_RUN_FINITE_STREAMING_JOBS \
+                          SHOULD_RUN_INFINITE_STREAMING_JOBS \
+                          SHOULD_RUN_BATCH_JOBS \
+                          SHOULD_RUN_GPU_BATCH_JOBS; do
+    echo
+    read -p "${boolean_option}? [y/N]: " ANSWER
+    case "${ANSWER}" in
+      [Yy]* ) eval "${boolean_option}"=true;;
+      * )     eval "${boolean_option}"=false;;
+    esac
+  done
+fi
 
 if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
   log 'Container already running'

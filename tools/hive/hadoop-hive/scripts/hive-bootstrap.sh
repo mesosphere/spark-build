@@ -4,7 +4,7 @@ set -x
 printenv | cat >> /root/.bashrc
 
 # hadoop bootstrap
-/etc/hadoop-bootstrap.sh -d
+/etc/hadoop-bootstrap.sh
 
 # init and start sentry
 SENTRY_CONF_TEMPLATE=$SENTRY_HOME/conf/sentry-site.xml.template
@@ -58,8 +58,9 @@ $HIVE_HOME/bin/hive --service hiveserver2 &
 
 if [[ $1 == "-bash" ]]; then
   /bin/bash
-fi
-
-if [[ $1 == "-d" ]]; then
+elif [[ $1 == "-d" ]]; then
   while true; do sleep 10000; done
+else
+  echo "Unknown argument $1"
+  echo "Usage: ./hive-bootstrap.sh [ -bash | -d ]"
 fi

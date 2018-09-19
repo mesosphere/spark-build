@@ -2,22 +2,6 @@ FROM ubuntu:16.04
 
 USER root
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
-ENV HADOOP_VERSION 2.6.0
-ENV CDH_VERSION 5
-ENV CDH_EXACT_VERSION 5.11.0
-ENV HADOOP_HOME /usr/local/hadoop
-ENV HADOOP_PREFIX /usr/local/hadoop
-ENV HADOOP_CONF_DIR /usr/local/hadoop/etc/hadoop
-ENV HIVE_HOME /usr/local/hive
-ENV HIVE_CONF /usr/local/hive/conf
-ENV HIVE_VERSION 1.1.0
-ENV POSTGRES_VERSION 9.5
-ENV POSTGRESQL_MAIN /var/lib/postgresql/9.5/main/
-ENV POSTGRESQL_CONFIG_FILE /var/lib/postgresql/9.5/main/postgresql.conf
-ENV POSTGRESQL_BIN /usr/lib/postgresql/9.5/bin/postgres
-ENV PGPASSWORD hive
-
 # install dev tools
 RUN apt-get update && \
     apt-get install -y curl wget tar openssh-server openssh-client rsync python-software-properties apt-file apache2 && \
@@ -62,6 +46,10 @@ RUN apt-get update && \
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV PATH $PATH:$JAVA_HOME/bin
 
+ENV CDH_VERSION 5
+ENV CDH_EXACT_VERSION 5.11.0
+ENV HADOOP_VERSION 2.6.0
+
 # download cdh hadoop
 RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION}.tar.gz \
     | tar -xzC /usr/local && \
@@ -69,6 +57,7 @@ RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/had
     ln -s ./hadoop-${HADOOP_VERSION}-cdh${CDH_EXACT_VERSION} hadoop
 
 # need to define JAVA_HOME inside hadoop-env.sh
+ENV HADOOP_PREFIX /usr/local/hadoop
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/lib/jvm/java-8-oracle\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
 # pseudo distributed configurations of hadoop
@@ -85,6 +74,7 @@ RUN chmod 700 /etc/hadoop-bootstrap.sh
 RUN chmod +x /usr/local/hadoop/etc/hadoop/*-env.sh
 
 # add hadoop to path
+ENV HADOOP_HOME /usr/local/hadoop
 ENV PATH $PATH:$HADOOP_HOME:$HADOOP_HOME/bin
 
 #for exposed ports refer
@@ -92,16 +82,11 @@ ENV PATH $PATH:$HADOOP_HOME:$HADOOP_HOME/bin
 EXPOSE 50010 50020 50070 50075 50090 8020 9000 10020 19888 8030 8031 8032 8033 8040 8042 8088
 
 # download cdh hive
-RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/hive-1.1.0-cdh${CDH_EXACT_VERSION}.tar.gz \
+ENV HIVE_VERSION 1.1.0
+RUN curl -L http://archive.cloudera.com/cdh${CDH_VERSION}/cdh/${CDH_VERSION}/hive-${HIVE_VERSION}-cdh${CDH_EXACT_VERSION}.tar.gz \
     | tar -xzC /usr/local && \
     cd /usr/local && \
-    mv hive-1.1.0-cdh${CDH_EXACT_VERSION} hive
-
-# add hive to path
-ENV PATH $PATH:$HIVE_HOME/bin
-
-# add postgresql jdbc jar to classpath
-RUN ln -s /usr/share/java/postgresql-jdbc4.jar $HIVE_HOME/lib/postgresql-jdbc4.jar
+    mv hive-${HIVE_VERSION}-cdh${CDH_EXACT_VERSION} hive
 
 # to configure postgres as hive metastore backend
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
@@ -110,31 +95,40 @@ RUN apt-get update -y && \
     apt-get -yq install vim postgresql-9.5 libpostgresql-jdbc-java && \
     rm -rf /var/lib/apt/lists/*
 
+# add hive to path
+ENV HIVE_HOME /usr/local/hive
+ENV PATH $PATH:$HIVE_HOME/bin
+
+# add postgresql jdbc jar to classpath
+RUN ln -s /usr/share/java/postgresql-jdbc4.jar $HIVE_HOME/lib/postgresql-jdbc4.jar
+
+ENV PGPASSWORD hive
 USER postgres
+
 # initialize hive metastore db
 # create metastore db, hive user and assign privileges
-RUN cd $HIVE_HOME/scripts/metastore/upgrade/postgres/ &&\
-     /etc/init.d/postgresql start &&\
-     psql --command "CREATE DATABASE metastore;" &&\
+RUN cd $HIVE_HOME/scripts/metastore/upgrade/postgres/ && \
+     /etc/init.d/postgresql start && \
+     psql --command "CREATE DATABASE metastore;" && \
      psql --command "CREATE USER hive WITH PASSWORD 'hive';" && \
      psql --command "ALTER USER hive WITH SUPERUSER;" && \
      psql --command "GRANT ALL PRIVILEGES ON DATABASE metastore TO hive;" && \
      psql -U hive -d metastore -h localhost -f hive-schema-${HIVE_VERSION}.postgres.sql
 
-
 # revert back to default user
 USER root
 
 # disable ssl in postgres.conf
+ENV POSTGRES_VERSION 9.5
+ENV POSTGRESQL_CONFIG_FILE /var/lib/postgresql/${POSTGRES_VERSION}/main/postgresql.conf
+ENV POSTGRESQL_MAIN /var/lib/postgresql/9.5/main/
 ADD conf/postgresql.conf $POSTGRESQL_MAIN
-RUN echo $POSTGRESQL_MAIN
-RUN echo $POSTGRESQL_CONFIG_FILE
 RUN chown postgres:postgres $POSTGRESQL_CONFIG_FILE
 RUN sed -i -e 's/peer/md5/g' /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
 
 # copy config, sql, data files to /opt/files
+ENV HIVE_CONF /usr/local/hive/conf
 RUN mkdir /opt/files
-RUN echo $HIVE_CONF
 ADD templates/hive-site.xml.template /opt/files/
 ADD templates/hive-site.xml.template $HIVE_CONF/hive-site.xml.template
 
