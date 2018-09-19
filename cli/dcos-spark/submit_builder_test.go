@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
@@ -37,10 +38,10 @@ func TestCliTestSuite(t *testing.T) {
 }
 
 // test spaces
-func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
+func (suite *CliTestSuite) TestTransformSubmitArgs() {
 	_, args := sparkSubmitArgSetup()
-	inputArgs := "--conf    spark.app.name=kerberosStreaming   --conf spark.cores.max=8"
-	submitArgs, _ := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	inputArgs := "--conf    spark.app.name=kerberosStreaming   --conf spark.cores.max=8 main.jar 100"
+	submitArgs, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	if "--conf=spark.app.name=kerberosStreaming" != submitArgs[0] {
 		suite.T().Errorf("Failed to reduce spaces while cleaning submit args.")
 	}
@@ -50,12 +51,54 @@ func (suite *CliTestSuite) TestCleanUpSubmitArgs() {
 	}
 }
 
+func (suite *CliTestSuite) TestTransformSubmitArgsWithMulitpleValues() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.driver.extraJavaOptions='-XX:+PrintGC -Dparam1=val1 -Dparam2=val2' main.py 100"
+	expected := "--conf=spark.driver.extraJavaOptions=-XX:+PrintGC -Dparam1=val1 -Dparam2=val2"
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual[0])
+}
+
+func (suite *CliTestSuite) TestTransformSubmitArgsWithSpecialCharacters() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.driver.extraJavaOptions='-Dparam1=\"val 1?\" -Dparam2=val\\ 2! -Dmulti.dot.param3=\"val\\ 3\" -Dpath=$PATH' main.py 100"
+	expected := "--conf=spark.driver.extraJavaOptions=-Dparam1=\"val 1?\" -Dparam2=val\\ 2! -Dmulti.dot.param3=\"val\\ 3\" -Dpath=$PATH"
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual[0])
+}
+
+func (suite *CliTestSuite) TestTransformSubmitArgsConfsAlreadyHasEquals() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf=spark.driver.extraJavaOptions='-Dparam1=val1' main.py 100"
+	expected := "--conf=spark.driver.extraJavaOptions=-Dparam1=val1"
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual[0])
+}
+
+func (suite *CliTestSuite) TestTransformSubmitArgsMultilines() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := `--conf spark.driver.extraJavaOptions='-XX:+PrintGC -XX:+PrintGCTimeStamps' \
+	--supervise --driver-memory 1g \
+	main.py 100`
+	expected := []string{"--conf=spark.driver.extraJavaOptions=-XX:+PrintGC -XX:+PrintGCTimeStamps", "--supervise", "--driver-memory=1g", "main.py"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+
+func (suite *CliTestSuite) TestIsSparkApp() {
+	assert.True(suite.T(), isSparkApp("mainApp.jar"))
+	assert.True(suite.T(), isSparkApp("pythonFile.py"))
+	assert.True(suite.T(), isSparkApp("file.R"))
+	assert.False(suite.T(), isSparkApp("app.c"))
+	assert.False(suite.T(), isSparkApp("randomFlag"))
+}
+
 // test scopts pattern for app args when have full submit args
 func (suite *CliTestSuite) TestScoptAppArgs() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := `--driver-cores 1 --conf spark.cores.max=1 --driver-memory 512M
   --class org.apache.spark.examples.SparkPi http://spark-example.jar --input1 value1 --input2 value2`
-	submitArgs, appFlags := cleanUpSubmitArgs(inputArgs, args.boolVals)
+	submitArgs, appFlags := transformSubmitArgs(inputArgs, args.boolVals)
 
 	if "--input1" != appFlags[0] {
 		suite.T().Errorf("Failed to parse app args.")
@@ -91,6 +134,7 @@ func (suite *CliTestSuite) TestPayloadSimple() {
 		"--driver-cores %s "+
 			"--conf spark.cores.max=%s "+
 			"--driver-memory %s "+
+			"--conf spark.driver.extraJavaOptions='-XX:+PrintGC -Dparam1=val1 -Dparam2=val2' "+
 			"--class %s "+
 			"%s --input1 value1 --input2 value2", driverCores, maxCores, driverMemory, mainClass, appJar)
 
@@ -124,6 +168,7 @@ func (suite *CliTestSuite) TestPayloadSimple() {
 		"spark.submit.deployMode":                    "cluster",
 		"spark.mesos.driver.labels":                  fmt.Sprintf("DCOS_SPACE:%s", marathonAppId),
 		"spark.driver.memory":                        driverMemory,
+		"spark.driver.extraJavaOptions":              "-XX:+PrintGC -Dparam1=val1 -Dparam2=val2",
 		"spark.jars":                                 appJar,
 	}
 

@@ -171,7 +171,7 @@ func handleCommands(app *kingpin.Application) {
 
 	run := app.Command("run", "Submit a job to the Spark Mesos Dispatcher").Action(cmd.runSubmit)
 	run.Flag("submit-args", fmt.Sprintf("Arguments matching what would be sent to 'spark-submit': %s",
-		sparkSubmitHelp())).Required().PlaceHolder("ARGS").StringVar(&cmd.submitArgs)
+		sparkSubmitHelp())).Required().PlaceHolder("\"ARGS\"").StringVar(&cmd.submitArgs)
 	// TODO this should be moved to submit args
 	run.Flag("docker-image", "Docker image to run the job within").
 		Default("").
