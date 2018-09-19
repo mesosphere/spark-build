@@ -102,7 +102,9 @@ ENV PATH $PATH:$HIVE_HOME/bin
 # add postgresql jdbc jar to classpath
 RUN ln -s /usr/share/java/postgresql-jdbc4.jar $HIVE_HOME/lib/postgresql-jdbc4.jar
 
+ENV PGPASSWORD hive
 USER postgres
+
 # initialize hive metastore db
 # create metastore db, hive user and assign privileges
 RUN cd $HIVE_HOME/scripts/metastore/upgrade/postgres/ && \
