@@ -38,11 +38,38 @@
 
   <property>
     <name>hive.users.in.admin.role</name>
-    <value>hdfs,hive</value>
+    <value>hive</value>
+  </property>
+
+  <!-- Hiveserver2, Sentry -->
+  <property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
   </property>
 
   <property>
-    <name>hive.security.authorization.manager</name>
-    <value>org.apache.hadoop.hive.ql.security.authorization.DefaultHiveAuthorizationProvider</value>
+   <name>hive.security.authorization.task.factory</name>
+   <value>org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl</value>
+  </property>
+
+  <property>
+    <name>hive.server2.session.hook</name>
+    <value>org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook</value>
+  </property>
+
+  <!-- Metastore, Sentry -->
+  <property>
+    <name>hive.metastore.filter.hook</name>
+    <value>org.apache.sentry.binding.metastore.SentryMetaStoreFilterHook</value>
+  </property>
+
+  <property>
+     <name>hive.metastore.pre.event.listeners</name>
+     <value>org.apache.sentry.binding.metastore.MetastoreAuthzBinding</value>
+  </property>
+
+  <property>
+     <name>hive.metastore.event.listeners</name>
+     <value>org.apache.sentry.binding.metastore.SentryMetastorePostEventListener</value>
   </property>
 </configuration>
