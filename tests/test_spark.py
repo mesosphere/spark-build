@@ -350,13 +350,9 @@ def test_unique_vips():
         # verify dispatcher-ui is reachable at VIP
         ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher1_ui))
         assert ok
-        
+
         ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher2_ui))
         assert ok
-
-        LOGGER.info("hostname for spark1: {}".format(dispatcher1_ui))
-        LOGGER.info("hostname for spark2: {}".format(dispatcher2_ui))
-        
     finally: 
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
