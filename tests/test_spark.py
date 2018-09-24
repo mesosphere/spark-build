@@ -123,7 +123,8 @@ def test_spark_app_name(service_name=utils.SPARK_SERVICE_NAME):
         app_args="",
         expected_output="This is an appName",
         service_name=service_name,
-        args=["--name 'This is an appName'"])
+        args=["--name 'This is an appName'",
+              "--class MultiConfs"])
 
 
 @pytest.mark.sanity
