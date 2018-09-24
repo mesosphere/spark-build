@@ -60,7 +60,7 @@
             "protocol": "tcp",
             "name": "dispatcher",
             "labels": {
-                "VIP_0": "spark-dispatcher:7077"
+                "VIP_0": "{{service.name}}-dispatcher:7077"
             }
         },
         {
@@ -68,7 +68,7 @@
             "protocol": "tcp",
             "name": "dispatcher-ui",
             "labels": {
-                "VIP_1": "spark-dispatcher:4040"
+                "VIP_1": "{{service.name}}-dispatcher:4040"
             }
         },
         {
@@ -76,7 +76,7 @@
             "protocol": "tcp",
             "name": "dispatcher-proxy",
             "labels": {
-                "VIP_2": "spark-dispatcher:80"
+                "VIP_2": "{{service.name}}-dispatcher:80"
             }
         }
     ],

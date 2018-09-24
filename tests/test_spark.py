@@ -13,6 +13,8 @@ import pytest
 import shakedown
 
 import sdk_cmd
+import sdk_hosts
+import sdk_install
 import sdk_security
 import sdk_tasks
 import sdk_utils
@@ -332,3 +334,25 @@ def test_driver_executor_tls():
         sdk_cmd.run_cli('security secrets delete /{}'.format(keystore_secret))
         sdk_cmd.run_cli('security secrets delete /{}'.format(truststore_secret))
         sdk_cmd.run_cli('security secrets delete /{}'.format(my_secret))
+
+
+@pytest.mark.sanity
+def test_unique_vips():
+    spark1_service_name = "test/groupa/spark"
+    spark2_service_name = "test/groupb/spark"
+    try: 
+        utils.require_spark(spark1_service_name)
+        utils.require_spark(spark2_service_name)
+
+        dispatcher1_ui = sdk_hosts.vip_host("marathon", "{}-dispatcher".format(spark1_service_name), 4040)
+        dispatcher2_ui = sdk_hosts.vip_host("marathon", "{}-dispatcher".format(spark2_service_name), 4040)
+
+        # verify dispatcher-ui is reachable at VIP
+        ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher1_ui))
+        assert ok
+
+        ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher2_ui))
+        assert ok
+    finally: 
+        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
+        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
