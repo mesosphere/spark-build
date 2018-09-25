@@ -12,7 +12,7 @@ mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
 
-
+SPARK_WORKING_DIR=${PWD}
 
 cd $MESOS_SANDBOX
 
@@ -85,6 +85,14 @@ if [ -n "${STATSD_UDP_HOST}" ] && [ -n "${STATSD_UDP_PORT}" ]; then
 else
     echo "spark-env: Skipping metrics configuration: STATSD_UDP_HOST/STATSD_UDP_PORT are not defined" >&2
     echo "spark-env: StatsD metrics require Mesos UCR. For dispatcher metrics, enable the 'UCR_containerizer' option. For driver metrics, include '--conf spark.mesos.containerizer=mesos' in your run"
+fi
+
+if [ -n "${STATSD_UDP_HOST}" ] && [ -n "${STATSD_UDP_PORT}" ]; then
+    sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
+        -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
+        ${SPARK_WORKING_DIR}/conf/metrics.properties.template >${SPARK_WORKING_DIR}/conf/metrics.properties
+else
+    echo "spark-env: No STATSD_UDP environment variables were defined" >&2
 fi
 
 # Options read when launching programs locally with

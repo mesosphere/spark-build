@@ -31,6 +31,14 @@ function set_log_level() {
         ${SPARK_DIST_PATH}/conf/log4j.properties.template >${SPARK_DIST_PATH}/conf/log4j.properties
 }
 
+function set_statsd_address() {
+  if [ "$STATSD_UDP_HOST" != "" ] && [ "$STATSD_UDP_PORT" != "" ]; then
+    sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
+        -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
+        ${SPARK_DIST_PATH}/conf/metrics.properties.template >${SPARK_DIST_PATH}/conf/metrics.properties
+  fi
+}
+
 function add_if_non_empty() {
 	if [ -n "$2" ]; then
 		echo "$1=$2" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
@@ -61,6 +69,7 @@ function configure_properties() {
 
 export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 set_log_level
+set_statsd_address
 export_daemon_opts
 configure_properties
 ZK="master.mesos:2181"

@@ -77,6 +77,10 @@ RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
 ADD dist /opt/spark/dist
 ADD krb5.conf.mustache /etc/
 
+# Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
+# current version: Spark 2.2.1, Scala 2.11
+ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/  
+
 # required to run as nobody
 RUN chmod -R ugo+rw /etc/nginx
 RUN chmod -R ugo+rw /etc/krb5.conf
