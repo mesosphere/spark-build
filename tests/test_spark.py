@@ -344,8 +344,8 @@ def test_unique_vips():
         utils.require_spark(spark1_service_name)
         utils.require_spark(spark2_service_name)
 
-        dispatcher1_ui = sdk_hosts.vip_host("marathon", "{}-dispatcher".format(spark1_service_name), 4040)
-        dispatcher2_ui = sdk_hosts.vip_host("marathon", "{}-dispatcher".format(spark2_service_name), 4040)
+        dispatcher1_ui = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark1_service_name), 4040)
+        dispatcher2_ui = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark2_service_name), 4040)
 
         # verify dispatcher-ui is reachable at VIP
         ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher1_ui))
