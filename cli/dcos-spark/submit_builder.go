@@ -6,14 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mesosphere/dcos-commons/cli/client"
-	"github.com/mesosphere/dcos-commons/cli/config"
-	"gopkg.in/alecthomas/kingpin.v3-unstable"
 	"log"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/mattn/go-shellwords"
+	"github.com/mesosphere/dcos-commons/cli/client"
+	"github.com/mesosphere/dcos-commons/cli/config"
+	"gopkg.in/alecthomas/kingpin.v3-unstable"
 )
 
 var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
@@ -146,8 +148,10 @@ Args:
 		StringVar(&args.mainClass) // note: spark-submit can autodetect, but only for file://local.jar
 	submit.Flag("properties-file", "Path to file containing whitespace-separated Spark property defaults.").
 		PlaceHolder("PATH").ExistingFileVar(&args.propertiesFile)
-	submit.Flag("conf", "Custom Spark configuration properties.").
-		PlaceHolder("PROP=VALUE").StringMapVar(&args.properties)
+	submit.Flag("conf", "Custom Spark configuration properties. "+
+		"If submitting properties with multiple values, "+
+		"wrap in single quotes e.g. --conf prop='val1 val2'").
+		PlaceHolder("prop=value").StringMapVar(&args.properties)
 	submit.Flag("kerberos-principal", "Principal to be used to login to KDC.").
 		PlaceHolder("user@REALM").Default("").StringVar(&args.kerberosPrincipal)
 	submit.Flag("keytab-secret-path", "Path to Keytab in secret store to be used in the Spark drivers").
@@ -280,75 +284,84 @@ func parseApplicationFile(args *sparkArgs) error {
 	return nil
 }
 
-func cleanUpSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
-
-	// collapse two or more spaces to one.
-	argsCompacted := collapseSpacesPattern.ReplaceAllString(argsStr, " ")
+// we use Kingpin to parse CLI commands and options
+// spark-submit by convention uses '--arg val' while kingpin only supports --arg=val
+// transformSubmitArgs turns the former into the latter
+func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []string) {
 	// clean up any instances of shell-style escaped newlines: "arg1\\narg2" => "arg1 arg2"
-	argsCleaned := strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsCompacted, " "))
-	// HACK: spark-submit uses '--arg val' by convention, while kingpin only supports '--arg=val'.
-	//       translate the former into the latter for kingpin to parse.
-	args := strings.Split(argsCleaned, " ")
-	argsEquals := make([]string, 0)
-	appFlags := make([]string, 0)
-	i := 0
-ARGLOOP:
-	for i < len(args) {
-		arg := args[i]
-		if !strings.HasPrefix(arg, "-") {
-			// looks like we've exited the flags entirely, and are now at the jar and/or args.
-			// any arguments without a dash at the front should've been joined to preceding keys.
-			// flush the rest and exit.
-			for i < len(args) {
-				arg = args[i]
-				// if we have a --flag going to the application we need to take the arg (flag) and the value ONLY
-				// if it's not of the format --flag=val which scopt allows
-				if strings.HasPrefix(arg, "-") {
-					appFlags = append(appFlags, arg)
-					if strings.Contains(arg, "=") || (i+1) >= len(args) {
-						i += 1
-					} else {
-						// if there's a value with this flag, add it
-						if !strings.HasPrefix(args[i+1], "-") {
-							appFlags = append(appFlags, args[i+1])
-							i += 1
-						}
-						i += 1
-					}
-				} else {
-					argsEquals = append(argsEquals, arg)
-					i += 1
-				}
+	argsStr = strings.TrimSpace(backslashNewlinePattern.ReplaceAllLiteralString(argsStr, " "))
+	// collapse two or more spaces to one
+	argsStr = collapseSpacesPattern.ReplaceAllString(argsStr, " ")
+	// parse argsStr into []string args maintaining shell escaped sequences
+	args, err := shellwords.Parse(argsStr)
+	if err != nil {
+		log.Fatalf("Could not parse string args correctly. Error: %v", err)
+	}
+	sparkArgs, appArgs := make([]string, 0), make([]string, 0)
+LOOP:
+	for i := 0; i < len(args); {
+		current := strings.TrimSpace(args[i])
+		switch {
+		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
+		// if current is a spark jar/app, we've processed all flags
+		case isSparkApp(current):
+			sparkArgs = append(sparkArgs, args[i])
+			appArgs = append(appArgs, args[i+1:]...)
+			break LOOP
+		case strings.HasPrefix(current, "--"):
+			if isBoolFlag(boolVals, current) {	
+				sparkArgs = append(sparkArgs, current)
+				i++
+				continue LOOP
 			}
-			break
-		}
-		// join this arg to the next arg if...:
-		// 1. we're not at the last arg in the array
-		// 2. we start with "--"
-		// 3. we don't already contain "=" (already joined)
-		// 4. we aren't a boolean value (no val to join)
-		if i < len(args)-1 && strings.HasPrefix(arg, "--") && !strings.Contains(arg, "=") {
-			// check for boolean:
-			for _, boolVal := range boolVals {
-				if boolVal.flagName == arg[2:] {
-					argsEquals = append(argsEquals, arg)
-					i += 1
-					continue ARGLOOP
-				}
+			if strings.Contains(current, "=") {
+				// already in the form arg=val, no merge required
+				sparkArgs = append(sparkArgs, current)
+				i++
+				continue LOOP
 			}
-			// merge this --key against the following val to get --key=val
-			argsEquals = append(argsEquals, arg+"="+args[i+1])
+			// otherwise, merge current with next into form arg=val; eg --driver-memory=512m
+			next := args[i+1]
+			sparkArgs = append(sparkArgs, current+"="+next)
 			i += 2
-		} else {
-			// already joined or at the end, pass through:
-			argsEquals = append(argsEquals, arg)
-			i += 1
+		default:
+			// if not a flag or jar, current is a continuation of the last arg and should not have been split
+			// eg extraJavaOptions="-Dparam1 -Dparam2" was parsed as [extraJavaOptions, -Dparam1, -Dparam2]
+			combined := sparkArgs[len(sparkArgs)-1] + " " + current
+			sparkArgs = append(sparkArgs[:len(sparkArgs)-1], combined)
+			i++
 		}
 	}
-	client.PrintVerbose("Translated spark-submit arguments: '%s'", argsEquals)
-	client.PrintVerbose("Translated application arguments: '%s'", appFlags)
+	if config.Verbose {
+		client.PrintVerbose("Translated spark-submit arguments: '%s'", strings.Join(sparkArgs, ", "))
+		client.PrintVerbose("Translated application arguments: '%s'", strings.Join(appArgs, ", "))
+	}
+	return sparkArgs, appArgs
+}
 
-	return argsEquals, appFlags
+var acceptedSparkAppExtensions = []string{
+	".jar",
+	".py",
+	".R",
+}
+
+func isSparkApp(str string) bool {
+	for _, ext := range acceptedSparkAppExtensions {
+		if strings.HasSuffix(str, ext) {
+			return true
+		}
+	}
+	return false
+}
+
+// check if string is a boolean flag (eg --supervise)
+func isBoolFlag(boolVals []*sparkVal, str string) bool {
+	for _, boolVal := range boolVals {
+		if boolVal.flagName == str[2:] {
+			return true
+		}
+	}
+	return false
 }
 
 func getValsFromPropertiesFile(path string) map[string]string {
@@ -416,7 +429,7 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 	// then map flags
 	submit, args := sparkSubmitArgSetup() // setup
 	// convert and get application flags, add them to the args passed to the spark app
-	submitArgs, appFlags := cleanUpSubmitArgs(cmd.submitArgs, args.boolVals)
+	submitArgs, appFlags := transformSubmitArgs(cmd.submitArgs, args.boolVals)
 	args.appArgs = append(args.appArgs, appFlags...)
 	_, err := submit.Parse(submitArgs)
 
