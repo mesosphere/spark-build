@@ -46,7 +46,7 @@ readonly TEST_S3_FOLDER="${4:-}"
 readonly CLUSTER_SSH_KEY="${5:-}"
 readonly DCOS_USERNAME="${6:-}"
 readonly DCOS_PASSWORD="${7:-}"
-readonly MODE="${8:-interactive}"
+readonly MODE="${8:-non-interactive}"
 
 for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
   if ! [[ -s ${file} ]]; then
@@ -71,7 +71,7 @@ readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
 readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
 readonly LOG_FILE="${TEST_NAME}.log"
-readonly TEST_DIRECTORY="${TEST_NAME}"
+readonly TEST_DIRECTORY="${TEST_NAME}_$(date +%Y%m%d)"
 readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 
 source "${TEST_CONFIG}"
@@ -197,7 +197,7 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
       "${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
-  log 'Skipping infrastructure installation' 
+  log 'Skipping infrastructure installation'
 fi
 
 if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
