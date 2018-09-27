@@ -46,7 +46,7 @@ readonly TEST_S3_FOLDER="${4:-}"
 readonly CLUSTER_SSH_KEY="${5:-}"
 readonly DCOS_USERNAME="${6:-}"
 readonly DCOS_PASSWORD="${7:-}"
-readonly MODE="${8:-interactive}"
+readonly MODE="${8:-non-interactive}"
 
 for file in "${CLUSTER_SSH_KEY}" "${TEST_CONFIG}"; do
   if ! [[ -s ${file} ]]; then
