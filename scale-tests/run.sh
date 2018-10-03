@@ -175,7 +175,7 @@ else
     bash -c "while sleep ${DCOS_CLI_REFRESH_INTERVAL_SEC}; do
       echo 'Refreshing DC/OS CLI authentication (interval: ${DCOS_CLI_REFRESH_INTERVAL_SEC}s)'
       dcos auth login --username=${DCOS_USERNAME} --password=${DCOS_PASSWORD}
-    done | tee -a ${LOG_FILE}"
+    done" | tee -a "${LOG_FILE}"
 
   container_exec \
     dcos package install --yes dcos-enterprise-cli
