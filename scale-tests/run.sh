@@ -173,9 +173,11 @@ else
   # This will refresh the DC/OS CLI authentication periodically in the background.
   docker exec -d "${CONTAINER_NAME}" \
     bash -c "while sleep ${DCOS_CLI_REFRESH_INTERVAL_SEC}; do
+      date
       echo 'Refreshing DC/OS CLI authentication (interval: ${DCOS_CLI_REFRESH_INTERVAL_SEC}s)'
       dcos auth login --username=${DCOS_USERNAME} --password=${DCOS_PASSWORD}
-    done" | tee -a "${LOG_FILE}"
+      echo
+    done | tee -a /tmp/dcos-auth-login-refresh.log" | tee -a "${LOG_FILE}"
 
   container_exec \
     dcos package install --yes dcos-enterprise-cli
