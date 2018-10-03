@@ -1,3 +1,5 @@
+from builtins import Exception
+
 import shakedown
 
 import logging
@@ -38,7 +40,7 @@ if not MESOS_SPARK_TEST_JAR_URL and not os.path.exists(MESOS_SPARK_TEST_JAR_PATH
 
 SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
-SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark")
+SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark95")
 FOLDERED_SPARK_SERVICE_NAME = "/path/to/" + SPARK_SERVICE_NAME
 SPARK_USER = os.getenv("SPARK_USER", "nobody")
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
@@ -82,9 +84,9 @@ def teardown_spark(service_name=SPARK_SERVICE_NAME, zk='spark_mesos_dispatcher')
         service_account='spark-principal-ignored',
         zk=zk)
 
-    if not sdk_utils.dcos_version_less_than('1.10'):
+    #if not sdk_utils.dcos_version_less_than('1.10'):
         # On 1.10+, sdk_uninstall doesn't run janitor. However Spark always needs it for ZK cleanup.
-        sdk_install.retried_run_janitor(service_name, 'spark-role-unused', 'spark-principal-ignored', zk)
+        #sdk_install.retried_run_janitor(service_name, 'spark-role-unused', 'spark-principal-ignored', zk)
 
 
 def _get_spark_options(service_name, additional_options):
