@@ -73,6 +73,7 @@ readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
 readonly LOG_FILE="${TEST_NAME}.log"
 readonly TEST_DIRECTORY="${TEST_NAME}_$(date +%Y%m%d)"
 readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+readonly DCOS_CLI_REFRESH_INTERVAL_SEC=600 # 10 minutes.
 
 source "${TEST_CONFIG}"
 
@@ -129,7 +130,7 @@ if is_interactive; then
 fi
 
 if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
-  log 'Container already running'
+  log "Container '${CONTAINER_NAME}' already running, skipping Docker image build"
 else
   git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
 
@@ -168,6 +169,15 @@ else
       --username="${DCOS_USERNAME}" \
       --password="${DCOS_PASSWORD}" \
       "${CLUSTER_URL}"
+
+  # This will refresh the DC/OS CLI authentication periodically in the background.
+  docker exec -d "${CONTAINER_NAME}" \
+    bash -c "while sleep ${DCOS_CLI_REFRESH_INTERVAL_SEC}; do
+      date
+      echo 'Refreshing DC/OS CLI authentication (interval: ${DCOS_CLI_REFRESH_INTERVAL_SEC}s)'
+      dcos auth login --username=${DCOS_USERNAME} --password=${DCOS_PASSWORD}
+      echo
+    done | tee -a /tmp/dcos-auth-login-refresh.log" | tee -a "${LOG_FILE}"
 
   container_exec \
     dcos package install --yes dcos-enterprise-cli
