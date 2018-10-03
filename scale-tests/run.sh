@@ -73,7 +73,7 @@ readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
 readonly LOG_FILE="${TEST_NAME}.log"
 readonly TEST_DIRECTORY="${TEST_NAME}_$(date +%Y%m%d)"
 readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
-readonly DCOS_CLI_REFRESH_INTERVAL=600 # 10 minutes.
+readonly DCOS_CLI_REFRESH_INTERVAL_SEC=600 # 10 minutes.
 
 source "${TEST_CONFIG}"
 
@@ -172,8 +172,8 @@ else
 
   # This will refresh the DC/OS CLI authentication periodically in the background.
   docker exec -d "${CONTAINER_NAME}" \
-    bash -c "while sleep ${DCOS_CLI_REFRESH_INTERVAL}; do
-      echo 'Refreshing DC/OS CLI authentication (interval: ${DCOS_CLI_REFRESH_INTERVAL}s)'
+    bash -c "while sleep ${DCOS_CLI_REFRESH_INTERVAL_SEC}; do
+      echo 'Refreshing DC/OS CLI authentication (interval: ${DCOS_CLI_REFRESH_INTERVAL_SEC}s)'
       dcos auth login --username=${DCOS_USERNAME} --password=${DCOS_PASSWORD}
     done | tee -a ${LOG_FILE}"
 
