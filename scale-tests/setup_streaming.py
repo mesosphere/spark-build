@@ -83,6 +83,7 @@ def install_package(package_name: str,
         package_name,
         service_name,
         expected_task_count,
+        timeout_seconds=60*60,
         additional_options=service_options,
         insert_strict_options=False)
 
