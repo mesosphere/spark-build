@@ -11,15 +11,14 @@ import logging
 import os
 import pytest
 import shakedown
-
+import time
 import sdk_cmd
 import sdk_security
 import sdk_tasks
 import sdk_utils
-
+import json
 import spark_s3 as s3
 import spark_utils as utils
-
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -46,7 +45,7 @@ def setup_spark(configure_security, configure_universe):
 @pytest.mark.sanity
 def test_task_not_lost():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                      app_args="1500",   # Long enough to examine the Executor's task info
+                                      app_args="1500",  # Long enough to examine the Executor's task info
                                       args=["--conf spark.cores.max=1",
                                             "--class org.apache.spark.examples.SparkPi"])
 
@@ -62,7 +61,7 @@ def test_task_not_lost():
 
 
 @pytest.mark.xfail(sdk_utils.is_strict_mode(), reason="Currently fails in strict mode")
-@pytest.mark.skip(reason="Currently fails due to CI misconfiguration") #TODO: Fix CI/update mesos-integration-tests
+@pytest.mark.skip(reason="Currently fails due to CI misconfiguration")  # TODO: Fix CI/update mesos-integration-tests
 # @pytest.mark.sanity
 # @pytest.mark.smoke
 def test_jar(service_name=utils.SPARK_SERVICE_NAME):
@@ -113,8 +112,10 @@ def test_multi_arg_confs(service_name=utils.SPARK_SERVICE_NAME):
         app_args="",
         expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
         service_name=service_name,
-        args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
-              "--class MultiConfs"])
+        args=[
+            "--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
+            "--class MultiConfs"])
+
 
 @pytest.mark.sanity
 def test_spark_app_name(service_name=utils.SPARK_SERVICE_NAME):
@@ -159,11 +160,50 @@ def test_cni():
                           "--class org.apache.spark.examples.SparkPi"])
 
 
+def test_unique_task_id():
+    driver_task_id_1 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                     app_args="100",
+                     args=["--class org.apache.spark.examples.SparkPi"])
+    print(driver_task_id_1)
+    print(driver_task_id_2)
+    driver_task_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                     app_args="100",
+                     args=["--class org.apache.spark.examples.SparkPi"])
+    #find that the task is complete
+    trigger = False
+    timeout_sec = 300
+    while timeout_sec > 0:
+        out_1 = sdk_cmd.run_cli("dcos spark status --skip-message {}".format(driver_task_id_1))
+        out_2 = sdk_cmd.run_cli("dcos sprak status --skip-message {}".format(driver_task_id_2))
+        data_1 = json.loads(out_1)
+        data_2 = json.loads(out_2)
+        print(data_1['driverState'])
+        print(data_2['driverState'])
+        if data_1['driverState'] == data_2["driverState"] == "FINISHED":
+            trigger = True
+            break
+        else:
+            timeout_sec -= 10
+            time.sleep(10)
+    # determine there are no duplicate task ids
+    task_id_list = []
+    assert trigger == True
+    if trigger:
+        out = sdk_cmd.run_cli("dcos task --completed --json")
+        data = json.loads(out)
+        for d in data:
+            if driver_task_id_1 in d['framework_id'] or driver_task_id_2 in d['framework_id']:
+                task_id_list.append(d['id'])
+        for id in task_id_list:
+            print(id)
+        assert len(task_id_list) == len(set(task_id_list))
+
+
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                      app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
+                                      app_args="3000",  # Long enough to examine the Driver's & Executor's task infos
                                       args=["--conf spark.mesos.network.name=dcos",
                                             "--conf spark.mesos.network.labels=key1:val1,key2:val2",
                                             "--conf spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
@@ -216,6 +256,7 @@ def test_s3_secrets():
         sdk_security.delete_secret(path)
         rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create /{} -v {}".format(path, val))
         assert rc == 0, "Failed to create secret {}, stderr: {}, stdout: {}".format(path, stderr, stdout)
+
     aws_access_key_path = "aws_access_key_id"
     make_credential_secret(aws_access_key_path, creds.access_key)
     aws_secret_key_path = "aws_secret_access_key"
