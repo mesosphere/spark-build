@@ -31,18 +31,36 @@ from docopt import docopt
 
 
 logging.basicConfig(
-    format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
+    format="[%(asctime)s|%(name)s|%(levelname)s]: %(message)s",
     level=logging.INFO,
-    stream=sys.stdout)
+    stream=sys.stdout,
+)
 
 log = logging.getLogger(__name__)
 
 
-def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: str, script_cpus: int, script_mem: int,
-         script_args: str, security: str, spark_build_branch: str):
-
-    def _get_app_defn(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: str, script_cpus: int,
-                      script_mem: int, script_args: str, security: str, spark_build_branch: str) -> typing.Dict:
+def main(
+    app_id: str,
+    dcos_username: str,
+    dcos_password: str,
+    input_file_uri: str,
+    script_cpus: int,
+    script_mem: int,
+    script_args: str,
+    security: str,
+    spark_build_branch: str,
+):
+    def _get_app_defn(
+        app_id: str,
+        dcos_username: str,
+        dcos_password: str,
+        input_file_uri: str,
+        script_cpus: int,
+        script_mem: int,
+        script_args: str,
+        security: str,
+        spark_build_branch: str,
+    ) -> typing.Dict:
         """
         Construct the marathon app definition.
         """
@@ -51,9 +69,7 @@ def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: st
             "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r scale-tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 batch_test.py $MESOS_SANDBOX/$SCRIPT_ARGS",
             "container": {
                 "type": "DOCKER",
-                "docker": {
-                    "image": "susanxhuynh/dcos-commons:spark",
-                }
+                "docker": {"image": "susanxhuynh/dcos-commons:spark"},
             },
             "cpus": script_cpus,
             "mem": script_mem,
@@ -63,31 +79,39 @@ def main(app_id: str, dcos_username: str, dcos_password: str, input_file_uri: st
                 "DCOS_PASSWORD": dcos_password,
                 "SCRIPT_ARGS": script_args.strip(),
                 "SPARK_BUILD_BRANCH": spark_build_branch,
-                "SECURITY": security
+                "SECURITY": security,
             },
-            "fetch": [
-                {
-                    "uri": input_file_uri,
-                }
-            ]
+            "fetch": [{"uri": input_file_uri}],
         }
         return app_defn
 
-    (success, err_msg) = sdk_marathon.install_app(_get_app_defn(app_id, dcos_username, dcos_password, input_file_uri,
-                                                                script_cpus, script_mem, script_args, security,
-                                                                spark_build_branch))
+    (success, err_msg) = sdk_marathon.install_app(
+        _get_app_defn(
+            app_id,
+            dcos_username,
+            dcos_password,
+            input_file_uri,
+            script_cpus,
+            script_mem,
+            script_args,
+            security,
+            spark_build_branch,
+        )
+    )
     assert success, err_msg
 
 
 if __name__ == "__main__":
     args = docopt(__doc__)
 
-    main(app_id=args["--app-id"],
-         dcos_username=args["--dcos-username"],
-         dcos_password=args["--dcos-password"],
-         input_file_uri=args["--input-file-uri"],
-         script_cpus=int(args["--script-cpus"]),
-         script_mem=int(args["--script-mem"]),
-         script_args=args["--script-args"],
-         security=args["--security"],
-         spark_build_branch=args["--spark-build-branch"])
+    main(
+        app_id=args["--app-id"],
+        dcos_username=args["--dcos-username"],
+        dcos_password=args["--dcos-password"],
+        input_file_uri=args["--input-file-uri"],
+        script_cpus=int(args["--script-cpus"]),
+        script_mem=int(args["--script-mem"]),
+        script_args=args["--script-args"],
+        security=args["--security"],
+        spark_build_branch=args["--spark-build-branch"],
+    )
