@@ -159,11 +159,14 @@ def test_cni():
                     args=["--conf spark.mesos.network.name=dcos",
                           "--class org.apache.spark.examples.SparkPi"])
 
-
+@pytest.mark.sanity
 def test_unique_task_id():
     driver_task_id_1 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
                      app_args="100",
                      args=["--class org.apache.spark.examples.SparkPi"])
+    driver_task_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                        app_args="100",
+                                        args=["--class org.apache.spark.examples.SparkPi"])
     print(driver_task_id_1)
     print(driver_task_id_2)
     driver_task_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,

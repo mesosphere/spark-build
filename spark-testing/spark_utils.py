@@ -40,7 +40,7 @@ if not MESOS_SPARK_TEST_JAR_URL and not os.path.exists(MESOS_SPARK_TEST_JAR_PATH
 
 SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
-SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark95")
+SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark6")
 FOLDERED_SPARK_SERVICE_NAME = "/path/to/" + SPARK_SERVICE_NAME
 SPARK_USER = os.getenv("SPARK_USER", "nobody")
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
