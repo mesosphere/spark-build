@@ -66,7 +66,7 @@ def main(
         """
         app_defn = {
             "id": app_id,
-            "cmd": "cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r scale-tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 batch_test.py $MESOS_SANDBOX/$SCRIPT_ARGS",
+            "cmd": "(while sleep 600; do echo 'Refreshing DC/OS CLI authentication (interval: 600s)'; dcos auth login --username=${DCOS_UID} --password=${DCOS_PASSWORD}; done &); cd $MESOS_SANDBOX; git clone https://github.com/mesosphere/spark-build.git; cd spark-build/; pwd; git checkout $SPARK_BUILD_BRANCH; python3 -m venv test-env; pip3 install -r scale-tests/requirements.txt; dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check; dcos package install spark --cli --yes; cd scale-tests/; export PYTHONPATH=../spark-testing:../testing; python3 batch_test.py $MESOS_SANDBOX/$SCRIPT_ARGS",
             "container": {
                 "type": "DOCKER",
                 "docker": {"image": "susanxhuynh/dcos-commons:spark"},
