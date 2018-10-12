@@ -70,13 +70,20 @@ readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/t
 readonly CONTAINER_NAME="${TEST_NAME}"
 readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
+readonly CONTAINER_FINISHED_SETTING_UP_FILE=/tmp/finished-setting-up
 readonly IMAGE_NAME="mesosphere/dcos-commons:${TEST_NAME}"
-readonly LOG_FILE="${TEST_NAME}_$(date +%Y%m%dT%H%M%SZ)_$(whoami).log"
-readonly TEST_DIRECTORY="${TEST_NAME}_$(date +%Y%m%d)"
+readonly SCALE_TESTS_DIRECTORY="scale-tests"
+readonly TEST_DIRECTORY="${SCALE_TESTS_DIRECTORY}/runs/${TEST_NAME}"
+readonly TEST_REPOSITORY_DIRECTORY="${SCALE_TESTS_DIRECTORY}/checkouts/${TEST_NAME}"
 readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
+readonly LOGS_DIRECTORY="${TEST_DIRECTORY}/script_logs"
+readonly LOG_FILE="${LOGS_DIRECTORY}/$(date +%Y%m%dT%H%M%SZ)_$(whoami).log"
 readonly DCOS_CLI_REFRESH_INTERVAL_SEC=600 # 10 minutes.
 
 source "${TEST_CONFIG}"
+
+mkdir -p "${TEST_DIRECTORY}"
+mkdir -p "${LOGS_DIRECTORY}"
 
 if [ "${SECURITY}" != "permissive" ] && [ "${SECURITY}" != "strict" ]; then
   echo "SECURITY must be either 'permissive' or 'strict', is '${SECURITY}'"
@@ -202,12 +209,25 @@ if is_interactive; then
   done
 fi
 
-if docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1; then
-  log "Container '${CONTAINER_NAME}' already running, skipping Docker image build"
-else
-  git clone git@github.com:mesosphere/spark-build.git "${TEST_DIRECTORY}" | tee -a "${LOG_FILE}"
+set +e
+docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1
+readonly container_running=$?
 
-  docker build -t "${IMAGE_NAME}" "${TEST_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
+docker exec -it "${CONTAINER_NAME}" test -f "${CONTAINER_FINISHED_SETTING_UP_FILE}"
+readonly container_finished_setting_up=$?
+set -e
+
+if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ]; then
+  log "Building Docker image for ${TEST_NAME}"
+
+  log "Cleaning up possibly pre-existing containers"
+  docker kill "${CONTAINER_NAME}" > /dev/null 2>&1 || true
+  docker rm -f "${CONTAINER_NAME}" > /dev/null 2>&1 || true
+
+  rm -rf "${TEST_REPOSITORY_DIRECTORY}"
+  git clone git@github.com:mesosphere/spark-build.git "${TEST_REPOSITORY_DIRECTORY}" | tee -a "${LOG_FILE}"
+
+  docker build -t "${IMAGE_NAME}" "${TEST_REPOSITORY_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
 
   docker run \
     --rm \
@@ -257,13 +277,16 @@ else
 
   container_exec \
     dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}" || true
+
+  container_exec \
+    touch "${CONTAINER_FINISHED_SETTING_UP_FILE}"
 fi
 
 if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Installing infrastructure'
   start_time=$(date +%s)
   container_exec \
-    ./scale-tests/setup_streaming.py "${INFRASTRUCTURE_OUTPUT_FILE}" \
+    ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
       --kafka-zookeeper-config "${KAFKA_ZOOKEEPER_CONFIG}" \
       --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
@@ -277,7 +300,7 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Uploading infrastructure file to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${INFRASTRUCTURE_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping infrastructure installation'
@@ -294,7 +317,7 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
       --quota-executors-mem "${NON_GPU_QUOTA_EXECUTORS_MEM}" \
       "${NON_GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}" \
-      "${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Installed non-GPU dispatchers in ${runtime} seconds"
@@ -302,13 +325,13 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading non-GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping non-GPU dispatchers installation'
@@ -323,7 +346,7 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
       --quota-drivers-mem "${GPU_QUOTA_DRIVERS_MEM}" \
       "${GPU_NUM_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}gpu-" \
-      "${GPU_DISPATCHERS_OUTPUT_FILE}"
+      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Installed GPU dispatchers in ${runtime} seconds"
@@ -340,32 +363,32 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   log 'Uploading GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${GPU_DISPATCHERS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping GPU dispatchers installation'
 fi
 
-if [[ -s ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
+if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
   log 'Merging non-GPU and GPU dispatcher list files'
   container_exec "\
     jq -s \
       '{spark: (.[0].spark + .[1].spark)}' \
-      ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
-      ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
-      > ${DISPATCHERS_JSON_OUTPUT_FILE} \
+      ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      ${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      > ${TEST_DIRECTORY}/${DISPATCHERS_JSON_OUTPUT_FILE} \
   "
 
   log 'Uploading merged dispatcher list file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping merging of non-GPU and GPU dispatcher list files'
@@ -376,9 +399,9 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${FAILING_NUM_CONSUMERS_PER_PRODUCER}" \
@@ -399,7 +422,7 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   log 'Uploading failing jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of failing streaming jobs'
@@ -410,9 +433,9 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${FINITE_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${FINITE_NUM_CONSUMERS_PER_PRODUCER}" \
@@ -431,7 +454,7 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   log 'Uploading finite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of finite streaming jobs'
@@ -442,9 +465,9 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \
@@ -462,7 +485,7 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   log 'Uploading infinite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of infinite streaming jobs'
@@ -525,7 +548,7 @@ if [ "${SHOULD_UNINSTALL_INFRASTRUCTURE_AT_THE_END}" = true ]; then
   log 'Uninstalling infrastructure'
   start_time=$(date +%s)
   container_exec \
-    ./scale-tests/setup_streaming.py "${INFRASTRUCTURE_OUTPUT_FILE}" --cleanup
+    ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" --cleanup
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Uninstalled infrastructure in ${runtime} seconds"
@@ -537,8 +560,11 @@ log 'Uploading log file to S3'
 container_exec \
   aws s3 cp --acl public-read \
     "${LOG_FILE}" \
-    "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_S3_DIRECTORY_URL}script_logs/"
 
 log 'Listing S3 artifacts'
 container_exec \
-  aws s3 ls "${TEST_S3_DIRECTORY_URL}"
+  aws s3 ls --recursive "${TEST_S3_DIRECTORY_URL}"
+
+log "Test output files can also be found under ${TEST_DIRECTORY}"
+ls "${TEST_DIRECTORY}"
