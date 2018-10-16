@@ -55,6 +55,33 @@ make stub-universe-url
 ```
 This will build and upload a "stub" universe (i.e. singleton repo) containing a Spark package.
 
+### Publishing a local Spark distribution to stub universe
+In case a custom Spark distribution needs to be tested on DC/OS and Spark sources are located
+in a different directory [publish_local_spark.sh](publish_local_spark.sh) helper script can be used.
+The script conditionally builds Spark distribution (either if it is not built yet or if a flag specified) and 
+runs Makefile's `stub-universe-url` target.
+
+Example output:
+```bash
+publish_local_spark.sh --help
+
+Usage: publish_local_spark.sh [<options>...]
+Options:
+--spark-dist-dir <absolute path>  Mandatory. Absolute path to Spark project sources used to build and/or upload Spark archive
+--hadoop-version <version>        Optional. Hadoop version to build Spark with. Default: 2.7
+--docker-dist-image <image tag>   Optional. Target Docker image to publish. Default: mesosphere/spark-dev:<git commit sha>
+--rebuild-docker                  If Docker image should be rebuilt. Default: false
+--rebuild-spark                   If Spark distribution should be rebuilt. Default: false
+--help                            Print this message
+```
+
+Assuming Spark source code is located at `/usr/projects/mesosphere/spark` script invocation will look like:
+```bash
+publish_local_spark.sh --spark-dist-dir /usr/projects/mesosphere/spark --docker-dist-image user/spark-dev:test
+```
+`--docker-dist-image` flag is useful when one doesn't have access to default private registry and wants to publish 
+target image to an available open repository.
+
 ## Test
 
 ```bash

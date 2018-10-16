@@ -15,6 +15,7 @@ logs/
 
 /spark/
 docker-dist
+docker-build
 mesos-spark-integration-tests/
 mesos-spark-integration-tests-assembly-*.jar
 dcos-spark-scala-tests-assembly-*.jar
