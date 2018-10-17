@@ -7,10 +7,13 @@
 #   MESOS_SPARK_TEST_JAR_PATH // /path/to/mesos-spark-integration-tests.jar
 #   DCOS_SPARK_TEST_JAR_PATH // /path/to/dcos-spark-scala-tests.jar
 
+import json
 import logging
 import os
 import pytest
+import retrying
 import shakedown
+import time
 
 import sdk_cmd
 import sdk_hosts
@@ -55,12 +58,59 @@ def test_task_not_lost():
     # Wait until executor is running
     sdk_tasks.check_running(SPARK_PI_FW_NAME, 1, timeout_seconds=600)
 
-    # Check Executor task ID - should be 0, the first task.
+    # Check Executor task ID - should end with 0, the first task.
     # If it's > 0, that means the first task was lost.
-    assert '0' == sdk_tasks.get_task_ids(SPARK_PI_FW_NAME, '')[0]
+    assert sdk_tasks.get_task_ids(SPARK_PI_FW_NAME, '')[0].endswith('-0')
 
     # Check job output
     utils.check_job_output(driver_task_id, "Pi is roughly 3")
+
+
+def retry_if_false(result):
+    return not result
+
+
+@retrying.retry(stop_max_attempt_number=30,
+                wait_fixed=10000,
+                retry_on_result=retry_if_false)
+def wait_for_jobs_completion(driver_id_1, driver_id_2):
+    out_1 = sdk_cmd.run_cli("spark status --skip-message {}".format(driver_id_1))
+    out_2 = sdk_cmd.run_cli("spark status --skip-message {}".format(driver_id_2))
+    data_1 = json.loads(out_1)
+    data_2 = json.loads(out_2)
+
+    LOGGER.info('Driver 1 state: %s, Driver 2 state: %s'%(data_1['driverState'], data_2['driverState']))
+    return data_1['driverState'] == data_2["driverState"] == "FINISHED"
+
+
+@pytest.mark.sanity
+def test_unique_task_ids():
+    sdk_cmd.run_cli("package install spark --cli --yes")
+
+    LOGGER.info('Submitting two sample Spark Applications')
+    driver_id_1 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                        app_args="100",
+                                        args=["--class org.apache.spark.examples.SparkPi"])
+    driver_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                        app_args="100",
+                                        args=["--class org.apache.spark.examples.SparkPi"])
+
+    LOGGER.info('Two Spark Applications submitted. Driver 1 ID: %s, Driver 2 ID: %s'%(driver_id_1,driver_id_2))
+    LOGGER.info('Waiting for completion. Polling state')
+    completed = wait_for_jobs_completion(driver_id_1, driver_id_2)
+
+    assert completed == True, 'Sample Spark Applications failed to successfully complete within given time'
+    out = sdk_cmd.run_cli("task --completed --json")
+    data = json.loads(out)
+
+    LOGGER.info('Collecting tasks that belong to the drivers created in this test')
+    task_ids = []
+    for d in data:
+        if driver_id_1 in d['framework_id'] or driver_id_2 in d['framework_id']:
+            task_ids.append(d['id'])
+
+    LOGGER.info('Tasks found: %s'%(' '.join(task_ids)))
+    assert len(task_ids) == len(set(task_ids)), 'Task ids for two independent Spark Applications contain duplicates'
 
 
 @pytest.mark.xfail(sdk_utils.is_strict_mode(), reason="Currently fails in strict mode")
@@ -149,7 +199,6 @@ def test_cni():
                     expected_output="Pi is roughly 3",
                     args=["--conf spark.mesos.network.name=dcos",
                           "--class org.apache.spark.examples.SparkPi"])
-
 
 @pytest.mark.sanity
 @pytest.mark.smoke
@@ -340,7 +389,7 @@ def test_driver_executor_tls():
 def test_unique_vips():
     spark1_service_name = "test/groupa/spark"
     spark2_service_name = "test/groupb/spark"
-    try: 
+    try:
         utils.require_spark(spark1_service_name)
         utils.require_spark(spark2_service_name)
 
@@ -353,6 +402,6 @@ def test_unique_vips():
 
         ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher2_ui))
         assert ok
-    finally: 
+    finally:
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
