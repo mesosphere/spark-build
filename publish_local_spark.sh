@@ -23,34 +23,35 @@ print_help () {
 }
 
 set_args () {
-  for arg in "$@"; do
-    case "$arg" in
-      ("--spark-dist-dir")
+  while [ -n "$1" ]; do
+    case $1 in
+      "--spark-dist-dir")
         shift
         SPARK_DIST_DIR=$1
         ;;
-      ("--hadoop-version")
+      "--hadoop-version")
         shift
         HADOOP_VERSION=$1
         ;;
-      ("--docker-dist-image")
+      "--docker-dist-image")
         shift
         DOCKER_DIST_IMAGE=$1
         ;;
-      ("--hadoop-version")
+      "--hadoop-version")
         shift
         HADOOP_VERSION=$1
         ;;
-      ("--rebuild-docker")
+      "--rebuild-docker")
         REBUILD_DOCKER=true
         ;;
-      ("--rebuild-spark")
+      "--rebuild-spark")
         REBUILD_SPARK=true
         ;;
-      ("-h" | "--help")
+      "-h" | "--help")
         PRINT_HELP=true
         ;;
     esac
+    shift
   done
 }
 
@@ -61,6 +62,16 @@ build_spark_distibution () {
 }
 
 set_args "$@"
+
+echo
+echo "Running with parameters:"
+echo "SPARK_DIST_DIR=$SPARK_DIST_DIR"
+echo "HADOOP_VERSION=$HADOOP_VERSION"
+echo "DOCKER_DIST_IMAGE=$DOCKER_DIST_IMAGE"
+echo "REBUILD_DOCKER=$REBUILD_DOCKER"
+echo "REBUILD_SPARK=$REBUILD_SPARK"
+echo "PRINT_HELP=$PRINT_HELP"
+echo
 
 if [ "${PRINT_HELP}" = true ]; then
   print_help
@@ -84,7 +95,7 @@ else
   echo mesosphere/spark-build:latest > docker-build
 fi
 
-if [ -z $"{REBUILD_SPARK}" ]; then
+if [ "${REBUILD_SPARK}" = true ]; then
   echo "Script launched with '--rebuild-spark' flag. Rebuilding Spark distribution."
   build_spark_distibution
 fi
@@ -101,4 +112,8 @@ mkdir -p build/dist
 cp ${SPARK_DIST} build/dist
 
 echo "Building stub universe and Uploading Spark Distribution to it"
-DOCKER_DIST_IMAGE=${DOCKER_DIST_IMAGE} make stub-universe-url
+if [ -n "${DOCKER_DIST_IMAGE}" ]; then
+    export DOCKER_DIST_IMAGE=${DOCKER_DIST_IMAGE}
+fi
+
+make stub-universe-url

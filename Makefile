@@ -182,4 +182,4 @@ template_parameters:
 ssh_user: core
 endef
 
-.PHONY: clean clean-dist cli stub-universe-url prod-dist docker-login test
+.PHONY: clean clean-dist cli stub-universe-url prod-dist docker-dist docker-login test
