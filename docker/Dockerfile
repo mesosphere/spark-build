@@ -63,6 +63,9 @@ RUN mkdir /etc/hadoop
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
 ADD nginx /etc/nginx
+# Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
+# current version: Spark 2.2.1, Scala 2.11
+ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/
 
 # The following symlinks are hacks to make spark-class work under the
 # restricted PATH (/usr/bin) set by the DCOS
