@@ -48,12 +48,12 @@ RUN mkdir -p /opt/mesosphere/ && \
 # JVM
 RUN mkdir -p /usr/lib/jvm/ && \
     cd /usr/lib/jvm && \
-    curl -L -O https://downloads.mesosphere.com/java/server-jre-8u192-linux-x64.tar.gz && \
-    tar zxf server-jre-8u192-linux-x64.tar.gz && \
-    rm server-jre-8u192-linux-x64.tar.gz
+    curl -L -O https://downloads.mesosphere.com/java/server-jre-8u172-linux-x64.tar.gz && \
+    tar zxf server-jre-8u172-linux-x64.tar.gz && \
+    rm server-jre-8u172-linux-x64.tar.gz
 
 ENV BOOTSTRAP /opt/mesosphere/bootstrap
-ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_192/jre
+ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_172/jre
 ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
 ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib/
 ENV HADOOP_CONF_DIR /etc/hadoop
@@ -76,10 +76,6 @@ RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
 ADD dist /opt/spark/dist
 ADD krb5.conf.mustache /etc/
-
-# Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
-# current version: Spark 2.2.1, Scala 2.11
-ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/  
 
 # required to run as nobody
 RUN chmod -R ugo+rw /etc/nginx
