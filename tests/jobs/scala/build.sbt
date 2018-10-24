@@ -1,13 +1,15 @@
+lazy val SparkVersion = sys.env.get("SPARK_VERSION").getOrElse("2.2.0")
+
 lazy val root = (project in file("."))
   .settings(
     name := "dcos-spark-scala-tests",
     version := "0.2-SNAPSHOT",
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
-      "org.apache.spark" %% "spark-core" % "2.2.0" % "provided",
-      "org.apache.spark" % "spark-streaming_2.11" % "2.2.0" % "provided",
-      "org.apache.spark" %% "spark-mllib" % "2.2.0" % "provided",
-      "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % "2.2.0",
+      "org.apache.spark" %% "spark-core" % SparkVersion % "provided",
+      "org.apache.spark" % "spark-streaming_2.11" % SparkVersion % "provided",
+      "org.apache.spark" %% "spark-mllib" % SparkVersion % "provided",
+      "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % SparkVersion,
       "org.apache.hadoop" % "hadoop-aws" % "2.6.0",
       "org.apache.kafka" % "kafka_2.11" % "0.10.0.1",
       "com.github.scopt" %% "scopt" % "3.7.0",
