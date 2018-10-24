@@ -48,12 +48,12 @@ RUN mkdir -p /opt/mesosphere/ && \
 # JVM
 RUN mkdir -p /usr/lib/jvm/ && \
     cd /usr/lib/jvm && \
-    curl -L -O https://downloads.mesosphere.com/java/server-jre-8u172-linux-x64.tar.gz && \
-    tar zxf server-jre-8u172-linux-x64.tar.gz && \
-    rm server-jre-8u172-linux-x64.tar.gz
+    curl -L -O https://downloads.mesosphere.com/java/server-jre-8u192-linux-x64.tar.gz && \
+    tar zxf server-jre-8u192-linux-x64.tar.gz && \
+    rm server-jre-8u192-linux-x64.tar.gz
 
 ENV BOOTSTRAP /opt/mesosphere/bootstrap
-ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_172/jre
+ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_192/jre
 ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
 ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib/
 ENV HADOOP_CONF_DIR /etc/hadoop
