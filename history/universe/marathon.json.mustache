@@ -56,12 +56,11 @@
 {{/security.kerberos.keytab}}
     "healthChecks": [
         {
-            "path": "/api/health",
-            "portIndex": 0,
-            "protocol": "MESOS_HTTP",
-            "gracePeriodSeconds": 300,
+            "protocol": "COMMAND",
+            "command": { "value": "echo \"http://$LIBPROCESS_IP:$PORT0/api/v1/version\"; curl --fail \"$LIBPROCESS_IP:$PORT0/api/v1/version\"" },
+            "gracePeriodSeconds": 5,
             "intervalSeconds": 60,
-            "timeoutSeconds": 20,
+            "timeoutSeconds": 10,
             "maxConsecutiveFailures": 3
         }
     ],
