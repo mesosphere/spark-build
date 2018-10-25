@@ -5,6 +5,13 @@ It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
 described below.
 
+## Development Dependencies
+
+- GNU Make 3.82+ (the version is important due to usage of multiline bash commands)
+- Docker
+- Git
+- sbt
+
 ## Configure
 
 edit `manifest.json`.
@@ -58,7 +65,7 @@ This will build and upload a "stub" universe (i.e. singleton repo) containing a 
 ### Publishing a local Spark distribution to stub universe
 In case a custom Spark distribution needs to be tested on DC/OS and Spark sources are located
 in a different directory [publish_local_spark.sh](publish_local_spark.sh) helper script can be used.
-The script conditionally builds Spark distribution (either if it is not built yet or if a flag specified) and 
+The script conditionally builds Spark distribution (either if it is not built yet or if a flag specified) and
 runs Makefile's `stub-universe-url` target.
 
 Example output:
@@ -79,7 +86,7 @@ Assuming Spark source code is located at `/usr/projects/mesosphere/spark` script
 ```bash
 publish_local_spark.sh --spark-dist-dir /usr/projects/mesosphere/spark --docker-dist-image user/spark-dev:test
 ```
-`--docker-dist-image` flag is useful when one doesn't have access to default private registry and wants to publish 
+`--docker-dist-image` flag is useful when one doesn't have access to default private registry and wants to publish
 target image to an available open repository.
 
 ## Test
