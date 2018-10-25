@@ -119,9 +119,8 @@
 
     "healthChecks": [
         {
-            "portIndex": 2,
-            "protocol": "MESOS_HTTP",
-            "path": "/",
+            "protocol": "COMMAND",
+            "command": { "value": "curl --fail --silent --output /dev/null http://$LIBPROCESS_IP:$PORT2" },
             "gracePeriodSeconds": 5,
             "intervalSeconds": 60,
             "timeoutSeconds": 10,

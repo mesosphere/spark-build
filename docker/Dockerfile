@@ -17,7 +17,6 @@
 # Create snapshot builds with:
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
-# Basing from Mesos image so the Mesos native library is present.
 FROM ubuntu:16.04
 
 # Set environment variables.
