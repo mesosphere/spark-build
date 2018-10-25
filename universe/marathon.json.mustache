@@ -122,7 +122,7 @@
     "healthChecks": [
         {
             "protocol": "COMMAND",
-            "command": { "value": "echo \"http://$LIBPROCESS_IP:$PORT0/api/v1/version\"; curl --fail \"$LIBPROCESS_IP:$PORT0/api/v1/version\"" },
+            "command": { "value": "echo \"http://$LIBPROCESS_IP:$PORT2/api/v1/version\"; curl --fail \"$LIBPROCESS_IP:$PORT0/api/v1/version\"" },
             "gracePeriodSeconds": 5,
             "intervalSeconds": 60,
             "timeoutSeconds": 10,
