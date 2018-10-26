@@ -179,6 +179,10 @@ def _delete_hdfs_terasort_files():
         job_dict = TERASORT_DELETE_JOB_KERBEROS
     else:
         job_dict = TERASORT_DELETE_JOB
+
+    if os.getenv("SECURITY") == "strict":
+        job_dict["run"]["user"] = "nobody"
+        
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_dict['id']))
     sdk_jobs.install_job(job_dict)
     sdk_jobs.run_job(job_dict, timeout_seconds=300)
