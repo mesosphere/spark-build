@@ -101,6 +101,7 @@ TERASORT_DELETE_JOB_KERBEROS = {
 
 
 def setup_module(module):
+    sdk_cmd.run_raw_cli("package install {} --yes --cli".format(utils.SPARK_PACKAGE_NAME))
     if not shakedown.package_installed('spark', SOAK_SPARK_SERVICE_NAME):
         additional_options = {
             "hdfs": {
@@ -122,7 +123,6 @@ def setup_module(module):
 
 @pytest.mark.soak
 def test_terasort():
-    sdk_cmd.run_raw_cli("package install {} --yes --cli".format(utils.SPARK_PACKAGE_NAME))
     if utils.hdfs_enabled():
         _delete_hdfs_terasort_files()
         _run_teragen()
