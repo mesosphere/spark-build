@@ -32,5 +32,21 @@ sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
 # bytes cipher strings of Java.
 # sed -i "s,<ENABLED_ALGORITHMS>,${SPARK_SSL_ENABLEDALGORITHMS//,/:}," /etc/nginx/conf.d/spark.conf
 
-# start service
+(
+  # The Spark process stdout is logged by runit's svlogd to a file named
+  # "current".
+  readonly SPARK_STDOUT_FILE="${MESOS_SANDBOX}"/spark/current
+
+  # Wait for Spark process log file to exist.
+  while [ ! -f "${SPARK_STDOUT_FILE}" ]; do
+    sleep 1
+  done
+
+  # Tail Spark process log file handled by runit. We do this because the output
+  # from this script (which is run in the Marathon app's Docker container) is
+  # logged by Mesos to the "stdout" files in the task sandbox.
+  tail -F "${SPARK_STDOUT_FILE}"
+) &
+
+# Start runit processes (spark and nginx).
 exec runsvdir -P /etc/service
