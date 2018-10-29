@@ -15,6 +15,7 @@ mkdir -p "${HADOOP_CONF_DIR}"
 
 cd $MESOS_SANDBOX
 
+LD_LIBRARY_PATH=/opt/mesosphere/libmesos-bundle/lib
 MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
 # Unless explicitly directed, use bootstrap (defined on L55 of Dockerfile) to lookup the IP of the driver agent

@@ -55,7 +55,6 @@ RUN mkdir -p /usr/lib/jvm/ && \
 ENV BOOTSTRAP /opt/mesosphere/bootstrap
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_172/jre
 ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
-ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib
 ENV HADOOP_CONF_DIR /etc/hadoop
 
 RUN mkdir /etc/hadoop

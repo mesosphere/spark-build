@@ -66,6 +66,7 @@ function configure_properties() {
     echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
 }
 
+
 export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 set_log_level
 set_statsd_address
