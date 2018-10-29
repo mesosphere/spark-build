@@ -18,7 +18,7 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
