@@ -18,7 +18,7 @@
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
 # Basing from Mesos image so the Mesos native library is present.
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
@@ -38,9 +38,9 @@ RUN apt-get update && \
 # lib mesos
 RUN mkdir -p /opt/mesosphere/ && \
     cd /opt/mesosphere && \
-    curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
-    tar zxf libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
-    rm libmesos-bundle-1.10-1.4.x-a35c801.tar.gz && \
+    curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.12.0.tar.gz && \
+    tar zxf libmesos-bundle-1.12.0.tar.gz && \
+    rm libmesos-bundle-1.12.0.tar.gz && \
     curl -L -O https://downloads.mesosphere.com/dcos-commons/artifacts/0.50.0/bootstrap.zip && \
     unzip bootstrap.zip && \
     rm bootstrap.zip
@@ -55,7 +55,6 @@ RUN mkdir -p /usr/lib/jvm/ && \
 ENV BOOTSTRAP /opt/mesosphere/bootstrap
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_172/jre
 ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
-ENV LD_LIBRARY_PATH /opt/mesosphere/libmesos-bundle/lib/
 ENV HADOOP_CONF_DIR /etc/hadoop
 
 RUN mkdir /etc/hadoop
