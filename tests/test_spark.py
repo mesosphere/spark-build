@@ -356,3 +356,28 @@ def test_unique_vips():
     finally: 
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
+
+
+@pytest.mark.sanity
+def test_task_stdout():
+    try:
+        service_name = utils.FOLDERED_SPARK_SERVICE_NAME
+        task_id = service_name.lstrip("/").replace("/", "_")
+        utils.require_spark(service_name=service_name)
+
+        task = sdk_cmd._get_task_info(task_id)
+        if not task:
+            raise Exception("Failed to get '{}' task".format(task_id))
+
+        task_sandbox_path = sdk_cmd.get_task_sandbox_path(task_id)
+        if not task_sandbox_path:
+            raise Exception("Failed to get '{}' sandbox path".format(task_id))
+        agent_id = task["slave_id"]
+
+        task_sandbox = sdk_cmd.cluster_request(
+            "GET", "/slave/{}/files/browse?path={}".format(agent_id, task_sandbox_path)
+        ).json()
+        stdout_file = [f for f in task_sandbox if f["path"].endswith("/stdout")][0]
+        assert stdout_file["size"] > 0, "stdout file should have content"
+    finally:
+        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, service_name)
