@@ -49,7 +49,7 @@ class AWSPublisher(object):
         s3_directory_url, self._http_directory_url = s3_urls_from_env(self._pkg_name)
         self._uploader = universe.S3Uploader(s3_directory_url, self._dry_run)
 
-    def _spam_universe_url(self, universe_url):
+    def _write_jenkins_prop_file(self, universe_url):
         # write jenkins properties file to $WORKSPACE/<pkg_version>.properties:
         jenkins_workspace_path = os.environ.get("WORKSPACE", "")
         if jenkins_workspace_path:
@@ -62,6 +62,8 @@ class AWSPublisher(object):
             )
             properties_file.flush()
             properties_file.close()
+
+    def _spam_universe_url(self, universe_url):
         # write URL to provided text file path:
         universe_url_path = os.environ.get("UNIVERSE_URL_PATH", "")
         if universe_url_path:
@@ -102,6 +104,7 @@ class AWSPublisher(object):
         for path in self._artifact_paths:
             self._uploader.upload(path)
 
+        self._write_jenkins_prop_file(universe_url)
         self._spam_universe_url(universe_url)
 
         # print to stdout, while the rest is all stderr:
