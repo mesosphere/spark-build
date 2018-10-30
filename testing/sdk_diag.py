@@ -18,6 +18,7 @@ import retrying
 
 import sdk_cmd
 import sdk_install
+import sdk_package_registry
 import sdk_plan
 import sdk_tasks
 
@@ -32,7 +33,8 @@ _testlogs_task_id_limit = 250
 # 1 Test suite test_sanity_py starts with 2 tasks to ignore: [test_placement-0, test_placement-1]
 # 2 test_sanity_py.health_check passes, with 3 tasks created: [test-scheduler, pod-0-task, pod-1-task]
 # 3 test_sanity_py.replace_0 fails, with 1 task created: [pod-0-task-NEWUUID]
-#   Upon failure, the following task logs should be collected: [test-scheduler, pod-0-task, pod-1-task, pod-0-task-NEWUUID]
+#   Upon failure, the following task logs should be collected:
+#                   [test-scheduler, pod-0-task, pod-1-task, pod-0-task-NEWUUID]
 # 4 test_sanity_py.replace_1 succeeds, with 1 task created: [pod-1-task-NEWUUID]
 # 5 test_sanity_py.restart_1 fails, with 1 new task: [pod-1-task-NEWUUID2]
 #   Upon failure, the following task logs should be collected: [pod-1-task-NEWUUID, pod-1-task-NEWUUID2]
@@ -105,13 +107,18 @@ def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
     This should be called in a hookimpl fixture.
     See also handle_test_setup() which must be called in a pytest_runtest_setup() hook."""
 
-    if not result.failed:
-        return  # passed, nothing to do
+    if not result.failed or os.environ.get('DISABLE_DIAG'):
+        return  # passed, nothing to do, or diagnostics collection disabled
 
-    # Fetch all plans from all currently-installed services.
+    # Fetch all state from all currently-installed services.
     # We do this retrieval first in order to be closer to the actual test failure.
     # Services may still be installed when e.g. we're still in the middle of a test suite.
-    service_names = sdk_install.get_installed_service_names()
+    service_names = list(
+        filter(
+            lambda name: name != sdk_package_registry.PACKAGE_REGISTRY_SERVICE_NAME,
+            sdk_install.get_installed_service_names(),
+        )
+    )
     if len(service_names) > 0:
         log.info(
             "Fetching plans for {} services that are currently installed: {}".format(
@@ -120,11 +127,11 @@ def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
         )
         for service_name in service_names:
             try:
+                # Skip thread retrieval if plan retrieval fails:
                 _dump_plans(item, service_name)
-            except:
-                log.exception(
-                    "Plan collection from service {} failed!".format(service_name)
-                )
+                _dump_threads(item, service_name)
+            except Exception:
+                log.exception("Plan/thread collection from service {} failed!".format(service_name))
 
     # Fetch all logs from tasks created since the last failure, or since the start of the suite.
     global _testlogs_ignored_task_ids
@@ -149,17 +156,17 @@ def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
             )
         )
         _dump_task_logs(item, new_task_ids)
-    except:
+    except Exception:
         log.exception("Task log collection failed!")
     try:
         log.info("Fetching mesos state:")
         _dump_mesos_state(item)
-    except:
+    except Exception:
         log.exception("Mesos state collection failed!")
     try:
         log.info("Creating/fetching cluster diagnostics bundle:")
         _dump_diagnostics_bundle(item)
-    except:
+    except Exception:
         log.exception("Diagnostics bundle creation failed")
     log.info("Post-failure collection complete")
 
@@ -182,9 +189,20 @@ def _dump_plans(item: pytest.Item, service_name: str):
             f.write("\n")  # ... and a trailing newline
 
 
+def _dump_threads(item: pytest.Item, service_name: str):
+    threads = sdk_cmd.service_request(
+        "GET", service_name, "v1/debug/threads", timeout_seconds=5
+    ).text
+    out_path = _setup_artifact_path(item, "threads_{}.txt".format(service_name.replace("/", "_")))
+    log.info("=> Writing {} ({} bytes)".format(out_path, len(threads)))
+    with open(out_path, "w") as f:
+        f.write(threads)
+        f.write("\n")  # ... and a trailing newline
+
+
 def _dump_diagnostics_bundle(item: pytest.Item):
     """Creates and downloads a DC/OS diagnostics bundle, and saves it to the artifact path for this test."""
-    rc, _, _ = sdk_cmd.run_raw_cli("node diagnostics create all")
+    rc, _, _ = sdk_cmd.run_cli("node diagnostics create all")
     if rc:
         log.error("Diagnostics bundle creation failed.")
         return
@@ -195,7 +213,7 @@ def _dump_diagnostics_bundle(item: pytest.Item):
         retry_on_result=lambda result: result is None,
     )
     def wait_for_bundle_file():
-        rc, stdout, stderr = sdk_cmd.run_raw_cli("node diagnostics --status --json")
+        rc, stdout, stderr = sdk_cmd.run_cli("node diagnostics --status --json")
         if rc:
             return None
 
@@ -221,20 +239,18 @@ def _dump_diagnostics_bundle(item: pytest.Item):
 def _dump_mesos_state(item: pytest.Item):
     """Downloads state from the Mesos master and saves it to the artifact path for this test."""
     for name in ["state.json", "slaves"]:
-        r = sdk_cmd.cluster_request(
-            "GET", "/mesos/{}".format(name), verify=False, raise_on_error=False
-        )
+        r = sdk_cmd.cluster_request("GET", "/mesos/{}".format(name), raise_on_error=False)
         if r.ok:
             if name.endswith(".json"):
                 name = name[: -len(".json")]  # avoid duplicate '.json'
-            with open(
-                _setup_artifact_path(item, "mesos_{}.json".format(name)), "w"
-            ) as f:
+            with open(_setup_artifact_path(item, "mesos_{}.json".format(name)), "w") as f:
                 f.write(r.text)
 
 
 def _dump_task_logs(item: pytest.Item, task_ids: list):
-    """For all of the provided tasks, downloads their task, executor, and agent logs to the artifact path for this test."""
+    """
+    For all of the provided tasks, downloads their task, executor, and agent logs to the artifact path for this test.
+    """
     task_ids_set = set(task_ids)
     cluster_tasks = sdk_cmd.cluster_request("GET", "/mesos/tasks").json()
     matching_tasks_by_agent = {}
@@ -248,7 +264,7 @@ def _dump_task_logs(item: pytest.Item, task_ids: list):
     for agent_id, agent_tasks in matching_tasks_by_agent.items():
         try:
             _dump_task_logs_for_agent(item, agent_id, agent_tasks)
-        except:
+        except Exception:
             log.exception("Failed to get logs for agent {}".format(agent_id))
 
 
@@ -274,7 +290,7 @@ def _dump_task_logs_for_agent(item: pytest.Item, agent_id: str, agent_tasks: lis
             task_byte_count += _dump_task_logs_for_task(
                 item, agent_id, agent_executor_paths, task_entry
             )
-        except:
+        except Exception:
             log.exception("Failed to get logs for task {}".format(task_entry))
     log.info(
         "Downloaded {} bytes of logs from {} tasks on agent {}".format(
@@ -286,9 +302,7 @@ def _dump_task_logs_for_agent(item: pytest.Item, agent_id: str, agent_tasks: lis
     if "/slave/log" in agent_executor_paths:
         out_path = _setup_artifact_path(item, "agent_{}.log".format(agent_id))
         stream = sdk_cmd.cluster_request(
-            "GET",
-            "/slave/{}/files/download?path=/slave/log".format(agent_id),
-            stream=True,
+            "GET", "/slave/{}/files/download?path=/slave/log".format(agent_id), stream=True
         )
         with open(out_path, "wb") as f:
             for chunk in stream.iter_content(chunk_size=8192):
@@ -297,10 +311,8 @@ def _dump_task_logs_for_agent(item: pytest.Item, agent_id: str, agent_tasks: lis
 
 def _dump_task_logs_for_task(
     item: pytest.Item, agent_id: str, agent_executor_paths: dict, task_entry: _TaskEntry
-):
-    executor_browse_path = _find_matching_executor_path(
-        agent_executor_paths, task_entry
-    )
+) -> int:
+    executor_browse_path = _find_matching_executor_path(agent_executor_paths, task_entry)
     if not executor_browse_path:
         # Expected executor path was not found on this agent. Did Mesos move their files around again?
         log.warning(
@@ -308,7 +320,7 @@ def _dump_task_logs_for_task(
                 task_entry, agent_id, "\n  ".join(sorted(agent_executor_paths.keys()))
             )
         )
-        return
+        return 0
 
     # Fetch paths under the executor.
     executor_file_infos = sdk_cmd.cluster_request(
@@ -320,50 +332,33 @@ def _dump_task_logs_for_task(
     task_file_infos = []
     if task_entry.executor_id and task_entry.task_id:
         for file_info in executor_file_infos:
-            if file_info["mode"].startswith("d") and file_info["path"].endswith(
-                "/tasks"
-            ):
+            if file_info["mode"].startswith("d") and file_info["path"].endswith("/tasks"):
                 task_browse_path = os.path.join(
                     executor_browse_path, "tasks/{}/".format(task_entry.task_id)
                 )
                 try:
                     task_file_infos = sdk_cmd.cluster_request(
-                        "GET",
-                        "/slave/{}/files/browse?path={}".format(
-                            agent_id, task_browse_path
-                        ),
+                        "GET", "/slave/{}/files/browse?path={}".format(agent_id, task_browse_path)
                     ).json()
-                except:
-                    log.exception(
-                        "Failed to fetch task sandbox from presumed default executor"
-                    )
+                except Exception:
+                    log.exception("Failed to fetch task sandbox from presumed default executor")
 
     # Select all log files to be fetched from the above list.
     selected_file_infos = collections.OrderedDict()
     if task_file_infos:
         # Include 'task' and 'executor' annotations in filenames to differentiate between them:
         _select_log_files(
-            item,
-            task_entry.task_id,
-            executor_file_infos,
-            "executor.",
-            selected_file_infos,
+            item, task_entry.task_id, executor_file_infos, "executor.", selected_file_infos
         )
-        _select_log_files(
-            item, task_entry.task_id, task_file_infos, "task.", selected_file_infos
-        )
+        _select_log_files(item, task_entry.task_id, task_file_infos, "task.", selected_file_infos)
     else:
         # No annotation needed:
-        _select_log_files(
-            item, task_entry.task_id, executor_file_infos, "", selected_file_infos
-        )
+        _select_log_files(item, task_entry.task_id, executor_file_infos, "", selected_file_infos)
     if not selected_file_infos:
         log.warning(
-            "Unable to find any stdout/stderr files in above paths for task {}".format(
-                task_entry
-            )
+            "Unable to find any stdout/stderr files in above paths for task {}".format(task_entry)
         )
-        return
+        return 0
 
     byte_count = sum([f["size"] for f in selected_file_infos.values()])
     log.info(
@@ -393,28 +388,27 @@ def _dump_task_logs_for_task(
             with open(out_path, "wb") as f:
                 for chunk in stream.iter_content(chunk_size=8192):
                     f.write(chunk)
-        except:
-            log.exception(
-                "Failed to get file for task {}: {}".format(task_entry, file_info)
-            )
+        except Exception:
+            log.exception("Failed to get file for task {}: {}".format(task_entry, file_info))
     return byte_count
 
 
-def _find_matching_executor_path(
-    agent_executor_paths: dict, task_entry: _TaskEntry
-) -> str:
+def _find_matching_executor_path(agent_executor_paths: dict, task_entry: _TaskEntry) -> str:
     """Finds and returns the executor directory for the provided task on the agent.
 
     Mesos has changed its schema for executor directories with each DC/OS release:
     - 1.9: There are only '/var/lib/mesos/...' paths. There are no '/runs/latest' paths, only '/runs/<UUID>'.
-    - 1.10: There are only '/var/lib/mesos/...' paths, but '/runs/latest' paths are available in addition to '/runs/<UUID>'.
-    - 1.11: There are both '/frameworks/...' paths and '/var/lib/mesos/...' paths. Both have '/runs/latest' as well as '/runs/<UUID>'.
+    - 1.10: There are only '/var/lib/mesos/...' paths, but '/runs/latest' paths are available in addition to
+                           '/runs/<UUID>'.
+    - 1.11: There are both '/frameworks/...' paths and '/var/lib/mesos/...' paths. Both have '/runs/latest' as well as
+                           '/runs/<UUID>'.
     (and Mesos folks tell me that '/frameworks/...' is the way forward, so '/var/lib/mesos/...' may be going away)
     SEE ALSO: https://issues.apache.org/jira/browse/MESOS-7899
 
     Additionally, given the correct path, there are also differences depending on the task/executor type:
     - Marathon/Metronome: The task id is used as the 'executor id'. Logs are at the advertised directory.
-    - Custom executor: 'executor id' + 'task id' are both used. Executor+Task logs are all combined into the same file(s) at the advertised directory.
+    - Custom executor: 'executor id' + 'task id' are both used. Executor+Task logs are all combined into the same
+                       file(s) at the advertised directory.
     - Default executor: 'executor id' + 'task id' are both used. Executor logs are at the advertised directory,
                         while task logs are under 'tasks/<task_id>/' relative to the advertised directory.
     """
@@ -468,15 +462,15 @@ def _select_log_files(
 
     Results are placed in the 'selected' param.
     """
-    logfile_pattern = re.compile("^.*/(stdout|stderr)(\.[0-9]+)?$")
+    logfile_pattern = re.compile(r"^.*/(stdout|stderr)(\.[0-9]+)?$")
     for file_info in file_infos:
         if not logfile_pattern.match(file_info["path"]):
             continue
         # Example output filename (sort by time):
-        # 180125_225944.world-1-server__4d534510-35d9-4f06-811e-e9a9ffa4d14f.task.stdout
-        # 180126_000225.hello-0-server__15174696-2d3d-48e9-b492-d9a0cc289786.executor.stderr
-        # 180126_002024.hello-world.662e7976-0224-11e8-b2f2-deead5f2b92b.stdout.1
-        out_filename = "{}.{}.{}{}".format(
+        # 180125_225944.world-1-server__4d534510-35d9-4f06-811e-e9a9ffa4d14f.task.stdout.log
+        # 180126_000225.hello-0-server__15174696-2d3d-48e9-b492-d9a0cc289786.executor.stderr.log
+        # 180126_002024.hello-world.662e7976-0224-11e8-b2f2-deead5f2b92b.stdout.1.log
+        out_filename = "{}.{}.{}{}.log".format(
             time.strftime("%y%m%d_%H%M%S", time.gmtime(file_info["mtime"])),
             task_id,
             source,
