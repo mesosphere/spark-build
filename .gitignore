@@ -29,3 +29,5 @@ cluster_info.json
 dcos-launch-*
 env/
 venv/
+
+.DS_Store

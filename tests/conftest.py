@@ -1,6 +1,11 @@
 import pytest
 import sdk_repository
 
+pytest_plugins = [
+    "tests.fixtures.hdfs",
+    "tests.fixtures.kafka",
+    "tests.fixtures.kdc"
+]
 
 @pytest.fixture(scope='session')
 def configure_universe():

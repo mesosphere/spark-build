@@ -115,10 +115,10 @@ stub-universe-url: docker-dist
 	fi
 
 # Special directive to assist in speeding up CI builds
-# Generates a master checksum against the source files in tests/jobs/scala/src/*
+# Generates a master checksum against the source files in tests/jobs/scala
 # This is later compared to avoid building identical jars from previous CI runs
 test-jar-checksum:
-	find tests/jobs/scala/src/* -type f -exec md5sum '{}' + | sort > checksums
+	find tests/jobs/scala -type f -exec md5sum '{}' + | sort > checksums
 	md5sum checksums | cut -d ' ' -f1 > test-jar-checksum
 
 MD5SUM ?= $(shell cat test-jar-checksum)
