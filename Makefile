@@ -3,6 +3,7 @@ BUILD_DIR := $(ROOT_DIR)/build
 DIST_DIR := $(BUILD_DIR)/dist
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
+SPARK_DEV_DOCKER_IMAGE ?= mesosphere/spark-dev
 AWS_REGION ?= us-west-2
 S3_BUCKET ?= infinity-artifacts
 # Default to putting artifacts under a random directory, which will get cleaned up automatically:
@@ -58,7 +59,7 @@ clean-dist:
 docker-login:
 	docker login --username="$(DOCKER_USERNAME)" --password="$(DOCKER_PASSWORD)"
 
-DOCKER_DIST_IMAGE ?= mesosphere/spark-dev:$(GIT_COMMIT)
+DOCKER_DIST_IMAGE ?= $(SPARK_DEV_DOCKER_IMAGE):$(GIT_COMMIT)
 docker-dist: $(DIST_DIR)
 	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
 	if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
