@@ -184,10 +184,12 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_servi
 
     consumer_args = " ".join([broker_dns, topic, stop_count, kerberos_flag])
 
-    utils.run_tests(app_url=jar_uri,
+    try:
+        utils.run_tests(app_url=jar_uri,
                     app_args=consumer_args,
                     expected_output="Read {} words".format(stop_count),
                     service_name=spark_service_name,
                     args=consumer_config)
+    finally:
+        utils.kill_driver(producer_id, spark_service_name)
 
-    utils.kill_driver(producer_id, spark_service_name)
