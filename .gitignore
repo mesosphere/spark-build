@@ -27,3 +27,5 @@ spark-universe-url*
 config.yaml
 cluster_info.json
 dcos-launch-*
+env/
+venv/
