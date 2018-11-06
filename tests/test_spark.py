@@ -436,7 +436,13 @@ def test_task_stdout():
 
 @pytest.mark.sanity
 def test_handling_wrong_request_to_spark_dispatcher():
-    sdk_cmd.run_cli("package install spark --cli --yes")
+    #submit a correct job
+    #get it's submission id
+    #submit a job through the REST interface with incorrect appArgs
+    #get the submission id, check that it's failed
+    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
+    service_name = utils.FOLDERED_SPARK_SERVICE_NAME
+    utils.require_spark(service_name=service_name)
     sdk_cmd.run_cli("node ssh --master-proxy --leader")
     host = "$(hostname)"
     headers = {
