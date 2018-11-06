@@ -21,10 +21,9 @@ import sdk_install
 import sdk_security
 import sdk_tasks
 import sdk_utils
-
+import requests
 import spark_s3 as s3
 import spark_utils as utils
-
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,7 +50,7 @@ def setup_spark(configure_security, configure_universe):
 @pytest.mark.sanity
 def test_task_not_lost():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                      app_args="1500",   # Long enough to examine the Executor's task info
+                                      app_args="1500",  # Long enough to examine the Executor's task info
                                       args=["--conf spark.cores.max=1",
                                             "--class org.apache.spark.examples.SparkPi"])
 
@@ -79,7 +78,7 @@ def wait_for_jobs_completion(driver_id_1, driver_id_2):
     data_1 = json.loads(out_1)
     data_2 = json.loads(out_2)
 
-    LOGGER.info('Driver 1 state: %s, Driver 2 state: %s'%(data_1['driverState'], data_2['driverState']))
+    LOGGER.info('Driver 1 state: %s, Driver 2 state: %s' % (data_1['driverState'], data_2['driverState']))
     return data_1['driverState'] == data_2["driverState"] == "FINISHED"
 
 
@@ -89,13 +88,13 @@ def test_unique_task_ids():
 
     LOGGER.info('Submitting two sample Spark Applications')
     driver_id_1 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                        app_args="100",
-                                        args=["--class org.apache.spark.examples.SparkPi"])
+                                   app_args="100",
+                                   args=["--class org.apache.spark.examples.SparkPi"])
     driver_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                        app_args="100",
-                                        args=["--class org.apache.spark.examples.SparkPi"])
+                                   app_args="100",
+                                   args=["--class org.apache.spark.examples.SparkPi"])
 
-    LOGGER.info('Two Spark Applications submitted. Driver 1 ID: %s, Driver 2 ID: %s'%(driver_id_1,driver_id_2))
+    LOGGER.info('Two Spark Applications submitted. Driver 1 ID: %s, Driver 2 ID: %s' % (driver_id_1, driver_id_2))
     LOGGER.info('Waiting for completion. Polling state')
     completed = wait_for_jobs_completion(driver_id_1, driver_id_2)
 
@@ -109,12 +108,12 @@ def test_unique_task_ids():
         if driver_id_1 in d['framework_id'] or driver_id_2 in d['framework_id']:
             task_ids.append(d['id'])
 
-    LOGGER.info('Tasks found: %s'%(' '.join(task_ids)))
+    LOGGER.info('Tasks found: %s' % (' '.join(task_ids)))
     assert len(task_ids) == len(set(task_ids)), 'Task ids for two independent Spark Applications contain duplicates'
 
 
 @pytest.mark.xfail(sdk_utils.is_strict_mode(), reason="Currently fails in strict mode")
-@pytest.mark.skip(reason="Currently fails due to CI misconfiguration") #TODO: Fix CI/update mesos-integration-tests
+@pytest.mark.skip(reason="Currently fails due to CI misconfiguration")  # TODO: Fix CI/update mesos-integration-tests
 # @pytest.mark.sanity
 # @pytest.mark.smoke
 def test_jar(service_name=utils.SPARK_SERVICE_NAME):
@@ -165,8 +164,9 @@ def test_multi_arg_confs(service_name=utils.SPARK_SERVICE_NAME):
         app_args="",
         expected_output="spark.driver.extraJavaOptions,-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\"valA valB\"",
         service_name=service_name,
-        args=["--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
-              "--class MultiConfs"])
+        args=[
+            "--conf spark.driver.extraJavaOptions='-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Dparam3=\\\"valA valB\\\"'",
+            "--class MultiConfs"])
 
 
 @pytest.mark.sanity
@@ -200,11 +200,12 @@ def test_cni():
                     args=["--conf spark.mesos.network.name=dcos",
                           "--class org.apache.spark.examples.SparkPi"])
 
+
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_cni_labels():
     driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                      app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
+                                      app_args="3000",  # Long enough to examine the Driver's & Executor's task infos
                                       args=["--conf spark.mesos.network.name=dcos",
                                             "--conf spark.mesos.network.labels=key1:val1,key2:val2",
                                             "--conf spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
@@ -257,6 +258,7 @@ def test_s3_secrets():
         sdk_security.delete_secret(path)
         rc, stdout, stderr = sdk_cmd.run_raw_cli("security secrets create /{} -v {}".format(path, val))
         assert rc == 0, "Failed to create secret {}, stderr: {}, stdout: {}".format(path, stderr, stdout)
+
     aws_access_key_path = "aws_access_key_id"
     make_credential_secret(aws_access_key_path, creds.access_key)
     aws_secret_key_path = "aws_secret_access_key"
@@ -430,3 +432,24 @@ def test_task_stdout():
         assert stdout_file["size"] > 0, "stdout file should have content"
     finally:
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, service_name)
+
+
+@pytest.mark.sanity
+def test_handling_wrong_request_to_spark_dispatcher():
+    sdk_cmd.run_cli("package install spark --cli --yes")
+    sdk_cmd.run_cli("node ssh --master-proxy --leader")
+    host = "$(hostname)"
+    headers = {
+        'Content-Type': 'application/json;charset=UTF-8',
+    }
+    data = {"appResource": "https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar",
+            "sparkProperties": {
+                "spark.master": "spark://{}".format(host),
+                "spark.driver.cores": "30",
+                "spark.app.name": "SparkPi",
+
+            },
+            "mainClass": "org.apache.spark.examples.SparkPi",
+            }
+    response = requests.post('http://{}/submissions/create'.format(host), headers=headers, data=data)
+    assert (200 <= response.status_code <= 300)
