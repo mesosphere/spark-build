@@ -24,6 +24,7 @@ import sdk_utils
 import requests
 import spark_s3 as s3
 import spark_utils as utils
+import subprocess
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -437,14 +438,21 @@ def test_task_stdout():
 @pytest.mark.sanity
 def test_handling_wrong_request_to_spark_dispatcher():
     #submit a correct job
-    #get it's submission id
-    #submit a job through the REST interface with incorrect appArgs
-    #get the submission id, check that it's failed
-    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
     service_name = utils.FOLDERED_SPARK_SERVICE_NAME
     utils.require_spark(service_name=service_name)
-    sdk_cmd.run_cli("node ssh --master-proxy --leader")
-    host = "$(hostname)"
+    results  = sdk_cmd.run_raw_cli("dcos spark run --submit-args=\"--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30\"")
+
+    #get it's submission id
+    submission_id = results.stdout.split(" ")[-1]
+
+    #submit a job through the REST interface with incorrect appArgs
+
+    #get the submission id, check that it's failed
+    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
+
+    sdk_cmd.run_raw_cli("node ssh --master-proxy --leader")
+    results = subprocess.run("hostname", shell=True, universal_newlines=True, check=True)
+    host = results.stdout
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
     }
@@ -459,3 +467,4 @@ def test_handling_wrong_request_to_spark_dispatcher():
             }
     response = requests.post('http://{}/submissions/create'.format(host), headers=headers, data=data)
     assert (200 <= response.status_code <= 300)
+    utils.teardown_spark(service_name=service_name)
