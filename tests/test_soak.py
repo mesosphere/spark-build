@@ -6,6 +6,7 @@ import shakedown
 
 import sdk_cmd
 import sdk_jobs
+import sdk_utils
 
 import spark_utils as utils
 from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
@@ -107,7 +108,7 @@ def setup_module(module):
     if not shakedown.package_installed('spark', SOAK_SPARK_SERVICE_NAME):
         additional_options = {
             "hdfs": {
-                "config-url": "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                "config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints".format(SOAK_HDFS_SERVICE_NAME)
             },
             "security": {
                 "kerberos": {
@@ -183,7 +184,7 @@ def _delete_hdfs_terasort_files():
     else:
         job_dict = TERASORT_DELETE_JOB
 
-    if os.getenv("SECURITY") == "strict":
+    if sdk_utils.is_strict_mode():
         job_dict["run"]["user"] = "nobody"
         
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_dict['id']))
