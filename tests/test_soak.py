@@ -52,7 +52,7 @@ TERASORT_DELETE_JOB = {
         "cpus": 0.1,
         "mem": 512,
         "disk": 0,
-        "user": "root",
+        "user": "nobody",
         "cmd": " && ".join([
             "/bin/bash",
             "HDFS_SERVICE_NAME=data-serviceshdfs /configure-hdfs.sh",
@@ -84,7 +84,7 @@ TERASORT_DELETE_JOB_KERBEROS = {
             "DCOS_UID": DCOS_UID,
             "DCOS_PASSWORD": DCOS_PASSWORD,
         },
-        "user": "root",
+        "user": "nobody",
         "artifacts": [
             {
                 "uri": "https://s3.amazonaws.com/soak-clusters/artifacts/soak110/dcos-cli-auth.py",
@@ -184,9 +184,6 @@ def _delete_hdfs_terasort_files():
     else:
         job_dict = TERASORT_DELETE_JOB
 
-    if sdk_utils.is_strict_mode():
-        job_dict["run"]["user"] = "nobody"
-        
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_dict['id']))
     sdk_jobs.install_job(job_dict)
     sdk_jobs.run_job(job_dict, timeout_seconds=300)
