@@ -6,6 +6,7 @@ import shakedown
 
 import sdk_cmd
 import sdk_jobs
+import sdk_utils
 
 import spark_utils as utils
 from tests.test_kafka import KAFKA_PACKAGE_NAME, test_pipeline
@@ -38,7 +39,9 @@ KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
                  "--conf", "spark.mesos.driverEnv.SPARK_USER=root"] # run as root on soak (centos)
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
-               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES)]
+               "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES),
+               "--conf", "spark.eventLog.enabled=true",
+               "--conf", "spark.eventLog.dir=hdfs://hdfs/history"]  # write jobs to spark history-server
 if HDFS_KERBEROS_ENABLED:
     COMMON_ARGS += KERBEROS_ARGS
 
@@ -49,7 +52,7 @@ TERASORT_DELETE_JOB = {
         "cpus": 0.1,
         "mem": 512,
         "disk": 0,
-        "user": "root",
+        "user": "nobody",
         "cmd": " && ".join([
             "/bin/bash",
             "HDFS_SERVICE_NAME=data-serviceshdfs /configure-hdfs.sh",
@@ -81,7 +84,7 @@ TERASORT_DELETE_JOB_KERBEROS = {
             "DCOS_UID": DCOS_UID,
             "DCOS_PASSWORD": DCOS_PASSWORD,
         },
-        "user": "root",
+        "user": "nobody",
         "artifacts": [
             {
                 "uri": "https://s3.amazonaws.com/soak-clusters/artifacts/soak110/dcos-cli-auth.py",
@@ -101,10 +104,11 @@ TERASORT_DELETE_JOB_KERBEROS = {
 
 
 def setup_module(module):
+    sdk_cmd.run_raw_cli("package install {} --yes --cli".format(utils.SPARK_PACKAGE_NAME))
     if not shakedown.package_installed('spark', SOAK_SPARK_SERVICE_NAME):
         additional_options = {
             "hdfs": {
-                "config-url": "http://api.hdfs.marathon.l4lb.thisdcos.directory/v1/endpoints"
+                "config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints".format(SOAK_HDFS_SERVICE_NAME)
             },
             "security": {
                 "kerberos": {
@@ -179,6 +183,7 @@ def _delete_hdfs_terasort_files():
         job_dict = TERASORT_DELETE_JOB_KERBEROS
     else:
         job_dict = TERASORT_DELETE_JOB
+
     LOGGER.info("Deleting hdfs terasort files by running job {}".format(job_dict['id']))
     sdk_jobs.install_job(job_dict)
     sdk_jobs.run_job(job_dict, timeout_seconds=300)
