@@ -446,10 +446,6 @@ def test_handling_wrong_request_to_spark_dispatcher():
     submission_id = results.stdout.split(" ")[-1]
 
     #submit a job through the REST interface with incorrect appArgs
-
-    #get the submission id, check that it's failed
-    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
-
     sdk_cmd.run_raw_cli("node ssh --master-proxy --leader")
     results = subprocess.run("hostname", shell=True, universal_newlines=True, check=True)
     host = results.stdout
@@ -458,7 +454,7 @@ def test_handling_wrong_request_to_spark_dispatcher():
     }
     data = {"appResource": "https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar",
             "sparkProperties": {
-                "spark.master": "spark://{}".format(host),
+                "spark.master": "spark://{0}".format(host),
                 "spark.driver.cores": "30",
                 "spark.app.name": "SparkPi",
 
@@ -466,5 +462,12 @@ def test_handling_wrong_request_to_spark_dispatcher():
             "mainClass": "org.apache.spark.examples.SparkPi",
             }
     response = requests.post('http://{}/submissions/create'.format(host), headers=headers, data=data)
-    assert (200 <= response.status_code <= 300)
+
+    #check that it's response code to ascertain it has failed
+    assert (response.status_code < 200 or response.status_code >= 300)
+
+    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
+    sdk_cmd.run_raw_cli("dcos spark status {0}".format(submission_id))
+
+
     utils.teardown_spark(service_name=service_name)
