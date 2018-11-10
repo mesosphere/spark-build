@@ -122,7 +122,7 @@ download-test-jar:
 	wget $(DCOS_SPARK_TEST_JAR_URL)
 
 $(DCOS_SPARK_TEST_JAR_PATH): download-test-jar
-	if [ "$(shell md5 -q -s ${DCOS_SPARK_TEST_JAR})" == $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
+	if [ "$(shell md5sum ${DCOS_SPARK_TEST_JAR} | awk '{print $1}')" == $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
 		mv -f -v $(DCOS_SPARK_TEST_JAR) $@
 	else
 		cd tests/jobs/scala
