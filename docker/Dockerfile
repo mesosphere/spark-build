@@ -17,7 +17,7 @@
 # Create snapshot builds with:
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
@@ -26,6 +26,7 @@ ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 # Upgrade package index and install basic commands.
 RUN apt-get update && \
     apt-get install -y \
+            python \
             software-properties-common \
             runit \
             nginx \
@@ -77,7 +78,7 @@ ADD krb5.conf.mustache /etc/
 
 # Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
 # current version: Spark 2.2.1, Scala 2.11
-ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/  
+ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/
 
 # required to run as nobody
 RUN chmod -R ugo+rw /etc/nginx
