@@ -114,11 +114,21 @@ stub-universe-url: docker-dist
 		rm -f $(ROOT_DIR)/stub-universe-url.tmp
 	fi
 
-DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
-$(DCOS_SPARK_TEST_JAR_PATH):
-	cd tests/jobs/scala
-	sbt assembly
-	cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
+DCOS_SPARK_TEST_JAR ?= dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
+DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR)
+DCOS_SPARK_TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/jars/$(DCOS_SPARK_TEST_JAR)
+DCOS_SPARK_TEST_JAR_CHECKSUM ?= 2e6e8ac021daf6ccacbc4e7a3a006947
+download-test-jar:
+	wget $(DCOS_SPARK_TEST_JAR_URL)
+
+$(DCOS_SPARK_TEST_JAR_PATH): download-test-jar
+	if [ "$(shell md5 -q -s ${DCOS_SPARK_TEST_JAR})" == $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
+		mv -f -v $(DCOS_SPARK_TEST_JAR) $@
+	else
+		cd tests/jobs/scala
+		sbt assembly
+		cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
+	fi
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
@@ -132,7 +142,7 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	cp -v test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $@
 
 # Special directive to allow building the test jars separately from running the tests.
-test-jars: $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH)
+test-jars: $(DCOS_SPARK_TEST_JAR_PATH)
 
 
 CF_TEMPLATE_URL ?= https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise/testing/master/cloudformation/ee.single-master.cloudformation.json
@@ -150,7 +160,6 @@ test: test-jars stub-universe-url config.yaml
 	STUB_UNIVERSE_URL=`cat $(UNIVERSE_URL_PATH)` \
 	S3_BUCKET=$(S3_BUCKET) \
 	TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${DCOS_SPARK_TEST_JAR_PATH}` \
-	TEST_SH_MESOS_SPARK_TEST_JAR_PATH=/build/`basename ${MESOS_SPARK_TEST_JAR_PATH}` \
 	TEST_SH_S3_PREFIX=$(S3_PREFIX) \
 	TEST_SH_AWS_REGION=$(AWS_REGION) \
 		$(ROOT_DIR)/test.sh $(TEST_SH_ARGS)
@@ -160,7 +169,7 @@ clean-cluster:
 	dcos-launch delete || echo "Error deleting cluster"
 
 clean: clean-dist
-	for f in  "$(MESOS_SPARK_TEST_JAR_PATH)" "$(DCOS_SPARK_TEST_JAR_PATH)" "$(UNIVERSE_URL_PATH)" "docker-build"; do
+	for f in "$(DCOS_SPARK_TEST_JAR_PATH)" "$(UNIVERSE_URL_PATH)" "docker-build"; do
 		[ ! -e $$f ] || rm $$f
 	done
 
