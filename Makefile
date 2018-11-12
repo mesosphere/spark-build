@@ -123,6 +123,10 @@ download-test-jar:
 		wget $(DCOS_SPARK_TEST_JAR_URL)
 	fi
 
+# Check whether latest jar stored in s3 is identical to test source code
+# Note: if source code in tests/jobs/scala is changed:
+# - DCOS_SPARK_TEST_JAR_CHECKSUM should be updated with new md5sum value and
+# - new test jar should be uploaded to DCOS_SPARK_TEST_JAR_URL
 $(DCOS_SPARK_TEST_JAR_PATH): download-test-jar
 	if [ $(shell md5sum ${DCOS_SPARK_TEST_JAR} | cut -d ' ' -f 1) != $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
 		cd tests/jobs/scala
