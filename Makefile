@@ -117,14 +117,14 @@ stub-universe-url: docker-dist
 DCOS_SPARK_TEST_JAR ?= dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
 DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR)
 DCOS_SPARK_TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/jars/$(DCOS_SPARK_TEST_JAR)
-DCOS_SPARK_TEST_JAR_CHECKSUM ?= 2e6e8ac021daf6ccacbc4e7a3a006947
+DCOS_SPARK_TEST_JAR_CHECKSUM ?= 3168572a0aab35af8b20a3ac228a1537
 download-test-jar:
-	wget $(DCOS_SPARK_TEST_JAR_URL)
+	if [ ! -f $(DCOS_SPARK_TEST_JAR) ]; then
+		wget $(DCOS_SPARK_TEST_JAR_URL)
+	fi
 
 $(DCOS_SPARK_TEST_JAR_PATH): download-test-jar
-	if [ "$(shell md5sum ${DCOS_SPARK_TEST_JAR} | awk '{print $1}')" == $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
-		mv -f -v $(DCOS_SPARK_TEST_JAR) $@
-	else
+	if [ $(shell md5sum ${DCOS_SPARK_TEST_JAR} | cut -d ' ' -f 1) != $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
 		cd tests/jobs/scala
 		sbt assembly
 		cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
