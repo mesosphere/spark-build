@@ -437,33 +437,73 @@ def test_task_stdout():
 
 @pytest.mark.sanity
 def test_handling_wrong_request_to_spark_dispatcher():
-    #submit a correct job
     service_name = utils.FOLDERED_SPARK_SERVICE_NAME
     utils.require_spark(service_name=service_name)
-    results  = sdk_cmd.run_raw_cli("dcos spark run --submit-args=\"--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30\"")
 
-    #get it's submission id
-    submission_id = results.stdout.split(" ")[-1]
+    json_data = sdk_cmd.run_cli("dcos task --json")
+    dispatcher_ip = json_data['statuses'][0]['container_status']['network_infos'][0]['ip_addresses'][0]['ip_address']
+    port = json_data['discovery']['ports'][0]['number']
 
-    #submit a job through the REST interface with incorrect appArgs
-    sdk_cmd.run_raw_cli("node ssh --master-proxy --leader")
-    results = subprocess.run("hostname", shell=True, universal_newlines=True, check=True)
-    host = results.stdout
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
     }
     data = {"action": "CreateSubmissionRequest",
             "clientSparkVersion": "2.3.2",
-            "appResource": "https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar",
+            "appResource": "noopTest.jar",
+            "mainClass": "noop.Test",
+            "appArgs": ["arg1", "arg2"],
+            "environmentVariables": {
+                "PATH": "/dev/null"
+            },
+
             "sparkProperties": {
                 "spark.app.name": "TestDispatcher",
 
             },
-            "mainClass": "org.apache.spark.examples.SparkPi",
-            }
-    response = requests.post('http://{}/submissions/create'.format(host), headers=headers, data=data)
 
-    #check that it's response code to ascertain it has failed
+            }
+    response = requests.post('http://{0}:{1}/submissions/create'.format(dispatcher_ip, port), headers=headers, data=data)
+
+    headers = {
+        'Content-Type': 'application/json;charset=UTF-8',
+    }
+    data = {"action": "CreateSubmissionRequest",
+            "clientSparkVersion": "2.3.2",
+            "appResource": "noopTest.jar",
+            "mainClass": "noop.Test",
+            "environmentVariables": {
+                "PATH": "/dev/null"
+            },
+
+            "sparkProperties": {
+                "spark.app.name": "TestDispatcher",
+            },
+
+            }
+    response = requests.post('http://{0}:{1}/submissions/create'.format(dispatcher_ip, port), headers=headers,
+                             data=data)
+
+    headers = {
+        'Content-Type': 'application/json;charset=UTF-8',
+    }
+    data = {"action": "CreateSubmissionRequest",
+            "clientSparkVersion": "2.3.2",
+            "appResource": "noopTest.jar",
+            "mainClass": "noop.Test",
+            "appArgs": ["arg1", "arg2"],
+            "environmentVariables": {
+                "PATH": "/dev/null"
+            },
+
+            "sparkProperties": {
+                "spark.app.name": "TestDispatcher",
+
+            },
+
+            }
+    response = requests.post('http://{0}:{1}/submissions/create'.format(dispatcher_ip, port), headers=headers,
+                             data=data)
+
     assert (response.status_code < 200 or response.status_code >= 300)
 
     #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
