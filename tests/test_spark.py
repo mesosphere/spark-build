@@ -503,10 +503,5 @@ def test_handling_wrong_request_to_spark_dispatcher():
             }
     response = requests.post('http://{0}:{1}/submissions/create'.format(dispatcher_ip, port), headers=headers,
                              data=data)
-
     assert (response.status_code < 200 or response.status_code >= 300)
 
-    #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
-    sdk_cmd.run_raw_cli("dcos spark status {0}".format(submission_id))
-
-    utils.teardown_spark(service_name=service_name)
