@@ -452,11 +452,11 @@ def test_handling_wrong_request_to_spark_dispatcher():
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
     }
-    data = {"appResource": "https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar",
+    data = {"action": "CreateSubmissionRequest",
+            "clientSparkVersion": "2.3.2",
+            "appResource": "https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar",
             "sparkProperties": {
-                "spark.master": "spark://{0}".format(host),
-                "spark.driver.cores": "30",
-                "spark.app.name": "SparkPi",
+                "spark.app.name": "TestDispatcher",
 
             },
             "mainClass": "org.apache.spark.examples.SparkPi",
@@ -468,6 +468,5 @@ def test_handling_wrong_request_to_spark_dispatcher():
 
     #check the submission id of the first job to ensure that it's complete to ensure park dispatcher is still running.
     sdk_cmd.run_raw_cli("dcos spark status {0}".format(submission_id))
-
 
     utils.teardown_spark(service_name=service_name)
