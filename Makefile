@@ -114,25 +114,38 @@ stub-universe-url: docker-dist
 		rm -f $(ROOT_DIR)/stub-universe-url.tmp
 	fi
 
-DCOS_SPARK_TEST_JAR ?= dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
-DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR)
-DCOS_SPARK_TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/jars/$(DCOS_SPARK_TEST_JAR)
-DCOS_SPARK_TEST_JAR_CHECKSUM ?= 3168572a0aab35af8b20a3ac228a1537
-download-test-jar:
-	if [ ! -f $(DCOS_SPARK_TEST_JAR) ]; then
-		wget $(DCOS_SPARK_TEST_JAR_URL)
-	fi
+# Special directive to assist in speeding up CI builds
+# Generates a master checksum against the source files in tests/jobs/scala/src/*
+# This is later compared to avoid building identical jars from previous CI runs
+generate-checksum:
+	find tests/jobs/scala/src/* -type f -exec md5sum '{}' + > checklist.chk
+	cut -d ' ' -f1 checklist.chk | sort | md5sum | cut -d ' ' -f1 > $(ROOT_DIR)/master_sum.chk
 
-# Check whether latest jar stored in s3 is identical to test source code
-# Note: if source code in tests/jobs/scala is changed:
-# - DCOS_SPARK_TEST_JAR_CHECKSUM should be updated with new md5sum value and
-# - new test jar should be uploaded to DCOS_SPARK_TEST_JAR_URL
-$(DCOS_SPARK_TEST_JAR_PATH): download-test-jar
-	if [ $(shell md5sum ${DCOS_SPARK_TEST_JAR} | cut -d ' ' -f 1) != $(DCOS_SPARK_TEST_JAR_CHECKSUM) ]; then
+MD5SUM ?= $(shell cat $(ROOT_DIR)/master_sum.chk)
+DCOS_SPARK_TEST_JAR_VERSION ?= 0.2
+DCOS_SPARK_TEST_JAR_BASE_PATH ?= dcos-spark-scala-tests-assembly-$(DCOS_SPARK_TEST_JAR_VERSION)
+DCOS_SPARK_TEST_JAR_MD5_PATH ?= $(DCOS_SPARK_TEST_JAR_BASE_PATH)-$(MD5SUM).jar
+DCOS_SPARK_TEST_JAR_SNAPSHOT_PATH ?= $(DCOS_SPARK_TEST_JAR_BASE_PATH)-SNAPSHOT.jar
+DCOS_SPARK_TEST_JAR_BASE_URL ?= https://infinity-artifacts.s3.amazonaws.com/autodelete7d/spark/jars
+DCOS_SPARK_TEST_JAR_URL ?= $(DCOS_SPARK_TEST_JAR_BASE_URL)/$(DCOS_SPARK_TEST_JAR_BASE_PATH)-$(MD5SUM).jar
+
+# Download the checksum jar if it exists, else create a jar and upload to S3 for future checks
+DCOS_SPARK_TEST_JAR_PATH ?= $(DCOS_SPARK_TEST_JAR_SNAPSHOT_PATH)
+$(DCOS_SPARK_TEST_JAR_PATH): generate-checksum
+	echo MD5SUM=$(MD5SUM)
+	if [ wget --spider $(DCOS_SPARK_TEST_JAR_URL) 2>/dev/null ] && \
+		[ ! -f $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR_MD5_PATH) ]; then
+		wget $(DCOS_SPARK_TEST_JAR_URL)
+		mv $(DCOS_SPARK_TEST_JAR_MD5_PATH) $(ROOT_DIR)/
+	else
 		cd tests/jobs/scala
 		sbt assembly
-		cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $@
+		cp -v $(ROOT_DIR)/tests/jobs/scala/target/scala-2.11/$(DCOS_SPARK_TEST_JAR_SNAPSHOT_PATH) \
+			$(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR_MD5_PATH)
+		aws s3 cp --acl public-read $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR_MD5_PATH) \
+			s3://infinity-artifacts/autodelete7d/spark/jars/$(DCOS_SPARK_TEST_JAR_MD5_PATH)
 	fi
+	cp -v $(ROOT_DIR)/$(DCOS_SPARK_TEST_JAR_MD5_PATH) $@
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
