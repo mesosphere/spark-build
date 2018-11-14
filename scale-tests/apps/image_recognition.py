@@ -1,6 +1,6 @@
 #
 ## The following is an example taken from Databricks: https://docs.databricks.com/applications/deep-learning/spark-integration.html
-# This runs Tensorflow on Spark with GPUs
+# This runs TensorFlow on Spark with GPUs
 
 import numpy as np
 import os
@@ -155,7 +155,6 @@ def apply_inference_on_batch(batch):
     We do not explicitly tell TensorFlow to use a GPU.
     It is able to choose between CPU and GPU based on its guess of which will be faster.
     """
-    printEnvVars()
     with tf.Graph().as_default():
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(model_data_bc.value)
@@ -166,18 +165,8 @@ def apply_inference_on_batch(batch):
             return [tup for tup in labeled if tup[2] is not None]
 
 
-def printEnvVars():
-    import os
-    print("================ CURRENT ENV VARS ================")
-    for pair in os.environ.items():
-        print(pair)
-    print("================ CURRENT ENV VARS ================")
-
-
 if __name__ == "__main__":
     import sys
-
-    printEnvVars()
 
     MODEL_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
     model_dir = '/tmp/imagenet'

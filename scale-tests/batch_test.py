@@ -54,7 +54,7 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 MONTE_CARLO_APP_URL = "https://raw.githubusercontent.com/mesosphere/spark-build/master/scale-tests/apps/monte-carlo-portfolio.py"
-GPU_IMAGE_RECOGNITION_APP_URL = "https://raw.githubusercontent.com/mesosphere/spark-build/master/scale-tests/apps/run_image_recognition-final.py"
+GPU_IMAGE_RECOGNITION_APP_URL = "https://raw.githubusercontent.com/mesosphere/spark-build/master/scale-tests/apps/image_recognition.py"
 
 
 def _get_duration() -> int:
