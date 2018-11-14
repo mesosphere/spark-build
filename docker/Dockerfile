@@ -17,47 +17,52 @@
 # Create snapshot builds with:
 # docker build -t spark:git-`git rev-parse --short HEAD` .
 
-FROM ubuntu:18.04
+#ubuntu:18.04 - linux; amd64
+#https://github.com/docker-library/repo-info/blob/master/repos/ubuntu/tag-details.md#ubuntu1804---linux-amd64
+FROM ubuntu@sha256:6b9eb699512656fc6ef936ddeb45ab25edcd17ab94901790989f89dbf782344a
 
 # Set environment variables.
 ENV DEBIAN_FRONTEND "noninteractive"
 ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 
+ARG LIBMESOS_BUNDLE_DOWNLOAD_URL="https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.12.0.tar.gz"
+ARG BOOTSTRAP_DOWNLOAD_URL="https://downloads.mesosphere.com/dcos-commons/artifacts/0.50.0/bootstrap.zip"
+
+ARG JAVA_VERSION="8u192"
+ARG JRE_DOWNLOAD_URL="https://downloads.mesosphere.com/java/server-jre-${JAVA_VERSION}-linux-x64.tar.gz"
+
 # Upgrade package index and install basic commands.
-RUN apt-get update && \
-    apt-get install -y \
-            python \
-            software-properties-common \
-            runit \
-            nginx \
-            krb5-user \
-            curl \
-            unzip \
-            r-base
+RUN apt-get update \
+    && apt-get install -y \
+               python \
+               software-properties-common \
+               runit \
+               nginx \
+               krb5-user \
+               curl \
+               unzip \
+               r-base \
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc
 
 # lib mesos
-RUN mkdir -p /opt/mesosphere/ && \
-    cd /opt/mesosphere && \
-    curl -L -O https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.12.0.tar.gz && \
-    tar zxf libmesos-bundle-1.12.0.tar.gz && \
-    rm libmesos-bundle-1.12.0.tar.gz && \
-    curl -L -O https://downloads.mesosphere.com/dcos-commons/artifacts/0.50.0/bootstrap.zip && \
-    unzip bootstrap.zip && \
-    rm bootstrap.zip
+ARG MESOSPHERE_HOME="/opt/mesosphere"
+ARG BOOTSTRAP_BINARY="${MESOSPHERE_HOME}/bootstrap.zip"
+RUN mkdir -p ${MESOSPHERE_HOME} \
+    && curl -L ${LIBMESOS_BUNDLE_DOWNLOAD_URL} | tar -C ${MESOSPHERE_HOME} -zx \
+    && curl -L -o ${BOOTSTRAP_BINARY} ${BOOTSTRAP_DOWNLOAD_URL} \
+    && unzip ${BOOTSTRAP_BINARY} -d ${MESOSPHERE_HOME} \
+    && rm ${BOOTSTRAP_BINARY}
+
+ENV BOOTSTRAP ${MESOSPHERE_HOME}/bootstrap
+ENV MESOS_NATIVE_JAVA_LIBRARY ${MESOSPHERE_HOME}/libmesos-bundle/lib/libmesos.so
 
 # JVM
-RUN mkdir -p /usr/lib/jvm/ && \
-    cd /usr/lib/jvm && \
-    curl -L -O https://downloads.mesosphere.com/java/server-jre-8u192-linux-x64.tar.gz && \
-    tar zxf server-jre-8u192-linux-x64.tar.gz && \
-    rm server-jre-8u192-linux-x64.tar.gz
+ENV JAVA_HOME /usr/lib/jvm/${JAVA_VERSION}
+RUN mkdir -p ${JAVA_HOME} \
+    && curl -L ${JRE_DOWNLOAD_URL} | tar -C ${JAVA_HOME} --strip-components=1 -zx
 
-ENV BOOTSTRAP /opt/mesosphere/bootstrap
-ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_192/jre
-ENV MESOS_NATIVE_JAVA_LIBRARY /opt/mesosphere/libmesos-bundle/lib/libmesos.so
 ENV HADOOP_CONF_DIR /etc/hadoop
-
-RUN mkdir /etc/hadoop
+RUN mkdir ${HADOOP_CONF_DIR}
 
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
@@ -66,12 +71,11 @@ ADD nginx /etc/nginx
 # The following symlinks are hacks to make spark-class work under the
 # restricted PATH (/usr/bin) set by the DCOS
 # --executor-environment-variables option
-RUN ln -s /bin/bash /usr/bin/bash
-RUN ln -s /bin/ls /usr/bin/ls
-RUN ln -s /bin/grep /usr/bin/grep
-
-RUN ln -s /var/lib/runit/service/spark /etc/service/spark
-RUN ln -s /var/lib/runit/service/nginx /etc/service/nginx
+RUN ln -s /bin/bash /usr/bin/bash \
+    && ln -s /bin/ls /usr/bin/ls \
+    && ln -s /bin/grep /usr/bin/grep \
+    && ln -s /var/lib/runit/service/spark /etc/service/spark \
+    && ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
 ADD dist /opt/spark/dist
 ADD krb5.conf.mustache /etc/
@@ -81,13 +85,16 @@ ADD krb5.conf.mustache /etc/
 ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/
 
 # required to run as nobody
-RUN chmod -R ugo+rw /etc/nginx
-RUN chmod -R ugo+rw /etc/krb5.conf
-RUN chmod -R ugo+rw /etc/hadoop
-RUN chmod -R ugo+rw /etc/service
-RUN chmod -R ugo+rw /var/lib/
-RUN chmod -R ugo+rw /var/run/
-RUN chmod -R ugo+rw /var/log/
-RUN chmod -R ugo+rw /opt/spark/dist
+RUN addgroup --gid 99 nobody \
+    && echo "nobody:x:99:99:nobody:/nonexistent:/usr/sbin/nologin" >> /etc/passwd \
+    && usermod -a -G users nobody \
+    && chmod -R ugo+rw /etc/nginx \
+    && chmod -R ugo+rw /etc/krb5.conf \
+    && chmod -R ugo+rw /etc/hadoop \
+    && chmod -R ugo+rw /etc/service \
+    && chmod -R ugo+rw /var/lib/ \
+    && chmod -R ugo+rw /var/run/ \
+    && chmod -R ugo+rw /var/log/ \
+    && chmod -R ugo+rw /opt/spark/dist
 
 WORKDIR /opt/spark/dist

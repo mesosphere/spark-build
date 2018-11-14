@@ -104,20 +104,40 @@
         "image": "{{resource.assets.container.docker.spark_docker}}",
     {{/service.docker-image}}
     "network": "HOST",
-    {{#service.user}}
+    {{#service.docker_user}}
         "parameters": [
-        {
-        "key": "user",
-        "value": "{{service.user}}"
-        }
+            {
+                "key": "user",
+                "value": "{{service.docker_user}}"
+            }
         ],
-    {{/service.user}}
+    {{/service.docker_user}}
+    {{^service.docker_user}}
+        "parameters": [
+            {
+                "key": "user",
+                "value": "{{service.user}}"
+            }
+        ],
+    {{/service.docker_user}}
     "forcePullImage": true
     }
     },
 {{/service.UCR_containerizer}}
 
     "healthChecks": [
+    {{#service.UCR_containerizer}}
+        {
+            "protocol": "MESOS_HTTP",
+            "path": "/",
+            "portIndex": 2,
+            "gracePeriodSeconds": 5,
+            "intervalSeconds": 60,
+            "timeoutSeconds": 10,
+            "maxConsecutiveFailures": 3
+        }
+    {{/service.UCR_containerizer}}
+    {{^service.UCR_containerizer}}
         {
             "protocol": "COMMAND",
             "command": { "value": "curl --fail --silent --output /dev/null http://$LIBPROCESS_IP:$PORT2" },
@@ -126,6 +146,7 @@
             "timeoutSeconds": 10,
             "maxConsecutiveFailures": 3
         }
+    {{/service.UCR_containerizer}}
     ],
 
     "upgradeStrategy": {
