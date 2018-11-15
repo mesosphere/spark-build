@@ -2,7 +2,7 @@
     "spark_version": "2.2.1",
     "default_spark_dist": {
         "hadoop_version": "2.6",
-        "uri": "https://downloads.mesosphere.com/spark/spark-2.2.1-4-SNAPSHOT-bin-2.6.tgz"
+        "uri": "https://downloads.mesosphere.io/spark-2.5.0-2.2.1-rc1/spark-2.2.1-bin-2.6.5.tgz"
     },
     "spark_dist": [
         {
