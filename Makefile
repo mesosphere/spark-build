@@ -125,22 +125,18 @@ MD5SUM ?= $(shell cat test-jar-checksum)
 DCOS_SPARK_TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/autodelete7d/spark/jars/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar 
 DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
 $(DCOS_SPARK_TEST_JAR_PATH): test-jar-checksum
-	if [ ! -f $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-${MD5SUM}.jar ]; then	
+	if [ ! -f dcos-spark-scala-tests-assembly-0.2-${MD5SUM}.jar ]; then	
 		if [ wget --spider $(DCOS_SPARK_TEST_JAR_URL) 2>/dev/null ]; then 	
 			wget $(DCOS_SPARK_TEST_JAR_URL)
 		else
 			cd tests/jobs/scala
 			sbt assembly
-			cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
-			aws s3 cp --acl public-read $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar \
+			cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
+			aws s3 cp --acl public-read dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar \
 				s3://infinity-artifacts/autodelete7d/spark/jars/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
-			# Give S3 time to update its records
-			while [ ! wget --spider $(DCOS_SPARK_TEST_JAR_URL) 2>/dev/null ]; do
-				sleep 10
-			done
 		fi
 	fi
-	cp -v $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar $@
+	cp -v dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar $@
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
