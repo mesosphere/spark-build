@@ -132,7 +132,7 @@ $(DCOS_SPARK_TEST_JAR_PATH): test-jar-checksum
 			cd tests/jobs/scala
 			sbt assembly
 			cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
-			aws s3 cp --acl public-read  \
+			aws s3 cp --acl public-read dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar \
 				s3://infinity-artifacts/autodelete7d/spark/jars/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
 		fi
 	fi
