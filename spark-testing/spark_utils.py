@@ -27,7 +27,11 @@ SPARK_SERVICE_ACCOUNT = os.getenv("SPARK_SERVICE_ACCOUNT", "spark-service-acct")
 SPARK_SERVICE_ACCOUNT_SECRET = os.getenv("SPARK_SERVICE_ACCOUNT_SECRET", "spark-service-acct-secret")
 SPARK_SERVICE_NAME = os.getenv("SPARK_SERVICE_NAME", "spark")
 FOLDERED_SPARK_SERVICE_NAME = "/path/to/" + SPARK_SERVICE_NAME
+
 SPARK_USER = os.getenv("SPARK_USER", "nobody")
+SPARK_HISTORY_USER = SPARK_USER
+SPARK_DOCKER_USER = os.getenv("SPARK_DOCKER_USER", None)
+
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
 JOB_WAIT_TIMEOUT_SEC = 1800
 
@@ -83,22 +87,26 @@ def teardown_spark(service_name=SPARK_SERVICE_NAME, zk='spark_mesos_dispatcher')
     sdk_install.uninstall(
         SPARK_PACKAGE_NAME,
         service_name,
-        role='spark-role-unused',
-        service_account='spark-principal-ignored',
+        role=re.escape('*'),
+        service_account='spark-service-acct',
         zk=zk)
 
     if not sdk_utils.dcos_version_less_than('1.10'):
         # On 1.10+, sdk_uninstall doesn't run janitor. However Spark always needs it for ZK cleanup.
-        sdk_install.retried_run_janitor(service_name, 'spark-role-unused', 'spark-principal-ignored', zk)
+        sdk_install.retried_run_janitor(service_name, re.escape('*'), 'spark-service-acct', zk)
 
 
 def _get_spark_options(service_name, additional_options):
     options = {
         "service": {
-            "user": "nobody",
-            "name": service_name
+            "user": SPARK_USER,
+            "name": service_name,
+            "use_bootstrap_for_IP_detect": True
         }
     }
+
+    if SPARK_DOCKER_USER is not None:
+        options["service"]["docker_user"] = SPARK_DOCKER_USER
 
     if sdk_utils.is_strict_mode():
         # At the moment, we do this by hand because Spark doesn't quite line up with other services
@@ -128,6 +136,9 @@ def submit_job(
     conf_args = args.copy()
 
     conf_args += ['--conf', 'spark.mesos.role={}'.format(driver_role)]
+
+    if SPARK_DOCKER_USER is not None:
+        conf_args += ['--conf', 'spark.mesos.executor.docker.parameters=user={}'.format(SPARK_DOCKER_USER)]
 
     if not list(filter(lambda x: x.startswith("spark.driver.memory="), conf_args)):
       conf_args += ['--conf', 'spark.driver.memory=2g']

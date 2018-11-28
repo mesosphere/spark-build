@@ -57,7 +57,6 @@ KERBEROS_ARGS = ["--kerberos-principal", ALICE_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(KEYTAB_SECRET_PATH),
                  "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(utils.SPARK_USER)]
 HDFS_CLIENT_ID = "hdfsclient"
-SPARK_HISTORY_USER = "nobody"
 
 
 @pytest.fixture(scope='module')
@@ -182,7 +181,7 @@ def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_univer
             additional_options={
                 "service": {
                     "name": HISTORY_SERVICE_NAME,
-                    "user": SPARK_HISTORY_USER,
+                    "user": utils.SPARK_HISTORY_USER,
                     "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
                     "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
                         .format(HDFS_SERVICE_NAME)
@@ -264,18 +263,18 @@ def test_terasort_suite():
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_supervise():
+    job_service_name = "RecoverableNetworkWordCount"
+
     @retrying.retry(
         wait_fixed=1000,
         stop_max_delay=600*1000,
         retry_on_result=lambda res: not res)
     def wait_job_present(present):
-        svc = shakedown.get_service(JOB_SERVICE_NAME)
+        svc = shakedown.get_service(job_service_name)
         if present:
             return svc is not None
         else:
             return svc is None
-
-    JOB_SERVICE_NAME = "RecoverableNetworkWordCount"
 
     job_args = ["--supervise",
                 "--class", "org.apache.spark.examples.streaming.RecoverableNetworkWordCount",
@@ -290,16 +289,31 @@ def test_supervise():
     log.info("Started supervised driver {}".format(driver_id))
     wait_job_present(True)
     log.info("Job has registered")
-    sdk_tasks.check_running(JOB_SERVICE_NAME, 1)
+    sdk_tasks.check_running(job_service_name, 1)
     log.info("Job has running executors")
 
-    service_info = shakedown.get_service(JOB_SERVICE_NAME).dict()
+    service_info = shakedown.get_service(job_service_name).dict()
     driver_regex = "spark.mesos.driver.frameworkId={}".format(service_info['id'])
-    shakedown.kill_process_on_host(hostname=service_info['hostname'], pattern=driver_regex)
+
+    status, stdout = shakedown.run_command_on_agent(service_info['hostname'],
+                                                    "ps aux | grep -v grep | grep '{}'".format(driver_regex),
+                                                    username=sdk_cmd.LINUX_USER)
+
+    pids = [p.strip().split()[1] for p in stdout.splitlines()]
+
+    for pid in pids:
+        status, stdout = shakedown.run_command_on_agent(service_info['hostname'],
+                                                        "sudo kill -9 {}".format(pid),
+                                                        username=sdk_cmd.LINUX_USER)
+
+        if status:
+            print("Killed pid: {}".format(pid))
+        else:
+            print("Unable to killed pid: {}".format(pid))
 
     wait_job_present(True)
     log.info("Job has re-registered")
-    sdk_tasks.check_running(JOB_SERVICE_NAME, 1)
+    sdk_tasks.check_running(job_service_name, 1)
     log.info("Job has re-started")
     out = utils.kill_driver(driver_id, utils.SPARK_SERVICE_NAME)
     log.info("{}".format(out))
@@ -335,7 +349,7 @@ def test_history_kdc_config(hdfs_with_kerberos):
             additional_options={
                 "service": {
                     "name": history_service_with_kdc_config,
-                    "user": SPARK_HISTORY_USER,
+                    "user": utils.SPARK_HISTORY_USER,
                     "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
                     "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
                         .format(HDFS_SERVICE_NAME)

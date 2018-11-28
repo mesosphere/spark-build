@@ -40,7 +40,7 @@
                 "user": {
                     "description": "Executors will run as this user.",
                     "type": "string",
-                    "default": "root"
+                    "default": "nobody"
                 },
                 "docker-image": {
                     "type": "string",
@@ -70,6 +70,11 @@
                     "type": "boolean",
                     "description": "Launch the Dispatcher using the Universal Container Runtime (UCR)",
                     "default": false
+                },
+                "docker_user": {
+                    "type": "string",
+                    "description": "Use a different user to run Docker container instead of service.user. Directly translates to docker run '--user' parameter",
+                    "default": ""
                 },
                 "use_bootstrap_for_IP_detect": {
                     "type": "boolean",

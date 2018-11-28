@@ -147,7 +147,7 @@ def run_janitor(service_name, role, service_account, znode):
 
     auth_token = sdk_cmd.run_cli('config show core.dcos_acs_token', print_output=False).strip()
 
-    cmd_list = ["docker", "run", "mesosphere/janitor", "/janitor.py",
+    cmd_list = ["sudo", "docker", "run", "mesosphere/janitor", "/janitor.py",
                 "-r", role,
                 "-p", service_account,
                 "-z", znode,

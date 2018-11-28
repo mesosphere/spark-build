@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 
 KERBEROS_APP_ID = "kdc"
 DCOS_BASE64_PREFIX = "__dcos_base64__"
-LINUX_USER = "core"
 KERBEROS_CONF = "krb5.conf"
 REALM = "LOCAL"
 

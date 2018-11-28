@@ -22,7 +22,7 @@ import sdk_utils
 log = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 30 * 60
-
+LINUX_USER = os.getenv("DCOS_SSH_USERNAME", "core")
 
 def service_request(
         method,
@@ -271,7 +271,7 @@ def master_ssh(cmd: str) -> tuple:
     Returns a boolean (==success) and a string (output)
     '''
     log.info('(SSH:master) {}'.format(cmd))
-    success, output = shakedown.run_command_on_master(cmd)
+    success, output = shakedown.run_command_on_master(cmd, username=LINUX_USER)
     log.info('Output (success={}):\n{}'.format(success, output))
     return success, output
 
@@ -282,7 +282,7 @@ def agent_ssh(agent_host: str, cmd: str) -> tuple:
     Returns a boolean (==success) and a string (output)
     '''
     log.info('(SSH:agent={}) {}'.format(agent_host, cmd))
-    success, output = shakedown.run_command_on_agent(agent_host, cmd)
+    success, output = shakedown.run_command_on_agent(agent_host, cmd, username=LINUX_USER)
     log.info('Output (success={}):\n{}'.format(success, output))
     return success, output
 

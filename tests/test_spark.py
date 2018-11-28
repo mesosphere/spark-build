@@ -85,15 +85,16 @@ def wait_for_jobs_completion(driver_id_1, driver_id_2):
 
 @pytest.mark.sanity
 def test_unique_task_ids():
-    sdk_cmd.run_cli("package install spark --cli --yes")
-
     LOGGER.info('Submitting two sample Spark Applications')
+    submit_args = ["--conf spark.cores.max=1", "--class org.apache.spark.examples.SparkPi"]
+
     driver_id_1 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                        app_args="100",
-                                        args=["--class org.apache.spark.examples.SparkPi"])
+                                   app_args="100",
+                                   args=submit_args)
+
     driver_id_2 = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                        app_args="100",
-                                        args=["--class org.apache.spark.examples.SparkPi"])
+                                   app_args="100",
+                                   args=submit_args)
 
     LOGGER.info('Two Spark Applications submitted. Driver 1 ID: %s, Driver 2 ID: %s'%(driver_id_1,driver_id_2))
     LOGGER.info('Waiting for completion. Polling state')
@@ -321,7 +322,6 @@ def test_s3_env():
 def test_foldered_spark():
     service_name = utils.FOLDERED_SPARK_SERVICE_NAME
     zk = 'spark_mesos_dispatcher__path_to_spark'
-    utils.teardown_spark(service_name=service_name, zk=zk)
     utils.require_spark(service_name=service_name, zk=zk)
     test_sparkPi(service_name=service_name)
     utils.teardown_spark(service_name=service_name, zk=zk)
@@ -397,10 +397,10 @@ def test_unique_vips():
         dispatcher2_ui = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark2_service_name), 4040)
 
         # verify dispatcher-ui is reachable at VIP
-        ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher1_ui))
+        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(dispatcher1_ui))
         assert ok
 
-        ok, _ = sdk_cmd.master_ssh("curl {}".format(dispatcher2_ui))
+        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(dispatcher2_ui))
         assert ok
     finally:
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
