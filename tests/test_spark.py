@@ -13,11 +13,11 @@ import os
 import pytest
 import retrying
 import shakedown
-import time
 
 import sdk_cmd
 import sdk_hosts
 import sdk_install
+import sdk_marathon
 import sdk_security
 import sdk_tasks
 import sdk_utils
@@ -387,21 +387,23 @@ def test_driver_executor_tls():
 
 @pytest.mark.sanity
 def test_unique_vips():
+
+    @retrying.retry(stop_max_attempt_number=3, wait_fixed=2000)
+    def verify_ip_is_reachable(ip):
+        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(ip))
+        assert ok
+
     spark1_service_name = "test/groupa/spark"
     spark2_service_name = "test/groupb/spark"
     try:
         utils.require_spark(spark1_service_name)
         utils.require_spark(spark2_service_name)
 
-        dispatcher1_ui = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark1_service_name), 4040)
-        dispatcher2_ui = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark2_service_name), 4040)
+        dispatcher1_ui_ip = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark1_service_name), 4040)
+        dispatcher2_ui_ip = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark2_service_name), 4040)
 
-        # verify dispatcher-ui is reachable at VIP
-        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(dispatcher1_ui))
-        assert ok
-
-        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(dispatcher2_ui))
-        assert ok
+        verify_ip_is_reachable(dispatcher1_ui_ip)
+        verify_ip_is_reachable(dispatcher2_ui_ip)
     finally:
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
         sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
