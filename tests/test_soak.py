@@ -36,12 +36,13 @@ TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-
 TERASORT_MAX_CORES=6
 
 KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,
-                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
-                 "--conf", "spark.mesos.driverEnv.SPARK_USER=nobody"] # run as root on soak (centos)
+                 "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET)] # run as root on soak (centos)
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
                "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES),
                "--conf", "spark.eventLog.enabled=true",
-               "--conf", "spark.eventLog.dir=hdfs://hdfs/history"]  # write jobs to spark history-server
+               "--conf", "spark.eventLog.dir=hdfs://hdfs/history",
+               "--conf", "spark.mesos.driverEnv.SPARK_USER=nobody",
+               "--conf", "spark.mesos.executor.docker.parameters=user=99"]  # write jobs to spark history-server
 if HDFS_KERBEROS_ENABLED:
     COMMON_ARGS += KERBEROS_ARGS
 
