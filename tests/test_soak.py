@@ -37,7 +37,7 @@ TERASORT_MAX_CORES=6
 
 KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,
                  "--keytab-secret-path", "/{}".format(HDFS_KEYTAB_SECRET),
-                 "--conf", "spark.mesos.driverEnv.SPARK_USER=root"] # run as root on soak (centos)
+                 "--conf", "spark.mesos.driverEnv.SPARK_USER=nobody"] # run as root on soak (centos)
 COMMON_ARGS = ["--conf", "spark.driver.port=1024",
                "--conf", "spark.cores.max={}".format(TERASORT_MAX_CORES),
                "--conf", "spark.eventLog.enabled=true",
