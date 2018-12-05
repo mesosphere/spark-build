@@ -10,6 +10,7 @@
 import logging
 import os
 import pytest
+import retrying
 import shakedown
 
 import sdk_cmd
