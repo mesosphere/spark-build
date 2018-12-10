@@ -6,6 +6,8 @@ export DISPATCHER_PORT="${PORT0}"
 export DISPATCHER_UI_PORT="${PORT1}"
 export SPARK_PROXY_PORT="${PORT2}"
 
+source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
+
 # determine scheme and derive WEB
 SCHEME=http
 OTHER_SCHEME=https
@@ -24,8 +26,8 @@ grep -v "#${OTHER_SCHEME}#" /etc/nginx/conf.d/spark.conf.template |
 	sed "s,#${SCHEME}#,," >/etc/nginx/conf.d/spark.conf
 
 sed -i "s,<PORT>,${SPARK_PROXY_PORT}," /etc/nginx/conf.d/spark.conf
-sed -i "s,<DISPATCHER_URL>,${SCHEME}://${HOST}:${DISPATCHER_PORT}," /etc/nginx/conf.d/spark.conf
-sed -i "s,<DISPATCHER_UI_URL>,http://${HOST}:${DISPATCHER_UI_PORT}," /etc/nginx/conf.d/spark.conf
+sed -i "s,<DISPATCHER_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_PORT}," /etc/nginx/conf.d/spark.conf
+sed -i "s,<DISPATCHER_UI_URL>,http://${SPARK_LOCAL_IP}:${DISPATCHER_UI_PORT}," /etc/nginx/conf.d/spark.conf
 sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
 
 # Disabled algorithms for Nginx because it crashes with the usual multi-1000

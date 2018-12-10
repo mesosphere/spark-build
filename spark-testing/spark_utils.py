@@ -75,7 +75,7 @@ def require_spark(service_name=SPARK_SERVICE_NAME, additional_options={}, zk='sp
         SPARK_PACKAGE_NAME,
         service_name,
         0,
-        additional_options=_get_spark_options(service_name, additional_options),
+        additional_options=get_spark_options(service_name, additional_options),
         wait_for_deployment=False, # no deploy plan
         insert_strict_options=False) # lacks principal + secret_name options
 
@@ -97,7 +97,7 @@ def teardown_spark(service_name=SPARK_SERVICE_NAME, zk='spark_mesos_dispatcher')
         sdk_install.retried_run_janitor(service_name, re.escape('*'), 'spark-service-acct', zk)
 
 
-def _get_spark_options(service_name, additional_options):
+def get_spark_options(service_name, additional_options):
     options = {
         "service": {
             "user": SPARK_USER,
@@ -115,6 +115,8 @@ def _get_spark_options(service_name, additional_options):
         # Specifically, Spark's config.json lacks: service.principal, service.secret_name
         options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
         options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
+
+    print(sdk_install.merge_dictionaries(options, additional_options))
 
     return sdk_install.merge_dictionaries(options, additional_options)
 

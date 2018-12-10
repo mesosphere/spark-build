@@ -31,7 +31,7 @@
 # 15. wget http://<S3_BUCKET>.s3.amazonaws.com/<S3_PATH>/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar
 # 16. docker run --net=host -it -v /home/core/:/vol <DOCKER_IMAGE> /bin/bash
 # 17. cp /vol/krb5.conf /etc/ && cp /vol/hdfs-site.xml /etc/hadoop/ && cp /vol/core-site.xml /etc/hadoop/ && kinit -k -t /vol/keytabs/hdfs.name-0-node.hdfs.mesos.keytab hdfs/name-0-node.hdfs.mesos@LOCAL
-# 18. SPARK_USER=core ./bin/spark-submit --conf spark.mesos.executor.docker.forcePullImage=true --conf spark.driver.extraJavaOptions="-Dsun.security.krb5.debug=true" --conf spark.mesos.executor.docker.image=mgummelt/spark:test --conf spark.mesos.executor.home=/opt/spark/dist --master mesos://leader.mesos:5050 --class HDFSWordCount /vol/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar hdfs:///<file>
+# 18. SPARK_USER=core ./bin/spark-submit --conf spark.mesos.executor.docker.forcePullImage=true --conf spark.driver.extraJavaOptions="-Dsun.security.krb5.debug=true" --conf spark.mesos.executor.docker.image=mgummelt/spark:test --master mesos://leader.mesos:5050 --class HDFSWordCount /vol/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar hdfs:///<file>
 
 set -euo pipefail
 set -x
