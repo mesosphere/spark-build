@@ -66,7 +66,7 @@ function is_interactive () {
 }
 
 readonly AWS_ACCOUNT='Team 10'
-readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/scale-testing/stub-universe-spark.json' # Spark with quota support.
+readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/2.5.0-2.2.1/stub-universe-spark.json'
 readonly CONTAINER_NAME="${TEST_NAME}"
 readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
