@@ -32,7 +32,7 @@ SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def configure_security():
     yield from utils.spark_security_session()
 
@@ -411,8 +411,9 @@ def test_unique_vips():
 
 @pytest.mark.sanity
 def test_task_stdout():
+    service_name = utils.FOLDERED_SPARK_SERVICE_NAME
+
     try:
-        service_name = utils.FOLDERED_SPARK_SERVICE_NAME
         task_id = service_name.lstrip("/").replace("/", "_")
         utils.require_spark(service_name=service_name)
 

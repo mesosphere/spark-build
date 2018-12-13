@@ -271,7 +271,7 @@ def cleanup_security(service_name: str,
     log.info("Finished cleaning up strict-mode security")
 
 
-def security_session(framework_name: str) -> None:
+def security_session(framework_name: str, service_account: str="service-acct", secret: str="secret") -> None:
     """Create a service account and configure permissions for strict-mode tests.
 
     This should generally be used as a fixture in a framework's conftest.py:
@@ -283,7 +283,9 @@ def security_session(framework_name: str) -> None:
     try:
         is_strict = sdk_utils.is_strict_mode()
         if is_strict:
-            service_account_info = setup_security(framework_name)
+            service_account_info = setup_security(service_name=framework_name,
+                                                  service_account=service_account,
+                                                  service_account_secret=secret)
         yield
     finally:
         if is_strict:

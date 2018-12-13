@@ -195,7 +195,7 @@ class KerberosEnvironment:
                 log.info("Found installed KDC app, reusing it")
                 return _get_kdc_task(self.app_definition["id"])
             log.info("Found installed KDC app, destroying it first")
-            sdk_marathon.destroy(self.app_definition["id"])
+            sdk_marathon.destroy_app(self.app_definition["id"])
 
         log.info("Installing KDC Marathon app")
         _install_marathon_app(self.app_definition)
@@ -439,12 +439,14 @@ class KerberosEnvironment:
         sdk_security.install_enterprise_cli()
 
         log.info("Removing the marathon KDC app")
-        sdk_marathon.destroy_app(self.app_definition["id"])
+        if sdk_marathon.app_exists(self.app_definition["id"]):
+            sdk_marathon.destroy_app(self.app_definition["id"])
+            if self._temp_working_dir and isinstance(self._temp_working_dir, tempfile.TemporaryDirectory):
+                log.info("Deleting temporary working directory")
+                self._temp_working_dir.cleanup()
 
-        if self._temp_working_dir and isinstance(self._temp_working_dir, tempfile.TemporaryDirectory):
-            log.info("Deleting temporary working directory")
-            self._temp_working_dir.cleanup()
-
-        # TODO: separate secrets handling into another module
-        log.info("Deleting keytab secret")
-        sdk_security.delete_secret(self.keytab_secret_path)
+            # TODO: separate secrets handling into another module
+            log.info("Deleting keytab secret")
+            sdk_security.delete_secret(self.keytab_secret_path)
+        else:
+            log.info("KDC app doesn't exist, skipping cleanup")

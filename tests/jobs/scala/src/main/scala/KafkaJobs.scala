@@ -1,11 +1,9 @@
 import java.util
 
 import scala.collection.mutable
-import scala.util.Random
-
+import scala.util.{Failure, Random, Success, Try}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringDeserializer
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.kafka010._
@@ -68,7 +66,12 @@ object KafkaFeeder {
         p.foreach { r =>
           val d = r.toString()
           val msg = new ProducerRecord[String, String](topic, null, d)
-          producer.send(msg)
+          println(s"sending message: $msg")
+
+          Try(producer.send(msg)) match {
+            case Success(_) => println("Message sent")
+            case Failure(ex) => ex.printStackTrace()
+          }
         }
         producer.close()
       }
@@ -167,7 +170,12 @@ object KafkaConsumer {
       ConsumerStrategies.Subscribe[String, String](Array(topic), props))
 
     val lines = messages.map(_.value)
-    val words = lines.flatMap(_.split(" "))
+
+    val words = lines.flatMap(line => {
+      println(s"Received line: $line")
+      line.split(" ")
+    })
+
     val wordCounts = words.map(x => (x, 1L)).reduceByKey(_ + _)
     wordCounts.foreachRDD { (rdd: RDD[(String, Long)], time: Time) =>
       val totalCount = WordAccumulator.getInstance(rdd.sparkContext)
