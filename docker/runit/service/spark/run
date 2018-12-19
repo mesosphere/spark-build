@@ -4,8 +4,6 @@ set -x
 
 exec 2>&1
 
-SPARK_DIST_PATH=/opt/spark/dist
-
 function export_daemon_opts() {
     export SPARK_DAEMON_JAVA_OPTS=""
     if [ "${DCOS_SERVICE_NAME}" != "spark" ]; then
@@ -28,20 +26,20 @@ function export_daemon_opts() {
 
 function set_log_level() {
     sed "s,<LOG_LEVEL>,${SPARK_LOG_LEVEL}," \
-        ${SPARK_DIST_PATH}/conf/log4j.properties.template >${SPARK_DIST_PATH}/conf/log4j.properties
+        ${SPARK_HOME}/conf/log4j.properties.template >${SPARK_HOME}/conf/log4j.properties
 }
 
 function set_statsd_address() {
   if [ "$STATSD_UDP_HOST" != "" ] && [ "$STATSD_UDP_PORT" != "" ]; then
     sed -e "s/<STATSD_UDP_HOST>/${STATSD_UDP_HOST}/g" \
         -e "s/<STATSD_UDP_PORT>/${STATSD_UDP_PORT}/g" \
-        ${SPARK_DIST_PATH}/conf/metrics.properties.template >${SPARK_DIST_PATH}/conf/metrics.properties
+        ${SPARK_HOME}/conf/metrics.properties.template >${SPARK_HOME}/conf/metrics.properties
   fi
 }
 
 function add_if_non_empty() {
 	if [ -n "$2" ]; then
-		echo "$1=$2" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
+		echo "$1=$2" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 	fi
 }
 
@@ -63,9 +61,10 @@ function configure_properties() {
     add_if_non_empty spark.ssl.trustStorePassword "${SPARK_SSL_TRUSTSTOREPASSWORD}"
     add_if_non_empty spark.ssl.protocol "${SPARK_SSL_PROTOCOL}"
     add_if_non_empty spark.ssl.enabledAlgorithms "${SPARK_SSL_ENABLEDALGORITHMS}"
-    echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties
+    echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 }
 
+source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
 
 export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 set_log_level
@@ -74,12 +73,12 @@ export_daemon_opts
 configure_properties
 ZK="master.mesos:2181"
 
-exec ${SPARK_DIST_PATH}/bin/spark-class \
+exec ${SPARK_HOME}/bin/spark-class \
     org.apache.spark.deploy.mesos.MesosClusterDispatcher \
     --port "${DISPATCHER_PORT}" \
     --webui-port "${DISPATCHER_UI_PORT}" \
     --master "mesos://zk://${ZK}/mesos" \
+    --host "${SPARK_LOCAL_IP}" \
     --zk "${ZK}" \
-    --host "${HOST}" \
     --name "${DCOS_SERVICE_NAME}" \
-    --properties-file "${SPARK_DIST_PATH}/conf/mesos-cluster-dispatcher.properties"
+    --properties-file "${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties"

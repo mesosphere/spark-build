@@ -18,18 +18,7 @@ cd $MESOS_SANDBOX
 LD_LIBRARY_PATH=/opt/mesosphere/libmesos-bundle/lib
 MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
-# Unless explicitly directed, use bootstrap (defined on L55 of Dockerfile) to lookup the IP of the driver agent
-if [ -z ${SKIP_BOOTSTRAP_IP_DETECT} ]; then
-    if [ -f ${BOOTSTRAP} ]; then
-        SPARK_LOCAL_IP=$($BOOTSTRAP --get-task-ip)
-        echo "spark-env: Configured SPARK_LOCAL_IP with bootstrap: ${SPARK_LOCAL_IP}" >&2
-    else
-        echo "ERROR: Unable to find bootstrap to configure SPARK_LOCAL_IP at ${BOOTSTRAP}, exiting." >&2
-        exit 1
-    fi
-else
-    echo "spark-env: Skipping bootstrap IP detection" >&2
-fi
+source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
 
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
 # But this fails now due to MESOS-6391, so I'm setting it to /tmp
