@@ -2,6 +2,9 @@
 set -e
 set -x
 
-mkdir -p "${MESOS_SANDBOX}"/spark
+mkdir -p "${MESOS_SANDBOX}"/spark || {
+    echo "ERROR: User '$(whoami)' does not have sufficient permissions to create the /spark directory in ${MESOS_SANDBOX}" >&2
+    echo "- if deploying Spark using the Docker engine on RHEL/CentOS, please set 'docker.user' to the correct UID. For user 'nobody', the UID is 99" >&2
+    echo "- see https://docs.mesosphere.com/services/spark/latest/limitations for more details" >&2
+}
 exec svlogd "${MESOS_SANDBOX}"/spark
-
