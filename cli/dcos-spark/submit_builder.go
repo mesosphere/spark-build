@@ -357,7 +357,7 @@ func processJarsFlag(args []string) []string {
 				i++
 				newArgs = append(newArgs, args[:i+1]...)
 			}
-			// add --conf spark.mesos.uris=one.jar,two.jar,three.jar
+			// add --conf spark.mesos.uris=one.jar,two.jar
 			newArgs = append(newArgs, "--conf", "spark.mesos.uris="+jarUrls)
 
 			jars = strings.Split(jarUrls, ",")
