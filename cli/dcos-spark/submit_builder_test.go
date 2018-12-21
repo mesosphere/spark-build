@@ -85,6 +85,25 @@ func (suite *CliTestSuite) TestTransformSubmitArgsMultilines() {
 	assert.Equal(suite.T(), expected, actual)
 }
 
+func (suite *CliTestSuite) TestTransformSubmitArgsHandlesJarsProperly() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := `--conf spark.cores.max=8 \
+	--jars=http://abcd.jar,http://efgh.jar \
+	main.jar 100`
+	expected := []string{"--conf=spark.cores.max=8", "--jars=http://abcd.jar,http://efgh.jar", "main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+func (suite *CliTestSuite) TestTransformSubmitArgsHandlesJarsProperlyWithSpace() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := `--conf spark.cores.max=8 \
+	--jars http://abcd.jar,http://efgh.jar \
+	main.jar 100`
+	expected := []string{"--conf=spark.cores.max=8", "--jars=http://abcd.jar,http://efgh.jar", "main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+
 func (suite *CliTestSuite) TestIsSparkApp() {
 	assert.True(suite.T(), isSparkApp("mainApp.jar"))
 	assert.True(suite.T(), isSparkApp("pythonFile.py"))

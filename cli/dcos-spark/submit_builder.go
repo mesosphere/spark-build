@@ -302,12 +302,6 @@ LOOP:
 	for i := 0; i < len(args); {
 		current := strings.TrimSpace(args[i])
 		switch {
-		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
-		// if current is a spark jar/app, we've processed all flags
-		case isSparkApp(current):
-			sparkArgs = append(sparkArgs, args[i])
-			appArgs = append(appArgs, args[i+1:]...)
-			break LOOP
 		case strings.HasPrefix(current, "--"):
 			if isBoolFlag(boolVals, current) {	
 				sparkArgs = append(sparkArgs, current)
@@ -324,6 +318,12 @@ LOOP:
 			next := args[i+1]
 			sparkArgs = append(sparkArgs, current+"="+next)
 			i += 2
+		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
+		// if current is a spark jar/app, we've processed all flags
+		case isSparkApp(current):
+			sparkArgs = append(sparkArgs, args[i])
+			appArgs = append(appArgs, args[i+1:]...)
+			break LOOP
 		default:
 			// if not a flag or jar, current is a continuation of the last arg and should not have been split
 			// eg extraJavaOptions="-Dparam1 -Dparam2" was parsed as [extraJavaOptions, -Dparam1, -Dparam2]
