@@ -173,11 +173,11 @@ def test_multi_arg_confs(service_name=utils.SPARK_SERVICE_NAME):
 @pytest.mark.sanity
 def test_jars_flag(service_name=utils.SPARK_SERVICE_NAME):
     uploadedJarUrl = utils.dcos_test_jar_url()
-    jarName = uploadedJarUrl.split("/")[-1]
+    jarName = uploadedJarUrl.split("/")[-1] # dcos-spark-scala-assembly-XX-SNAPSHOT.jar
     utils.run_tests(
         app_url=utils.SPARK_EXAMPLES, # submit an app that does not include class 'MultiConfs'
         app_args="",
-        expected_output="spark.driver.extraClassPath,{}".format(jarName), # dcos-spark-scala-assembly-XX-SNAPSHOT.jar
+        expected_output="spark.driver.extraClassPath,/mnt/mesos/sandbox/{}".format(jarName),
         service_name=service_name,
         args=["--jars {}".format(uploadedJarUrl),
               "--class MultiConfs"])
