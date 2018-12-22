@@ -34,18 +34,19 @@ ARG JRE_DOWNLOAD_URL="https://downloads.mesosphere.com/java/server-jre-${JAVA_VE
 # Upgrade package index and install basic commands.
 RUN apt-get update \
     && apt-get install -y \
-               python \
-               software-properties-common \
-               runit \
-               nginx \
-               krb5-user \
                curl \
-               unzip \
+               krb5-user \
+               net-tools \
+               nginx \
+               python \
+               runit \
                r-base \
+               software-properties-common \
+               unzip \
     && rm -rf /var/lib/apt/lists/* /usr/share/doc
 
 # lib mesos
-ARG MESOSPHERE_HOME="/opt/mesosphere"
+ENV MESOSPHERE_HOME="/opt/mesosphere"
 ARG BOOTSTRAP_BINARY="${MESOSPHERE_HOME}/bootstrap.zip"
 RUN mkdir -p ${MESOSPHERE_HOME} \
     && curl -L ${LIBMESOS_BUNDLE_DOWNLOAD_URL} | tar -C ${MESOSPHERE_HOME} -zx \
@@ -66,6 +67,7 @@ RUN mkdir ${HADOOP_CONF_DIR}
 
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
+ADD configure-spark-bind-address.sh ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
 ADD nginx /etc/nginx
 
 # The following symlinks are hacks to make spark-class work under the
@@ -77,12 +79,13 @@ RUN ln -s /bin/bash /usr/bin/bash \
     && ln -s /var/lib/runit/service/spark /etc/service/spark \
     && ln -s /var/lib/runit/service/nginx /etc/service/nginx
 
-ADD dist /opt/spark/dist
+ENV SPARK_HOME="/opt/spark"
+ADD dist ${SPARK_HOME}
 ADD krb5.conf.mustache /etc/
 
 # Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
 # current version: Spark 2.2.1, Scala 2.11
-ADD jars/spark-statsd-2.2.1-2.11.jar /opt/spark/dist/jars/
+ADD jars/spark-statsd-2.2.1-2.11.jar ${SPARK_HOME}/jars/
 
 # required to run as nobody
 RUN addgroup --gid 99 nobody \
@@ -95,6 +98,6 @@ RUN addgroup --gid 99 nobody \
     && chmod -R ugo+rw /var/lib/ \
     && chmod -R ugo+rw /var/run/ \
     && chmod -R ugo+rw /var/log/ \
-    && chmod -R ugo+rw /opt/spark/dist
+    && chmod -R ugo+rw ${SPARK_HOME}
 
-WORKDIR /opt/spark/dist
+WORKDIR ${SPARK_HOME}

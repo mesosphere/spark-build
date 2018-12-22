@@ -62,6 +62,34 @@
                         "ALL"
                     ]
                 },
+                "virtual_network_enabled": {
+                  "description": "Enable virtual networking",
+                  "type": "boolean",
+                  "default": false
+                },
+                "virtual_network_name": {
+                  "description": "The name of the virtual network to join",
+                  "type": "string",
+                  "default": "dcos"
+                },
+                "virtual_network_plugin_labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                         "properties": {
+                            "key": {
+                                "type": "string",
+                                "default": ""
+                            },
+                            "value": {
+                                "type": "string",
+                                "default": ""
+                            }
+                         }
+                    },
+                    "description": "Labels to pass to the virtual network plugin",
+                    "default": []
+                },
                 "spark-history-server-url": {
                     "type": "string",
                     "description": "URL of The Spark History Server (e.g. {{https-protocol}}<dcos-url>/service/spark-history )"

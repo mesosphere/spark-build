@@ -1,4 +1,4 @@
-lazy val SparkVersion = sys.env.get("SPARK_VERSION").getOrElse("2.2.0")
+lazy val SparkVersion = sys.env.getOrElse("SPARK_VERSION", "2.3.2")
 
 lazy val root = (project in file("."))
   .settings(
@@ -7,9 +7,11 @@ lazy val root = (project in file("."))
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % SparkVersion % "provided",
-      "org.apache.spark" % "spark-streaming_2.11" % SparkVersion % "provided",
+      "org.apache.spark" %% "spark-streaming" % SparkVersion % "provided",
+      "org.apache.spark" %% "spark-sql" % SparkVersion % "provided",
       "org.apache.spark" %% "spark-mllib" % SparkVersion % "provided",
-      "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % SparkVersion,
+      "org.apache.spark" %% "spark-streaming-kafka-0-10" % SparkVersion,
+      "org.apache.spark" %% "spark-sql-kafka-0-10" % SparkVersion,
       "org.apache.hadoop" % "hadoop-aws" % "2.6.0",
       "org.apache.kafka" % "kafka_2.11" % "0.10.0.1",
       "com.github.scopt" %% "scopt" % "3.7.0",

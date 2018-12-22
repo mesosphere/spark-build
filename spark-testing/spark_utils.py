@@ -3,6 +3,7 @@ import shakedown
 import logging
 import os
 import re
+import retrying
 import urllib
 import urllib.parse
 
@@ -74,7 +75,7 @@ def require_spark(service_name=SPARK_SERVICE_NAME, additional_options={}, zk='sp
         SPARK_PACKAGE_NAME,
         service_name,
         0,
-        additional_options=_get_spark_options(service_name, additional_options),
+        additional_options=get_spark_options(service_name, additional_options),
         wait_for_deployment=False, # no deploy plan
         insert_strict_options=False) # lacks principal + secret_name options
 
@@ -96,7 +97,7 @@ def teardown_spark(service_name=SPARK_SERVICE_NAME, zk='spark_mesos_dispatcher')
         sdk_install.retried_run_janitor(service_name, re.escape('*'), 'spark-service-acct', zk)
 
 
-def _get_spark_options(service_name, additional_options):
+def get_spark_options(service_name, additional_options):
     options = {
         "service": {
             "user": SPARK_USER,
@@ -114,6 +115,8 @@ def _get_spark_options(service_name, additional_options):
         # Specifically, Spark's config.json lacks: service.principal, service.secret_name
         options["service"]["service_account"] = SPARK_SERVICE_ACCOUNT
         options["service"]["service_account_secret"] = SPARK_SERVICE_ACCOUNT_SECRET
+
+    print(sdk_install.merge_dictionaries(options, additional_options))
 
     return sdk_install.merge_dictionaries(options, additional_options)
 
@@ -171,6 +174,17 @@ def check_job_output(task_id, expected_output):
         LOGGER.error("task stdout: {}".format(stdout))
         LOGGER.error("task stderr: {}".format(stderr))
         raise Exception("{} not found in stdout".format(expected_output))
+
+
+@retrying.retry(
+        wait_fixed=5000,
+        stop_max_delay=600 * 1000,
+        retry_on_result=lambda res: not res)
+def wait_for_running_job_output(task_id, expected_line):
+    stdout = sdk_cmd.run_cli("task log --lines=1000 {}".format(task_id))
+    result = expected_line in stdout
+    LOGGER.info('Checking for {} in STDOUT:\n{}\nResult: {}'.format(expected_line, stdout, result))
+    return result
 
 
 def upload_file(file_path):
