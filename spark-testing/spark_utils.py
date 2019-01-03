@@ -32,6 +32,7 @@ FOLDERED_SPARK_SERVICE_NAME = "/path/to/" + SPARK_SERVICE_NAME
 SPARK_USER = os.getenv("SPARK_USER", "nobody")
 SPARK_HISTORY_USER = SPARK_USER
 SPARK_DOCKER_USER = os.getenv("SPARK_DOCKER_USER", None)
+SPARK_DOCKER_IMAGE = os.getenv("DOCKER_DIST_IMAGE", "mesosphere/spark-dev")
 
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
 JOB_WAIT_TIMEOUT_SEC = 1800
@@ -134,7 +135,8 @@ def submit_job(
         spark_user=SPARK_USER,
         driver_role=SPARK_DRIVER_ROLE,
         verbose=True,
-        principal=SPARK_SERVICE_ACCOUNT):
+        principal=SPARK_SERVICE_ACCOUNT,
+        use_cli=True):
 
     conf_args = args.copy()
 
@@ -154,11 +156,22 @@ def submit_job(
 
     submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
     verbose_flag = "--verbose" if verbose else ""
-    stdout = sdk_cmd.svc_cli(
-        SPARK_PACKAGE_NAME,
-        service_name,
-        'run {} --submit-args="{}"'.format(verbose_flag, submit_args))
-    result = re.search(r"Submission id: (\S+)", stdout)
+    result = None
+
+    if use_cli:
+        stdout = sdk_cmd.svc_cli(
+            SPARK_PACKAGE_NAME,
+            service_name,
+            'run {} --submit-args="{}"'.format(verbose_flag, submit_args))
+        result = re.search(r"Submission id: (\S+)", stdout)
+    else:
+        docker_cmd = "sudo docker run --net=host -ti {} bin/spark-submit {}".format(SPARK_DOCKER_IMAGE, submit_args)
+        ssh_opts = "--option UserKnownHostsFile=/dev/null --option StrictHostKeyChecking=no"
+
+        LOGGER.info("Running Docker command on leader: {}".format(docker_cmd))
+        _, stdout, stderr = sdk_cmd.run_raw_cli("node ssh --master-proxy --leader {} '{}'".format(ssh_opts, docker_cmd))
+        result = re.search(r'"submissionId" : "(\S+)"', stdout)
+
     if not result:
         raise Exception("Unable to find submission ID in stdout:\n{}".format(stdout))
     return result.group(1)

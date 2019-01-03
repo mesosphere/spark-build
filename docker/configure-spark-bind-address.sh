@@ -77,11 +77,10 @@ fi
 
 if [ ! -z "${SPARK_LOCAL_IP}" ]; then
     echo "[bind-address]: Bind address: ${SPARK_LOCAL_IP}"
-    echo "SPARK_LOCAL_IP=${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-env.sh
+    export SPARK_LOCAL_IP=${SPARK_LOCAL_IP}
     export LIBPROCESS_IP=${SPARK_LOCAL_IP}
 
     echo "spark.driver.host ${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-defaults.conf
-    echo "spark.driver.bindAddress ${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-defaults.conf
 else
     echo "[bind-address]: IP resolution was skipped, bind address will be resolved internally by Spark"
 fi
