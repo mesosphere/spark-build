@@ -42,7 +42,6 @@ def setup_spark(configure_security, configure_universe):
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark()
-        sdk_cmd.run_cli('package install --cli dcos-enterprise-cli --yes')
         yield
     finally:
         utils.teardown_spark()

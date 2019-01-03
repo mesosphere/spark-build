@@ -21,7 +21,8 @@ which sleeps for `taskDurationSec`. The main goal of this class is to mimic long
 Usage: 
 
 ```
-dcos spark run --submit-args="--class MockTaskRunner https://s3.us-east-2.amazonaws.com/<S3 bucket>/dcos-spark-scala-tests-assembly-<version>.jar 4 1800"
+dcos spark run --submit-args="--class MockTaskRunner \
+https://s3.us-east-2.amazonaws.com/<S3 bucket>/dcos-spark-scala-tests-assembly-<version>.jar numTasks taskDurationSec"
 ```
 
 Example:
@@ -38,3 +39,36 @@ In the example above Spark Driver will launch 4 single-core executors (controlle
 `spark.cores.max` settings), and TaskRunnerApp will run 4 Spark Tasks each sleeping for 30 minutes. Each of the executors
 will run only one task and the whole application should complete after 30 minutes (in case executors aren't crashed 
 externally during the execution)
+
+## ShuffleApp
+[ShuffleApp](src/main/scala/ShuffleApp.scala) performs a naive shuffle and is aimed at testing communications between 
+executors e.g. within a virtual/overlay network. It's a slight modification of GroupByTest from Spark Examples but with 
+a deterministic sequential key generation which doesn't rely on random number generator.
+ 
+
+Usage: 
+
+```
+dcos spark run --submit-args="--class MockTaskRunner \
+https://s3.us-east-2.amazonaws.com/<S3 bucket>/dcos-spark-scala-tests-assembly-<version>.jar numMappers totalUniqueKeys valueSize numReducers sleepBeforeShutdown"
+```
+
+Example:
+
+```
+dcos spark run --verbose --submit-args=" \
+--conf spark.executor.cores=1 \
+--conf spark.cores.max=4 \
+--conf=spark.scheduler.minRegisteredResourcesRatio=1 \
+--conf=spark.scheduler.maxRegisteredResourcesWaitingTime=3m \
+--class ShuffleApp \
+https://s3.us-east-2.amazonaws.com/<S3 bucket>/dcos-spark-scala-tests-assembly-<version>.jar 4 12000 100 4 300"
+
+```
+
+In the example above Spark Driver will launch 4 single-core executors (controlled by `spark.executor.cores` and 
+`spark.cores.max` settings), and wait for all of them get to the running state (ratio is controlled by 
+`spark.scheduler.minRegisteredResourcesRatio` and wait time by `spark.scheduler.maxRegisteredResourcesWaitingTime` 
+properties). When all executors are up, 12000 unique keys will be generated 4 times i.e. each of 4 partitions will contain 
+the same set of keys which will then be grouped by 4 reducers. `sleepBeforeShutdown` parameter is needed in order to
+verify tasks' properties while they're running and avoid quick application termination. 

@@ -12,7 +12,7 @@ featureMaturity:
 
 1.  Run a Spark job:
 
-        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30"
+        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 30"
 
 1.  Run a Python Spark job:
 

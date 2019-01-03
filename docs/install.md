@@ -112,7 +112,7 @@ For development purposes, you can install Spark on a local DC/OS cluster. For th
 1. Run a simple Job:
 
    ```bash
-   dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 30"
+   dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 30"
    ```
 
 **Note**: A limited resource environment such as DC/OS Vagrant restricts some of the features available in DC/OS Apache
@@ -302,7 +302,7 @@ Permissions can also be assigned through the UI.
     $ dcos spark run --verbose --submit-args=" \
     --conf spark.mesos.principal=<service-account> \
     --conf spark.mesos.containerizer=mesos \
-    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 100"
+    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 100"
     ```
 
 If you want to use the [Docker Engine](/1.10/deploying-services/containerizers/docker-containerizer/) instead of the [Universal Container Runtime](/1.10/deploying-services/containerizers/ucr/), you must specify the user through the `SPARK_USER` environment variable: 
@@ -311,7 +311,7 @@ If you want to use the [Docker Engine](/1.10/deploying-services/containerizers/d
     $ dcos spark run --verbose --submit-args="\
     --conf spark.mesos.principal=<service-account> \
     --conf spark.mesos.driverEnv.SPARK_USER=nobody \
-    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar 100"
+    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 100"
     ```
 
 

@@ -1,21 +1,22 @@
 import ipaddress
 import json
 import logging
-import os
 
 import pytest
-import retrying
 import sdk_cmd
 import sdk_install
+import sdk_networks
 import sdk_tasks
-import sdk_utils
 import shakedown
 import spark_utils as utils
 
 log = logging.getLogger(__name__)
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
+
+SHUFFLE_JOB_FW_NAME = "Shuffle Test"
+SHUFFLE_JOB_EXPECTED_GROUPS_COUNT = 12000
+SHUFFLE_JOB_NUM_EXECUTORS = 4
 
 CNI_DISPATCHER_SERVICE_NAME = "spark-cni-dispatcher"
 CNI_DISPATCHER_ZK = "spark_mesos__dispatcher_cni"
@@ -44,76 +45,14 @@ def configure_security():
     yield from utils.spark_security_session()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def setup_spark(configure_security, configure_universe):
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark()
-        sdk_cmd.run_cli('package install --cli dcos-enterprise-cli --yes')
         yield
     finally:
         utils.teardown_spark()
-
-
-@pytest.mark.sanity
-def test_cni(setup_spark):
-    utils.run_tests(app_url=utils.SPARK_EXAMPLES,
-                    app_args="",
-                    expected_output="Pi is roughly 3",
-                    args=["--conf spark.mesos.network.name=dcos",
-                          "--class org.apache.spark.examples.SparkPi"])
-
-
-@pytest.mark.sanity
-@pytest.mark.smoke
-def test_cni_labels(setup_spark):
-    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
-                                      app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
-                                      args=["--conf spark.mesos.network.name=dcos",
-                                            "--conf spark.mesos.network.labels={}".format(SPARK_NETWORK_LABELS),
-                                            "--conf spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
-                                            "--class org.apache.spark.examples.SparkPi"])
-
-    # Wait until executors are running
-    sdk_tasks.check_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS, timeout_seconds=600)
-
-    # Check for network name / labels in Driver task info
-    driver_task = shakedown.get_task(driver_task_id, completed=False)
-    _check_task_network_info(driver_task)
-
-    # Check for network name / labels in Executor task info
-    executor_task = shakedown.get_service_tasks(SPARK_PI_FW_NAME)[0]
-    _check_task_network_info(executor_task)
-
-    # Check job output
-    utils.check_job_output(driver_task_id, "Pi is roughly 3")
-
-
-def _check_task_network_info(task):
-    # Expected: "network_infos":[{
-    #   "name":"dcos",
-    #   "labels":{
-    #       "labels":[
-    #           {"key":"key_1","value":"value_1"},
-    #           {"key":"key_2","value":"value_2"}]}}]
-    network_info = task['container']['network_infos'][0]
-    log.info("Network info:\n{}".format(network_info))
-    assert network_info['name'] == NETWORK_NAME
-    labels = network_info['labels']['labels']
-
-    log.info("=> Labels network_info['labels']:\n{}".format(network_info['labels']))
-    log.info("=> Labels network_info['labels']['labels']:\n{}".format(network_info['labels']['labels']))
-    _check_label_present(labels, "key_1", "value_1")
-    _check_label_present(labels, "key_2", "value_2")
-
-
-def _check_label_present(labels, key, value):
-    for label in labels:
-        if label["key"] == key:
-            assert label["value"] == value
-            return
-
-    raise AssertionError("Label with key {} wasn't found in task network labels".format(key))
 
 
 # The following dispatcher fixtures rely on sdk_install.install because for the time being
@@ -145,24 +84,134 @@ def spark_dispatcher(configure_security, configure_universe, use_ucr_containeriz
 
 @pytest.mark.sanity
 @pytest.mark.parametrize('use_ucr_containerizer', [False])
-def test_dispatcher_cni_support_for_docker(spark_dispatcher):
-    host_ip, task_ip = _get_host_and_task_ips(CNI_DISPATCHER_SERVICE_NAME)
-    subnet = _get_host_subnet(host_ip)
+def test_cni_dispatcher_docker(spark_dispatcher):
+    task = _get_dispatcher_task()
+    _check_task_network(task, is_docker=True)
+
+
+@pytest.mark.sanity
+@pytest.mark.parametrize('use_ucr_containerizer', [True])
+def test_cni_dispatcher_ucr(spark_dispatcher):
+    task = _get_dispatcher_task()
+    _check_task_network(task)
+
+
+@pytest.mark.sanity
+@pytest.mark.smoke
+def test_cni_labels(setup_spark):
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                      app_args="3000",   # Long enough to examine the Driver's & Executor's task infos
+                                      args=["--conf spark.mesos.network.name={}".format(NETWORK_NAME),
+                                            "--conf spark.mesos.network.labels={}".format(SPARK_NETWORK_LABELS),
+                                            "--conf spark.cores.max={}".format(CNI_TEST_NUM_EXECUTORS),
+                                            "--conf spark.mesos.containerizer=mesos",
+                                            "--class org.apache.spark.examples.SparkPi"])
+
+    sdk_tasks.check_running(SPARK_PI_FW_NAME, CNI_TEST_NUM_EXECUTORS, timeout_seconds=600)
+
+    driver_task = shakedown.get_task(driver_task_id, completed=False)
+    _check_task_network(driver_task)
+    _check_task_network_labels(driver_task)
+
+    executor_tasks = shakedown.get_service_tasks(SPARK_PI_FW_NAME)
+    for task in executor_tasks:
+        _check_task_network(task)
+        _check_task_network_labels(task)
+
+    utils.check_job_output(driver_task_id, "Pi is roughly 3")
+
+
+@pytest.mark.sanity
+@pytest.mark.smoke
+def test_cni_driver_and_executors_docker(setup_spark):
+    driver_task_id = _submit_shuffle_job(num_unique_keys=SHUFFLE_JOB_EXPECTED_GROUPS_COUNT, sleep=300)
+    sdk_tasks.check_running(SHUFFLE_JOB_FW_NAME, SHUFFLE_JOB_NUM_EXECUTORS, timeout_seconds=600)
+
+    driver_task = shakedown.get_task(driver_task_id, completed=False)
+    _check_task_network(driver_task, is_docker=True)
+
+    executor_tasks = shakedown.get_service_tasks(SHUFFLE_JOB_FW_NAME)
+    for task in executor_tasks:
+        _check_task_network(task, is_docker=True)
+
+    utils.wait_for_running_job_output(driver_task_id, "Groups count: {}".format(SHUFFLE_JOB_EXPECTED_GROUPS_COUNT))
+
+
+@pytest.mark.sanity
+@pytest.mark.smoke
+def test_cni_driver_and_executors_ucr(setup_spark):
+    driver_task_id = _submit_shuffle_job(num_unique_keys=SHUFFLE_JOB_EXPECTED_GROUPS_COUNT,
+                                         sleep=300,
+                                         extra_args=["--conf spark.mesos.containerizer=mesos"])
+
+    sdk_tasks.check_running(SHUFFLE_JOB_FW_NAME, SHUFFLE_JOB_NUM_EXECUTORS, timeout_seconds=600)
+    driver_task = shakedown.get_task(driver_task_id, completed=False)
+    _check_task_network(driver_task)
+
+    executor_tasks = shakedown.get_service_tasks(SHUFFLE_JOB_FW_NAME)
+    for task in executor_tasks:
+        _check_task_network(task)
+
+    utils.wait_for_running_job_output(driver_task_id, "Groups count: {}".format(SHUFFLE_JOB_EXPECTED_GROUPS_COUNT))
+
+
+def _submit_shuffle_job(num_mappers=4, num_unique_keys=4000, value_size_bytes=100, num_reducers=4, sleep=0, extra_args=[]):
+    # Usage: ShuffleApp [numMappers] [numPairs] [valueSize] [numReducers] [sleepBeforeShutdown]
+    return utils.submit_job(app_url=utils.dcos_test_jar_url(),
+                            app_args="{} {} {} {} {}".format(num_mappers, num_unique_keys, value_size_bytes, num_reducers, sleep),
+                            args=["--conf spark.executor.cores=1",
+                                  "--conf spark.cores.max={}".format(SHUFFLE_JOB_NUM_EXECUTORS),
+                                  "--conf spark.scheduler.minRegisteredResourcesRatio=1",
+                                  "--conf spark.scheduler.maxRegisteredResourcesWaitingTime=3m",
+                                  "--conf spark.mesos.network.name={}".format(NETWORK_NAME),
+                                  "--class ShuffleApp"] + extra_args)
+
+
+def _check_task_network(task, is_docker=False):
+    host_ip = sdk_networks.get_task_host(task)
+    task_ip = sdk_networks.get_task_ip(task)
+    subnet = sdk_networks.get_overlay_subnet()
+
     _verify_task_ip(task_ip, host_ip, subnet)
+    _verify_task_network_name(task)
 
-    # Network labels are not propagated to Mesos Task NetworkInfo by Marathon
-    # when Docker containerizer is used. Labels verification is skipped for Docker.
+    if is_docker:
+        _check_docker_network(task, host_ip, subnet)
+    else:
+        _verify_ucr_task_inet_address(task, subnet)
 
-    # checking Docker container info
-    task = _get_task()
-    task_id = task["id"]
-    container_id_cmd = "sudo docker ps --format='{{.ID}}' | " \
-                       "xargs -I {} docker inspect --format='{{.ID}},{{.Config.Labels.MESOS_TASK_ID}}' {} | " \
-                       "grep " + task_id + " | cut -d',' -f1"
 
-    _, container_id = sdk_cmd.agent_ssh(host_ip, container_id_cmd)
-    assert container_id is not None and container_id.rstrip() != ""
+def _verify_task_ip(task_ip, host_ip, subnet):
+    assert host_ip != task_ip, \
+        "Task has the same IP as the host it's running on"
+    assert ipaddress.ip_address(task_ip) in ipaddress.ip_network(subnet), \
+        "Task IP is not in the specified subnet"
 
+
+def _verify_task_network_name(task):
+    network_info = task['container']['network_infos'][0]
+    log.info("Network info:\n{}".format(network_info))
+    assert network_info['name'] == NETWORK_NAME
+
+
+def _check_task_network_labels(task):
+    labels = task['container']['network_infos'][0]['labels']['labels']
+
+    _check_label_present(labels, "key_1", "value_1")
+    _check_label_present(labels, "key_2", "value_2")
+
+
+def _check_label_present(labels, key, value):
+    for label in labels:
+        if label["key"] == key:
+            assert label["value"] == value
+            return
+
+    raise AssertionError("Label with key {} wasn't found in task network labels".format(key))
+
+
+def _check_docker_network(task, host_ip, subnet):
+    container_id = _get_docker_container_id(task, host_ip)
     inspect_cmd = "sudo docker inspect " \
                   "--format='{{.NetworkSettings.Networks." + NETWORK_NAME + ".IPAddress}}' " + container_id.rstrip()
 
@@ -178,25 +227,34 @@ def test_dispatcher_cni_support_for_docker(spark_dispatcher):
         "Docker Inet address is not in the specified subnet"
 
 
-@pytest.mark.sanity
-@pytest.mark.parametrize('use_ucr_containerizer', [True])
-def test_dispatcher_cni_support_for_ucr(spark_dispatcher):
-    host_ip, task_ip = _get_host_and_task_ips(CNI_DISPATCHER_SERVICE_NAME)
-    subnet = _get_host_subnet(host_ip)
-    _verify_task_ip(task_ip, host_ip, subnet)
-    task = _get_task()
+def _get_docker_container_id(task, host_ip):
+    task_id = _get_task_container_id(task)
+    assert task_id is not None, "Unable to find a task in state TASK_RUNNING"
 
-    log.info("Checking task network info")
-    _check_task_network_info(task)
+    container_id_cmd = "docker inspect --format='{{.ID}}' mesos-" + task_id
+    _, container_id = sdk_cmd.agent_ssh(host_ip, container_id_cmd)
 
-    # checking UCR container inet address
+    assert container_id is not None and container_id.rstrip() != "", \
+        "Unable to retrieve Docker container ID for task id: {}, host: {}".format(task_id, host_ip)
+    return container_id
+
+
+def _get_task_container_id(task):
+    for status in task['statuses']:
+        if status['state'] == "TASK_RUNNING":
+            return status['container_status']['container_id']['value']
+
+    return None
+
+
+def _verify_ucr_task_inet_address(task, subnet):
     task_id = task["id"]
     inet_addr = sdk_cmd.run_cli(f"task exec {task_id} hostname -i")
     assert ipaddress.ip_address(inet_addr.rstrip()) in ipaddress.ip_network(subnet), \
         "UCR container Inet address is not in the specified subnet"
 
 
-def _get_task(task_name=CNI_DISPATCHER_SERVICE_NAME):
+def _get_dispatcher_task(task_name=CNI_DISPATCHER_SERVICE_NAME):
     tasks_json = json.loads(sdk_cmd.run_cli("task --json"))
 
     tasks = []
@@ -206,56 +264,3 @@ def _get_task(task_name=CNI_DISPATCHER_SERVICE_NAME):
 
     assert len(tasks) == 1, "More than one task with name {} is running".format(task_name)
     return tasks[0]
-
-
-def _get_host_subnet(host_ip, network_name=NETWORK_NAME):
-    network_info_endpoint = "leader.mesos:5050/overlay-master/state"
-    network_info_curl_cmd = "curl http://{}".format(network_info_endpoint)
-
-    if sdk_utils.is_strict_mode():
-        network_info_curl_cmd = "curl -k https://{}".format(network_info_endpoint)
-
-    @retrying.retry(stop_max_attempt_number=10, wait_fixed=1000)
-    def get_network_info_with_retry():
-        ok, networks = sdk_cmd.master_ssh(network_info_curl_cmd)
-        assert ok
-        return json.loads(networks)
-
-    network_info = get_network_info_with_retry()
-
-    # finding an agent with the same IP as tasks's from the list of agents in networks info
-    task_agent = None
-    for agent in network_info["agents"]:
-        if agent["ip"] == host_ip:
-            task_agent = agent
-            break
-
-    assert task_agent is not None, \
-        "Agent with task IP is not present in networks info output"
-
-    # finding subnet info from agent's networks
-    subnet = None
-    for network in task_agent["overlays"]:
-        if network["info"]["name"] == network_name:
-            subnet = network["info"]["subnet"]
-            break
-
-    assert subnet is not None, \
-        "Subnet wasn't found in agent networks info output"
-
-    return subnet
-
-
-def _get_host_and_task_ips(service_name):
-    app_json = sdk_cmd.get_json_output("marathon app show {}".format(service_name))
-
-    host_ip = app_json["tasks"][0]["host"]
-    task_ip = app_json["tasks"][0]["ipAddresses"][0]["ipAddress"]
-    return host_ip, task_ip
-
-
-def _verify_task_ip(task_ip, host_ip, subnet):
-    assert host_ip != task_ip, \
-        "Task has the same IP as the host it's running on"
-    assert ipaddress.ip_address(task_ip) in ipaddress.ip_network(subnet), \
-        "Task IP is not in the specified subnet"
