@@ -93,6 +93,7 @@ func (suite *CliTestSuite) TestProcessJarsFlag() {
 		"--jars=http://one.jar",
 		"--conf=spark.mesos.uris=http://one.jar",
 		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar",
 		"main.jar"}
 	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)
@@ -104,6 +105,7 @@ func (suite *CliTestSuite) TestProcessMultiJarsFlag() {
 		"--jars=http://one.jar,http://two.jar",
 		"--conf=spark.mesos.uris=http://one.jar,http://two.jar",
 		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
 		"main.jar"}
 	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)
@@ -115,6 +117,7 @@ func (suite *CliTestSuite) TestProcessMultiJarsFlagWithSpace() {
 		"--jars=http://one.jar,http://two.jar",
 		"--conf=spark.mesos.uris=http://one.jar,http://two.jar",
 		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
 		"main.jar"}
 	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)

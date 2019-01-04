@@ -366,9 +366,11 @@ func processJarsFlag(args []string) []string {
 				jarName := paths[len(paths)-1]
 				jarNames = append(jarNames, jarName)
 			}
-			// add --conf spark.mesos.extraClassPaths=one.jar:two.jar
+			// add --conf spark.driver.extraClassPaths=one.jar:two.jar
+			// add --conf spark.executor.extraClassPath=one.jar:two.jar
 			jarPaths := strings.Join(jarNames, ":/mnt/mesos/sandbox/")
 			newArgs = append(newArgs, "--conf", "spark.driver.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
+			newArgs = append(newArgs, "--conf", "spark.executor.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
 			newArgs = append(newArgs, args[i+1:]...)
 			break
 		}
