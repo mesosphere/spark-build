@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const image = "mesosphere/spark"
@@ -81,6 +82,43 @@ func (suite *CliTestSuite) TestTransformSubmitArgsMultilines() {
 	--supervise --driver-memory 1g \
 	main.py 100`
 	expected := []string{"--conf=spark.driver.extraJavaOptions=-XX:+PrintGC -XX:+PrintGCTimeStamps", "--supervise", "--driver-memory=1g", "main.py"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+
+func (suite *CliTestSuite) TestProcessJarsFlag() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.cores.max=8 --jars=http://one.jar main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--jars=http://one.jar",
+		"--conf=spark.mesos.uris=http://one.jar",
+		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar",
+		"main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+func (suite *CliTestSuite) TestProcessMultiJarsFlag() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.cores.max=8 --jars=http://one.jar,http://two.jar main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--jars=http://one.jar,http://two.jar",
+		"--conf=spark.mesos.uris=http://one.jar,http://two.jar",
+		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
+}
+func (suite *CliTestSuite) TestProcessMultiJarsFlagWithSpace() {
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.cores.max=8 --jars http://one.jar,http://two.jar main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--jars=http://one.jar,http://two.jar",
+		"--conf=spark.mesos.uris=http://one.jar,http://two.jar",
+		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar:/mnt/mesos/sandbox/two.jar",
+		"main.jar"}
 	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)
 }
