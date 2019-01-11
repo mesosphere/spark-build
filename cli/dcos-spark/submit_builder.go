@@ -298,18 +298,15 @@ func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []stri
 		log.Fatalf("Could not parse string args correctly. Error: %v", err)
 	}
 	sparkArgs, appArgs := make([]string, 0), make([]string, 0)
+
+	args = processJarsFlag(args)
+
 LOOP:
 	for i := 0; i < len(args); {
 		current := strings.TrimSpace(args[i])
 		switch {
-		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
-		// if current is a spark jar/app, we've processed all flags
-		case isSparkApp(current):
-			sparkArgs = append(sparkArgs, args[i])
-			appArgs = append(appArgs, args[i+1:]...)
-			break LOOP
 		case strings.HasPrefix(current, "--"):
-			if isBoolFlag(boolVals, current) {	
+			if isBoolFlag(boolVals, current) {
 				sparkArgs = append(sparkArgs, current)
 				i++
 				continue LOOP
@@ -324,6 +321,12 @@ LOOP:
 			next := args[i+1]
 			sparkArgs = append(sparkArgs, current+"="+next)
 			i += 2
+		// The main assumption with --submit-args is that all spark-submit flags come before the spark jar URL
+		// if current is a spark jar/app, we've processed all flags
+		case isSparkApp(current):
+			sparkArgs = append(sparkArgs, args[i])
+			appArgs = append(appArgs, args[i+1:]...)
+			break LOOP
 		default:
 			// if not a flag or jar, current is a continuation of the last arg and should not have been split
 			// eg extraJavaOptions="-Dparam1 -Dparam2" was parsed as [extraJavaOptions, -Dparam1, -Dparam2]
@@ -337,6 +340,45 @@ LOOP:
 		client.PrintVerbose("Translated application arguments: '%s'", strings.Join(appArgs, ", "))
 	}
 	return sparkArgs, appArgs
+}
+
+// Special handling of '--jars' flag
+// Adds additional flags to instruct Mesos Fetcher to download jars to sandbox and add them to driver class path
+func processJarsFlag(args []string) []string {
+	var newArgs, jarNames, jars []string
+	for i := 0; i < len(args); i++ {
+		if strings.Contains(args[i], "jars") {
+			var jarUrls string
+			if strings.Contains(args[i], "=") {
+				jarUrls = strings.Split(args[i], "=")[1]
+				newArgs = append(newArgs, args[:i+1]...)
+			} else {
+				jarUrls = args[i+1]
+				i++
+				newArgs = append(newArgs, args[:i+1]...)
+			}
+			// add --conf spark.mesos.uris=one.jar,two.jar
+			newArgs = append(newArgs, "--conf", "spark.mesos.uris="+jarUrls)
+
+			jars = strings.Split(jarUrls, ",")
+			for i := 0; i < len(jars); i++ {
+				paths := strings.Split(jars[i], "/")
+				jarName := paths[len(paths)-1]
+				jarNames = append(jarNames, jarName)
+			}
+			// add --conf spark.driver.extraClassPaths=one.jar:two.jar
+			// add --conf spark.executor.extraClassPath=one.jar:two.jar
+			jarPaths := strings.Join(jarNames, ":/mnt/mesos/sandbox/")
+			newArgs = append(newArgs, "--conf", "spark.driver.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
+			newArgs = append(newArgs, "--conf", "spark.executor.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
+			newArgs = append(newArgs, args[i+1:]...)
+			break
+		}
+	}
+	if len(newArgs) > 0 {
+		return newArgs
+	}
+	return args
 }
 
 var acceptedSparkAppExtensions = []string{
