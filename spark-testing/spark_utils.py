@@ -39,7 +39,7 @@ JOB_WAIT_TIMEOUT_SEC = 1800
 LOGGER = logging.getLogger(__name__)
 
 SPARK_PACKAGE_NAME = os.getenv("SPARK_PACKAGE_NAME", "spark")
-SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.0.1.jar"
+SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar"
 
 
 def _check_tests_assembly():
@@ -279,6 +279,7 @@ def spark_security_session():
     try:
         if sdk_utils.is_strict_mode():
             setup_security()
+            sdk_security.install_enterprise_cli()
         yield
     finally:
         if sdk_utils.is_strict_mode():

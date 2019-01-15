@@ -69,16 +69,19 @@ function detect_bind_address_with_bootstrap() {
     fi
 }
 
-if [ "${VIRTUAL_NETWORK_ENABLED}" = true ]; then
-    detect_bind_address
-else
+if [ "${USE_BOOTSTRAP_FOR_IP_DETECT}" = true ] && [ "${VIRTUAL_NETWORK_ENABLED}" != true ]; then
     detect_bind_address_with_bootstrap
+else
+    detect_bind_address
 fi
 
 if [ ! -z "${SPARK_LOCAL_IP}" ]; then
     echo "[bind-address]: Bind address: ${SPARK_LOCAL_IP}"
     echo "SPARK_LOCAL_IP=${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-env.sh
     export LIBPROCESS_IP=${SPARK_LOCAL_IP}
+
+    echo "spark.driver.host ${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+    echo "spark.driver.bindAddress ${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-defaults.conf
 else
     echo "[bind-address]: IP resolution was skipped, bind address will be resolved internally by Spark"
 fi
