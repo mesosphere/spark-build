@@ -196,7 +196,7 @@ key_helper: true
 template_parameters:
   AdminLocation: 0.0.0.0/0
   PublicSlaveInstanceCount: 1
-  SlaveInstanceCount: 5
+  SlaveInstanceCount: 7
 ssh_user: core
 endef
 
