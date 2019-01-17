@@ -4,6 +4,7 @@ import pytest
 import sdk_auth
 import sdk_cmd
 import sdk_tasks
+import sdk_utils
 import shakedown
 import spark_utils as utils
 
@@ -42,6 +43,7 @@ def feed_sample_data(jar_uri, kafka_brokers, topic, common_args, messages):
     utils.check_job_output(producer_id, "{} messages sent to Kafka".format(len(messages)))
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_structured_streaming_recovery(kerberized_spark, kerberized_kafka):

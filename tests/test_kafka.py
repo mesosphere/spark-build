@@ -3,6 +3,7 @@ import os
 import pytest
 import sdk_cmd
 import sdk_tasks
+import sdk_utils
 import spark_utils as utils
 
 from tests.fixtures.kafka import KERBERIZED_KAFKA, KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME, KEYTAB_SECRET
@@ -27,6 +28,7 @@ def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
         utils.teardown_spark()
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
 @pytest.mark.skipif(not utils.kafka_enabled(), reason='KAFKA_ENABLED is false')
