@@ -25,6 +25,11 @@
 
         {{#service.virtual_network_enabled}}
         "VIRTUAL_NETWORK_ENABLED": "true",
+        "VIRTUAL_NETWORK_NAME": "{{service.virtual_network_name}}",
+            {{^service.virtual_network_plugin_labels.isEmpty}}
+            "VIRTUAL_NETWORK_PLUGIN_LABELS": "{{#service.virtual_network_plugin_labels}}{{key}}:{{value}},{{/service.virtual_network_plugin_labels}}",
+            {{/service.virtual_network_plugin_labels.isEmpty}}
+        "VIRTUAL_NETWORK_LABELS": "{{service.virtual_network_name}}",
         "SPARK_BIND_ADDRESS_DETECTION_METHOD": "hostname=ip-address",
         {{/service.virtual_network_enabled}}
         {{^service.virtual_network_enabled}}
