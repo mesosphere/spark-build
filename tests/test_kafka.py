@@ -12,6 +12,7 @@ import sdk_hosts
 import sdk_install
 import sdk_tasks
 import sdk_security
+import sdk_utils
 
 
 LOGGER = logging.getLogger(__name__)
@@ -108,6 +109,7 @@ def setup_spark(kerberized_kafka, configure_security_spark, configure_universe):
         utils.teardown_spark()
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 @pytest.mark.smoke
 @pytest.mark.skipif(not utils.kafka_enabled(), reason='KAFKA_ENABLED is false')
