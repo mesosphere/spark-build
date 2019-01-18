@@ -83,10 +83,6 @@ ENV SPARK_HOME="/opt/spark"
 ADD dist ${SPARK_HOME}
 ADD krb5.conf.mustache /etc/
 
-# Add external jar for pushing metrics via StatsD (https://github.com/vidhyaarvind/spark-statsd)
-# current version: Spark 2.2.1, Scala 2.11
-ADD jars/spark-statsd-2.2.1-2.11.jar ${SPARK_HOME}/jars/
-
 # required to run as nobody
 RUN addgroup --gid 99 nobody \
     && echo "nobody:x:99:99:nobody:/nonexistent:/usr/sbin/nologin" >> /etc/passwd \
