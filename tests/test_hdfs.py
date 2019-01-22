@@ -15,6 +15,7 @@ import sdk_install
 import sdk_marathon
 import sdk_security
 import sdk_tasks
+import sdk_utils
 
 from tests import hdfs_auth
 import spark_utils as utils
@@ -239,6 +240,7 @@ def _run_terasort_job(terasort_class, app_args, expected_output):
                     args=submit_args)
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_terasort_suite():
@@ -260,6 +262,7 @@ def test_terasort_suite():
                       expected_output="partitions are properly sorted")
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_supervise():
@@ -322,6 +325,7 @@ def test_supervise():
     wait_job_present(False)
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_history():
@@ -335,6 +339,7 @@ def test_history():
                     args=(job_args + KERBEROS_ARGS))
 
 
+@sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
 def test_history_kdc_config(hdfs_with_kerberos):
