@@ -278,7 +278,8 @@ def _get_task_container_id(task):
 
 def _verify_ucr_task_inet_address(task, subnet):
     task_id = task["id"]
-    inet_addr = sdk_cmd.run_cli(f"task exec {task_id} hostname -i")
+    # older versions of Mesos produce additional output while running 'tasks exec', therefore 'tail -1'
+    inet_addr = sdk_cmd.run_cli(f"task exec {task_id} hostname -i | tail -1")
     assert ipaddress.ip_address(inet_addr.rstrip()) in ipaddress.ip_network(subnet), \
         "UCR container Inet address is not in the specified subnet"
 
