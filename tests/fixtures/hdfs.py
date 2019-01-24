@@ -1,7 +1,8 @@
 import base64
-import logging
 import json
+import logging
 import os
+
 import pytest
 import sdk_auth
 import sdk_cmd
@@ -9,7 +10,6 @@ import sdk_install
 import sdk_marathon
 import sdk_security
 import sdk_utils
-import shakedown
 import spark_utils as utils
 
 from tests import hdfs_auth
@@ -54,7 +54,6 @@ SPARK_SUBMIT_HDFS_KERBEROS_ARGS = ["--kerberos-principal", ALICE_PRINCIPAL,
                  "--conf", "spark.mesos.driverEnv.SPARK_USER={}".format(utils.SPARK_USER)]
 
 HDFS_CLIENT_ID = "hdfsclient"
-SPARK_HISTORY_USER = "nobody"
 
 
 @pytest.fixture(scope='session')
@@ -129,55 +128,14 @@ def configure_security_spark():
     yield from utils.spark_security_session()
 
 
-@pytest.fixture(scope='session')
-def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_universe):
-    try:
-        sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-        hdfs_cmd("rm -r -skipTrash {}".format(HDFS_HISTORY_DIR))
-        hdfs_cmd("mkdir {}".format(HDFS_HISTORY_DIR))
-        hdfs_cmd("chmod 1777 {}".format(HDFS_HISTORY_DIR))
-
-        sdk_install.uninstall(HISTORY_PACKAGE_NAME, HISTORY_SERVICE_NAME)
-        sdk_install.install(
-            HISTORY_PACKAGE_NAME,
-            HISTORY_SERVICE_NAME,
-            0,
-            additional_options={
-                "service": {
-                    "name": HISTORY_SERVICE_NAME,
-                    "user": SPARK_HISTORY_USER,
-                    "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
-                    "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
-                    .format(HDFS_SERVICE_NAME)
-                },
-                "security": {
-                    "kerberos": {
-                        "enabled": True,
-                        "krb5conf": HDFS_KRB5_CONF,
-                        "principal": GENERIC_HDFS_USER_PRINCIPAL,
-                        "keytab": KEYTAB_SECRET_PATH
-                    }
-                }
-            },
-            wait_for_deployment=False,  # no deploy plan
-            insert_strict_options=False)  # no standard service_account/etc options
-        yield
-
-    finally:
-        sdk_install.uninstall(HISTORY_PACKAGE_NAME, HISTORY_SERVICE_NAME)
-
-
 @pytest.fixture(scope='module')
-def kerberized_spark(setup_history_server, hdfs_with_kerberos, kerberos_options, configure_security_spark, configure_universe):
+def kerberized_spark(hdfs_with_kerberos, kerberos_options, configure_security_spark, configure_universe):
     try:
         additional_options = {
             "hdfs": {
                 "config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints".format(HDFS_SERVICE_NAME)
             },
-            "security": kerberos_options,
-            "service": {
-                "spark-history-server-url": shakedown.dcos_url_path("/service/{}".format(HISTORY_SERVICE_NAME))
-            }
+            "security": kerberos_options
         }
 
         utils.require_spark(additional_options=additional_options)

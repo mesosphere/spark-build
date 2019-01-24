@@ -37,6 +37,16 @@
                     "type": "string",
                     "default": "{{default-docker-image}}"
                 },
+                "docker_user": {
+                    "type": "string",
+                    "description": "Specify the integer UID for the Linux user, overriding service.user, when running the Spark Driver and Executor containers with the Docker Engine. Directly translates to docker run '--user' parameter. Note: This should typically be set to 99 when running as nobody (default) on RHEL/CentOS.",
+                    "default": ""
+                },
+                "UCR_containerizer": {
+                    "type": "boolean",
+                    "description": "Launch Spark History Server using the Universal Container Runtime (UCR)",
+                    "default": false
+                },
                 "hdfs-config-url": {
                     "type": "string",
                     "description": "URL which serves hdfs-site.xml and core-site.xml (i.e. <hdfs-config-url>/hdfs-site.xml should exist)"
