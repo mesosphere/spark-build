@@ -87,7 +87,7 @@
                             }
                          }
                     },
-                    "description": "Labels to pass to the virtual network plugin",
+                    "description": "Labels to pass to the virtual network plugin (e.g., [{\"key\": \"key_1\", \"value\": \"value_1\"}, {\"key\": \"key_2\", \"value\": \"value_2\"}])",
                     "default": []
                 },
                 "spark-history-server-url": {
@@ -101,7 +101,7 @@
                 },
                 "docker_user": {
                     "type": "string",
-                    "description": "Use a different user to run Docker container instead of service.user. Directly translates to docker run '--user' parameter",
+                    "description": "Specify the integer UID for the Linux user, overriding service.user, when running the Spark Driver and Executor containers with the Docker Engine. Directly translates to docker run '--user' parameter. Note: This should typically be set to 99 when running as nobody (default) on RHEL/CentOS.",
                     "default": ""
                 },
                 "use_bootstrap_for_IP_detect": {
