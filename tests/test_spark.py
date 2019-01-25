@@ -350,7 +350,7 @@ def test_driver_executor_tls():
 @pytest.mark.sanity
 def test_unique_vips():
 
-    @retrying.retry(stop_max_attempt_number=3, wait_fixed=2000)
+    @retrying.retry(wait_exponential_multiplier=1000, stop_max_attempt_number=7) # ~2 minutes
     def verify_ip_is_reachable(ip):
         ok, _ = sdk_cmd.master_ssh("curl -v {}".format(ip))
         assert ok
