@@ -69,7 +69,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_servi
         "--conf", uris
     ]
 
-    kerberos_args = get_kerberized_kafka_spark_conf(spark_service_name)
+    kerberos_args = get_kerberized_kafka_spark_conf(spark_service_name, keytab_secret)
 
     producer_config = ["--conf", "spark.cores.max=2", "--conf", "spark.executor.cores=1",
                        "--class", "KafkaFeeder"] + common_args
