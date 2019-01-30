@@ -177,7 +177,11 @@ def test_shuffle_job(
         if check_network_labels and use_ucr_for_spark_submit:
             _check_task_network_labels(task)
 
-    utils.wait_for_running_job_output(driver_task_id, "Groups count: {}".format(SHUFFLE_JOB_EXPECTED_GROUPS_COUNT))
+    try:
+        utils.wait_for_running_job_output(driver_task_id, "Groups count: {}".format(SHUFFLE_JOB_EXPECTED_GROUPS_COUNT))
+    finally:
+        log.info("Cleaning up. Attempting to kill driver: {}".format(driver_task_id))
+        utils.kill_driver(driver_task_id, service_name=CNI_DISPATCHER_SERVICE_NAME)
 
 
 def _submit_shuffle_job(sleep=0, extra_args=[], use_cli=True):

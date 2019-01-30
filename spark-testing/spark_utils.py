@@ -35,7 +35,9 @@ SPARK_DOCKER_USER = os.getenv("SPARK_DOCKER_USER", None)
 SPARK_DOCKER_IMAGE = os.getenv("DOCKER_DIST_IMAGE", "mesosphere/spark-dev")
 
 SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
-JOB_WAIT_TIMEOUT_SEC = 1800
+
+JOB_WAIT_TIMEOUT_MINUTES = 15
+JOB_WAIT_TIMEOUT_SECONDS = JOB_WAIT_TIMEOUT_MINUTES * 60
 
 LOGGER = logging.getLogger(__name__)
 
@@ -123,8 +125,14 @@ def get_spark_options(service_name, additional_options):
 
 
 def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, args=[]):
-    task_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args)
-    check_job_output(task_id, expected_output)
+    driver_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args)
+    try:
+        check_job_output(driver_id, expected_output)
+    except TimeoutError:
+        LOGGER.error("Timed out waiting for job output, will attempt to cleanup and kill driver: {}".format(driver_id))
+        raise
+    finally:
+        kill_driver(driver_id, service_name=service_name)
 
 
 def submit_job(
@@ -179,7 +187,7 @@ def submit_job(
 
 def check_job_output(task_id, expected_output):
     LOGGER.info('Waiting for task id={} to complete'.format(task_id))
-    shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SEC)
+    shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SECONDS)
     stdout = _task_log(task_id)
 
     if expected_output not in stdout:
