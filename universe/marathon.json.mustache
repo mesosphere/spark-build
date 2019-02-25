@@ -32,12 +32,6 @@
         "VIRTUAL_NETWORK_LABELS": "{{service.virtual_network_name}}",
         "SPARK_BIND_ADDRESS_DETECTION_METHOD": "hostname=ip-address",
         {{/service.virtual_network_enabled}}
-        {{^service.virtual_network_enabled}}
-            {{#service.use_bootstrap_for_IP_detect}}
-            "USE_BOOTSTRAP_FOR_IP_DETECT": "true",
-            {{/service.use_bootstrap_for_IP_detect}}
-        {{/service.virtual_network_enabled}}
-
         {{#service.service_account_secret}}
         "DCOS_SERVICE_ACCOUNT_CREDENTIAL": { "secret": "serviceCredential" },
         "MESOS_MODULES": "{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}",

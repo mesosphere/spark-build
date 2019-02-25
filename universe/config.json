@@ -103,11 +103,6 @@
                     "type": "string",
                     "description": "Specify the integer UID for the Linux user, overriding service.user, when running the Spark Driver and Executor containers with the Docker Engine. Directly translates to docker run '--user' parameter. Note: This should typically be set to 99 when running as nobody (default) on RHEL/CentOS.",
                     "default": ""
-                },
-                "use_bootstrap_for_IP_detect": {
-                    "type": "boolean",
-                    "description": "Use the bootstrap utility for detecting host IP as opposed to using Spark's internal mechanism, see troubleshooting.md.",
-                    "default": false
                 }
             }
         },

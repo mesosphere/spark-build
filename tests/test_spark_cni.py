@@ -9,6 +9,7 @@ import sdk_networks
 import sdk_tasks
 import shakedown
 import spark_utils as utils
+import docker_utils
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +33,7 @@ CNI_SERVICE_OPTIONS = {
         "virtual_network_enabled": True,
         "virtual_network_name": NETWORK_NAME,
         "virtual_network_plugin_labels": DISPATCHER_NETWORK_LABELS,
-        "UCR_containerizer": False,
-        "use_bootstrap_for_IP_detect": False
+        "UCR_containerizer": False
     }
 }
 
@@ -116,6 +116,14 @@ def test_cni_driver_and_executors(setup_spark, use_ucr_for_spark_submit):
     submit_args = [
         "--conf spark.mesos.network.name={}".format(NETWORK_NAME)
     ]
+
+    # ATM, this is the only corner-case with using 'bootstrap' for IP resolution:
+    # Spark jobs submitted with a network different from Dispatcher's network and using Docker containerizer
+    if not use_ucr_for_spark_submit:
+        submit_args = submit_args + [
+            "--conf spark.mesos.driverEnv.VIRTUAL_NETWORK_ENABLED=true",
+            "--conf spark.executorEnv.VIRTUAL_NETWORK_ENABLED=true"
+        ]
 
     test_shuffle_job(
         submit_args=submit_args,
@@ -244,40 +252,17 @@ def _check_label_present(labels, key, value):
 
 
 def _check_docker_network(task, host_ip, subnet):
-    container_id = _get_docker_container_id(task, host_ip)
-    inspect_cmd = "sudo docker inspect " \
-                  "--format='{{.NetworkSettings.Networks." + NETWORK_NAME + ".IPAddress}}' " + container_id.rstrip()
-
-    _, container_ip = sdk_cmd.agent_ssh(host_ip, inspect_cmd)
+    _, container_ip = docker_utils.docker_inspect(
+        task,
+        format_options="--format='{{.NetworkSettings.Networks." + NETWORK_NAME + ".IPAddress}}'"
+    )
     assert ipaddress.ip_address(container_ip.rstrip()) in ipaddress.ip_network(subnet), \
         "Docker container Network Info IP is not in the specified subnet"
 
     # checking Docker container inet address
-    exec_cmd = "sudo docker exec {} hostname -i".format(container_id.rstrip())
-
-    _, inet_addr = sdk_cmd.agent_ssh(host_ip, exec_cmd)
+    _, inet_addr = docker_utils.docker_exec(task, "hostname -i")
     assert ipaddress.ip_address(inet_addr.rstrip()) in ipaddress.ip_network(subnet), \
         "Docker Inet address is not in the specified subnet"
-
-
-def _get_docker_container_id(task, host_ip):
-    task_id = _get_task_container_id(task)
-    assert task_id is not None, "Unable to find a task in state TASK_RUNNING"
-
-    container_id_cmd = "docker inspect --format='{{.ID}}' mesos-" + task_id
-    _, container_id = sdk_cmd.agent_ssh(host_ip, container_id_cmd)
-
-    assert container_id is not None and container_id.rstrip() != "", \
-        "Unable to retrieve Docker container ID for task id: {}, host: {}".format(task_id, host_ip)
-    return container_id
-
-
-def _get_task_container_id(task):
-    for status in task['statuses']:
-        if status['state'] == "TASK_RUNNING":
-            return status['container_status']['container_id']['value']
-
-    return None
 
 
 def _verify_ucr_task_inet_address(task, subnet):

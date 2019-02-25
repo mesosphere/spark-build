@@ -49,7 +49,11 @@ def test_driver_metrics(use_overlay):
                    "--class {}".format(app_name)]
 
     if use_overlay:
-        submit_args = submit_args + ["--conf spark.mesos.network.name=dcos"]
+        submit_args = submit_args + [
+            "--conf spark.mesos.network.name=dcos",
+            "--conf spark.mesos.driverEnv.VIRTUAL_NETWORK_ENABLED=true",
+            "--conf spark.executorEnv.VIRTUAL_NETWORK_ENABLED=true"
+        ]
 
     expected_metric = "jvm.heap.used"
 

@@ -18,7 +18,25 @@ cd $MESOS_SANDBOX
 LD_LIBRARY_PATH=/opt/mesosphere/libmesos-bundle/lib
 MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
-source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
+# Configuring bind address
+if [ -f ${BOOTSTRAP} ]; then
+    # Resetting LIBPROCESS_IP to discover container address with bootstrap
+    if [ "${VIRTUAL_NETWORK_ENABLED}" = true ]; then
+        export LIBPROCESS_IP=0.0.0.0
+    fi
+
+    SPARK_LOCAL_IP=$($BOOTSTRAP --get-task-ip)
+
+    export SPARK_LOCAL_IP=${SPARK_LOCAL_IP}
+    export LIBPROCESS_IP=${SPARK_LOCAL_IP}
+
+    echo "spark.driver.host ${SPARK_LOCAL_IP}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+
+    echo "spark-env: Configured SPARK_LOCAL_IP with bootstrap: ${SPARK_LOCAL_IP}" >&2
+else
+    echo "spark-env: ERROR: Unable to find bootstrap to configure SPARK_LOCAL_IP at ${BOOTSTRAP}, exiting." >&2
+    exit 1
+fi
 
 # I first set this to MESOS_SANDBOX, as a Workaround for MESOS-5866
 # But this fails now due to MESOS-6391, so I'm setting it to /tmp
