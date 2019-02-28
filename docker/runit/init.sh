@@ -6,7 +6,7 @@ export DISPATCHER_PORT="${PORT0}"
 export DISPATCHER_UI_PORT="${PORT1}"
 export SPARK_PROXY_PORT="${PORT2}"
 
-source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
+source ${SPARK_HOME}/conf/spark-env.sh
 
 # determine scheme and derive WEB
 SCHEME=http

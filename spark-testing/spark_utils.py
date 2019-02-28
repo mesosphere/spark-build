@@ -104,8 +104,7 @@ def get_spark_options(service_name, additional_options):
     options = {
         "service": {
             "user": SPARK_USER,
-            "name": service_name,
-            "use_bootstrap_for_IP_detect": True
+            "name": service_name
         }
     }
 
