@@ -14,35 +14,10 @@ menuWeight: 125
     failing. To debug this class of issue, visit the Mesos UI at `http://<dcos-url>/mesos/` and navigate to the sandbox
     for the dispatcher.
 
-*   Spark has an internal mechanism for detecting the IP of the host. We use this method by default, but sometimes it
-    fails, returning errors like these:
-
-    ```
-    ERROR SparkUncaughtExceptionHandler: Uncaught exception in thread Thread[main,5,main]
-        java.net.UnknownHostException: ip-172-31-4-148: ip-172-31-4-148: Name or service not known
-            at java.net.InetAddress.getLocalHost(InetAddress.java:1505)
-            at org.apache.spark.util.Utils$.findLocalInetAddress(Utils.scala:891)
-            at org.apache.spark.util.Utils$.org$apache$spark$util$Utils$$localIpAddress$lzycompute(Utils.scala:884)
-            at org.apache.spark.util.Utils$.org$apache$spark$util$Utils$$localIpAddress(Utils.scala:884)
-            at org.apache.spark.util.Utils$$anonfun$localHostName$1.apply(Utils.scala:941)
-            at org.apache.spark.util.Utils$$anonfun$localHostName$1.apply(Utils.scala:941)
-            at scala.Option.getOrElse(Option.scala:121)
-            at org.apache.spark.util.Utils$.localHostName(Utils.scala:941)
-            at org.apache.spark.deploy.mesos.MesosClusterDispatcherArguments.<init>(MesosClusterDispatcherArguments.scala:27)
-            at org.apache.spark.deploy.mesos.MesosClusterDispatcher$.main(MesosClusterDispatcher.scala:103)
-            at org.apache.spark.deploy.mesos.MesosClusterDispatcher.main(MesosClusterDispatcher.scala)
-        Caused by: java.net.UnknownHostException: ip-172-31-4-148: Name or service not known
-            at java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
-            at java.net.InetAddress$2.lookupAllHostAddr(InetAddress.java:928)
-            at java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1323)
-            at java.net.InetAddress.getLocalHost(InetAddress.java:1500)
-            ... 10 more
-    18/01/25 17:42:57 INFO ShutdownHookManager: Shutdown hook called
-    ```
-
-    In this case, enable the `service.use_bootstrap_for_IP_detect` option in the Dispatcher config, either via the UI,
-    editing the task or set to `true` in the options.json, and restart the service.  This will cause the DC/OS-specific
-    `bootstrap` utility to detect the IP, which may allow the initialization of the Spark service to complete. 
+*   Spark has an internal mechanism for detecting the IP of the host. However, in some cases it is not sufficient for 
+    a proper hostname resolution e.g. when hostname resolves to multiple addresses or when Spark runs in virtual network.
+    For this reason DC/OS-specific `bootstrap` utility is used to detect the IP, which may allow the initialization of 
+    the Spark service to complete.
 
 # Jobs
 
@@ -55,8 +30,16 @@ menuWeight: 125
 *   Jobs themselves log output to their sandbox, which you can access through the Mesos UI. The Spark logs will be sent
     to `stderr`, while any output you write in your job will be sent to `stdout`.
 
-*   To disable using the Mesosphere `bootstrap` utility for host IP detection in jobs add
-    `spark.mesos.driverEnv.SKIP_BOOTSTRAP_IP_DETECT=true` to your job configuration.
+*   DC/OS Apache Spark supports virtual/overlay networks and once dispatcher deployed it will launch all submitted jobs 
+    in  same network it has been launched itself. To override network setting for a specific job a user needs to set the
+    following properties:
+    ```
+    --conf spark.mesos.network.name=<network_name>
+    --conf spark.mesos.driverEnv.VIRTUAL_NETWORK_ENABLED=true
+    --conf spark.executorEnv.VIRTUAL_NETWORK_ENABLED=true
+    ```
+    This enables bind address discovery for driver and executors. Setting `VIRTUAL_NETWORK_ENABLED` flags is only needed
+    when using Docker containerizer.
 
 # CLI
 

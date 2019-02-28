@@ -67,7 +67,6 @@ RUN mkdir ${HADOOP_CONF_DIR}
 
 ADD runit/service /var/lib/runit/service
 ADD runit/init.sh /sbin/init.sh
-ADD configure-spark-bind-address.sh ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
 ADD nginx /etc/nginx
 
 # The following symlinks are hacks to make spark-class work under the

@@ -71,12 +71,13 @@ function configure_properties() {
 
         echo "spark.mesos.dispatcher.driverDefault.spark.mesos.network.labels=${VIRTUAL_NETWORK_PLUGIN_LABELS}" | \
             sed 's/,$//' >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
+
+        add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.VIRTUAL_NETWORK_ENABLED "${VIRTUAL_NETWORK_ENABLED}"
+        add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.executorEnv.VIRTUAL_NETWORK_ENABLED "${VIRTUAL_NETWORK_ENABLED}"
     fi
 
     echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 }
-
-source ${MESOSPHERE_HOME}/configure-spark-bind-address.sh
 
 export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 set_log_level
