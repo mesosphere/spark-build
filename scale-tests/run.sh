@@ -66,7 +66,6 @@ function is_interactive () {
 }
 
 readonly AWS_ACCOUNT='Team 10'
-readonly CLUSTER_SPARK_PACKAGE_REPO='https://universe-converter.mesosphere.com/transform?url=https://infinity-artifacts.s3.amazonaws.com/permanent/spark/assets/2.5.0-2.2.1/stub-universe-spark.json'
 readonly CONTAINER_NAME="${TEST_NAME}"
 readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
@@ -275,8 +274,10 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
   container_exec \
     dcos package install --yes dcos-enterprise-cli
 
-  container_exec \
-    dcos package repo add --index=0 spark-aws "${CLUSTER_SPARK_PACKAGE_REPO}" || true
+  if [ -n "${SPARK_PACKAGE_REPO}" ]; then
+    container_exec \
+      dcos package repo add --index=0 spark-aws "${SPARK_PACKAGE_REPO}" || true
+  fi
 
   container_exec \
     touch "${CONTAINER_FINISHED_SETTING_UP_FILE}"
@@ -402,6 +403,7 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
       "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${FAILING_NUM_CONSUMERS_PER_PRODUCER}" \
@@ -436,6 +438,7 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
       "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${FINITE_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${FINITE_NUM_CONSUMERS_PER_PRODUCER}" \
@@ -468,6 +471,7 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
       "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
       --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \

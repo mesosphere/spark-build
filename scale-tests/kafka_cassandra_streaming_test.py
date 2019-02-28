@@ -13,19 +13,20 @@ Arguments:
     submissions_output_file             file path to output `dispatcher name`,`submission ID` pairs
 
 Options:
-    --jar <URL>                         hosted JAR URL
-    --num-producers-per-kafka <n>       number of producers per Kafka cluster to create [default: 1]
-    --num-consumers-per-producer <n>    number of consumers for producer to create [default: 1]
-    --producer-number-of-words <n>      number of total words published by producers [default: 1]
-    --producer-words-per-second <n>     number of words per second published by producers [default: 1]
-    --producer-spark-cores-max <n>      spark.cores.max [default: 2]
-    --producer-spark-executor-cores <n> spark.executor.cores [default: 2]
-    --producer-must-fail                the producer is passed an invalid command line argument causing it to fail [default: False]
-    --consumer-batch-size-seconds <n>   number seconds accumulating entries for each batch request [default: 10]
-    --consumer-write-to-cassandra       write to Cassandra [default: False]
-    --consumer-spark-cores-max <n>      spark.cores.max [default: 1]
-    --consumer-spark-executor-cores <n> spark.executor.cores [default: 1]
-    --consumer-must-fail                the consumer is passed an invalid command line argument causing it to fail [default: False]
+    --spark-executor-docker-image <image> Docker image for Spark executors [default: ]
+    --jar <URL>                           hosted JAR URL
+    --num-producers-per-kafka <n>         number of producers per Kafka cluster to create [default: 1]
+    --num-consumers-per-producer <n>      number of consumers for producer to create [default: 1]
+    --producer-number-of-words <n>        number of total words published by producers [default: 1]
+    --producer-words-per-second <n>       number of words per second published by producers [default: 1]
+    --producer-spark-cores-max <n>        spark.cores.max [default: 2]
+    --producer-spark-executor-cores <n>   spark.executor.cores [default: 2]
+    --producer-must-fail                  the producer is passed an invalid command line argument causing it to fail [default: False]
+    --consumer-batch-size-seconds <n>     number seconds accumulating entries for each batch request [default: 10]
+    --consumer-write-to-cassandra         write to Cassandra [default: False]
+    --consumer-spark-cores-max <n>        spark.cores.max [default: 1]
+    --consumer-spark-executor-cores <n>   spark.executor.cores [default: 1]
+    --consumer-must-fail                  the consumer is passed an invalid command line argument causing it to fail [default: False]
 """
 
 
@@ -52,7 +53,6 @@ COMMON_CONF = [
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
     "--conf", "spark.port.maxRetries=32",
-    "--conf", "spark.mesos.executor.docker.image=mesosphere/spark:2.5.0-2.2.1-hadoop-2.7",
     "--conf", "spark.mesos.executor.home=/opt/spark/dist",
     "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
     "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
@@ -76,6 +76,7 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
 
 
 def _submit_producer(name,
+                     spark_executor_docker_image,
                      jar,
                      kafka_broker_dns,
                      dispatcher,
@@ -104,6 +105,11 @@ def _submit_producer(name,
     if number_of_words == 0:
         app_config.extend(["--supervise"])
 
+    if spark_executor_docker_image:
+        app_config.extend([
+            "--conf", "spark.mesos.executor.docker.image={}".format(spark_executor_docker_image)
+        ])
+
     args = app_config + COMMON_CONF
 
     submission_id = spark_utils.submit_job(
@@ -120,6 +126,7 @@ def _submit_producer(name,
 
 
 def _submit_consumer(name,
+                     spark_executor_docker_image,
                      jar,
                      kafka_broker_dns,
                      cassandra_native_client_dns,
@@ -157,6 +164,11 @@ def _submit_consumer(name,
                   "--conf",      "spark.cassandra.connection.port={}".format(cassandra_port),
                   "--name",      name,
                   "--class",     CONSUMER_CLASS_NAME]
+
+    if spark_executor_docker_image:
+        app_config.extend([
+            "--conf", "spark.mesos.executor.docker.image={}".format(spark_executor_docker_image)
+        ])
 
     args = app_config + COMMON_CONF
 
@@ -256,6 +268,7 @@ def main(args):
         # Assuming only 1 Cassandra cluster.
         cassandra = infrastructure['cassandra'][0]
 
+    spark_executor_docker_image   = args['--spark-executor-docker-image']
     jar                           = args["--jar"] if args["--jar"] else DEFAULT_JAR
     submissions_output_file       = args["<submissions_output_file>"]
     kafka_package_names           = map(lambda kafka: kafka['package_name'], kafkas)
@@ -312,6 +325,7 @@ def main(args):
 
             producer_submission_id = _submit_producer(
                 '{}-k{:02d}-p{:02d}'.format(PRODUCER_CLASS_NAME, kafka_idx, producer_idx),
+                spark_executor_docker_image,
                 jar,
                 kafka_broker_dns,
                 dispatcher,
@@ -336,6 +350,7 @@ def main(args):
 
                 consumer_submission_id = _submit_consumer(
                     '{}-k{:02d}-p{:02d}-c{:02d}'.format(CONSUMER_CLASS_NAME, kafka_idx, producer_idx, consumer_idx),
+                    spark_executor_docker_image,
                     jar,
                     kafka_broker_dns,
                     cassandra_native_client_dns,
