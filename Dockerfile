@@ -1,4 +1,26 @@
-FROM ubuntu:18.04
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#ubuntu:18.04 - linux; amd64
+#https://github.com/docker-library/repo-info/blob/master/repos/ubuntu/tag-details.md#ubuntu1804---linux-amd64
+FROM ubuntu@sha256:be159ff0e12a38fd2208022484bee14412680727ec992680b66cdead1ba76d19
+# Set environment variables for apt to be noninteractive
+ENV DEBIAN_FRONTEND "noninteractive"
+ENV DEBCONF_NONINTERACTIVE_SEEN "true"
+
 RUN apt-get update && apt-get install -y \
     bc \
     curl \
@@ -16,7 +38,7 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-pip \
     python3-venv \
-    python-software-properties \
+    r-base \
     software-properties-common \
     wget \
     zip && \
@@ -26,7 +48,6 @@ RUN add-apt-repository -y ppa:longsleep/golang-backports && apt-get update && ap
 # AWS CLI for uploading build artifacts
 RUN pip install awscli
 # Install dcos-launch to create clusters for integration testing
-RUN apt-get install -y python3-venv
 RUN wget https://downloads.dcos.io/dcos-launch/bin/linux/dcos-launch -O /usr/bin/dcos-launch
 RUN chmod +x /usr/bin/dcos-launch
 # shakedown and dcos-cli require this to output cleanly
@@ -35,17 +56,6 @@ ENV LANG=C.UTF-8
 # use an arbitrary path for temporary build artifacts
 ENV GOPATH=/go-tmp
 
-# Build R
-ENV R_VERSION=3.4.0
-ENV R_TGZ=R-${R_VERSION}.tar.gz
-RUN export PATH=/root/packages/bin:$PATH \
-  && cd /tmp \
-  && wget https://cran.r-project.org/src/base/R-3/${R_TGZ} \
-  && tar xf ${R_TGZ} \
-  && cd R-${R_VERSION}/ \
-  && ./configure --with-readline=no --with-x=no CPPFLAGS="-I/root/packages/include" LDFLAGS="-L/root/packages/lib" \
-  && make \
-  && make install
 
 RUN apt-get update && apt-get install -y apt-transport-https \
   && echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list \
