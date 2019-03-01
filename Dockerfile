@@ -22,40 +22,24 @@ ENV DEBIAN_FRONTEND "noninteractive"
 ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 
 RUN apt-get update && apt-get install -y \
-    bc \
     curl \
-    default-jdk \
-    gfortran \
-    git \
-    jq \
-    libbz2-dev \
-    liblzma-dev \
-    libcurl4-openssl-dev \
-    libpcre++-dev \
-    libssl-dev \
+    groff \
     python-pip \
     python3 \
-    python3-dev \
     python3-pip \
-    python3-venv \
     r-base \
     software-properties-common \
-    wget \
-    zip && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 # install go 1.7
 RUN add-apt-repository -y ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
 # AWS CLI for uploading build artifacts
-RUN pip install awscli
+RUN pip3 install awscli
 # Install dcos-launch to create clusters for integration testing
-RUN wget https://downloads.dcos.io/dcos-launch/bin/linux/dcos-launch -O /usr/bin/dcos-launch
-RUN chmod +x /usr/bin/dcos-launch
+RUN curl -L -o /usr/bin/dcos-launch https://downloads.dcos.io/dcos-launch/bin/linux/dcos-launch \
+    && chmod +x /usr/bin/dcos-launch
 # shakedown and dcos-cli require this to output cleanly
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-# use an arbitrary path for temporary build artifacts
-ENV GOPATH=/go-tmp
-
 
 RUN apt-get update && apt-get install -y apt-transport-https \
   && echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list \
