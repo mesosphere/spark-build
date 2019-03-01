@@ -28,7 +28,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     openjdk-8-jdk \
     groff \
-    python-pip \
     python3 \
     python3-pip \
     r-base \
