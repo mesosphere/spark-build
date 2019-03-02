@@ -176,7 +176,7 @@ def submit_job(
         ssh_opts = "--option UserKnownHostsFile=/dev/null --option StrictHostKeyChecking=no"
 
         LOGGER.info("Running Docker command on leader: {}".format(docker_cmd))
-        _, stdout, stderr = sdk_cmd.run_raw_cli("node ssh --master-proxy --leader {} '{}'".format(ssh_opts, docker_cmd))
+        _, stdout, stderr = sdk_cmd.run_raw_cli("node ssh --master-proxy --leader --user={} {} '{}'".format(sdk_cmd.LINUX_USER, ssh_opts, docker_cmd))
         result = re.search(r'"submissionId" : "(\S+)"', stdout)
 
     if not result:
