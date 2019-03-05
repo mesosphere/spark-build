@@ -44,6 +44,9 @@
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "SPARK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
         "SPARK_USER": "{{service.user}}",
+        {{#service.docker_user}}
+        "SPARK_DOCKER_USER": "{{service.docker_user}}",
+        {{/service.docker_user}}
         "SPARK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.service_account}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",

@@ -86,7 +86,7 @@ def spark_dispatcher(configure_security, configure_universe, use_ucr_containeriz
     False
 ])
 def test_cni_dispatcher(spark_dispatcher, use_ucr_containerizer):
-    task = _get_dispatcher_task()
+    task = utils.get_dispatcher_task(service_name=CNI_DISPATCHER_SERVICE_NAME)
     _check_task_network(task, is_ucr=use_ucr_containerizer)
 
 
@@ -142,7 +142,7 @@ def test_dispatcher_default_network(spark_dispatcher, use_ucr_containerizer, use
     log.info("Running test with use_ucr_containerizer={}, use_ucr_for_spark_submit={}"
              .format(use_ucr_containerizer, use_ucr_for_spark_submit))
 
-    dispatcher_task = _get_dispatcher_task()
+    dispatcher_task = utils.get_dispatcher_task(service_name=CNI_DISPATCHER_SERVICE_NAME)
     _check_task_network(dispatcher_task, is_ucr=use_ucr_containerizer)
     dispatcher_ip = sdk_networks.get_task_ip(dispatcher_task)
 
@@ -252,7 +252,7 @@ def _check_label_present(labels, key, value):
 
 
 def _check_docker_network(task, host_ip, subnet):
-    _, container_ip = docker_utils.docker_inspect(
+    container_ip = docker_utils.docker_inspect(
         task,
         format_options="--format='{{.NetworkSettings.Networks." + NETWORK_NAME + ".IPAddress}}'"
     )
@@ -260,7 +260,7 @@ def _check_docker_network(task, host_ip, subnet):
         "Docker container Network Info IP is not in the specified subnet"
 
     # checking Docker container inet address
-    _, inet_addr = docker_utils.docker_exec(task, "hostname -i")
+    inet_addr = docker_utils.docker_exec(task, "hostname -i")
     assert ipaddress.ip_address(inet_addr.rstrip()) in ipaddress.ip_network(subnet), \
         "Docker Inet address is not in the specified subnet"
 
@@ -271,15 +271,3 @@ def _verify_ucr_task_inet_address(task, subnet):
     inet_addr = sdk_cmd.run_cli(f"task exec {task_id} hostname -i | tail -1")
     assert ipaddress.ip_address(inet_addr.rstrip()) in ipaddress.ip_network(subnet), \
         "UCR container Inet address is not in the specified subnet"
-
-
-def _get_dispatcher_task(task_name=CNI_DISPATCHER_SERVICE_NAME):
-    tasks_json = json.loads(sdk_cmd.run_cli("task --json"))
-
-    tasks = []
-    for task in tasks_json:
-        if task["name"] == task_name:
-            tasks.append(task)
-
-    assert len(tasks) == 1, "More than one task with name {} is running".format(task_name)
-    return tasks[0]
