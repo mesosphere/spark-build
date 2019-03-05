@@ -20,8 +20,9 @@ MESOS_NATIVE_JAVA_LIBRARY=/opt/mesosphere/libmesos-bundle/lib/libmesos.so
 
 # Configuring bind address
 if [ -f ${BOOTSTRAP} ]; then
-    # Resetting LIBPROCESS_IP to discover container address with bootstrap
-    if [ "${VIRTUAL_NETWORK_ENABLED}" = true ]; then
+    # If launched not by Mesos or running in a virtual network, we need to reset LIBPROCESS_IP
+    # so that bootstrap is able to discover container IP properly
+    if [[  (-z "$MESOS_CONTAINER_IP" && -z "$LIBPROCESS_IP") || "${VIRTUAL_NETWORK_ENABLED}" = true ]]; then
         export LIBPROCESS_IP=0.0.0.0
     fi
 
