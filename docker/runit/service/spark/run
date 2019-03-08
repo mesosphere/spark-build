@@ -76,6 +76,14 @@ function configure_properties() {
         add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.executorEnv.VIRTUAL_NETWORK_ENABLED "${VIRTUAL_NETWORK_ENABLED}"
     fi
 
+    if [ "${SPARK_DOCKER_USER}" != "" ]; then
+        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.executor.docker.parameters=user=${SPARK_DOCKER_USER}" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
+    else
+        echo "spark.mesos.dispatcher.driverDefault.spark.mesos.executor.docker.parameters=user=${SPARK_USER}" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
+    fi
+
+    add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.SPARK_USER "${SPARK_USER}"
+
     echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 }
 

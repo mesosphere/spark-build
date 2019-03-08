@@ -1,5 +1,6 @@
 import shakedown
 
+import json
 import logging
 import os
 import re
@@ -39,7 +40,7 @@ SPARK_DRIVER_ROLE = os.getenv("SPARK_DRIVER_ROLE", "*")
 JOB_WAIT_TIMEOUT_MINUTES = 15
 JOB_WAIT_TIMEOUT_SECONDS = JOB_WAIT_TIMEOUT_MINUTES * 60
 
-LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 SPARK_PACKAGE_NAME = os.getenv("SPARK_PACKAGE_NAME", "spark")
 SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar"
@@ -123,12 +124,24 @@ def get_spark_options(service_name, additional_options):
     return sdk_install.merge_dictionaries(options, additional_options)
 
 
+def get_dispatcher_task(service_name=SPARK_SERVICE_NAME):
+    tasks_json = json.loads(sdk_cmd.run_cli("task --json"))
+
+    tasks = []
+    for task in tasks_json:
+        if task["name"] == service_name:
+            tasks.append(task)
+
+    assert len(tasks) == 1, "More than one task with name {} is running".format(service_name)
+    return tasks[0]
+
+
 def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, args=[]):
     driver_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args)
     try:
         check_job_output(driver_id, expected_output)
     except TimeoutError:
-        LOGGER.error("Timed out waiting for job output, will attempt to cleanup and kill driver: {}".format(driver_id))
+        log.error("Timed out waiting for job output, will attempt to cleanup and kill driver: {}".format(driver_id))
         raise
     finally:
         kill_driver(driver_id, service_name=service_name)
@@ -139,7 +152,7 @@ def submit_job(
         app_args,
         service_name=SPARK_SERVICE_NAME,
         args=[],
-        spark_user=SPARK_USER,
+        spark_user=None,
         driver_role=SPARK_DRIVER_ROLE,
         verbose=True,
         principal=SPARK_SERVICE_ACCOUNT,
@@ -153,12 +166,16 @@ def submit_job(
         conf_args += ['--conf', 'spark.mesos.executor.docker.parameters=user={}'.format(SPARK_DOCKER_USER)]
 
     if not list(filter(lambda x: x.startswith("spark.driver.memory="), conf_args)):
-      conf_args += ['--conf', 'spark.driver.memory=2g']
+        conf_args += ['--conf', 'spark.driver.memory=2g']
 
     if sdk_utils.is_strict_mode():
         conf_args += [
-            '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user),
             '--conf spark.mesos.principal={}'.format(principal)
+        ]
+
+    if spark_user is not None:
+        conf_args += [
+            '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)
         ]
 
     submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
@@ -175,7 +192,7 @@ def submit_job(
         docker_cmd = "sudo docker run --net=host -ti {} bin/spark-submit {}".format(SPARK_DOCKER_IMAGE, submit_args)
         ssh_opts = "--option UserKnownHostsFile=/dev/null --option StrictHostKeyChecking=no"
 
-        LOGGER.info("Running Docker command on leader: {}".format(docker_cmd))
+        log.info("Running Docker command on leader: {}".format(docker_cmd))
         _, stdout, stderr = sdk_cmd.run_raw_cli("node ssh --master-proxy --leader --user={} {} '{}'".format(sdk_cmd.LINUX_USER, ssh_opts, docker_cmd))
         result = re.search(r'"submissionId" : "(\S+)"', stdout)
 
@@ -185,14 +202,14 @@ def submit_job(
 
 
 def check_job_output(task_id, expected_output):
-    LOGGER.info('Waiting for task id={} to complete'.format(task_id))
+    log.info('Waiting for task id={} to complete'.format(task_id))
     shakedown.wait_for_task_completion(task_id, timeout_sec=JOB_WAIT_TIMEOUT_SECONDS)
     stdout = _task_log(task_id)
 
     if expected_output not in stdout:
         stderr = _task_log(task_id, "stderr")
-        LOGGER.error("task stdout: {}".format(stdout))
-        LOGGER.error("task stderr: {}".format(stderr))
+        log.error("task stdout: {}".format(stdout))
+        log.error("task stderr: {}".format(stderr))
         raise Exception("{} not found in stdout".format(expected_output))
 
 
@@ -203,7 +220,7 @@ def check_job_output(task_id, expected_output):
 def wait_for_running_job_output(task_id, expected_line):
     stdout = sdk_cmd.run_cli("task log --lines=1000 {}".format(task_id))
     result = expected_line in stdout
-    LOGGER.info('Checking for {} in STDOUT:\n{}\nResult: {}'.format(expected_line, stdout, result))
+    log.info('Checking for {} in STDOUT:\n{}\nResult: {}'.format(expected_line, stdout, result))
     return result
 
 
@@ -219,7 +236,7 @@ def upload_dcos_test_jar():
     if DCOS_SPARK_TEST_JAR_URL is None:
         DCOS_SPARK_TEST_JAR_URL = upload_file(DCOS_SPARK_TEST_JAR_PATH)
     else:
-        LOGGER.info("Using provided DC/OS test jar URL: {}".format(DCOS_SPARK_TEST_JAR_URL))
+        log.info("Using provided DC/OS test jar URL: {}".format(DCOS_SPARK_TEST_JAR_URL))
     return DCOS_SPARK_TEST_JAR_URL
 
 
@@ -230,7 +247,7 @@ def upload_mesos_test_jar():
     if MESOS_SPARK_TEST_JAR_URL is None:
         MESOS_SPARK_TEST_JAR_URL = upload_file(MESOS_SPARK_TEST_JAR_PATH)
     else:
-        LOGGER.info("Using provided Mesos test jar URL: {}".format(DCOS_SPARK_TEST_JAR_URL))
+        log.info("Using provided Mesos test jar URL: {}".format(DCOS_SPARK_TEST_JAR_URL))
     return MESOS_SPARK_TEST_JAR_URL
 
 
@@ -251,18 +268,18 @@ def _task_log(task_id, filename=None):
           ("" if filename is None else " {}".format(filename)))
 
 
-def spark_security_session():
+def spark_security_session(users=[SPARK_USER], service_names=[SPARK_SERVICE_NAME, FOLDERED_SPARK_SERVICE_NAME]):
     '''
     Spark strict mode setup is slightly different from dcos-commons, so can't use sdk_security::security_session.
     Differences:
     (1) the role is "*", (2) the driver itself is a framework and needs permission to execute tasks.
     '''
-    user = SPARK_USER
     role = '*'
     service_account = SPARK_SERVICE_ACCOUNT
     secret = SPARK_SERVICE_ACCOUNT_SECRET
 
     def grant_driver_permission(service_account_name, service_name):
+        log.info(f"Granting Driver permissions to service account: {service_account_name}, service: {service_account}")
         app_id = "/{}".format(service_name.lstrip("/"))
         # double-encoded (why?)
         app_id = urllib.parse.quote(
@@ -274,27 +291,49 @@ def spark_security_session():
                             description="Spark drivers may execute Mesos tasks",
                             action="create")
 
+    def add_marathon_permissions():
+        log.info('Adding user permissions to Marathon')
+
+        for user in users:
+            log.info(f"Adding user permissions for Marathon. user: {user}")
+            sdk_security.grant_permissions(
+                linux_user=user,
+                role_name="slave_public",
+                service_account_name="dcos_marathon"
+            )
+
     def setup_security():
-        LOGGER.info('Setting up strict-mode security for Spark')
+        log.info('Setting up strict-mode security for Spark')
+
+        add_marathon_permissions()
+
         sdk_security.create_service_account(service_account_name=service_account, service_account_secret=secret)
-        sdk_security.grant_permissions(
-            linux_user=user,
-            role_name=role,
-            service_account_name=service_account
-        )
-        grant_driver_permission(service_account, SPARK_SERVICE_NAME)
-        grant_driver_permission(service_account, FOLDERED_SPARK_SERVICE_NAME)
-        LOGGER.info('Finished setting up strict-mode security for Spark')
+
+        for user in users:
+            log.info(f"Granting permissions to user: {user}, role: {role}, service account: {service_account}")
+            sdk_security.grant_permissions(
+                linux_user=user,
+                role_name=role,
+                service_account_name=service_account
+            )
+
+        for service_name in service_names:
+            grant_driver_permission(service_account, service_name)
+
+        log.info('Finished setting up strict-mode security for Spark')
 
     def cleanup_security():
-        LOGGER.info('Cleaning up strict-mode security for Spark')
-        sdk_security.revoke_permissions(
-            linux_user=user,
-            role_name=role,
-            service_account_name=service_account
-        )
+        log.info('Cleaning up strict-mode security for Spark')
+
+        for user in users:
+            sdk_security.revoke_permissions(
+                linux_user=user,
+                role_name=role,
+                service_account_name=service_account
+            )
+
         sdk_security.delete_service_account(service_account, secret)
-        LOGGER.info('Finished cleaning up strict-mode security for Spark')
+        log.info('Finished cleaning up strict-mode security for Spark')
 
     try:
         if sdk_utils.is_strict_mode():
