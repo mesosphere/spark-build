@@ -53,12 +53,12 @@ This tutorial will get you up and running in minutes with Spark. You will instal
        dcos package install spark --cli
        ```
 
-1.  Run the sample SparkPi jar for DC/OS. This runs a Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar). 
+1.  Run the sample SparkPi jar for DC/OS. This runs a Spark job which calculates the value of Pi. You can view the example source [here](https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar). 
 
     1.  Run this command: 
 
         ```bash
-        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 30"
+        dcos spark run --submit-args="--class org.apache.spark.examples.SparkPi https://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar 30"
         ```
         
         Your output should resemble:
