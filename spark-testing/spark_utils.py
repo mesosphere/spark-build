@@ -268,6 +268,65 @@ def _task_log(task_id, filename=None):
           ("" if filename is None else " {}".format(filename)))
 
 
+def grant_user_permissions(user, role="*", service_account=SPARK_SERVICE_ACCOUNT):
+    log.info(f"Adding user permissions for Marathon. User: {user}")
+    sdk_security.grant_permissions(
+        linux_user=user,
+        role_name="slave_public",
+        service_account_name="dcos_marathon"
+    )
+
+    log.info(f"Adding user permissions for {service_account}. User: {user}, role: {role}")
+    sdk_security.grant_permissions(
+        linux_user=user,
+        role_name=role,
+        service_account_name=service_account
+    )
+
+
+def revoke_user_permissions(user, role="*", service_account=SPARK_SERVICE_ACCOUNT):
+    log.info(f"Revoking user permissions for Marathon. User: {user}")
+    sdk_security.grant_permissions(
+        linux_user=user,
+        role_name="slave_public",
+        service_account_name="dcos_marathon"
+    )
+
+    log.info(f"Revoking user permissions for {service_account}. User: {user}, role: {role}")
+    sdk_security.revoke_permissions(
+        linux_user=user,
+        role_name=role,
+        service_account_name=service_account
+    )
+
+
+def _escape_service_name(service_name):
+    app_id = "/{}".format(service_name.lstrip("/"))
+    # double-encoded (why?)
+    return urllib.parse.quote(
+        urllib.parse.quote(app_id, safe=''),
+        safe=''
+    )
+
+
+def grant_launch_task_permission(service_name, service_account_name=SPARK_SERVICE_ACCOUNT):
+    log.info(f"Granting launch task permission to service account: {service_account_name}, service: {service_name}")
+    app_id = _escape_service_name(service_name)
+    sdk_security._grant(service_account_name,
+                        "dcos:mesos:master:task:app_id:{}".format(app_id),
+                        description="Spark drivers may execute Mesos tasks",
+                        action="create")
+
+
+def revoke_launch_task_permission(service_name, service_account_name=SPARK_SERVICE_ACCOUNT):
+    log.info(f"Revoking launch task permission to service account: {service_account_name}, service: {service_name}")
+    app_id = _escape_service_name(service_name)
+    sdk_security._revoke(service_account_name,
+                        "dcos:mesos:master:task:app_id:{}".format(app_id),
+                        description="Spark drivers may execute Mesos tasks",
+                        action="create")
+
+
 def spark_security_session(users=[SPARK_USER], service_names=[SPARK_SERVICE_NAME, FOLDERED_SPARK_SERVICE_NAME]):
     '''
     Spark strict mode setup is slightly different from dcos-commons, so can't use sdk_security::security_session.
@@ -278,47 +337,15 @@ def spark_security_session(users=[SPARK_USER], service_names=[SPARK_SERVICE_NAME
     service_account = SPARK_SERVICE_ACCOUNT
     secret = SPARK_SERVICE_ACCOUNT_SECRET
 
-    def grant_driver_permission(service_account_name, service_name):
-        log.info(f"Granting Driver permissions to service account: {service_account_name}, service: {service_account}")
-        app_id = "/{}".format(service_name.lstrip("/"))
-        # double-encoded (why?)
-        app_id = urllib.parse.quote(
-            urllib.parse.quote(app_id, safe=''),
-            safe=''
-        )
-        sdk_security._grant(service_account_name,
-                            "dcos:mesos:master:task:app_id:{}".format(app_id),
-                            description="Spark drivers may execute Mesos tasks",
-                            action="create")
-
-    def add_marathon_permissions():
-        log.info('Adding user permissions to Marathon')
-
-        for user in users:
-            log.info(f"Adding user permissions for Marathon. user: {user}")
-            sdk_security.grant_permissions(
-                linux_user=user,
-                role_name="slave_public",
-                service_account_name="dcos_marathon"
-            )
-
     def setup_security():
         log.info('Setting up strict-mode security for Spark')
-
-        add_marathon_permissions()
-
         sdk_security.create_service_account(service_account_name=service_account, service_account_secret=secret)
 
         for user in users:
-            log.info(f"Granting permissions to user: {user}, role: {role}, service account: {service_account}")
-            sdk_security.grant_permissions(
-                linux_user=user,
-                role_name=role,
-                service_account_name=service_account
-            )
+            grant_user_permissions(user, role, service_account)
 
         for service_name in service_names:
-            grant_driver_permission(service_account, service_name)
+            grant_launch_task_permission(service_name)
 
         log.info('Finished setting up strict-mode security for Spark')
 
@@ -326,19 +353,19 @@ def spark_security_session(users=[SPARK_USER], service_names=[SPARK_SERVICE_NAME
         log.info('Cleaning up strict-mode security for Spark')
 
         for user in users:
-            sdk_security.revoke_permissions(
-                linux_user=user,
-                role_name=role,
-                service_account_name=service_account
-            )
+            revoke_user_permissions(user, role, service_account)
 
+        # TODO: improve security setup/teardown to make it more fine-grained (allow different service names/accts/users)
+        # tracking issue: https://jira.mesosphere.com/browse/DCOS-50933
         sdk_security.delete_service_account(service_account, secret)
         log.info('Finished cleaning up strict-mode security for Spark')
 
     try:
+        if not sdk_utils.is_open_dcos():
+            sdk_security.install_enterprise_cli()
+
         if sdk_utils.is_strict_mode():
             setup_security()
-            sdk_security.install_enterprise_cli()
         yield
     finally:
         if sdk_utils.is_strict_mode():

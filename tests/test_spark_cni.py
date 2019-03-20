@@ -38,13 +38,8 @@ CNI_SERVICE_OPTIONS = {
 }
 
 
-@pytest.fixture(scope='module')
-def configure_security():
-    yield from utils.spark_security_session()
-
-
 @pytest.fixture()
-def setup_spark(configure_security, configure_universe):
+def setup_spark(configure_security_spark, configure_universe):
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark()
@@ -58,7 +53,7 @@ def setup_spark(configure_security, configure_universe):
 # https://jira.mesosphere.com/browse/DCOS-45468 (Add supporting endpoints for services
 # running in CNI (e.g. Calico) to AdminRouter)
 @pytest.fixture()
-def spark_dispatcher(configure_security, configure_universe, use_ucr_containerizer):
+def spark_dispatcher(configure_security_spark, configure_universe, use_ucr_containerizer):
     utils.teardown_spark(service_name=CNI_DISPATCHER_SERVICE_NAME, zk=CNI_DISPATCHER_ZK)
 
     options = {

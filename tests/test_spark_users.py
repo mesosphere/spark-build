@@ -4,6 +4,7 @@ import pytest
 
 import sdk_cmd
 import sdk_tasks
+import sdk_utils
 import shakedown
 import spark_utils as utils
 import docker_utils
@@ -17,12 +18,25 @@ LIST_USERS_CMD = "ps aux | grep java | cut -d' ' -f1 | uniq | tail -1"
 
 
 @pytest.fixture(scope='module')
-def configure_security():
-    yield from utils.spark_security_session(users=["nobody", "root"], service_names=[SERVICE_NAME])
+def configure_user_permissions(configure_security_spark):
+    """Tests in this module require permissions for 'root' user, we can't use `spark_utils.spark_security_session` here
+       because it drops service account completely during teardown. To lower down amount of boilerplate code in tests
+       'configure_security_spark' fixture is defined with 'session' scope thus dropped service account won't be
+       recreated in tests executed after the current one.
+    """
+    try:
+        if sdk_utils.is_strict_mode():
+            utils.grant_launch_task_permission(SERVICE_NAME)
+            utils.grant_user_permissions("root")
+        yield
+    finally:
+        if sdk_utils.is_strict_mode():
+            utils.revoke_launch_task_permission(SERVICE_NAME)
+            utils.revoke_user_permissions("root")
 
 
 @pytest.fixture()
-def setup_spark(configure_security, configure_universe, use_ucr_containerizer, user):
+def setup_spark(configure_user_permissions, configure_universe, use_ucr_containerizer, user):
     options = {
         "service": {
             "name": SERVICE_NAME,

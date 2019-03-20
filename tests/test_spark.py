@@ -17,7 +17,6 @@ import shakedown
 import sdk_cmd
 import sdk_hosts
 import sdk_install
-import sdk_marathon
 import sdk_security
 import sdk_tasks
 import sdk_utils
@@ -32,13 +31,8 @@ SPARK_PI_FW_NAME = "Spark Pi"
 CNI_TEST_NUM_EXECUTORS = 1
 
 
-@pytest.fixture(scope='session')
-def configure_security():
-    yield from utils.spark_security_session()
-
-
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(configure_security, configure_universe):
+def setup_spark(configure_security_spark, configure_universe):
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark()

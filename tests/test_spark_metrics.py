@@ -10,13 +10,8 @@ import spark_utils as utils
 log = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='session')
-def configure_security():
-    yield from utils.spark_security_session()
-
-
 @pytest.fixture(scope='module', autouse=True)
-def setup_spark(configure_security, configure_universe):
+def setup_spark(configure_security_spark, configure_universe):
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark()

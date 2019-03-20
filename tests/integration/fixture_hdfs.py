@@ -12,7 +12,7 @@ import sdk_utils
 import shakedown
 import spark_utils as utils
 
-from tests import hdfs_auth
+from tests.integration import hdfs_auth
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,14 +57,14 @@ HDFS_CLIENT_ID = "hdfsclient"
 SPARK_HISTORY_USER = "nobody"
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def configure_security_hdfs():
     yield from sdk_security.security_session(framework_name=HDFS_SERVICE_NAME,
                                              service_account=HDFS_SERVICE_ACCOUNT,
                                              secret=HDFS_SERVICE_ACCOUNT_SECRET)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def hdfs_with_kerberos(configure_security_hdfs, kerberos_options):
     try:
         additional_options = {
@@ -97,7 +97,7 @@ def hdfs_with_kerberos(configure_security_hdfs, kerberos_options):
         sdk_install.uninstall(HDFS_PACKAGE_NAME, HDFS_SERVICE_NAME)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def setup_hdfs_client(hdfs_with_kerberos):
     try:
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -109,7 +109,7 @@ def setup_hdfs_client(hdfs_with_kerberos):
         sdk_marathon.install_app(hdfsclient_app_def)
 
         sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-        hdfs_cmd("rm -r -skipTrash {}".format(HDFS_DATA_DIR))
+        hdfs_cmd("rm -r -f -skipTrash {}".format(HDFS_DATA_DIR))
         hdfs_cmd("mkdir -p {}".format(HDFS_DATA_DIR))
         hdfs_cmd("chown {}:users {}".format(ALICE_USER, HDFS_DATA_DIR))
         yield
@@ -119,21 +119,20 @@ def setup_hdfs_client(hdfs_with_kerberos):
 
 
 def hdfs_cmd(cmd):
+    LOGGER.info('Running command %s', cmd)
     rc, _, _ = sdk_cmd.marathon_task_exec(HDFS_CLIENT_ID, "bin/hdfs dfs -{}".format(cmd))
     if rc != 0:
         raise Exception("HDFS command failed with code {}: {}".format(rc, cmd))
 
 
-@pytest.fixture(scope='session')
-def configure_security_spark():
-    yield from utils.spark_security_session()
-
-
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_universe):
     try:
+        LOGGER.info('Preparing to install History Server')
         sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-        hdfs_cmd("rm -r -skipTrash {}".format(HDFS_HISTORY_DIR))
+
+        LOGGER.info('Creating History Server HDFS directory')
+        hdfs_cmd("rm -r -f -skipTrash {}".format(HDFS_HISTORY_DIR))
         hdfs_cmd("mkdir {}".format(HDFS_HISTORY_DIR))
         hdfs_cmd("chmod 1777 {}".format(HDFS_HISTORY_DIR))
 
@@ -167,7 +166,7 @@ def setup_history_server(hdfs_with_kerberos, setup_hdfs_client, configure_univer
         sdk_install.uninstall(HISTORY_PACKAGE_NAME, HISTORY_SERVICE_NAME)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='package')
 def kerberized_spark(setup_history_server, hdfs_with_kerberos, kerberos_options, configure_security_spark, configure_universe):
     try:
         additional_options = {

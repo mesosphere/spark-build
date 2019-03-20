@@ -1,3 +1,7 @@
+from tests.integration.fixture_hdfs import HDFS_SERVICE_NAME, HDFS_DATA_DIR, HDFS_HISTORY_DIR
+from tests.integration.fixture_hdfs import HISTORY_PACKAGE_NAME
+from tests.integration.fixture_hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS, KEYTAB_SECRET_PATH, GENERIC_HDFS_USER_PRINCIPAL
+
 import json
 import logging
 import pytest
@@ -12,10 +16,6 @@ import shakedown
 import spark_utils as utils
 
 log = logging.getLogger(__name__)
-
-from tests.fixtures.hdfs import HDFS_SERVICE_NAME, HDFS_DATA_DIR, HDFS_HISTORY_DIR
-from tests.fixtures.hdfs import HISTORY_PACKAGE_NAME
-from tests.fixtures.hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS, KEYTAB_SECRET_PATH, GENERIC_HDFS_USER_PRINCIPAL
 
 
 def _run_terasort_job(terasort_class, app_args, expected_output):
@@ -52,7 +52,7 @@ def test_terasort_suite(kerberized_spark, hdfs_with_kerberos):
 @sdk_utils.dcos_ee_only
 @pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
 @pytest.mark.sanity
-def test_supervise():
+def test_supervise(kerberized_spark, hdfs_with_kerberos):
     job_service_name = "RecoverableNetworkWordCount"
 
     @retrying.retry(

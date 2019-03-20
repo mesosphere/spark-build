@@ -31,6 +31,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 KEYTAB_SECRET = "__dcos_base64___keytab"
 
+
 def upload_jaas():
     jaas_path = os.path.join(THIS_DIR, "..", "resources", "spark-kafka-client-jaas.conf")
     s3.upload_file(jaas_path)
@@ -53,14 +54,14 @@ def get_kerberized_kafka_spark_conf(spark_service_name, keytab_secret=KEYTAB_SEC
     ]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def configure_security_kafka():
     yield from sdk_security.security_session(framework_name=KAFKA_SERVICE_NAME,
                                              service_account=KAFKA_SERVICE_ACCOUNT,
                                              secret=KAFKA_SERVICE_ACCOUNT_SECRET)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def kerberized_kafka(configure_security_kafka, kerberos_options):
     try:
         additional_options = {

@@ -8,10 +8,10 @@ import sdk_utils
 import shakedown
 import spark_utils as utils
 
-from tests.fixtures.hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS, HDFS_CLIENT_ID, GENERIC_HDFS_USER_PRINCIPAL
-from tests.fixtures.hdfs import hdfs_cmd
-from tests.fixtures.kafka import KAFKA_SERVICE_NAME, KAFKA_PACKAGE_NAME
-from tests.fixtures.kafka import get_kerberized_kafka_spark_conf, upload_jaas
+from tests.integration.fixture_hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS, HDFS_CLIENT_ID, GENERIC_HDFS_USER_PRINCIPAL
+from tests.integration.fixture_hdfs import hdfs_cmd
+from tests.integration.fixture_kafka import KAFKA_SERVICE_NAME, KAFKA_PACKAGE_NAME
+from tests.integration.fixture_kafka import get_kerberized_kafka_spark_conf, upload_jaas
 
 LOGGER = logging.getLogger(__name__)
 HDFS_CHECKPOINT_DIR = "hdfs://hdfs/checkpoints"
@@ -23,11 +23,11 @@ SPARK_SECURITY_PROTOCOL = "SASL_PLAINTEXT"
 
 def setup_hdfs_paths():
     sdk_auth.kinit(HDFS_CLIENT_ID, keytab="hdfs.keytab", principal=GENERIC_HDFS_USER_PRINCIPAL)
-    hdfs_cmd("rm -r -skipTrash {}".format(HDFS_CHECKPOINT_DIR))
+    hdfs_cmd("rm -r -f -skipTrash {}".format(HDFS_CHECKPOINT_DIR))
     hdfs_cmd("mkdir {}".format(HDFS_CHECKPOINT_DIR))
     hdfs_cmd("chmod 1777 {}".format(HDFS_CHECKPOINT_DIR))
 
-    hdfs_cmd("rm -r -skipTrash {}".format(HDFS_TMP_DIR))
+    hdfs_cmd("rm -r -f -skipTrash {}".format(HDFS_TMP_DIR))
     hdfs_cmd("mkdir {}".format(HDFS_TMP_DIR))
     hdfs_cmd("chmod 1777 {}".format(HDFS_TMP_DIR))
 

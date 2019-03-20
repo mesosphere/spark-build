@@ -14,6 +14,14 @@ import sdk_diag
 import sdk_utils
 import teamcity
 
+
+pytest_plugins = [
+    "tests.common.fixtures",
+    "tests.integration.fixture_hdfs",
+    "tests.integration.fixture_kafka",
+    "tests.integration.fixture_kdc"
+]
+
 log_level = os.getenv('TEST_LOG_LEVEL', 'INFO').upper()
 log_levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'EXCEPTION')
 assert log_level in log_levels, \

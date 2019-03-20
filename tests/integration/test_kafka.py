@@ -6,16 +6,11 @@ import sdk_tasks
 import sdk_utils
 import spark_utils as utils
 
-from tests.fixtures.kafka import KERBERIZED_KAFKA, KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME, KEYTAB_SECRET
-from tests.fixtures.kafka import get_kerberized_kafka_spark_conf, upload_jaas
+from tests.integration.fixture_kafka import KERBERIZED_KAFKA, KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME, KEYTAB_SECRET
+from tests.integration.fixture_kafka import get_kerberized_kafka_spark_conf, upload_jaas
 
 LOGGER = logging.getLogger(__name__)
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-@pytest.fixture(scope='session')
-def configure_security_spark():
-    yield from utils.spark_security_session()
 
 
 @pytest.fixture(scope='module')
