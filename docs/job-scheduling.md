@@ -134,7 +134,7 @@ $ dcos spark run --verbose --name=spark --submit-args="\
 --conf spark.cores.max=8 \
 --conf spark.mesos.role=executor \
 --class org.apache.spark.examples.SparkPi \
-http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 3000"
+http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar 3000"
 
 ```
 
@@ -225,7 +225,7 @@ for the roles you intend to use, detailed below. Following the example above the
     --conf spark.mesos.principal=spark-principal \
     --conf spark.mesos.role=executor \
     --conf spark.mesos.containerizer=mesos \
-    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 100"
+    --class org.apache.spark.examples.SparkPi http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar 100"
     ```
 
 # Setting `spark.cores.max`
@@ -241,7 +241,7 @@ $ dcos spark run --verbose --name=spark --submit-args="\
 --driver-memory=1024M \
 --conf spark.cores.max=8 \ #<< Very important!
 --class org.apache.spark.examples.SparkPi \
-http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.3.2.jar 3000"
+http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar 3000"
 ```
 
 When running multiple concurrent Spark jobs, consider setting spark.cores.max between
