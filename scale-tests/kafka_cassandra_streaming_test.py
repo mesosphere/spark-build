@@ -53,7 +53,6 @@ COMMON_CONF = [
     "--conf", "spark.mesos.containerizer=mesos",
     "--conf", "spark.mesos.driver.failoverTimeout=30",
     "--conf", "spark.port.maxRetries=32",
-    "--conf", "spark.mesos.executor.home=/opt/spark/dist",
     "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
     "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"
 ]
