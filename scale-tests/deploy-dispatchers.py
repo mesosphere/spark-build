@@ -258,7 +258,8 @@ def get_default_options(arguments: dict) -> dict:
             "log-level": arguments["--log-level"],
             "spark-history-server-url": arguments["--history-service"] or "",
             "UCR_containerizer": ast.literal_eval(arguments.get("--ucr-containerizer", True)),
-            "use_bootstrap_for_IP_detect": False
+            "virtual_network_enabled": True,
+            "virtual_network_name": "dcos"
         },
         "security": {
             "kerberos": {
