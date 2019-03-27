@@ -1,53 +1,71 @@
-import scala.util.Random
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.receiver.Receiver
+import org.apache.spark.util.LongAccumulator
 
-class RandomWordReceiver(wordsPerSecond: Float, numberOfWords: Long = 0L) extends Receiver[String](StorageLevel.MEMORY_ONLY_2) with Logging {
-  val waitFor: Long = (1000L / wordsPerSecond).toLong
+import scala.util.Random
+
+class RandomWordReceiver(wordsPerSecond: Float, numberOfWords: AtomicLong, accumulator: LongAccumulator, infinite: Boolean = false)
+  extends Receiver[String](StorageLevel.MEMORY_ONLY_2) with Logging {
+
+  val rate: Long = (1000L / wordsPerSecond).toLong
   val inputList: Array[String] = "the quick brown fox jumps over the lazy dog".split(" ")
   val random: Random = Random
 
+  private var executorService: ScheduledExecutorService = _
+
   def onStart(): Unit = {
-    // Start the thread that receives data over a connection
-    new Thread("Random Word Receiver") {
-      override def run() : Unit = { receive(numberOfWords) }
-    }.start()
+    if (accumulator.value >= numberOfWords.get()) {
+      val msg = "Receiver (re)started after all words had been published"
+      logError(msg)
+      stop(msg)
+    } else {
+      executorService = Executors.newScheduledThreadPool(1)
+      val receiver = new WordReceiver
+
+      executorService.scheduleAtFixedRate(receiver, 0, rate, TimeUnit.MILLISECONDS)
+    }
   }
 
   def onStop() : Unit = {
-    // There is nothing much to do as the thread calling receive()
-    // is designed to stop by itself if isStopped() returns false
+    logInfo("Received 'stop' shutting down executor service")
+    if (executorService != null) {
+      executorService.shutdown()
+    }
   }
 
-  /**
-    * Select a random word from the input list until the receiver is stopped.
-    */
-  private def receive(numberOfWords: Long): Unit = {
-    try {
-      var wordsStored = 0L
-      while(!isStopped) {
+  sealed class WordReceiver extends Runnable {
+    /**
+      * Select a random word from the input list until the receiver is stopped.
+      */
+    override def run(): Unit = {
+      try {
         val word: String = inputList(random.nextInt(inputList.length))
 
-        logInfo(s"Writing: $word (${wordsStored + 1} of ${numberOfWords}")
+        if (infinite) {
+          logInfo(s"Writing: $word (infinite stream)")
 
-        store(word)
+          store(word)
+        } else {
+          val wordsLeft = numberOfWords.getAndDecrement()
 
-        wordsStored += 1
-        if (numberOfWords > 0 && wordsStored >= numberOfWords) {
-          stop("Requested number of words sent")
+          if (wordsLeft > 0L) {
+            logInfo(s"Writing: '$word' ($wordsLeft words left)")
+            store(word)
+            accumulator.add(1)
+          } else {
+            stop("Requested number of words sent")
+          }
         }
-
-        Thread.sleep(waitFor)
+      } catch {
+        case t: Throwable =>
+          logError("Exception caught while emitting data", t)
+          // restart if there is any other error
+          restart("Error receiving data", t)
       }
-
-      // Restart in an attempt to connect again when server is active again
-      restart("Trying to connect again")
-    } catch {
-      case t: Throwable =>
-        // restart if there is any other error
-        restart("Error receiving data", t)
     }
   }
 }

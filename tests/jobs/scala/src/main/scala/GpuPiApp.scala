@@ -1,4 +1,3 @@
-import com.databricks.spark.gpu.pi.GpuPi
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import java.io._

@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
   * Usage: MockTaskRunner [numTasks] [taskDurationSec]
   */
 object MockTaskRunner {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     if (args.length < 2) {
       println("Usage: MockTaskRunner [numTasks] [taskDurationSec]")
       System.exit(1)
@@ -20,11 +20,12 @@ object MockTaskRunner {
       .getOrCreate()
 
     val numTasks = args(0).toInt
-    val sleepSeconds = args(1).toInt
+    val sleepSeconds = args(1).toLong
+    val sleepMillis = sleepSeconds * 1000
 
     spark.sparkContext.parallelize(0 until numTasks, numTasks).foreachPartition{_ =>
       println(s"Sleeping for $sleepSeconds seconds")
-      Thread.sleep(sleepSeconds * 1000)
+      Thread.sleep(sleepMillis)
       println(s"Sleep finished")
     }
 

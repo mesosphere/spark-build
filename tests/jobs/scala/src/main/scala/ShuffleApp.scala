@@ -9,7 +9,7 @@ import scala.util.Random
   * Usage: ShuffleApp [numMappers] [numKeys] [valueSize] [numReducers] [sleepBeforeShutdown]
   */
 object ShuffleApp {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder
       .appName("Shuffle Test")
@@ -19,7 +19,7 @@ object ShuffleApp {
     val numKeys = if (args.length > 1) args(1).toInt else 1000
     val valSize = if (args.length > 2) args(2).toInt else 1000
     val numReducers = if (args.length > 3) args(3).toInt else numMappers
-    val sleepBeforeShutdown = if (args.length > 4) args(4).toInt else 0
+    val sleepBeforeShutdownMillis = if (args.length > 4) args(4).toLong * 1000 else 0
 
     val keyPairs = spark.sparkContext.parallelize(0 until numMappers, numMappers).flatMap { _ =>
       val random = new Random
@@ -43,7 +43,7 @@ object ShuffleApp {
 
     val groupsCount = keyPairs.groupByKey(numReducers).count()
     println(s"Groups count: $groupsCount")
-    Thread.sleep(sleepBeforeShutdown * 1000)
+    Thread.sleep(sleepBeforeShutdownMillis)
     spark.stop()
   }
 }
