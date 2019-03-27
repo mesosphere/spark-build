@@ -18,11 +18,6 @@ log = logging.getLogger(__name__)
 GPU_PI_APP_NAME = "GpuPiApp"
 
 
-@pytest.fixture(scope='module')
-def configure_security_spark():
-    yield from spark_utils.spark_security_session()
-
-
 @pytest.fixture(scope='module', autouse=True)
 def setup_spark(configure_security_spark, configure_universe):
     try:

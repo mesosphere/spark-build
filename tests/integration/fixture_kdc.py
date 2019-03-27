@@ -3,11 +3,11 @@ import pytest
 import sdk_auth
 import sdk_hosts
 
-from tests.fixtures.hdfs import HDFS_SERVICE_NAME, GENERIC_HDFS_USER_PRINCIPAL, ALICE_PRINCIPAL
-from tests.fixtures.kafka import KAFKA_SERVICE_NAME
+from tests.integration.fixture_hdfs import HDFS_SERVICE_NAME, GENERIC_HDFS_USER_PRINCIPAL, ALICE_PRINCIPAL
+from tests.integration.fixture_kafka import KAFKA_SERVICE_NAME
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def kerberos_env():
     try:
         kafka_principals = build_kafka_principals()
@@ -70,7 +70,7 @@ def build_hdfs_principals():
     return principals
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def kerberos_options(kerberos_env):
     return {
         "kerberos": {

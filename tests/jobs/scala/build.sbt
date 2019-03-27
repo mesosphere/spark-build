@@ -13,7 +13,6 @@ lazy val root = (project in file("."))
       "org.apache.spark" %% "spark-streaming-kafka-0-10" % SparkVersion,
       "org.apache.spark" %% "spark-sql-kafka-0-10" % SparkVersion,
       "org.apache.hadoop" % "hadoop-aws" % "2.6.0",
-      "org.apache.kafka" % "kafka_2.11" % "0.10.0.1",
       "com.github.scopt" %% "scopt" % "3.7.0",
       "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.7",
       "com.airbnb" % "kafka-statsd-metrics2" % "0.5.2+issue28" from "https://infinity-artifacts.s3.amazonaws.com/scale-tests/kafka-statsd-metrics2-0.5.2+issue28-20180612-8c1e3c4f3fa83.jar",
