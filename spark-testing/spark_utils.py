@@ -259,7 +259,7 @@ def dcos_test_jar_url():
     return DCOS_SPARK_TEST_JAR_URL
 
 
-def kill_driver(driver_id, service_name):
+def kill_driver(driver_id, service_name=SPARK_SERVICE_NAME):
     return sdk_cmd.svc_cli(SPARK_PACKAGE_NAME, service_name, "kill {}".format(driver_id))
 
 
