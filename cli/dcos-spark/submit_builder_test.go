@@ -88,16 +88,17 @@ func (suite *CliTestSuite) TestTransformSubmitArgsMultilines() {
 
 func (suite *CliTestSuite) TestProcessJarsFlag() {
 	_, args := sparkSubmitArgSetup()
-	inputArgs := "--conf spark.cores.max=8 --jars=http://one.jar main.jar 100"
+	inputArgs := "--conf spark.cores.max=8 --jars=http://one.jar app/jars/main.jar 100"
 	expected := []string{"--conf=spark.cores.max=8",
 		"--jars=http://one.jar",
 		"--conf=spark.mesos.uris=http://one.jar",
 		"--conf=spark.driver.extraClassPath=/mnt/mesos/sandbox/one.jar",
 		"--conf=spark.executor.extraClassPath=/mnt/mesos/sandbox/one.jar",
-		"main.jar"}
+		"app/jars/main.jar"}
 	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
 	assert.Equal(suite.T(), expected, actual)
 }
+
 func (suite *CliTestSuite) TestProcessMultiJarsFlag() {
 	_, args := sparkSubmitArgSetup()
 	inputArgs := "--conf spark.cores.max=8 --jars=http://one.jar,http://two.jar main.jar 100"

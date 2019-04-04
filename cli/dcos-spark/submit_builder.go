@@ -347,7 +347,7 @@ LOOP:
 func processJarsFlag(args []string) []string {
 	var newArgs, jarNames, jars []string
 	for i := 0; i < len(args); i++ {
-		if strings.Contains(args[i], "jars") {
+		if strings.HasPrefix(args[i], "--jars") {
 			var jarUrls string
 			if strings.Contains(args[i], "=") {
 				jarUrls = strings.Split(args[i], "=")[1]
