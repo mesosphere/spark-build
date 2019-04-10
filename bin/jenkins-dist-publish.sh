@@ -16,7 +16,7 @@ function upload_to_s3 {
 }
 
 function set_hadoop_versions {
-    HADOOP_VERSIONS=( "2.6" "2.7" )
+    HADOOP_VERSIONS=( "2.7" "2.9" )
 }
 
 # rename build/dist/spark-*.tgz to build/dist/spark-<TAG>.tgz
