@@ -16,7 +16,8 @@ lazy val root = (project in file("."))
       "com.github.scopt" %% "scopt" % "3.7.0",
       "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.7",
       "com.airbnb" % "kafka-statsd-metrics2" % "0.5.2+issue28" from "https://infinity-artifacts.s3.amazonaws.com/scale-tests/kafka-statsd-metrics2-0.5.2+issue28-20180612-8c1e3c4f3fa83.jar",
-      "com.datadoghq" % "java-dogstatsd-client" % "2.5"
+      "com.datadoghq" % "java-dogstatsd-client" % "2.5",
+      "com.google.guava" % "guava" % "23.0" % "provided"
     )
   )
 

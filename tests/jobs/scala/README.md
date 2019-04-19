@@ -72,3 +72,25 @@ In the example above Spark Driver will launch 4 single-core executors (controlle
 properties). When all executors are up, 12000 unique keys will be generated 4 times i.e. each of 4 partitions will contain 
 the same set of keys which will then be grouped by 4 reducers. `sleepBeforeShutdown` parameter is needed in order to
 verify tasks' properties while they're running and avoid quick application termination. 
+
+## ProvidedPackages
+[ProvidedPackages](src/main/scala/ProvidedPackages.scala) adds number from 1 to `inputNum`, where the default value of `inputNum` is 10, and prints the sum. To perform the addition it is using the `guava` library, which would be marked as provided in the [build.sbt](build.sbt). The main aim of this class is to test the availability of the `guava` library in the classpath of driver as well as executors, without shifting it with the main application jar. This can be achieved by specifying `guava` package's maven coordinates in the `--packages` flag.
+
+Usage:
+
+```
+dcos spark run --submit-args="--class ProvidedPackages \
+https://s3.us-east-2.amazonaws.com/<S3 Bucket>/dcos-spark-scala-tests-assembly-<version>.jar inputNum"
+```
+
+Example:
+
+```
+dcos spark run --verbose --submit-args=" \
+--packages=com.google.guava:guava:23.0 \
+--class ProvidedPackages \
+https://s3.us-east-2.amazonaws.com/<S3 bucket>/dcos-spark-scala-tests-assembly-<version>.jar 20"
+
+```
+
+In the example above Spark will download the `guava` package in the classpath of driver as well as executors. The classpath will be decided by the `spark.jars.ivy` setting.

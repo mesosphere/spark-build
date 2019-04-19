@@ -22,6 +22,8 @@ var keyWhitespaceValPattern = regexp.MustCompile("(.+)\\s+(.+)")
 var backslashNewlinePattern = regexp.MustCompile("\\s*\\\\s*\\n\\s+")
 var collapseSpacesPattern = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 
+const mesosSandboxPath = "/mnt/mesos/sandbox"
+
 type sparkVal struct {
 	flagName string
 	propName string
@@ -119,7 +121,6 @@ appears to be client mode only? doesn't seem to be used in POST submit call at a
 - proxyUser:              --proxy-user SOMENAME
 client mode only (downloads jars to local system, wouldn't work for POST call):
 - ivyRepoPath:            (spark.jars.ivy)
-- packages:               --packages maven,coordinates,for,jars (spark.jars.packages)
 - packagesExclusions:     --exclude-packages groupId:artifactId,toExclude:fromClasspath (spark.jars.excludes)
 - repositories:           --repositories additional.remote,repositories.to.search
 yarn only (note: principal/tgt/keytab are supported in patched spark):
@@ -221,6 +222,12 @@ Args:
 	val.flag(submit).StringVar(&val.s)
 	args.stringVals = append(args.stringVals, val)
 
+	val = newSparkVal("packages", "spark.jars.packages", "Comma-separated list of maven coordinates of jars to include "+
+                "on the driver and executor classpaths. Will search the local maven repo, then maven central and any additional remote "+
+                "repositories given by --repositories. The format for the coordinates should be groupId:artifactId:version")
+        val.flag(submit).StringVar(&val.s)
+        args.stringVals = append(args.stringVals, val)
+
 	val = newSparkVal("py-files", "spark.submit.pyFiles", "Add .py, .zip or .egg files to "+
 		"be distributed with your application. If you depend on multiple Python files we recommend packaging them "+
 		"into a .zip or .egg.")
@@ -300,6 +307,7 @@ func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []stri
 	sparkArgs, appArgs := make([]string, 0), make([]string, 0)
 
 	args = processJarsFlag(args)
+        args = processPackagesFlag(args)
 
 LOOP:
 	for i := 0; i < len(args); {
@@ -368,9 +376,33 @@ func processJarsFlag(args []string) []string {
 			}
 			// add --conf spark.driver.extraClassPaths=one.jar:two.jar
 			// add --conf spark.executor.extraClassPath=one.jar:two.jar
-			jarPaths := strings.Join(jarNames, ":/mnt/mesos/sandbox/")
-			newArgs = append(newArgs, "--conf", "spark.driver.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
-			newArgs = append(newArgs, "--conf", "spark.executor.extraClassPath=/mnt/mesos/sandbox/"+jarPaths)
+			jarPaths := strings.Join(jarNames, ":"+mesosSandboxPath+"/")
+			newArgs = append(newArgs, "--conf", "spark.driver.extraClassPath="+mesosSandboxPath+"/"+jarPaths)
+			newArgs = append(newArgs, "--conf", "spark.executor.extraClassPath="+mesosSandboxPath+"/"+jarPaths)
+			newArgs = append(newArgs, args[i+1:]...)
+			break
+		}
+	}
+	if len(newArgs) > 0 {
+		return newArgs
+	}
+	return args
+}
+
+// Special handling of '--packages' flag
+// Adds additional flag to set ivy user directory to instruct Spark to download jars to sandbox
+func processPackagesFlag(args []string) []string {
+	var newArgs []string
+	for i := 0; i < len(args); i++ {
+		if strings.HasPrefix(args[i], "--packages") {
+			if strings.Contains(args[i], "=") {
+				newArgs = append(newArgs, args[:i+1]...)
+			} else {
+				i++
+				newArgs = append(newArgs, args[:i+1]...)
+			}
+			// add --conf spark.jars.ivy=path/to/ivy_user_dir
+			newArgs = append(newArgs, "--conf", "spark.jars.ivy="+mesosSandboxPath+"/.ivy2")
 			newArgs = append(newArgs, args[i+1:]...)
 			break
 		}
