@@ -75,7 +75,7 @@ def main(dispatchers, jar_url, kafka_pkg_name, kafka_svc_name, num_consumers, de
         "--supervise",
         "--conf", "spark.mesos.containerizer=mesos",
         "--conf", "spark.mesos.driver.failoverTimeout=30",
-        "--conf", "spark.mesos.uris=http://norvig.com/big.txt",
+        "--conf", "spark.mesos.uris=https://infinity-soak.s3.amazonaws.com/data/norvig/big.txt",
         "--conf", "spark.port.maxRetries={}".format(port_retries),
         "--conf", "spark.scheduler.maxRegisteredResourcesWaitingTime=2400s",
         "--conf", "spark.scheduler.minRegisteredResourcesRatio=1.0"

@@ -30,7 +30,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   * http://path-to-bucket/dcos-spark-scala-tests-assembly-0.1-SNAPSHOT.jar \
   * kafka-0-broker.secure-kafka.autoip.dcos.thisdcos.directory:1025 file:///mnt/mesos/sandbox/big.txt top1 false"
   *
-  * this assumes that {ARGS} contains `--conf spark.mesos.uris=http://norvig.com/big.txt`
+  * this assumes that {ARGS} contains `--conf spark.mesos.uris=https://infinity-soak.s3.amazonaws.com/data/norvig/big.txt`
   */
 object KafkaFeeder {
   def main(args: Array[String]): Unit = {
