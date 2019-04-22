@@ -44,7 +44,7 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_servi
     broker_dns = sdk_cmd.svc_cli(KAFKA_PACKAGE_NAME, KAFKA_SERVICE_NAME, 'endpoints broker', json=True)['dns'][0]
     topic = "top1"
 
-    big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "http://norvig.com/big.txt"
+    big_file, big_file_url = "file:///mnt/mesos/sandbox/big.txt", "https://infinity-soak.s3.amazonaws.com/data/norvig/big.txt"
 
     # arguments to the application
     producer_args = " ".join([broker_dns, big_file, topic, kerberos_flag])
