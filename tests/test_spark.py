@@ -59,6 +59,19 @@ def test_task_not_lost():
     utils.check_job_output(driver_task_id, "Pi is roughly 3")
 
 
+@pytest.mark.sanity
+def test_mesos_label_support():
+    driver_task_id = utils.submit_job(app_url=utils.SPARK_EXAMPLES,
+                                      app_args="150",
+                                      args=["--conf spark.cores.max=1",
+                                            "--conf spark.mesos.driver.labels=foo:bar", # pass a test label
+                                            "--class org.apache.spark.examples.SparkPi"])
+
+    driver_task_info = sdk_cmd._get_task_info(driver_task_id)
+    expected = {'key': 'foo', 'value': 'bar'}
+    assert expected in driver_task_info['labels']
+
+
 def retry_if_false(result):
     return not result
 
