@@ -21,34 +21,34 @@
 			"revisionTime": "2018-02-21T22:46:20Z"
 		},
 		{
-			"checksumSHA1": "kbCt1P08/QIAaOSjF/DTvflwsHQ=",
+			"checksumSHA1": "Zh/SIyV2CDUNz5g9qb2ScKGxwUU=",
 			"path": "github.com/mesosphere/dcos-commons/cli",
-			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
-			"revisionTime": "2018-04-24T03:33:12Z"
+			"revision": "0069656dc683bb0052199f440a019f23290eec11",
+			"revisionTime": "2019-04-10T07:35:29Z"
 		},
 		{
-			"checksumSHA1": "RtIxmUnHx4wIXNSZA/bMA3jo1ik=",
+			"checksumSHA1": "tm8cc4JRkETRI3tzM+Kvn2zkMD4=",
 			"path": "github.com/mesosphere/dcos-commons/cli/client",
-			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
-			"revisionTime": "2018-04-24T03:33:12Z"
+			"revision": "0069656dc683bb0052199f440a019f23290eec11",
+			"revisionTime": "2019-04-10T07:35:29Z"
 		},
 		{
 			"checksumSHA1": "QDiOJgnY42uMi15mdpWTQC+XWOE=",
 			"path": "github.com/mesosphere/dcos-commons/cli/commands",
-			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
-			"revisionTime": "2018-04-24T03:33:12Z"
+			"revision": "0069656dc683bb0052199f440a019f23290eec11",
+			"revisionTime": "2019-04-10T07:35:29Z"
 		},
 		{
 			"checksumSHA1": "y/MfA7he+pywk7ADfefLAHZJiWs=",
 			"path": "github.com/mesosphere/dcos-commons/cli/config",
-			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
-			"revisionTime": "2018-04-24T03:33:12Z"
+			"revision": "0069656dc683bb0052199f440a019f23290eec11",
+			"revisionTime": "2019-04-10T07:35:29Z"
 		},
 		{
 			"checksumSHA1": "Bes2UqmiEf0QOkK3QsieyNjfdSc=",
 			"path": "github.com/mesosphere/dcos-commons/cli/queries",
-			"revision": "c9970ca35751da5f26e8b57dc9fcbd6fc139c29b",
-			"revisionTime": "2018-04-24T03:33:12Z"
+			"revision": "0069656dc683bb0052199f440a019f23290eec11",
+			"revisionTime": "2019-04-10T07:35:29Z"
 		},
 		{
 			"checksumSHA1": "uEc9/1HbYGeK7wPStF6FmUlfzGE=",

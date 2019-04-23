@@ -16,6 +16,7 @@ import (
 func main() {
 	app := cli.New()
 	handleCommands(app)
+	client.SetCustomResponseCheck(checkForUnauthorized)
 	// Omit modname:
 	kingpin.MustParse(app.Parse(cli.GetArguments()))
 }
@@ -371,5 +372,14 @@ func checkSparkJSONResponse(responseJson map[string]interface{}) error {
 	if !successBool {
 		return errors.New("Spark returned success=false")
 	}
+	return nil
+}
+
+func checkForUnauthorized(response *http.Response, body []byte) error {
+	if (response.StatusCode == http.StatusUnauthorized) {
+		return fmt.Errorf("%s request to %s was not authorized. Make sure you are logged in.",
+			response.Request.Method, response.Request.URL)
+	}
+
 	return nil
 }
