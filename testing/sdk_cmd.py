@@ -194,14 +194,14 @@ def create_task_text_file(marathon_task_name: str, filename: str, lines: list) -
 EOL\"""".format(output_file=filename, content="\n".join(lines))
     rc, stdout, stderr = marathon_task_exec(marathon_task_name, output_cmd)
 
-    if rc or stderr:
+    if rc:
         log.warning("Error creating file %s. rc=%s stdout=%s stderr=%s", filename, rc, stdout, stderr)
         return False
 
     linecount_cmd = "wc -l {output_file}".format(output_file=filename)
     rc, stdout, stderr = marathon_task_exec(marathon_task_name, linecount_cmd)
 
-    if rc or stderr:
+    if rc:
         log.warning("Error checking file %s. rc=%s stdout=%s stderr=%s", filename, rc, stdout, stderr)
         return False
 

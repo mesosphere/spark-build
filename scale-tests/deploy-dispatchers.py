@@ -63,7 +63,7 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-MAX_THREADPOOL_WORKERS = 50
+MAX_THREADPOOL_WORKERS = 5
 
 # This script will deploy the specified number of dispatchers with an optional
 # options json file. It will take the given base service name and

@@ -120,7 +120,7 @@ def install_app_from_file(app_name: str, app_def_path: str) -> (bool, str):
     log.info("Running %s", cmd)
     rc, stdout, stderr = sdk_cmd.run_raw_cli(cmd)
 
-    if rc or stderr:
+    if rc:
         log.error("returncode=%s stdout=%s stderr=%s", rc, stdout, stderr)
         return False, stderr
 
