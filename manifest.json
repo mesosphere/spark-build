@@ -2,16 +2,16 @@
     "spark_version": "2.4.0",
     "default_spark_dist": {
         "hadoop_version": "2.9",
-        "uri": "https://downloads.mesosphere.com/spark/assets/spark-2.4.0-bin-hadoop2.9.2-SNAPSHOT-20190408.tgz"
+        "uri": "https://downloads.mesosphere.com/spark/assets/2.8.0/spark-2.4.0-bin-hadoop2.9.2.tgz"
     },
     "spark_dist": [
         {
             "hadoop_version": "2.9",
-            "uri": "https://downloads.mesosphere.com/spark/assets/spark-2.4.0-bin-hadoop2.9.2-SNAPSHOT-20190408.tgz"
+            "uri": "https://downloads.mesosphere.com/spark/assets/2.8.0/spark-2.4.0-bin-hadoop2.9.2.tgz"
         },
         {
             "hadoop_version": "2.7",
-            "uri": "https://downloads.mesosphere.com/spark/assets/spark-2.4.0-bin-hadoop2.7.7-SNAPSHOT-20190408.tgz"
+            "uri": "https://downloads.mesosphere.com/spark/assets/2.8.0/spark-2.4.0-bin-hadoop2.7.7.tgz"
         }
     ]
 }
