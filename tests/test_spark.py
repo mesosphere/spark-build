@@ -72,6 +72,29 @@ def test_mesos_label_support():
     assert expected in driver_task_info['labels']
 
 
+@pytest.mark.sanity
+def test_dispatcher_liveliness_after_malformed_request():
+    # Get dispatcher ip and port
+    dispatcher_details = sdk_cmd._get_task_info(utils.SPARK_PACKAGE_NAME)
+    ip = dispatcher_details['statuses'][0]['container_status']['network_infos'][0]['ip_addresses'][0]['ip_address']
+    port = dispatcher_details['discovery']['ports']['ports'][0]['number']
+
+    # Sends resource/<filename> as a submission request to dispatcher and returns action field
+    def submit_dispatcher_request(request_filename):
+        with open(os.path.join(THIS_DIR, 'resources', request_filename), 'r') as file:
+            request = file.read()
+        curl_command = '''curl -d '{}' -H "Content-Type: application/json" -X POST "http://{}:{}/v1/submissions/create"''' \
+            .format(request, ip, port)
+        success, output = sdk_cmd.master_ssh(curl_command)
+        assert success
+        return json.loads(output)['action']
+
+    # Perform valid, invalid and valid again requests
+    assert submit_dispatcher_request('dispatcher_submit_request_valid.json') == 'CreateSubmissionResponse'
+    assert submit_dispatcher_request('dispatcher_submit_request_missing_args.json') == 'ErrorResponse'
+    assert submit_dispatcher_request('dispatcher_submit_request_valid.json') == 'CreateSubmissionResponse'
+
+
 def retry_if_false(result):
     return not result
 

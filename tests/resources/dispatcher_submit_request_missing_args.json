@@ -1,0 +1,12 @@
+{
+  "action": "CreateSubmissionRequest",
+  "clientSparkVersion": "1.2.3",
+  "appResource": "noop-test.jar",
+  "mainClass": "noop.Test",
+  "environmentVariables": {
+    "PATH": "/dev/null"
+  },
+  "sparkProperties": {
+    "spark.app.name": "TestDispatcher"
+  }
+}
