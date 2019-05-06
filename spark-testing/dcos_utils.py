@@ -17,3 +17,21 @@ def agent_ssh(host_ip, cmd):
 
     return sdk_cmd.run_cli(f"node ssh --master-proxy --private-ip={host_ip} {ssh_options} \"{cmd}\"",
                            print_output=False)
+
+
+def delete_secret(secret: str) -> None:
+    """
+    Deletes a given secret.
+    """
+    # ignore any failures:
+    sdk_cmd.run_cli("security secrets delete {}".format(secret))
+
+
+def create_secret(secret: str, secret_value_or_filename: str, is_file: bool) -> None:
+    """
+    Creates secret of type file or value by given name
+    """
+    if is_file:
+        sdk_cmd.run_cli("security secrets create -f {} {}".format(secret_value_or_filename, secret))
+    else:
+        sdk_cmd.run_cli("security secrets create -v {} {}".format(secret_value_or_filename, secret))
