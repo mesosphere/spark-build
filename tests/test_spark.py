@@ -15,8 +15,6 @@ import retrying
 import shakedown
 
 import sdk_cmd
-import sdk_hosts
-import sdk_install
 import sdk_security
 import sdk_tasks
 import sdk_utils
@@ -317,19 +315,6 @@ def test_s3_env():
     assert len(list(s3.list("linecount-env.txt"))) > 0
 
 
-@pytest.mark.dcos_min_version('1.10')
-@pytest.mark.sanity
-@pytest.mark.smoke
-def test_foldered_spark():
-    service_name = utils.FOLDERED_SPARK_SERVICE_NAME
-    zk = 'spark_mesos_dispatcher__path_to_spark'
-    utils.require_spark(service_name=service_name, zk=zk)
-    test_sparkPi(service_name=service_name)
-    utils.teardown_spark(service_name=service_name, zk=zk)
-    # reinstall CLI so that it's available for the following tests:
-    sdk_cmd.run_cli('package install --cli {} --yes'.format(utils.SPARK_PACKAGE_NAME))
-
-
 @pytest.mark.sanity
 def test_cli_multiple_spaces():
     utils.run_tests(app_url=utils.SPARK_EXAMPLES,
@@ -384,53 +369,3 @@ def test_driver_executor_tls():
         sdk_cmd.run_cli('security secrets delete /{}'.format(keystore_secret))
         sdk_cmd.run_cli('security secrets delete /{}'.format(truststore_secret))
         sdk_cmd.run_cli('security secrets delete /{}'.format(my_secret))
-
-
-@pytest.mark.sanity
-def test_unique_vips():
-
-    @retrying.retry(wait_exponential_multiplier=1000, stop_max_attempt_number=7) # ~2 minutes
-    def verify_ip_is_reachable(ip):
-        ok, _ = sdk_cmd.master_ssh("curl -v {}".format(ip))
-        assert ok
-
-    spark1_service_name = "test/groupa/spark"
-    spark2_service_name = "test/groupb/spark"
-    try:
-        utils.require_spark(spark1_service_name)
-        utils.require_spark(spark2_service_name)
-
-        dispatcher1_ui_ip = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark1_service_name), 4040)
-        dispatcher2_ui_ip = sdk_hosts.vip_host("marathon", "dispatcher.{}".format(spark2_service_name), 4040)
-
-        verify_ip_is_reachable(dispatcher1_ui_ip)
-        verify_ip_is_reachable(dispatcher2_ui_ip)
-    finally:
-        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark1_service_name)
-        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, spark2_service_name)
-
-
-@pytest.mark.sanity
-def test_task_stdout():
-    service_name = utils.FOLDERED_SPARK_SERVICE_NAME
-
-    try:
-        task_id = service_name.lstrip("/").replace("/", "_")
-        utils.require_spark(service_name=service_name)
-
-        task = sdk_cmd._get_task_info(task_id)
-        if not task:
-            raise Exception("Failed to get '{}' task".format(task_id))
-
-        task_sandbox_path = sdk_cmd.get_task_sandbox_path(task_id)
-        if not task_sandbox_path:
-            raise Exception("Failed to get '{}' sandbox path".format(task_id))
-        agent_id = task["slave_id"]
-
-        task_sandbox = sdk_cmd.cluster_request(
-            "GET", "/slave/{}/files/browse?path={}".format(agent_id, task_sandbox_path)
-        ).json()
-        stdout_file = [f for f in task_sandbox if f["path"].endswith("/stdout")][0]
-        assert stdout_file["size"] > 0, "stdout file should have content"
-    finally:
-        sdk_install.uninstall(utils.SPARK_PACKAGE_NAME, service_name)
