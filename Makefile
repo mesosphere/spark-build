@@ -1,6 +1,7 @@
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUILD_DIR := $(ROOT_DIR)/build
 DIST_DIR := $(BUILD_DIR)/dist
+STATSD_DIR := $(ROOT_DIR)/spark-statsd-reporter
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
 SPARK_DEV_DOCKER_IMAGE ?= mesosphere/spark-dev
@@ -43,6 +44,12 @@ prod-dist: $(SPARK_DIR)
 	mv $${filename} $(DIST_DIR)
 	echo "Built: $(DIST_DIR)/$${filename}"
 
+statsd-reporter:
+	pushd $(STATSD_DIR)
+	docker run -v $(STATSD_DIR):/spark-statsd-reporter -w /spark-statsd-reporter maven:3.6-jdk-8-alpine mvn clean package
+	popd
+	echo "$(STATSD_DIR)/target/spark-statsd-reporter.jar" > $@
+
 # If build/dist/ doesn't exist, creates it and downloads the spark build in manifest.json.
 # To instead use a locally built version of spark, you must run "make prod-dist".
 SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
@@ -60,7 +67,7 @@ docker-login:
 	docker login --username="$(DOCKER_USERNAME)" --password="$(DOCKER_PASSWORD)"
 
 DOCKER_DIST_IMAGE ?= $(SPARK_DEV_DOCKER_IMAGE):$(GIT_COMMIT)
-docker-dist: $(DIST_DIR)
+docker-dist: $(DIST_DIR) statsd-reporter
 	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
 	if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
 		echo "Using spark: $${SPARK_BUILDS}"
@@ -76,6 +83,7 @@ docker-dist: $(DIST_DIR)
 	cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
 	cp -r conf/* $(BUILD_DIR)/docker/dist/conf
 	cp -r docker/* $(BUILD_DIR)/docker
+	cp `cat statsd-reporter` $(BUILD_DIR)/docker
 
 	pushd $(BUILD_DIR)/docker
 	docker build -t $(DOCKER_DIST_IMAGE) .
@@ -178,7 +186,7 @@ clean-cluster:
 	dcos-launch delete || echo "Error deleting cluster"
 
 clean: clean-dist
-	for f in "$(DCOS_SPARK_TEST_JAR_PATH)" "$(UNIVERSE_URL_PATH)" "docker-build"; do
+	for f in "$(DCOS_SPARK_TEST_JAR_PATH)" "$(UNIVERSE_URL_PATH)" "docker-build" "statsd-reporter"; do
 		[ ! -e $$f ] || rm $$f
 	done
 

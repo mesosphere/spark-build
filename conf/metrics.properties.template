@@ -1,7 +1,7 @@
-
 # Enable StatsdSink for all instances by class name
-*.sink.statsd.class=org.apache.spark.metrics.sink.StatsdSink
+*.sink.statsd.class=org.apache.spark.metrics.sink.statsd.StatsdSink
 *.sink.statsd.prefix=spark
+*.sink.statsd.tags=app_type=spark
 *.sink.statsd.host=<STATSD_UDP_HOST>
 *.sink.statsd.port=<STATSD_UDP_PORT>
 
