@@ -215,7 +215,7 @@ def check_job_output(task_id, expected_output):
 
 @retrying.retry(
         wait_fixed=5000,
-        stop_max_delay=600 * 1000,
+        stop_max_delay=6000 * 1000,
         retry_on_result=lambda res: not res)
 def wait_for_running_job_output(task_id, expected_line):
     stdout = sdk_cmd.run_cli("task log --lines=1000 {}".format(task_id))
