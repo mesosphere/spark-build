@@ -81,6 +81,7 @@ RUN ln -s /bin/bash /usr/bin/bash \
 ENV SPARK_HOME="/opt/spark"
 ADD dist ${SPARK_HOME}
 ADD krb5.conf.mustache /etc/
+ADD spark-statsd-reporter.jar ${SPARK_HOME}/jars/mesosphere-statsd-reporter.jar
 
 # required to run as nobody
 RUN addgroup --gid 99 nobody \
