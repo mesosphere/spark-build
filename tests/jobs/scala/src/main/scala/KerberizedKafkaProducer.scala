@@ -67,9 +67,6 @@ object KerberizedKafkaProducer {
     properties.put("sasl.kerberos.service.name", service)
     properties.put("security.protocol", "SASL_PLAINTEXT")
     properties.put("sasl.mechanism", "GSSAPI")
-    properties.put(ProducerConfig.ACKS_CONFIG, "all")
-    properties.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1")
-    properties.put(ProducerConfig.RETRIES_CONFIG, "100")
 
     new KafkaProducer[Int, String](properties)
   }
