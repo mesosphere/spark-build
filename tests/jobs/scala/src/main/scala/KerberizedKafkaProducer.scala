@@ -1,8 +1,8 @@
 import java.util.{HashMap => JMap}
 
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata, ProducerConfig}
 
-import scala.util.{Failure, Success, Try}
+import scala.collection.JavaConversions._
 
 /**
   * A simple Kafka Producer which should be used in the same way as kafka-console-producer with Kerberized
@@ -35,14 +35,28 @@ object KerberizedKafkaProducer {
 
   def sendMessages(topic: String, messages: Array[String])(producer: KafkaProducer[Int, String]): Unit = {
     messages.foreach { str =>
-      val msg = new ProducerRecord[Int, String](topic, str.hashCode, str)
+      val msg = new ProducerRecord[Int, String](topic, str)
       println(s"sending message: $msg")
 
-      Try(producer.send(msg)) match {
-        case Success(_) => println("Message sent")
-        case Failure(ex) => ex.printStackTrace()
+      producer.send(msg, new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null) {
+          exception.printStackTrace()
+        } else {
+          println(s"Message has been published to (topic_partition@offset): ${metadata.toString}")
+        }
       }
+      })
     }
+    Thread.sleep(3000) // wait a few seconds for metrics update
+    println("===========================================================================")
+    println("Producer metrics by topic:")
+    producer.metrics.values
+      .filter(m => m.metricName().group().equalsIgnoreCase("producer-topic-metrics"))
+      .foreach(metric => println(metric.metricName().description() + ": " + metric.metricValue()))
+    println("===========================================================================")
+    println(s"Partition metadata for topic '$topic':")
+    producer.partitionsFor(topic).foreach(p => println(p))
   }
 
   def getKafkaProducer(service: String, brokers: String): KafkaProducer[Int, String] = {
