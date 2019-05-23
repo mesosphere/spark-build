@@ -2,7 +2,6 @@ package org.apache.spark.metrics.sink.statsd;
 
 
 import com.codahale.metrics.*;
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,22 +97,19 @@ public class StatsdReporter extends ScheduledReporter {
         }
     }
 
-    @VisibleForTesting
-    void reportGauges(SortedMap<String, Gauge> gauges, DatagramSocket socket) {
+    private void reportGauges(SortedMap<String, Gauge> gauges, DatagramSocket socket) {
         gauges.forEach((name, value) ->
                 send(socket, metricFormatter.buildMetricString(name, value.getValue(), GAUGE))
         );
     }
 
-    @VisibleForTesting
-    void reportCounters(SortedMap<String, Counter> counters, DatagramSocket socket) {
+    private void reportCounters(SortedMap<String, Counter> counters, DatagramSocket socket) {
         counters.forEach((name, value) ->
                 send(socket, metricFormatter.buildMetricString(name, value.getCount(), COUNTER))
         );
     }
 
-    @VisibleForTesting
-    void reportHistograms(SortedMap<String, Histogram> histograms, DatagramSocket socket) {
+    private void reportHistograms(SortedMap<String, Histogram> histograms, DatagramSocket socket) {
         histograms.forEach((name, histogram) -> {
             Snapshot snapshot = histogram.getSnapshot();
             send(socket,
@@ -133,8 +129,7 @@ public class StatsdReporter extends ScheduledReporter {
         });
     }
 
-    @VisibleForTesting
-    void reportMeters(SortedMap<String, Meter> meters, DatagramSocket socket) {
+    private void reportMeters(SortedMap<String, Meter> meters, DatagramSocket socket) {
         meters.forEach((name, meter) -> {
             send(socket,
                     metricFormatter.buildMetricString(name, "count", meter.getCount(), GAUGE),
@@ -146,8 +141,7 @@ public class StatsdReporter extends ScheduledReporter {
         });
     }
 
-    @VisibleForTesting
-    void reportTimers(SortedMap<String, Timer> timers, DatagramSocket socket) {
+    private void reportTimers(SortedMap<String, Timer> timers, DatagramSocket socket) {
         timers.forEach((name, timer) -> {
             Snapshot snapshot = timer.getSnapshot();
             send(socket,
@@ -169,8 +163,7 @@ public class StatsdReporter extends ScheduledReporter {
         });
     }
 
-    @VisibleForTesting
-    void send(DatagramSocket socket, String...metrics) {
+    private void send(DatagramSocket socket, String...metrics) {
         for (String metric: metrics) {
             byte[] bytes = metric.getBytes(UTF_8);
             DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address);

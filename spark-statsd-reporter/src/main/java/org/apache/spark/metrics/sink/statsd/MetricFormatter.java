@@ -18,13 +18,26 @@ class MetricFormatter {
     private final InstanceDetailsProvider instanceDetailsProvider;
     private final String[] tags;
 
-    MetricFormatter(InstanceDetailsProvider instanceDetailsProvider, String prefix, String[] tags) {
+    public MetricFormatter(InstanceDetailsProvider instanceDetailsProvider, String prefix, String[] tags) {
         this.instanceDetailsProvider = instanceDetailsProvider;
         this.prefix = prefix;
         this.tags = tags;
     }
 
-    String formatValue(Object value) {
+    public String buildMetricString(String name, String argument, Object value, String metricType) {
+        String fullName = MetricRegistry.name(name, argument);
+        return buildMetricString(fullName, value, metricType);
+    }
+
+    public String buildMetricString(String name, Object value, String metricType) {
+        String tagString = buildTags();
+        String prefixedName = MetricRegistry.name(prefix, name);
+        String metricString =  String.format(metricsFormat, removeIds(prefixedName), tagString, formatValue(value), metricType);
+
+        return sanitize(metricString);
+    }
+
+    private String formatValue(Object value) {
         if (value instanceof Float || value instanceof Double || value instanceof BigDecimal) {
             return String.format("%2.2f", value);
         } else if (value instanceof Number) {
@@ -34,20 +47,7 @@ class MetricFormatter {
         }
     }
 
-    String buildMetricString(String name, String argument, Object value, String metricType) {
-        String fullName = MetricRegistry.name(name, argument);
-        return buildMetricString(fullName, value, metricType);
-    }
-
-    String buildMetricString(String name, Object value, String metricType) {
-        String tagString = buildTags();
-        String prefixedName = MetricRegistry.name(prefix, name);
-        String metricString =  String.format(metricsFormat, removeIds(prefixedName), tagString, formatValue(value), metricType);
-
-        return sanitize(metricString);
-    }
-
-    String removeIds(String name) {
+    private String removeIds(String name) {
         //removing variable parts of a metric name (application and executor IDs)
         return instanceDetailsProvider.getInstanceDetails().map(instanceDetails -> {
             String formatted = name;
@@ -66,7 +66,7 @@ class MetricFormatter {
         }).orElse(name);
     }
 
-    String buildTags() {
+    private String buildTags() {
         //if instance details are available, enrich metric with tags
         return instanceDetailsProvider.getInstanceDetails().map(instanceDetails -> {
             List<String> extractedTags = new ArrayList<>(asList(
@@ -86,7 +86,8 @@ class MetricFormatter {
         }).orElse(Joiner.on(",").join(tags));
     }
 
-    String sanitize(String s) {
+
+    private String sanitize(String s) {
         return whitespacePattern.matcher(s).replaceAll("_").toLowerCase();
     }
 }
