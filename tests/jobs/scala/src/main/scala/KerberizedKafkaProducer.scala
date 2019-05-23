@@ -1,6 +1,7 @@
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.{HashMap => JMap}
 
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata, ProducerConfig}
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerConfig, ProducerRecord, RecordMetadata}
 
 import scala.collection.JavaConversions._
 
@@ -24,7 +25,6 @@ object KerberizedKafkaProducer {
         t.printStackTrace()
     }
 
-    println(s"${messages.length} messages sent to Kafka")
   }
 
   def withProducer(service: String, brokers: String, f: KafkaProducer[Int, String] => _): Unit = {
@@ -34,6 +34,7 @@ object KerberizedKafkaProducer {
   }
 
   def sendMessages(topic: String, messages: Array[String])(producer: KafkaProducer[Int, String]): Unit = {
+    val messageCounter = new AtomicInteger()
     messages.foreach { str =>
       val msg = new ProducerRecord[Int, String](topic, str)
       println(s"sending message: $msg")
@@ -44,11 +45,12 @@ object KerberizedKafkaProducer {
           exception.printStackTrace()
         } else {
           println(s"Message has been published to (topic_partition@offset): ${metadata.toString}")
+          messageCounter.incrementAndGet()
         }
       }
-      })
+      }).get()
     }
-    Thread.sleep(3000) // wait a few seconds for metrics update
+    println(s"${messageCounter.get()} messages sent to Kafka")
     println("===========================================================================")
     println("Producer metrics by topic:")
     producer.metrics.values
