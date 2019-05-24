@@ -72,7 +72,8 @@ public class StatsdReporterTest {
             sleep(100);
 
             assertTrue(server.receivedMessages().stream().allMatch(s -> s.startsWith("spark.driver.testcounter")));
-            assertTrue(server.receivedMessages().stream().allMatch(s -> s.endsWith(":3|c")));
+            // counters must be reported as gauges due to StatsD specifics: it treats values as independent increments
+            assertTrue(server.receivedMessages().stream().allMatch(s -> s.endsWith(":3|g")));
             assertEquals(1, server.receivedMessages().size());
         }
     }

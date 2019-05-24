@@ -18,23 +18,29 @@ class InstanceDetailsProvider  {
     private final static Logger logger = LoggerFactory.getLogger(StatsdReporter.class);
 
     private InstanceDetails instance = null;
+    private boolean initialized = false;
 
     Optional<InstanceDetails> getInstanceDetails() {
-        if(instance == null) {
+        if (!initialized) {
             if (SparkEnv.get() == null) {
                 logger.warn("SparkEnv is not initialized, instance details unavailable");
             } else {
-                SparkConf sparkConf = SparkEnv.get().conf();
-                instance =
-                        new InstanceDetails(
-                                sparkConf.getAppId(),
-                                sparkConf.get("spark.app.name"),
-                                InstanceType.valueOf(SparkEnv.get().metricsSystem().instance().toUpperCase()),
-                                sparkConf.get("spark.executor.id"),
-                                sparkConf.get("spark.metrics.namespace", "default")
-                        );
+                instance = buildInstanceDetails();
             }
+            initialized = true;
         }
+
         return Optional.ofNullable(instance);
+    }
+
+    InstanceDetails buildInstanceDetails() {
+        SparkConf sparkConf = SparkEnv.get().conf();
+        return new InstanceDetails(
+                sparkConf.getAppId(),
+                sparkConf.get("spark.app.name"),
+                InstanceType.valueOf(SparkEnv.get().metricsSystem().instance().toUpperCase()),
+                sparkConf.get("spark.executor.id"),
+                sparkConf.get("spark.metrics.namespace", "default")
+        );
     }
 }

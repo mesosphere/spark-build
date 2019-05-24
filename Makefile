@@ -46,7 +46,7 @@ prod-dist: $(SPARK_DIR)
 
 statsd-reporter:
 	pushd $(STATSD_DIR)
-	docker run -v $(STATSD_DIR):/spark-statsd-reporter -w /spark-statsd-reporter maven:3.6-jdk-8-alpine mvn clean package
+	docker run -v ~/.m2:/root/.m2 -v $(STATSD_DIR):/spark-statsd-reporter -w /spark-statsd-reporter maven:3.6-jdk-8-alpine mvn clean package
 	popd
 	echo "$(STATSD_DIR)/target/spark-statsd-reporter.jar" > $@
 
