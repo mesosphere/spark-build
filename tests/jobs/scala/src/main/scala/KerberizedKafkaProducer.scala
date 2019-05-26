@@ -1,22 +1,30 @@
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{HashMap => JMap}
 
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerConfig, ProducerRecord, RecordMetadata}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 /**
   * A simple Kafka Producer which should be used in the same way as kafka-console-producer with Kerberized
   * Kafka instance. The idea here is that producer runs as a driver without the need to launch executors.
   */
 object KerberizedKafkaProducer {
+  private val timeout = 3 minutes
+  implicit private val executionContext: ExecutionContext =
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(20))
+
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
       throw new IllegalArgumentException("USAGE: <service name> <brokerlist> <topic> [message1, message2, ...]")
     }
 
     val Array(service, brokers, topic) = args.take(3)
-    val messages = args.drop(3)
+    val messages = args.drop(3).toList
     println(s"Got brokers $brokers, producing ${messages.length} to topic $topic")
     try {
       withProducer(service, brokers, sendMessages(topic, messages))
@@ -24,7 +32,6 @@ object KerberizedKafkaProducer {
       case t: Throwable =>
         t.printStackTrace()
     }
-
   }
 
   def withProducer(service: String, brokers: String, f: KafkaProducer[Int, String] => _): Unit = {
@@ -33,23 +40,26 @@ object KerberizedKafkaProducer {
     producer.close()
   }
 
-  def sendMessages(topic: String, messages: Array[String])(producer: KafkaProducer[Int, String]): Unit = {
+  def sendMessages(topic: String, messages: List[String])(producer: KafkaProducer[Int, String]): Unit = {
     val messageCounter = new AtomicInteger()
-    messages.foreach { str =>
-      val msg = new ProducerRecord[Int, String](topic, str)
-      println(s"sending message: $msg")
 
-      producer.send(msg, new Callback {
-      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-        if (exception != null) {
-          exception.printStackTrace()
-        } else {
+    val futures = messages.map { str =>
+      val msg = new ProducerRecord[Int, String](topic, str)
+      sendMessage(producer, msg)
+    }
+
+    futures.foreach { future =>
+      future.onComplete {
+        case Success(metadata) =>
           println(s"Message has been published to (topic_partition@offset): ${metadata.toString}")
           messageCounter.incrementAndGet()
-        }
+        case Failure(exception) => exception.printStackTrace()
       }
-      }).get()
     }
+
+    val resultFuture = Future.sequence(futures)
+    Await.result(resultFuture, timeout)
+
     println(s"${messageCounter.get()} messages sent to Kafka")
     println("===========================================================================")
     println("Producer metrics by topic:")
@@ -59,6 +69,23 @@ object KerberizedKafkaProducer {
     println("===========================================================================")
     println(s"Partition metadata for topic '$topic':")
     producer.partitionsFor(topic).foreach(p => println(p))
+  }
+
+  /**
+    * Wrapper method which converts Java Future returned by producer.send method to Scala Future
+    */
+  def sendMessage(producer: KafkaProducer[Int, String], record: ProducerRecord[Int, String]): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    producer.send(record, new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null) {
+          promise.complete(Failure(exception))
+        } else {
+          promise.complete(Success(metadata))
+        }
+      }
+    })
+    promise.future
   }
 
   def getKafkaProducer(service: String, brokers: String): KafkaProducer[Int, String] = {
