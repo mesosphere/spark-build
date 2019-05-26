@@ -105,7 +105,9 @@ public class StatsdReporter extends ScheduledReporter {
 
     private void reportCounters(SortedMap<String, Counter> counters, DatagramSocket socket) {
         counters.forEach((name, value) ->
-                send(socket, metricFormatter.buildMetricString(name, value.getCount(), COUNTER))
+                // counter is reported as a gauge because StatsD treats new values as increments
+                // but not as a final value e.g. sending 'foo:1|c' to StatsD increments 'foo' by 1
+                send(socket, metricFormatter.buildMetricString(name, value.getCount(), GAUGE))
         );
     }
 
