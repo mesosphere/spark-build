@@ -1,8 +1,7 @@
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{HashMap => JMap}
 
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerConfig, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer._
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -15,8 +14,6 @@ import scala.util.{Failure, Success}
   */
 object KerberizedKafkaProducer {
   private val timeout = 3 minutes
-  implicit private val executionContext: ExecutionContext =
-    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(20))
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
@@ -41,6 +38,8 @@ object KerberizedKafkaProducer {
   }
 
   def sendMessages(topic: String, messages: List[String])(producer: KafkaProducer[Int, String]): Unit = {
+    import ExecutionContext.Implicits.global
+
     val messageCounter = new AtomicInteger()
 
     val futures = messages.map { str =>
@@ -60,15 +59,24 @@ object KerberizedKafkaProducer {
     val resultFuture = Future.sequence(futures)
     Await.result(resultFuture, timeout)
 
-    println(s"${messageCounter.get()} messages sent to Kafka")
-    println("===========================================================================")
-    println("Producer metrics by topic:")
+    println(
+      s"""
+         |${messageCounter.get()} messages sent to Kafka
+         |===========================================================================
+         |Producer metrics by topic:
+       """.stripMargin)
+
     producer.metrics.values
       .filter(m => m.metricName().group().equalsIgnoreCase("producer-topic-metrics"))
       .foreach(metric => println(metric.metricName().description() + ": " + metric.metricValue()))
-    println("===========================================================================")
-    println(s"Partition metadata for topic '$topic':")
-    producer.partitionsFor(topic).foreach(p => println(p))
+
+    println(
+      s"""
+        |===========================================================================
+        |Partition metadata for topic '$topic':
+        |${producer.partitionsFor(topic).mkString("\n")}
+      """.stripMargin)
+
   }
 
   /**
