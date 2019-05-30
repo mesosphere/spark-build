@@ -25,5 +25,5 @@
             "url": "https://raw.githubusercontent.com/apache/spark/master/LICENSE"
         }
     ],
-    "minDcosReleaseVersion": "1.10"
+    "minDcosReleaseVersion": "1.11"
 }
