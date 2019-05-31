@@ -85,6 +85,8 @@ function configure_properties() {
     add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.SPARK_USER "${SPARK_USER}"
 
     echo "spark.mesos.proxy.baseURL=../../mesos" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
+
+    add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.SPARK_APP_ORIGIN "${DCOS_SERVICE_NAME}"
 }
 
 export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"

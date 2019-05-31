@@ -8,6 +8,28 @@
 # CLI reads the "SPARK_HDFS_CONFIG_URL" marathon label in order to set
 # spark.mesos.uris
 
+parent_command=$(echo $@)
+echo ${parent_command}
+
+origin="spark-submit"
+export INSTANCE_TYPE="dispatcher"
+# check if SPARK_APP_ORIGIN already set by Dispatcher
+if [[ ! -z "${SPARK_APP_ORIGIN}" ]]; then
+   origin="${SPARK_APP_ORIGIN}"
+   echo "Setting origin to $SPARK_APP_ORIGIN"
+fi
+
+if [[ $parent_command == *"SparkSubmit"* ]]; then
+    echo "Running as a Driver"
+    export INSTANCE_TYPE="driver"
+elif [[ $parent_command == *"ExecutorBackend"* ]]; then
+   echo "Running as a Executor"
+   export INSTANCE_TYPE="executor"
+fi
+
+echo "spark.mesos.driverEnv.SPARK_APP_ORIGIN ${origin}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+echo "spark.executorEnv.SPARK_APP_ORIGIN ${origin}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+
 mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
