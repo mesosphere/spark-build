@@ -218,5 +218,14 @@
         "{{hdfs.config-url}}/hdfs-site.xml",
         "{{hdfs.config-url}}/core-site.xml"
     {{/hdfs.config-url}}
-    ]
+    ],
+    "check": {
+        "http": {
+            "portIndex": 0,
+            "path": "/v1/health"
+        },
+        "intervalSeconds": {{service.check.intervalSeconds}},
+        "timeoutSeconds": {{service.check.timeoutSeconds}},
+        "delaySeconds": {{service.check.delaySeconds}}
+    }
 }
