@@ -3,15 +3,38 @@
 # This file is sourced when running various Spark programs.
 # Copy it as spark-env.sh and edit that to configure Spark for your site.
 
+# additional environment variables for monitoring and troubleshooting purposes:
+parent_command="$@"
+echo "${parent_command}"
+
+# Dispatcher sets SPARK_APPLICATION_ORIGIN to distinguish between different services and
+# provide better monitoring details. If this environment variable is not set,
+# then a Driver is submitted directly via spark-submit.
+if [[ ${parent_command} == *"MesosClusterDispatcher"* ]]; then
+   export SPARK_INSTANCE_TYPE="dispatcher"
+   if [[ -n "${DCOS_SERVICE_NAME}" ]]; then
+      export SPARK_APPLICATION_ORIGIN="${DCOS_SERVICE_NAME}"
+   fi
+elif [[ ${parent_command} == *"SparkSubmit"* ]]; then
+   export SPARK_INSTANCE_TYPE="driver"
+   echo "spark.executorEnv.SPARK_APPLICATION_ORIGIN=${SPARK_APPLICATION_ORIGIN}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+elif [[ ${parent_command} == *"ExecutorBackend"* ]]; then
+   export SPARK_INSTANCE_TYPE="executor"
+fi
+
+if [[ -z "${SPARK_APPLICATION_ORIGIN}" ]]; then
+   export SPARK_APPLICATION_ORIGIN="spark-submit"
+fi
+
+echo "Spark application origin: '${SPARK_APPLICATION_ORIGIN}'. Container instance type: '${SPARK_INSTANCE_TYPE}'."
+
 # A custom HDFS config can be fetched via spark.mesos.uris.  This
 # moves those config files into the standard directory.  In DCOS, the
 # CLI reads the "SPARK_HDFS_CONFIG_URL" marathon label in order to set
 # spark.mesos.uris
-
 mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
-
 
 cd $MESOS_SANDBOX
 
