@@ -13,6 +13,8 @@ import static org.apache.spark.metrics.sink.statsd.Configuration.Keys;
 
 public class StatsdSink implements Sink {
     private final static Logger logger = LoggerFactory.getLogger(StatsdSink.class);
+    // Static prefix is used to distinguish Spark JVM source from other JVM applications in the cluster
+    private static final String STATIC_PREFIX = "spark";
     private final StatsdReporter reporter;
 
     private int pollInterval;
@@ -21,7 +23,7 @@ public class StatsdSink implements Sink {
 
     public StatsdSink(Properties properties, MetricRegistry registry, org.apache.spark.SecurityManager securityMgr) {
         logger.info("Starting StatsdSink with properties:\n" + properties.toString());
-        this.prefix = properties.getProperty(Keys.PREFIX, Defaults.PREFIX);
+        this.prefix = MetricRegistry.name(properties.getProperty(Keys.PREFIX, Defaults.PREFIX), STATIC_PREFIX);
         this.pollInterval = Integer.parseInt(properties.getProperty(Keys.POLL_INTERVAL, Defaults.POLL_INTERVAL));
         this.pollUnit = TimeUnit.valueOf(properties.getProperty(Keys.POLL_UNIT, Defaults.POLL_UNIT).toUpperCase());
 

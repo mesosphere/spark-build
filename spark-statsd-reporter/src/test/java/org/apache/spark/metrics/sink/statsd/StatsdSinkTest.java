@@ -26,7 +26,7 @@ public class StatsdSinkTest {
             sleep(100);
 
             // Default host, port and prefix check
-            assertEquals("test_gauge,:1|g", server.receivedMessages().get(0));
+            assertEquals("spark.test_gauge,:1|g", server.receivedMessages().get(0));
         }
     }
 
@@ -38,7 +38,7 @@ public class StatsdSinkTest {
 
             Properties props = new Properties();
             props.put(Configuration.Keys.PORT, Integer.toString(testUdpPort));
-            props.put(Configuration.Keys.PREFIX, "spark");
+            props.put(Configuration.Keys.PREFIX, "myprefix");
             props.put(Configuration.Keys.TAGS, "foo=bar");
 
             StatsdSink sink = new StatsdSink(props, registry, null);
@@ -50,7 +50,7 @@ public class StatsdSinkTest {
             sleep(100);
 
             // Provided port, prefix and tags check
-            assertEquals("spark.test_gauge,foo=bar:1|g", server.receivedMessages().get(0));
+            assertEquals("myprefix.spark.test_gauge,foo=bar:1|g", server.receivedMessages().get(0));
         }
     }
 }

@@ -1,10 +1,10 @@
 package org.apache.spark.metrics.sink.statsd;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.SparkEnv;
-import org.apache.spark.metrics.MetricsSystem;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 public class InstanceDetailsProviderTest {
 
     @Mock SparkEnv env;
-    @Mock MetricsSystem metricsSystem;
+    @Rule private final EnvironmentVariables environmentVariables = new EnvironmentVariables();
 
     private static final String appName = "test-app";
     private static final String appId = "test-id";
@@ -43,11 +43,11 @@ public class InstanceDetailsProviderTest {
     public void testInitialization() {
         PowerMockito.mockStatic(SparkEnv.class);
         SparkConf conf = getDefaultSparkConf();
+        final String instanceType = "driver";
 
-        when(metricsSystem.instance()).thenReturn("driver");
-        when(env.metricsSystem()).thenReturn(metricsSystem);
         when(env.conf()).thenReturn(conf);
         when(SparkEnv.get()).thenReturn(env);
+        environmentVariables.set("SPARK_INSTANCE_TYPE", instanceType);
 
         InstanceDetailsProvider provider = spy(InstanceDetailsProvider.class);
         provider.getInstanceDetails();
@@ -60,11 +60,11 @@ public class InstanceDetailsProviderTest {
     public void testExecutorInstanceDetails() {
         PowerMockito.mockStatic(SparkEnv.class);
         SparkConf conf = getDefaultSparkConf();
+        final String instanceType = "executor";
 
-        when(metricsSystem.instance()).thenReturn("executor");
-        when(env.metricsSystem()).thenReturn(metricsSystem);
         when(env.conf()).thenReturn(conf);
         when(SparkEnv.get()).thenReturn(env);
+        environmentVariables.set("SPARK_INSTANCE_TYPE", instanceType);
 
         InstanceDetailsProvider provider = new InstanceDetailsProvider();
         Optional<InstanceDetails> instanceDetails = provider.getInstanceDetails();
@@ -87,12 +87,11 @@ public class InstanceDetailsProviderTest {
         SparkConf conf = getDefaultSparkConf();
         conf.set("spark.app.id", applicationId);
         conf.set("spark.executor.id", applicationId);
+        final String instanceType = "driver";
 
-
-        when(metricsSystem.instance()).thenReturn("driver");
-        when(env.metricsSystem()).thenReturn(metricsSystem);
         when(env.conf()).thenReturn(conf);
         when(SparkEnv.get()).thenReturn(env);
+        environmentVariables.set("SPARK_INSTANCE_TYPE", instanceType);
 
         InstanceDetailsProvider provider = new InstanceDetailsProvider();
         Optional<InstanceDetails> instanceDetails = provider.getInstanceDetails();
@@ -114,11 +113,11 @@ public class InstanceDetailsProviderTest {
         String namespace = "test_namespace";
         SparkConf conf = getDefaultSparkConf();
         conf.set("spark.metrics.namespace", namespace);
+        final String instanceType = "driver";
 
-        when(metricsSystem.instance()).thenReturn("driver");
-        when(env.metricsSystem()).thenReturn(metricsSystem);
         when(env.conf()).thenReturn(conf);
         when(SparkEnv.get()).thenReturn(env);
+        environmentVariables.set("SPARK_INSTANCE_TYPE", instanceType);
 
         InstanceDetailsProvider provider = new InstanceDetailsProvider();
         Optional<InstanceDetails> instanceDetails = provider.getInstanceDetails();
@@ -130,6 +129,26 @@ public class InstanceDetailsProviderTest {
             assertEquals(appId, details.getApplicationId());
             assertEquals(InstanceType.DRIVER, details.getInstanceType());
             assertEquals(execId, details.getInstanceId());
+        });
+    }
+
+    @Test
+    public void testSparkAppOrigin() {
+        PowerMockito.mockStatic(SparkEnv.class);
+        SparkConf conf = getDefaultSparkConf();
+        final String origin = "spark-test";
+
+        when(env.conf()).thenReturn(conf);
+        when(SparkEnv.get()).thenReturn(env);
+
+        environmentVariables.set("SPARK_APPLICATION_ORIGIN", origin);
+
+        InstanceDetailsProvider provider = new InstanceDetailsProvider();
+        Optional<InstanceDetails> instanceDetails = provider.getInstanceDetails();
+
+        assertTrue(instanceDetails.isPresent());
+        instanceDetails.ifPresent(details -> {
+            assertEquals(origin, details.getApplicationOrigin());
         });
     }
 }
