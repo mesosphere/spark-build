@@ -3,37 +3,38 @@
 # This file is sourced when running various Spark programs.
 # Copy it as spark-env.sh and edit that to configure Spark for your site.
 
+# additional environment variables for monitoring and troubleshooting purposes:
+parent_command="$@"
+echo "${parent_command}"
+
+# Dispatcher sets SPARK_APPLICATION_ORIGIN to distinguish between different services and
+# provide better monitoring details. If this environment variable is not set,
+# then a Driver is submitted directly via spark-submit.
+if [[ ${parent_command} == *"MesosClusterDispatcher"* ]]; then
+   export SPARK_INSTANCE_TYPE="dispatcher"
+   if [[ -n "${DCOS_SERVICE_NAME}" ]]; then
+      export SPARK_APPLICATION_ORIGIN="${DCOS_SERVICE_NAME}"
+   fi
+elif [[ ${parent_command} == *"SparkSubmit"* ]]; then
+   export SPARK_INSTANCE_TYPE="driver"
+   echo "spark.executorEnv.SPARK_APPLICATION_ORIGIN=${SPARK_APPLICATION_ORIGIN}" >> ${SPARK_HOME}/conf/spark-defaults.conf
+elif [[ ${parent_command} == *"ExecutorBackend"* ]]; then
+   export SPARK_INSTANCE_TYPE="executor"
+fi
+
+if [[ -z "${SPARK_APPLICATION_ORIGIN}" ]]; then
+   export SPARK_APPLICATION_ORIGIN="spark-submit"
+fi
+
+echo "Spark application origin: '${SPARK_APPLICATION_ORIGIN}'. Container instance type: '${SPARK_INSTANCE_TYPE}'."
+
 # A custom HDFS config can be fetched via spark.mesos.uris.  This
 # moves those config files into the standard directory.  In DCOS, the
 # CLI reads the "SPARK_HDFS_CONFIG_URL" marathon label in order to set
 # spark.mesos.uris
-
-parent_command=$(echo $@)
-echo ${parent_command}
-
-origin="spark-submit"
-export INSTANCE_TYPE="dispatcher"
-# check if SPARK_APP_ORIGIN already set by Dispatcher
-if [[ ! -z "${SPARK_APP_ORIGIN}" ]]; then
-   origin="${SPARK_APP_ORIGIN}"
-   echo "Setting origin to $SPARK_APP_ORIGIN"
-fi
-
-if [[ $parent_command == *"SparkSubmit"* ]]; then
-    echo "Running as a Driver"
-    export INSTANCE_TYPE="driver"
-elif [[ $parent_command == *"ExecutorBackend"* ]]; then
-   echo "Running as a Executor"
-   export INSTANCE_TYPE="executor"
-fi
-
-echo "spark.mesos.driverEnv.SPARK_APP_ORIGIN ${origin}" >> ${SPARK_HOME}/conf/spark-defaults.conf
-echo "spark.executorEnv.SPARK_APP_ORIGIN ${origin}" >> ${SPARK_HOME}/conf/spark-defaults.conf
-
 mkdir -p "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/hdfs-site.xml" ] && cp "${MESOS_SANDBOX}/hdfs-site.xml" "${HADOOP_CONF_DIR}"
 [ -f "${MESOS_SANDBOX}/core-site.xml" ] && cp "${MESOS_SANDBOX}/core-site.xml" "${HADOOP_CONF_DIR}"
-
 
 cd $MESOS_SANDBOX
 
