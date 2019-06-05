@@ -14,6 +14,7 @@ import scala.util.{Failure, Success}
   */
 object KerberizedKafkaProducer {
   private val timeout = 3 minutes
+  private val messageCounter = new AtomicInteger()
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
@@ -40,8 +41,6 @@ object KerberizedKafkaProducer {
   def sendMessages(topic: String, messages: List[String])(producer: KafkaProducer[Int, String]): Unit = {
     import ExecutionContext.Implicits.global
 
-    val messageCounter = new AtomicInteger()
-
     val futures = messages.map { str =>
       val msg = new ProducerRecord[Int, String](topic, str)
       sendMessage(producer, msg)
@@ -51,7 +50,6 @@ object KerberizedKafkaProducer {
       future.onComplete {
         case Success(metadata) =>
           println(s"Message has been published to (topic_partition@offset): ${metadata.toString}")
-          messageCounter.incrementAndGet()
         case Failure(exception) => exception.printStackTrace()
       }
     }
@@ -89,6 +87,7 @@ object KerberizedKafkaProducer {
         if (exception != null) {
           promise.complete(Failure(exception))
         } else {
+          messageCounter.incrementAndGet()
           promise.complete(Success(metadata))
         }
       }
