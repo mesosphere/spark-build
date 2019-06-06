@@ -8,7 +8,8 @@
                 "name": {
                     "default": "spark-history",
                     "description": "The app name for the Spark History Server.  The service will be available at {{https-protocol}}<dcos_url>/service/<name>/",
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^(\\/?((\\.\\.)|(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9]))?($|\\/))+$"
                 },
                 "cpus": {
                     "default": 1,
