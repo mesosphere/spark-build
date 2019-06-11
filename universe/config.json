@@ -8,7 +8,8 @@
                 "name": {
                     "default": "spark",
                     "description": "The Spark Dispatcher will register with Mesos with this as a framework name.  This service will be available at {{https-protocol}}<dcos-url>/service/<name>/",
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^(\\/?((\\.\\.)|(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9]))?($|\\/))+$"
                 },
                 "cpus": {
                     "default": 1,
