@@ -54,13 +54,13 @@ dcos package install spark --cli
 # Custom Installation
 
 You can customize the default configuration properties by creating a JSON options file and passing it to `dcos package
-install --options`. For example, to launch the Dispatcher using the Universal Container Runtime (UCR), create a file
-called `options.json`:
+install --options`. For example, to launch the Dispatcher using Docker instead of the Universal Container Runtime (UCR),
+create a file called `options.json`:
 
 ```json
 {
   "service": {
-    "UCR_containerizer": true
+    "UCR_containerizer": false
   }
 }
 ```

@@ -98,7 +98,7 @@
                 "UCR_containerizer": {
                     "type": "boolean",
                     "description": "Launch the Dispatcher using the Universal Container Runtime (UCR)",
-                    "default": false
+                    "default": true
                 },
                 "docker_user": {
                     "type": "string",
