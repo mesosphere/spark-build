@@ -104,6 +104,52 @@
                     "type": "string",
                     "description": "Specify the integer UID for the Linux user, overriding service.user, when running the Spark Driver and Executor containers with the Docker Engine. Directly translates to docker run '--user' parameter. Note: This should typically be set to 99 when running as nobody (default) on RHEL/CentOS.",
                     "default": ""
+                },
+                "tls": {
+                    "type": "object",
+                    "description": "Spark TLS configuration.",
+                    "properties": {
+                        "enabled": {
+                            "description": "Enable TLS",
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "protocol": {
+                            "description": "Protocol used for TLS",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "keystore": {
+                            "description": "Base64 encoded value of keystore",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "keypassword": {
+                            "description": "The password for the private key of a keystore",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "keystore_password": {
+                            "description": "The password used to access the keystore",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "truststore": {
+                            "description": "Base64 encoded value of truststore",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "truststore_password": {
+                            "description": "The password used to access the truststore",
+                            "type": "string",
+                            "default": ""
+                        },
+                        "algorithms": {
+                            "description": "Comma separated list of ciphers",
+                            "type": "string",
+                            "default": ""
+                        }
+                    }
                 }
             }
         },

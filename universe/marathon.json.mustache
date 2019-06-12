@@ -23,6 +23,17 @@
             {{/security.kerberos.realm}}
         {{/security.kerberos.enabled}}
 
+        {{#service.tls.enabled}}
+        "SPARK_SSL_ENABLED": "true",
+        "SPARK_SSL_PROTOCOL": "{{service.tls.protocol}}",
+        "SPARK_SSL_KEYSTOREBASE64": "{{service.tls.keystore}}",
+        "SPARK_SSL_KEYPASSWORD": "{{service.tls.keypassword}}",
+        "SPARK_SSL_KEYSTOREPASSWORD": "{{service.tls.keystore_password}}",
+        "SPARK_SSL_TRUSTSTOREBASE64": "{{service.tls.truststore}}",
+        "SPARK_SSL_TRUSTSTOREPASSWORD": "{{service.tls.truststore_password}}",
+        "SPARK_SSL_ENABLEDALGORITHMS": "{{service.tls.algorithms}}",
+        {{/service.tls.enabled}}
+
         {{#service.virtual_network_enabled}}
         "VIRTUAL_NETWORK_ENABLED": "true",
         "VIRTUAL_NETWORK_NAME": "{{service.virtual_network_name}}",
@@ -179,6 +190,11 @@
     },
     "healthChecks": [
         {
+            {{#service.tls.enabled}}
+            "protocol": "COMMAND",
+            "command": { "value": "/bin/spark_health.sh" }
+            {{/service.tls.enabled}}
+            {{^service.tls.enabled}}
             "protocol": "MESOS_HTTP",
             "path": "/",
             "portIndex": 2,
@@ -186,6 +202,7 @@
             "intervalSeconds": 60,
             "timeoutSeconds": 10,
             "maxConsecutiveFailures": 3
+            {{/service.tls.enabled}}
         }
     ],
 
@@ -206,12 +223,12 @@
         "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}",
         "DCOS_SERVICE_NAME": "{{service.name}}",
         "DCOS_SERVICE_PORT_INDEX": "2",
-        {{#security.ssl.enabled}}
+        {{#service.tls.enabled}}
             "DCOS_SERVICE_SCHEME": "https"
-        {{/security.ssl.enabled}}
-        {{^security.ssl.enabled}}
+        {{/service.tls.enabled}}
+        {{^service.tls.enabled}}
             "DCOS_SERVICE_SCHEME": "http"
-        {{/security.ssl.enabled}}
+        {{/service.tls.enabled}}
     },
     "uris": [
     {{#hdfs.config-url}}

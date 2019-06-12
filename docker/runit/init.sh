@@ -14,6 +14,8 @@ OTHER_SCHEME=https
 if [[ "${SPARK_SSL_ENABLED}" == true ]]; then
 	SCHEME=https
 	OTHER_SCHEME=http
+        DISPATCHER_SSL_PORT=$((DISPATCHER_PORT+400))
+        DISPATCHER_UI_SSL_PORT=$((DISPATCHER_UI_PORT+400))
 fi
 
 # TODO(mgummelt): I'm pretty sure this isn't used.  Remove after some time.
@@ -25,10 +27,19 @@ export DISPATCHER_UI_WEB_PROXY_BASE="/service/${DCOS_SERVICE_NAME}"
 grep -v "#${OTHER_SCHEME}#" /etc/nginx/conf.d/spark.conf.template |
 	sed "s,#${SCHEME}#,," >/etc/nginx/conf.d/spark.conf
 
+if [[ "${SPARK_SSL_ENABLED}" == true ]]; then
+        sed -i "s,<DISPATCHER_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_SSL_PORT}," /etc/nginx/conf.d/spark.conf
+        sed -i "s,<DISPATCHER_UI_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_UI_SSL_PORT}," /etc/nginx/conf.d/spark.conf
+else
+        sed -i "s,<DISPATCHER_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_PORT}," /etc/nginx/conf.d/spark.conf
+        sed -i "s,<DISPATCHER_UI_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_UI_PORT}," /etc/nginx/conf.d/spark.conf
+fi
+
 sed -i "s,<PORT>,${SPARK_PROXY_PORT}," /etc/nginx/conf.d/spark.conf
-sed -i "s,<DISPATCHER_URL>,${SCHEME}://${SPARK_LOCAL_IP}:${DISPATCHER_PORT}," /etc/nginx/conf.d/spark.conf
-sed -i "s,<DISPATCHER_UI_URL>,http://${SPARK_LOCAL_IP}:${DISPATCHER_UI_PORT}," /etc/nginx/conf.d/spark.conf
 sed -i "s,<PROTOCOL>,${SPARK_SSL_PROTOCOL}," /etc/nginx/conf.d/spark.conf
+
+cp /mnt/mesos/sandbox/.ssl/scheduler.crt /etc/nginx/spark.crt
+cp /mnt/mesos/sandbox/.ssl/scheduler.key /etc/nginx/spark.key
 
 # Disabled algorithms for Nginx because it crashes with the usual multi-1000
 # bytes cipher strings of Java.
