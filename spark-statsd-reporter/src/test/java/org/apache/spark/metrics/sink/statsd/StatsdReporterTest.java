@@ -1,13 +1,16 @@
 package org.apache.spark.metrics.sink.statsd;
 
-
 import com.codahale.metrics.*;
+import com.google.common.collect.ImmutableSet;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -15,6 +18,7 @@ import java.util.TreeMap;
 import static java.lang.Thread.sleep;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.assertFalse;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -52,9 +56,9 @@ public class StatsdReporterTest {
             assertTrue(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":42|g")));
             assertTrue(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":123.12|g")));
             assertEquals(2, server.receivedMessages().size());
-
         }
     }
+
     @Test
     public void testCounters() throws Exception {
         final int testUdpPort = 4441;
@@ -72,7 +76,8 @@ public class StatsdReporterTest {
             sleep(100);
 
             assertTrue(server.receivedMessages().stream().allMatch(s -> s.startsWith("spark.driver.testcounter")));
-            // counters must be reported as gauges due to StatsD specifics: it treats values as independent increments
+            // counters must be reported as gauges due to StatsD specifics: it treats values
+            // as independent increments
             assertTrue(server.receivedMessages().stream().allMatch(s -> s.endsWith(":3|g")));
             assertEquals(1, server.receivedMessages().size());
         }
@@ -153,7 +158,7 @@ public class StatsdReporterTest {
             timerContext.stop();
             timers.put("test-app-01.driver.TestTimer", timer);
 
-            reporter.report(new TreeMap<>(), new TreeMap<>(),new TreeMap<>(), new TreeMap<>(), timers);
+            reporter.report(new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), timers);
 
             sleep(100);
 
@@ -176,18 +181,147 @@ public class StatsdReporterTest {
         }
     }
 
-    private StatsdReporter buildTestReporter(int testUdpPort) {
-        return StatsdReporter
-                .forRegistry(null)
-                .formatter(formatter)
-                .host("localhost")
-                .port(testUdpPort)
-                .build();
+    @Test
+    public void testExcludeFilter() throws Exception {
+        final int testUdpPort = 4445;
+        try (DatagramTestServer server = DatagramTestServer.run(testUdpPort)) {
+            ImmutableSet<String> excludes = ImmutableSet.copyOf("test-app-01.driver.TestGaugeInt".split(","));
+            StatsdReporterFactory reporterFactory = new StatsdReporterFactory();
+            reporterFactory.setFormatter(formatter);
+            reporterFactory.setHost("localhost");
+            reporterFactory.setPort(testUdpPort);
+            reporterFactory.setExcludes(excludes);
+            StatsdReporter reporter = reporterFactory.build(null);
+
+            SortedMap<String, Gauge> gauges = new TreeMap<>();
+            gauges.put("test-app-01.driver.TestGaugeInt", () -> 42);
+            gauges.put("test-app-01.driver.TestGaugeFloat", () -> 123.123f);
+
+            reporter.report(gauges, new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), new TreeMap<>());
+
+            sleep(100); // Pausing to let DatagramTestServer collect all messages before the assertion
+
+            // Check that both gauge metrics were received and app id is dropped
+            assertTrue(server.receivedMessages().stream().allMatch(s -> s.startsWith("spark.driver.testgauge")));
+            assertFalse(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":42|g")));
+            assertTrue(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":123.12|g")));
+            assertEquals(1, server.receivedMessages().size());
+        }
     }
 
-    private void assertThatExists(DatagramTestServer server, String expectedMetricNamePrefix, String expectedMetricArgumentName, String expectedValueAndType) {
-        assertTrue(server.receivedMessages().stream().anyMatch(
-                s -> s.startsWith(expectedMetricNamePrefix + expectedMetricArgumentName)
+    @Test
+    public void testIncludeFilter() throws Exception {
+        final int testUdpPort = 4446;
+        try (DatagramTestServer server = DatagramTestServer.run(testUdpPort)) {
+            ImmutableSet<String> includes = ImmutableSet.copyOf("test-app-01.driver.TestGaugeFloat".split(","));
+            StatsdReporterFactory reporterFactory = new StatsdReporterFactory();
+            reporterFactory.setFormatter(formatter);
+            reporterFactory.setHost("localhost");
+            reporterFactory.setPort(testUdpPort);
+            reporterFactory.setIncludes(includes);
+            StatsdReporter reporter = reporterFactory.build(null);
+
+            SortedMap<String, Gauge> gauges = new TreeMap<>();
+            gauges.put("test-app-01.driver.TestGaugeInt", () -> 42);
+            gauges.put("test-app-01.driver.TestGaugeFloat", () -> 123.123f);
+
+            reporter.report(gauges, new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), new TreeMap<>());
+
+            sleep(100); // Pausing to let DatagramTestServer collect all messages before the assertion
+
+            // Check that both gauge metrics were received and app id is dropped
+            assertTrue(server.receivedMessages().stream().allMatch(s -> s.startsWith("spark.driver.testgauge")));
+            assertFalse(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":42|g")));
+            assertTrue(server.receivedMessages().stream().anyMatch(s -> s.endsWith(":123.12|g")));
+            assertEquals(1, server.receivedMessages().size());
+        }
+    }
+
+    @Test
+    public void testAttributeExcludeFilter() throws Exception {
+        final int testUdpPort = 4447;
+        try (DatagramTestServer server = DatagramTestServer.run(testUdpPort)) {
+            EnumSet<MetricAttribute> excludesAttributes = EnumSet.copyOf(Arrays.asList(MetricAttribute.COUNT));
+            StatsdReporterFactory reporterFactory = new StatsdReporterFactory();
+            reporterFactory.setFormatter(formatter);
+            reporterFactory.setHost("localhost");
+            reporterFactory.setPort(testUdpPort);
+            reporterFactory.setExcludesAttributes(excludesAttributes);
+            StatsdReporter reporter = reporterFactory.build(null);
+
+            SortedMap<String, Meter> meters = new TreeMap<>();
+            Meter meter = new Meter();
+            meter.mark();
+            meter.mark(2);
+            meters.put("test-app-01.driver.TestMeter", meter);
+
+            reporter.report(new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), meters, new TreeMap<>());
+
+            sleep(100);
+
+            String prefix = "spark.driver.testmeter.";
+            assertThatNotExists(server, prefix, "count", "3|g");
+            assertThatExists(server, prefix, "m1_rate", "0.00|ms");
+            assertThatExists(server, prefix, "m5_rate", "0.00|ms");
+            assertThatExists(server, prefix, "m15_rate", "0.00|ms");
+            // mean value depends on the timing and can't be predicted for the test
+            assertThatExists(server, prefix, "mean_rate", "|ms");
+            assertEquals(4, server.receivedMessages().size());
+        }
+    }
+
+    @Test
+    public void testAttributeIncludeFilter() throws Exception {
+        final int testUdpPort = 4448;
+        try (DatagramTestServer server = DatagramTestServer.run(testUdpPort)) {
+            EnumSet<MetricAttribute> includesAttributes = EnumSet.copyOf(Arrays.asList(MetricAttribute.COUNT));
+            StatsdReporterFactory reporterFactory = new StatsdReporterFactory();
+            reporterFactory.setFormatter(formatter);
+            reporterFactory.setHost("localhost");
+            reporterFactory.setPort(testUdpPort);
+            reporterFactory.setIncludesAttributes(includesAttributes);
+            StatsdReporter reporter = reporterFactory.build(null);
+
+            SortedMap<String, Meter> meters = new TreeMap<>();
+            Meter meter = new Meter();
+            meter.mark();
+            meter.mark(2);
+            meters.put("test-app-01.driver.TestMeter", meter);
+
+            reporter.report(new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), meters, new TreeMap<>());
+
+            sleep(100);
+
+            String prefix = "spark.driver.testmeter.";
+            assertThatExists(server, prefix, "count", "3|g");
+            assertThatNotExists(server, prefix, "m1_rate", "0.00|ms");
+            assertThatNotExists(server, prefix, "m5_rate", "0.00|ms");
+            assertThatNotExists(server, prefix, "m15_rate", "0.00|ms");
+            // mean value depends on the timing and can't be predicted for the test
+            assertThatNotExists(server, prefix, "mean_rate", "|ms");
+            assertEquals(1, server.receivedMessages().size());
+        }
+    }
+
+    private StatsdReporter buildTestReporter(int testUdpPort) {
+        StatsdReporterFactory reporterFactory = new StatsdReporterFactory();
+        reporterFactory.setFormatter(formatter);
+        reporterFactory.setHost("localhost");
+        reporterFactory.setPort(testUdpPort);
+        return reporterFactory.build(null);
+    }
+
+    private void assertThatExists(DatagramTestServer server, String expectedMetricNamePrefix,
+            String expectedMetricArgumentName, String expectedValueAndType) {
+        assertTrue(server.receivedMessages().stream()
+                .anyMatch(s -> s.startsWith(expectedMetricNamePrefix + expectedMetricArgumentName)
+                        && s.endsWith(expectedValueAndType)));
+    }
+
+    private void assertThatNotExists(DatagramTestServer server, String expectedMetricNamePrefix,
+            String expectedMetricArgumentName, String expectedValueAndType) {
+        assertFalse(server.receivedMessages().stream()
+                .anyMatch(s -> s.startsWith(expectedMetricNamePrefix + expectedMetricArgumentName)
                         && s.endsWith(expectedValueAndType)));
     }
 }

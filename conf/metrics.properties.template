@@ -1,3 +1,41 @@
+# org.apache.spark.metrics.sink.StatsdSink
+#   Name:                   Default:      Description:
+#   host                    127.0.0.1     Hostname or IP of StatsD server
+#   port                    8125          Port of StatsD server
+#   poll.interval           10            Poll period
+#   poll.unit               seconds       Units of poll period
+#   rate.unit               seconds       Units of rate
+#   duration.unit           milliseconds  Units of duration
+#   tags                    EMPTY STRING  Tags associated with metric name
+#   prefix                  EMPTY STRING  Prefix to prepend to metric name
+#   excludes                EMPTY STRING  Comma separated list of Metrics to exclude from reports,
+#                                         by name. When defined matching metrics will not be reported.
+#   includes                EMPTY STRING  Comma separated list of Metrics to include in reports,
+#                                         by name. When defined, only these metrics will be reported.
+#   excludes.attributes     EMPTY STRING  Comma separated list of metrics attributes to exclude from
+#                                         reports, by name (e.g. p98,m15_rate,stddev). When defined,
+#                                         matching metrics attributes will not be reported.
+#   includes.attributes     EMPTY STRING  Comma separated list of metrics attributes to include in
+#                                         reports, by name (e.g. p98,m15_rate,stddev). When defined,
+#                                         only these attributes will be reported.
+#   use.regex.filters       false         Indicates whether the values of the 'includes' and 'excludes'
+#                                         fields should be treated as regular expressions or not.
+#   use.substring.matching  false         Uses a substring matching strategy to determine whether a
+#                                         metric should be processed.
+#
+## Examples
+# Enable StatsdSink for all instances by class name
+#*.sink.statsd.class=org.apache.spark.metrics.sink.StatsdSink
+#*.sink.statsd.host=12.0.0.1
+#*.sink.statsd.port=8125
+#*.sink.statsd.prefix=spark
+#*.sink.statsd.excludes=metric1,metric2
+#*.sink.statsd.includes=metric3,metric4
+#*.sink.statsd.excludes.attributes=p98,m15_rate
+#*.sink.statsd.includes.attributes=stddev
+#*.sink.statsd.use.regex.filters=false
+#*.sink.statsd.use.substring.matching=false
+
 # Enable StatsdSink for all instances by class name
 *.sink.statsd.class=org.apache.spark.metrics.sink.statsd.StatsdSink
 *.sink.statsd.prefix=
