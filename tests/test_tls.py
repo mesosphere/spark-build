@@ -1,6 +1,6 @@
 import logging
 import pytest
-i
+
 import dcos_utils
 import spark_utils as utils
 
@@ -17,7 +17,7 @@ def setup_spark(configure_security_spark, configure_universe):
             "tls": {
                 "enabled": True,
                 "protocol": "TLSv1.2",
-                "keystore": "/spark/keystore",
+                "keystore": "{}".format(secret_path),
                 "keypassword": "deleteme",
                 "keystore_password": "deleteme"
             }
@@ -28,6 +28,7 @@ def setup_spark(configure_security_spark, configure_universe):
         utils.require_spark(additional_options=service_options)
         yield
     finally:
+        dcos_utils.delete_secret(secret_path)
         utils.teardown_spark()
 
 
