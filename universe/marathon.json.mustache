@@ -26,10 +26,10 @@
         {{#service.tls.enabled}}
         "SPARK_SSL_ENABLED": "true",
         "SPARK_SSL_PROTOCOL": "{{service.tls.protocol}}",
-        "SPARK_SSL_KEYSTOREBASE64": "{{service.tls.keystore}}",
+        "SPARK_SSL_KEYSTORE": "{{service.tls.keystore}}",
         "SPARK_SSL_KEYPASSWORD": "{{service.tls.keypassword}}",
         "SPARK_SSL_KEYSTOREPASSWORD": "{{service.tls.keystore_password}}",
-        "SPARK_SSL_TRUSTSTOREBASE64": "{{service.tls.truststore}}",
+        "SPARK_SSL_TRUSTSTORE": "{{service.tls.truststore}}",
         "SPARK_SSL_TRUSTSTOREPASSWORD": "{{service.tls.truststore_password}}",
         "SPARK_SSL_ENABLEDALGORITHMS": "{{service.tls.algorithms}}",
         {{/service.tls.enabled}}

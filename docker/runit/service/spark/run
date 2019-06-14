@@ -44,14 +44,12 @@ function add_if_non_empty() {
 }
 
 function configure_properties() {
-    if [ "${SPARK_SSL_KEYSTOREBASE64}" != "" ]; then
-        echo "${SPARK_SSL_KEYSTOREBASE64}" | base64 -d > /tmp/dispatcher-keystore.jks
-        add_if_non_empty spark.ssl.keyStore /tmp/dispatcher-keystore.jks
+    if [ "${SPARK_SSL_KEYSTORE}" != "" ]; then
+        add_if_non_empty spark.ssl.keyStore "/mnt/mesos/sandbox/${SPARK_SSL_KEYSTORE}"
     fi
 
-    if [ "${SPARK_SSL_TRUSTSTOREBASE64}" != "" ]; then
-        echo "${SPARK_SSL_TRUSTSTOREBASE64}" | base64 -d > /tmp/dispatcher-truststore.jks
-        add_if_non_empty spark.ssl.trustStore /tmp/dispatcher-truststore.jks
+    if [ "${SPARK_SSL_TRUSTSTORE}" != "" ]; then
+        add_if_non_empty spark.ssl.trustStore "/mnt/mesos/sandbox/${SPARK_SSL_TRUSTSTORE}"
     fi
 
     add_if_non_empty spark.mesos.dispatcher.historyServer.url "${SPARK_HISTORY_SERVER_URL}"
