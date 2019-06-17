@@ -66,14 +66,14 @@
 
     {{#service.service_account_secret}}
     "secrets": {
-        "serviceCredential": {
-            "source": "{{service.service_account_secret}}"
-        },
         {{#service.tls.enabled}}
         "dispatcherSecret": {
             "source": "{{service.tls.keystore}}"
-        }
+        },
         {{/service.tls.enabled}}
+        "serviceCredential": {
+            "source": "{{service.service_account_secret}}"
+        }
     },
     {{/service.service_account_secret}}
     {{#service.virtual_network_enabled}}
