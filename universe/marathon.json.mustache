@@ -68,7 +68,12 @@
     "secrets": {
         "serviceCredential": {
             "source": "{{service.service_account_secret}}"
+        },
+        {{#service.tls.enabled}}
+        "dispatcherSecret": {
+            "source": "{{service.tls.keystore}}"
         }
+        {{/service.tls.enabled}}
     },
     {{/service.service_account_secret}}
     {{#service.virtual_network_enabled}}
@@ -116,6 +121,14 @@
     ],
     {{/service.virtual_network_enabled}}
     "container": {
+        {{#service.tls.enabled}}
+        "volumes": [
+            {
+                "containerPath": "secret/{{service.tls.keystore}}",
+                "secret": "dispatcherSecret"
+            }
+        ],
+        {{/service.tls.enabled}}
         {{#service.UCR_containerizer}}
         "type": "MESOS",
         "docker": {

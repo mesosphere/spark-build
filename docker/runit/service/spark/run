@@ -45,11 +45,11 @@ function add_if_non_empty() {
 
 function configure_properties() {
     if [ "${SPARK_SSL_KEYSTORE}" != "" ]; then
-        add_if_non_empty spark.ssl.keyStore "/mnt/mesos/sandbox/${SPARK_SSL_KEYSTORE}"
+        add_if_non_empty spark.ssl.keyStore "/mnt/mesos/sandbox/secret/${SPARK_SSL_KEYSTORE}"
     fi
 
     if [ "${SPARK_SSL_TRUSTSTORE}" != "" ]; then
-        add_if_non_empty spark.ssl.trustStore "/mnt/mesos/sandbox/${SPARK_SSL_TRUSTSTORE}"
+        add_if_non_empty spark.ssl.trustStore "/mnt/mesos/sandbox/secret/${SPARK_SSL_TRUSTSTORE}"
     fi
 
     add_if_non_empty spark.mesos.dispatcher.historyServer.url "${SPARK_HISTORY_SERVER_URL}"

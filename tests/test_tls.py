@@ -5,13 +5,15 @@ import dcos_utils
 import spark_utils as utils
 
 log = logging.getLogger(__name__)
-secret_path = "/spark/keystore"
+secret_path = "spark/keystore"
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_spark(configure_security_spark, configure_universe):
     secret_file_name = "server.jks"
+
     dcos_utils.delete_secret(secret_path)
     dcos_utils.create_secret(secret_path, secret_file_name, True)
+
     service_options = {
         "service": {
             "tls": {
@@ -23,6 +25,7 @@ def setup_spark(configure_security_spark, configure_universe):
             }
         }
     }
+
     try:
         utils.upload_dcos_test_jar()
         utils.require_spark(additional_options=service_options)
