@@ -9,7 +9,7 @@ secret_path = "spark/keystore"
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_spark(configure_security_spark, configure_universe):
-    secret_file_name = "server.jks"
+    secret_file_name = "tests/server.jks"
 
     dcos_utils.delete_secret(secret_path)
     dcos_utils.create_secret(secret_path, secret_file_name, True)
