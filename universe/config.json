@@ -42,7 +42,7 @@
                     "default": "",
                     "media": {
                        "type": "application/x-secret+string"
-                     }
+                    }
                 },
                 "user": {
                     "description": "Executors will run as this user.",
