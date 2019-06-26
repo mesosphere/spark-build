@@ -31,12 +31,18 @@
                 "service_account": {
                     "description": "The Spark Dispatcher will register with Mesos with this principal.",
                     "type": "string",
-                    "default": ""
+                    "default": "",
+                    "media": {
+                      "type": "application/x-service-account+string"
+                    }
                 },
                 "service_account_secret": {
                     "description": "The Spark Dispatcher will register with mesos with this secret.",
                     "type": "string",
-                    "default": ""
+                    "default": "",
+                    "media": {
+                       "type": "application/x-secret+string"
+                    }
                 },
                 "user": {
                     "description": "Executors will run as this user.",
