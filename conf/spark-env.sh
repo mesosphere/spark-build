@@ -66,10 +66,6 @@ fi
 # But this fails now due to MESOS-6391, so I'm setting it to /tmp
 MESOS_DIRECTORY=/tmp
 
-export LIBPROCESS_SSL_CA_DIR=/mnt/mesos/sandbox/.ssl/
-export LIBPROCESS_SSL_CA_FILE=/mnt/mesos/sandbox/.ssl/ca.crt
-export LIBPROCESS_SSL_CERT_FILE=/mnt/mesos/sandbox/.ssl/scheduler.crt
-export LIBPROCESS_SSL_KEY_FILE=/mnt/mesos/sandbox/.ssl/scheduler.key
 export MESOS_MODULES="{\"libraries\": [{\"file\": \"libdcos_security.so\", \"modules\": [{\"name\": \"com_mesosphere_dcos_ClassicRPCAuthenticatee\"}]}]}"
 export MESOS_AUTHENTICATEE="com_mesosphere_dcos_ClassicRPCAuthenticatee"
 
