@@ -200,8 +200,8 @@ def install_cassandra(args: dict) -> list:
 
 def install(args):
     services = {}
-    # services["zookeeper"] = install_zookeeper(args)
-    # services["kafka"] = install_kafka(args, services["zookeeper"])
+    services["zookeeper"] = install_zookeeper(args)
+    services["kafka"] = install_kafka(args, services["zookeeper"])
     services["cassandra"] = install_cassandra(args)
 
     for k, v in services.items():
