@@ -72,6 +72,8 @@ def get_service_options(service_name: str, service_account_info: typing.Dict,
         log.info("No options specified. Using defaults")
 
     # Always set the service name
+    if service_name[0] != '/':
+        service_name = '/' + service_name
     service_name_options = {"service": {"name": service_name}}
 
     return merge_service_options([get_strict_mode_options(service_account_info),
