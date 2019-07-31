@@ -224,7 +224,7 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
   docker rm -f "${CONTAINER_NAME}" > /dev/null 2>&1 || true
 
   rm -rf "${TEST_REPOSITORY_DIRECTORY}"
-  git clone git@github.com:mesosphere/spark-build.git "${TEST_REPOSITORY_DIRECTORY}" | tee -a "${LOG_FILE}"
+  git clone https://github.com/mesosphere/spark-build.git "${TEST_REPOSITORY_DIRECTORY}" | tee -a "${LOG_FILE}"
 
   docker build -t "${IMAGE_NAME}" "${TEST_REPOSITORY_DIRECTORY}/scale-tests" | tee -a "${LOG_FILE}"
 
