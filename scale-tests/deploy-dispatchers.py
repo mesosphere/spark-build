@@ -88,7 +88,7 @@ def create_quota(
         assert rc == 0, "Error removing quota"
 
 
-    cmd_list = ["spark", "quota", "create"]
+    cmd_list = ["spark", "quota", "create", "--force"]
     for r in ["cpus", "mem", "gpus", ]:
         if r in quota:
             cmd_list.extend(["-{}".format(r[0]), quota[r],])
@@ -111,6 +111,36 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
     role_name = "{}-{}-role".format(service_name, role_base).replace("/", "__")
     if quota_for_role:
         create_quota(role_name, quota_for_role)
+    else:
+        log.info("No quota to assing to %s", role_name)
+
+    return role_name
+
+def setup_group_role(service_name: str, quota: typing.Dict) -> str:
+    """
+    Setup the group role for the specified service
+    """
+
+    group = os.path.dirname(service_name)
+    if group == "" or group == "/":
+        return ""
+
+    if group[0] != "/":
+        group = "/" + group
+
+
+    # Summarize the required quota of all children
+    quota_sum = {}
+    for q in quota.values():
+        for k, v in q.items():
+            if k not in quota_sum:
+                quota_sum[k] = 0
+            quota_sum[k] += float(v)
+
+
+    role_name = group.replace("/", "__")
+    if quota_sum:
+        create_quota(role_name, quota_sum)
     else:
         log.info("No quota to assing to %s", role_name)
 
@@ -182,6 +212,9 @@ def install_package(package_name: str,
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
+
+    # Create a group role, per strict-role requirements
+    setup_group_role(service_name, quota_options)
 
     drivers_role = setup_role(service_name, "drivers", quota_options)
     executors_role = setup_role(service_name, "executors", quota_options)
