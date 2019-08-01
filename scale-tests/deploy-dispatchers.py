@@ -214,10 +214,13 @@ def install_package(package_name: str,
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
     # Create a group role, per strict-role requirements
-    setup_group_role(service_name, quota_options)
+    # setup_group_role(service_name, quota_options)
 
-    drivers_role = setup_role(service_name, "drivers", quota_options)
-    executors_role = setup_role(service_name, "executors", quota_options)
+    # JUST FOR MWT-18
+    # drivers_role = setup_role(service_name, "drivers", quota_options)
+    # executors_role = setup_role(service_name, "executors", quota_options)
+    drivers_role = "{}-{}-role".format(service_name, "drivers").replace("/", "__")
+    executors_role = "{}-{}-role".format(service_name, "executors").replace("/", "__")
 
     setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
 
