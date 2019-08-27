@@ -30,6 +30,7 @@ manifest-dist:
 	popd
 
 HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
+SCALA_VERSION ?= $(shell jq ".default_spark_dist.scala_version" "$(ROOT_DIR)/manifest.json")
 SPARK_DIR ?= $(ROOT_DIR)/spark
 $(SPARK_DIR):
 	git clone $(SPARK_REPO_URL) $(SPARK_DIR)
@@ -37,7 +38,8 @@ $(SPARK_DIR):
 prod-dist: $(SPARK_DIR)
 	pushd $(SPARK_DIR)
 	rm -rf spark-*.tgz
-	./dev/make-distribution.sh --tgz -Pmesos "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests
+	./dev/change-scala-version.sh $(SCALA_VERSION)
+	./dev/make-distribution.sh --tgz -Pmesos "-Pscala-$(SCALA_VERSION)" "-Phadoop-$(HADOOP_VERSION)" -Pnetlib-lgpl -Psparkr -Phive -Phive-thriftserver -DskipTests -Dmaven.test.skip=true -Dmaven.source.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true
 	filename=`ls spark-*.tgz`
 	rm -rf $(DIST_DIR)
 	mkdir -p $(DIST_DIR)
