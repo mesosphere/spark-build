@@ -11,10 +11,6 @@ function export_daemon_opts() {
         export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher${ZK_SUFFIX}"
     fi
 
-    if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
-        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=$SPARK_DISPATCHER_MESOS_ROLE"
-    fi
-
     if [ "$SPARK_DISPATCHER_MESOS_PRINCIPAL" != "" ]; then
         export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.principal=$SPARK_DISPATCHER_MESOS_PRINCIPAL"
     fi
@@ -74,6 +70,19 @@ function configure_properties() {
 
         add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.mesos.driverEnv.VIRTUAL_NETWORK_ENABLED "${VIRTUAL_NETWORK_ENABLED}"
         add_if_non_empty spark.mesos.dispatcher.driverDefault.spark.executorEnv.VIRTUAL_NETWORK_ENABLED "${VIRTUAL_NETWORK_ENABLED}"
+    fi
+
+    if [[ "${MESOS_ALLOCATION_ROLE}" != "" ]] && [[ "${MARATHON_APP_ENFORCE_GROUP_ROLE}" = "TRUE" ]]; then
+        echo "Group role enforcement is enabled, Dispatcher will run with role '${MESOS_ALLOCATION_ROLE}'"
+        add_if_non_empty spark.mesos.role "${MESOS_ALLOCATION_ROLE}"
+    elif [[ "${SPARK_DISPATCHER_MESOS_ROLE}" != "" ]]; then
+        add_if_non_empty spark.mesos.role "${SPARK_DISPATCHER_MESOS_ROLE}"
+    fi
+
+    if [[ "${SPARK_DISPATCHER_ENFORCE_ROLE}" = true ]]; then
+        echo "Dispatcher role enforcement is enabled, all submissions with spark.mesos.role set and different from '${MESOS_ALLOCATION_ROLE}' will be rejected"
+        echo "Submissions with spark.mesos.role unset will run with role '${MESOS_ALLOCATION_ROLE}' by default"
+        add_if_non_empty spark.mesos.dispatcher.role.enforce "true"
     fi
 
     if [ "${SPARK_DOCKER_USER}" != "" ]; then
