@@ -72,6 +72,8 @@ def _retried_install_impl(
 
     # Wait for expected tasks to come up
     if expected_running_tasks > 0:
+        if service_name[0] != '/':
+            service_name = '/' + service_name
         shakedown.wait_for_service_tasks_running(
             service_name, expected_running_tasks, timeout_seconds)
 

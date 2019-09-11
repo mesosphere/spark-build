@@ -38,6 +38,7 @@ Options:
 
 from concurrent.futures import ThreadPoolExecutor
 from docopt import docopt
+from pprint import pprint
 
 import ast
 import json
@@ -117,6 +118,46 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
     return role_name
 
 
+def setup_group_role(service_name: str, quota: typing.Dict) -> str:
+    """
+    Setup the group role for the specified service
+    """
+
+    group = os.path.dirname(service_name)
+    if group == "" or group == "/":
+        return ""
+
+    if group[0] != "/":
+        group = "/" + group
+
+    print("********************************************************************************")
+    print("quota")
+    print("********************************************************************************")
+    pprint(quota)
+
+    # Summarize the required quota of all children
+    quota_sum = {}
+    for q in quota.values():
+        for k, v in q.items():
+            if k not in quota_sum:
+                quota_sum[k] = 0.0
+            quota_sum[k] += float(v)
+
+    print("********************************************************************************")
+    print("quota sum")
+    print("********************************************************************************")
+    pprint(quota_sum)
+
+
+    role_name = group.replace("/", "__")
+    if quota_sum:
+        create_quota(role_name, quota_sum)
+    else:
+        log.info("No quota to assing to %s", role_name)
+
+    return role_name
+
+
 def setup_spark_security(service_name: str,
                          drivers_role: str,
                          executors_role: str,
@@ -183,8 +224,15 @@ def install_package(package_name: str,
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    drivers_role = setup_role(service_name, "drivers", quota_options)
-    executors_role = setup_role(service_name, "executors", quota_options)
+    # Create a group role, per strict-role requirements
+    # if quota_options:
+    #     setup_group_role(service_name, quota_options)
+
+    # JUST FOR MWT-18
+    # drivers_role = setup_role(service_name, "drivers", quota_options)
+    # executors_role = setup_role(service_name, "executors", quota_options)
+    drivers_role = "{}-{}-role".format(service_name, "drivers").replace("/", "__")
+    executors_role = "{}-{}-role".format(service_name, "executors").replace("/", "__")
 
     setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
 

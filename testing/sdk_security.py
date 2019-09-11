@@ -72,7 +72,7 @@ def _revoke(user: str, acl: str, description: str, action: str="create") -> None
     log.info("Want to delete {user}+{acl}".format(user=user, acl=acl))
 
 
-def get_permissions(service_account_name: str, role: str, linux_user: str) -> typing.List[dict]:
+def get_role_permissions(service_account_name: str, role: str) -> typing.List[dict]:
     return [
         # registration permissions
         {
@@ -81,7 +81,25 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> ty
             'description': "Service {} may register with the Mesos master with role={}".format(
                 service_account_name, role),
         },
+        # resource permissions
+        {
+            'user': service_account_name,
+            'acl': "dcos:mesos:master:reservation:role:{}".format(role),
+            'description': "Service {} may reserve Mesos resources with role={}".format(
+                service_account_name, role)
+        },
 
+        # volume permissions
+        {
+            'user': service_account_name,
+            'acl': "dcos:mesos:master:volume:role:{}".format(role),
+            'description': "Service {} may create Mesos volumes with role={}".format(
+                service_account_name, role)
+        }
+    ]
+
+def get_permissions(service_account_name: str, linux_user: str) -> typing.List[dict]:
+    return [
         # task execution permissions
         {
             'user': service_account_name,
@@ -103,12 +121,6 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> ty
         # resource permissions
         {
             'user': service_account_name,
-            'acl': "dcos:mesos:master:reservation:role:{}".format(role),
-            'description': "Service {} may reserve Mesos resources with role={}".format(
-                service_account_name, role)
-        },
-        {
-            'user': service_account_name,
             'acl': "dcos:mesos:master:reservation:principal:{}".format(service_account_name),
             'description': "Service {} may reserve Mesos resources with principal={}".format(
                 service_account_name, service_account_name),
@@ -118,12 +130,6 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> ty
         # volume permissions
         {
             'user': service_account_name,
-            'acl': "dcos:mesos:master:volume:role:{}".format(role),
-            'description': "Service {} may create Mesos volumes with role={}".format(
-                service_account_name, role)
-        },
-        {
-            'user': service_account_name,
             'acl': "dcos:mesos:master:volume:principal:{}".format(service_account_name),
             'description': "Service {} may create Mesos volumes with principal={}".format(
                 service_account_name, service_account_name),
@@ -131,19 +137,37 @@ def get_permissions(service_account_name: str, role: str, linux_user: str) -> ty
         }]
 
 
-def grant_permissions(linux_user: str, role_name: str, service_account_name: str) -> None:
+def grant_permissions(linux_user: str, role_name: str = "", service_account_name: str = "", role_list: typing.List[str] = []) -> None:
     log.info("Granting permissions to {account}".format(account=service_account_name))
-    permissions = get_permissions(service_account_name, role_name, linux_user)
+
+    permissions = get_permissions(service_account_name, linux_user)
+
+    if not role_list:
+        role_list = [role_name]
+
+    for role in role_list:
+        permissions += get_role_permissions(service_account_name, role)
+
     for permission in permissions:
         _grant(**permission)
+
     log.info("Permission setup completed for {account}".format(account=service_account_name))
 
 
 def revoke_permissions(linux_user: str, role_name: str, service_account_name: str) -> None:
     log.info("Revoking permissions to {account}".format(account=service_account_name))
-    permissions = get_permissions(service_account_name, role_name, linux_user)
+
+    permissions = get_permissions(service_account_name, linux_user)
+
+    if not role_list:
+        role_list = [ role_name ]
+
+    for role in role_list:
+        permissions += get_role_permissions(service_account_name, role)
+
     for permission in permissions:
         _revoke(**permission)
+
     log.info("Permission cleanup completed for {account}".format(account=service_account_name))
 
 
@@ -201,13 +225,21 @@ def delete_secret(secret: str) -> None:
 
 
 def _get_role_list(service_name: str) -> typing.List[str]:
-    # TODO: spark_utils uses:
-    # app_id_encoded = urllib.parse.quote(
-    #     urllib.parse.quote(app_id, safe=''),
-    #     safe=''
-    # )
     role_basename = service_name.replace("/", "__")
-    return [
+
+    roles = []
+
+    # Grant roles on each group components.
+    path_components = service_name.split("/")
+    role_path = ""
+    for component in path_components[:-1]:
+        if role_path != "":
+            role_path += "__"
+        role_path += component
+
+        roles.append(role_path)
+
+    return roles + [
         "{}-role".format(role_basename),
         "slave_public%252F{}-role".format(role_basename),
     ]
@@ -235,12 +267,11 @@ def setup_security(service_name: str,
 
     service_account_info["roles"] = _get_role_list(service_name)
 
-    for role_name in service_account_info["roles"]:
-        grant_permissions(
-            linux_user=linux_user,
-            role_name=role_name,
-            service_account_name=service_account
-        )
+    grant_permissions(
+        linux_user=linux_user,
+        role_list=service_account_info["roles"],
+        service_account_name=service_account
+    )
 
     log.info("Finished setting up strict-mode security")
 
@@ -259,12 +290,11 @@ def cleanup_security(service_name: str,
         roles = service_account_info.get("roles", _get_role_list(service_name))
         linux_user = service_account_info.get("linux_user", "nobody")
 
-        for role_name in roles:
-            revoke_permissions(
-                linux_user=linux_user,
-                role_name=role_name,
-                service_account_name=service_account
-            )
+        revoke_permissions(
+            linux_user=linux_user,
+            role_list=roles,
+            service_account_name=service_account
+        )
 
     delete_service_account(service_account, service_account_secret)
 

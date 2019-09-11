@@ -294,6 +294,12 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
     touch "${CONTAINER_FINISHED_SETTING_UP_FILE}"
 fi
 
+dcos cluster setup \
+     --insecure \
+     --username="${DCOS_USERNAME}" \
+     --password="${DCOS_PASSWORD}" \
+     "${CLUSTER_URL}"
+
 ################################################################################
 # Create package repository stubs if they're not there #########################
 ################################################################################
@@ -342,12 +348,12 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
-      --kafka-zookeeper-config "${KAFKA_ZOOKEEPER_CONFIG}" \
-      --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
-      --kafka-config "${KAFKA_CONFIG}" \
-      --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
-      --cassandra-config "${CASSANDRA_CONFIG}"
+    --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
+    --kafka-zookeeper-config "${KAFKA_ZOOKEEPER_CONFIG}" \
+    --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
+    --kafka-config "${KAFKA_CONFIG}" \
+    --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
+    --cassandra-config "${CASSANDRA_CONFIG}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Installed infrastructure in ${runtime} seconds"
@@ -355,8 +361,8 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Uploading infrastructure file to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping infrastructure installation'
 fi
@@ -370,13 +376,13 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-      --quota-drivers-cpus "${NON_GPU_QUOTA_DRIVERS_CPUS}" \
-      --quota-drivers-mem "${NON_GPU_QUOTA_DRIVERS_MEM}" \
-      --quota-executors-cpus "${NON_GPU_QUOTA_EXECUTORS_CPUS}" \
-      --quota-executors-mem "${NON_GPU_QUOTA_EXECUTORS_MEM}" \
-      "${NON_GPU_NUM_DISPATCHERS}" \
-      "${SERVICE_NAMES_PREFIX}" \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
+    --quota-drivers-cpus "${NON_GPU_QUOTA_DRIVERS_CPUS}" \
+    --quota-drivers-mem "${NON_GPU_QUOTA_DRIVERS_MEM}" \
+    --quota-executors-cpus "${NON_GPU_QUOTA_EXECUTORS_CPUS}" \
+    --quota-executors-mem "${NON_GPU_QUOTA_EXECUTORS_MEM}" \
+    "${NON_GPU_NUM_DISPATCHERS}" \
+    "${SERVICE_NAMES_PREFIX}" \
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Installed non-GPU dispatchers in ${runtime} seconds"
@@ -384,14 +390,14 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading non-GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping non-GPU dispatchers installation'
 fi
@@ -405,11 +411,11 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-      --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
-      --quota-drivers-mem "${GPU_QUOTA_DRIVERS_MEM}" \
-      "${GPU_NUM_DISPATCHERS}" \
-      "${SERVICE_NAMES_PREFIX}gpu-" \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}"
+    --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
+    --quota-drivers-mem "${GPU_QUOTA_DRIVERS_MEM}" \
+    "${GPU_NUM_DISPATCHERS}" \
+    "${SERVICE_NAMES_PREFIX}gpu-" \
+    "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Installed GPU dispatchers in ${runtime} seconds"
@@ -426,14 +432,14 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   log 'Uploading GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping GPU dispatchers installation'
 fi
@@ -455,8 +461,8 @@ if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_
   log 'Uploading merged dispatcher list file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping merging of non-GPU and GPU dispatcher list files'
 fi
@@ -470,23 +476,23 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
-      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
-      --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${FAILING_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-must-fail \
-      --producer-number-of-words "${FAILING_PRODUCER_NUMBER_OF_WORDS}" \
-      --producer-words-per-second "${FAILING_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${FAILING_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${FAILING_PRODUCER_SPARK_EXECUTOR_CORES}" \
-      --consumer-must-fail \
-      --consumer-write-to-cassandra \
-      --consumer-batch-size-seconds "${FAILING_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${FAILING_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${FAILING_CONSUMER_SPARK_EXECUTOR_CORES}"
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+    --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
+    --jar "${TEST_ASSEMBLY_JAR_URL}" \
+    --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
+    --num-consumers-per-producer "${FAILING_NUM_CONSUMERS_PER_PRODUCER}" \
+    --producer-must-fail \
+    --producer-number-of-words "${FAILING_PRODUCER_NUMBER_OF_WORDS}" \
+    --producer-words-per-second "${FAILING_PRODUCER_WORDS_PER_SECOND}" \
+    --producer-spark-cores-max "${FAILING_PRODUCER_SPARK_CORES_MAX}" \
+    --producer-spark-executor-cores "${FAILING_PRODUCER_SPARK_EXECUTOR_CORES}" \
+    --consumer-must-fail \
+    --consumer-write-to-cassandra \
+    --consumer-batch-size-seconds "${FAILING_CONSUMER_BATCH_SIZE_SECONDS}" \
+    --consumer-spark-cores-max "${FAILING_CONSUMER_SPARK_CORES_MAX}" \
+    --consumer-spark-executor-cores "${FAILING_CONSUMER_SPARK_EXECUTOR_CORES}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Started failing jobs in ${runtime} seconds"
@@ -494,8 +500,8 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   log 'Uploading failing jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of failing streaming jobs'
 fi
@@ -509,21 +515,21 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
-      --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${FINITE_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${FINITE_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-number-of-words "${FINITE_PRODUCER_NUMBER_OF_WORDS}" \
-      --producer-words-per-second "${FINITE_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${FINITE_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${FINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
-      --consumer-write-to-cassandra \
-      --consumer-batch-size-seconds "${FINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${FINITE_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+    --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
+    --jar "${TEST_ASSEMBLY_JAR_URL}" \
+    --num-producers-per-kafka "${FINITE_NUM_PRODUCERS_PER_KAFKA}" \
+    --num-consumers-per-producer "${FINITE_NUM_CONSUMERS_PER_PRODUCER}" \
+    --producer-number-of-words "${FINITE_PRODUCER_NUMBER_OF_WORDS}" \
+    --producer-words-per-second "${FINITE_PRODUCER_WORDS_PER_SECOND}" \
+    --producer-spark-cores-max "${FINITE_PRODUCER_SPARK_CORES_MAX}" \
+    --producer-spark-executor-cores "${FINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
+    --consumer-write-to-cassandra \
+    --consumer-batch-size-seconds "${FINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
+    --consumer-spark-cores-max "${FINITE_CONSUMER_SPARK_CORES_MAX}" \
+    --consumer-spark-executor-cores "${FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Started finite jobs in ${runtime} seconds"
@@ -531,8 +537,8 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   log 'Uploading finite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of finite streaming jobs'
 fi
@@ -546,20 +552,20 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
-      --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-number-of-words 0 \
-      --producer-words-per-second "${INFINITE_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${INFINITE_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${INFINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
-      --consumer-batch-size-seconds "${INFINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${INFINITE_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+    "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
+    "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+    --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
+    --jar "${TEST_ASSEMBLY_JAR_URL}" \
+    --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
+    --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \
+    --producer-number-of-words 0 \
+    --producer-words-per-second "${INFINITE_PRODUCER_WORDS_PER_SECOND}" \
+    --producer-spark-cores-max "${INFINITE_PRODUCER_SPARK_CORES_MAX}" \
+    --producer-spark-executor-cores "${INFINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
+    --consumer-batch-size-seconds "${INFINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
+    --consumer-spark-cores-max "${INFINITE_CONSUMER_SPARK_CORES_MAX}" \
+    --consumer-spark-executor-cores "${INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
   log "Started infinite jobs in ${runtime} seconds"
@@ -567,8 +573,8 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   log 'Uploading infinite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
+    "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+    "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of infinite streaming jobs'
 fi
@@ -582,15 +588,15 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-batch-marathon-app.py \
-      --app-id "${BATCH_APP_ID}" \
-      --dcos-username "${DCOS_USERNAME}" \
-      --dcos-password "${DCOS_PASSWORD}" \
-      --security "${SECURITY}" \
-      --input-file-uri "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
-      --script-cpus "${BATCH_SCRIPT_CPUS}" \
-      --script-mem "${BATCH_SCRIPT_MEM}" \
-      --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
-      --script-args "\"\
+    --app-id "${BATCH_APP_ID}" \
+    --dcos-username "${DCOS_USERNAME}" \
+    --dcos-password "${DCOS_PASSWORD}" \
+    --security "${SECURITY}" \
+    --input-file-uri "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
+    --script-cpus "${BATCH_SCRIPT_CPUS}" \
+    --script-mem "${BATCH_SCRIPT_MEM}" \
+    --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
+    --script-args "\"\
         ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
       \""
@@ -610,15 +616,15 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-batch-marathon-app.py \
-      --app-id "${GPU_APP_ID}" \
-      --dcos-username "${DCOS_USERNAME}" \
-      --dcos-password "${DCOS_PASSWORD}" \
-      --security "${SECURITY}" \
-      --input-file-uri "${GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
-      --script-cpus "${GPU_SCRIPT_CPUS}" \
-      --script-mem "${GPU_SCRIPT_MEM}" \
-      --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}" \
-      --script-args "\"\
+    --app-id "${GPU_APP_ID}" \
+    --dcos-username "${DCOS_USERNAME}" \
+    --dcos-password "${DCOS_PASSWORD}" \
+    --security "${SECURITY}" \
+    --input-file-uri "${GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
+    --script-cpus "${GPU_SCRIPT_CPUS}" \
+    --script-mem "${GPU_SCRIPT_MEM}" \
+    --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}" \
+    --script-args "\"\
         ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${GPU_SUBMITS_PER_MIN} \
         --docker-image ${GPU_DOCKER_IMAGE} \
@@ -657,8 +663,8 @@ fi
 log 'Uploading log file to S3'
 container_exec \
   aws s3 cp --acl public-read \
-    "${LOG_FILE}" \
-    "${TEST_S3_DIRECTORY_URL}script_logs/"
+  "${LOG_FILE}" \
+  "${TEST_S3_DIRECTORY_URL}script_logs/"
 
 log 'Listing S3 artifacts'
 container_exec \

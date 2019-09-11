@@ -71,6 +71,8 @@ def get_service_options(service_name: str, service_account_info: typing.Dict,
     else:
         log.info("No options specified. Using defaults")
 
+    if service_name[0] != '/':
+        service_name = '/' + service_name
     # Always set the service name
     service_name_options = {"service": {"name": service_name}}
 
