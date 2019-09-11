@@ -25,6 +25,10 @@ function usage () {
   echo '           non-interactive \\'
 }
 
+################################################################################
+# Parse and validate command line and parameter file parameters ################
+################################################################################
+
 if [ "${#}" -lt 7 ]; then
   echo -e "run.sh needs at least 7 arguments but was given ${#}\\n"
   usage
@@ -119,6 +123,10 @@ function container_exec () {
 declare -x AWS_PROFILE
 eval "$(maws li "${AWS_ACCOUNT}")"
 
+################################################################################
+# Calculate a few things and present a pre-test report #########################
+################################################################################
+
 readonly FINITE_NUM_PRODUCERS=$((KAFKA_CLUSTER_COUNT * FINITE_NUM_PRODUCERS_PER_KAFKA))
 readonly FINITE_NUM_CONSUMERS=$((FINITE_NUM_PRODUCERS * FINITE_NUM_CONSUMERS_PER_PRODUCER))
 readonly FINITE_NUM_JOBS=$((FINITE_NUM_PRODUCERS + FINITE_NUM_CONSUMERS))
@@ -189,6 +197,10 @@ case "${ANSWER}" in
   * )     log 'Exiting...' && exit 0;;
 esac
 
+################################################################################
+# Set a few more parameters ####################################################
+################################################################################
+
 if is_interactive; then
   for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
                           SHOULD_INSTALL_NON_GPU_DISPATCHERS \
@@ -207,6 +219,10 @@ if is_interactive; then
     esac
   done
 fi
+
+################################################################################
+# Create Docker container for test if it doesn't exist yet #####################
+################################################################################
 
 set +e
 docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1
@@ -294,6 +310,9 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
   container_exec \
     touch "${CONTAINER_FINISHED_SETTING_UP_FILE}"
 fi
+################################################################################
+# Install infrastructure #######################################################
+################################################################################
 
 if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   log 'Installing infrastructure'
@@ -318,6 +337,10 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
 else
   log 'Skipping infrastructure installation'
 fi
+
+################################################################################
+# Install non-GPU Spark dispatchers ############################################
+################################################################################
 
 if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   log 'Installing non-GPU dispatchers'
@@ -349,6 +372,10 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
 else
   log 'Skipping non-GPU dispatchers installation'
 fi
+
+################################################################################
+# Install GPU Spark dispatchers ################################################
+################################################################################
 
 if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   log 'Installing GPU dispatchers'
@@ -388,6 +415,10 @@ else
   log 'Skipping GPU dispatchers installation'
 fi
 
+################################################################################
+# Upload merged (non-GPU + GPU) Spark dispatcher list file #####################
+################################################################################
+
 if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
   log 'Merging non-GPU and GPU dispatcher list files'
   container_exec "\
@@ -406,6 +437,10 @@ if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_
 else
   log 'Skipping merging of non-GPU and GPU dispatcher list files'
 fi
+
+################################################################################
+# Run failing streaming jobs ###################################################
+################################################################################
 
 if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
   log 'Starting failing jobs'
@@ -442,6 +477,10 @@ else
   log 'Skipping running of failing streaming jobs'
 fi
 
+################################################################################
+# Run finite streaming jobs ####################################################
+################################################################################
+
 if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   log 'Starting finite jobs. Consumers write to Cassandra'
   start_time=$(date +%s)
@@ -475,6 +514,10 @@ else
   log 'Skipping running of finite streaming jobs'
 fi
 
+################################################################################
+# Run infinite streaming jobs ##################################################
+################################################################################
+
 if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   log 'Starting infinite jobs. Consumers do not write to Cassandra'
   start_time=$(date +%s)
@@ -507,6 +550,10 @@ else
   log 'Skipping running of infinite streaming jobs'
 fi
 
+################################################################################
+# Run non-GPU batch jobs #######################################################
+################################################################################
+
 if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
   log 'Starting batch jobs'
   start_time=$(date +%s)
@@ -530,6 +577,10 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
 else
   log 'Skipping running of batch jobs'
 fi
+
+################################################################################
+# Run GPU batch jobs ###########################################################
+################################################################################
 
 if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
   log 'Starting GPU batch jobs'
@@ -560,6 +611,10 @@ else
   log 'Skipping running of GPU batch jobs'
 fi
 
+################################################################################
+# Uninstall infrastructure #####################################################
+################################################################################
+
 if [ "${SHOULD_UNINSTALL_INFRASTRUCTURE_AT_THE_END}" = true ]; then
   log 'Uninstalling infrastructure'
   start_time=$(date +%s)
@@ -571,6 +626,10 @@ if [ "${SHOULD_UNINSTALL_INFRASTRUCTURE_AT_THE_END}" = true ]; then
 else
   log 'Skipping uninstalling of infrastructure'
 fi
+
+################################################################################
+################################################################################
+################################################################################
 
 log 'Uploading log file to S3'
 container_exec \
