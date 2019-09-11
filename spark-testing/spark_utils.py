@@ -160,7 +160,8 @@ def submit_job(
 
     conf_args = args.copy()
 
-    conf_args += ['--conf', 'spark.mesos.role={}'.format(driver_role)]
+    if driver_role:
+        conf_args += ['--conf', 'spark.mesos.role={}'.format(driver_role)]
 
     if SPARK_DOCKER_USER is not None:
         conf_args += ['--conf', 'spark.mesos.executor.docker.parameters=user={}'.format(SPARK_DOCKER_USER)]

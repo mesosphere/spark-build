@@ -35,3 +35,18 @@ def create_secret(secret: str, secret_value_or_filename: str, is_file: bool) -> 
         sdk_cmd.run_cli("security secrets create -f {} {}".format(secret_value_or_filename, secret))
     else:
         sdk_cmd.run_cli("security secrets create -v {} {}".format(secret_value_or_filename, secret))
+
+
+def get_framework_json(framework_name, completed=True):
+    response = sdk_cmd.cluster_request("GET", "/mesos/frameworks").json()
+
+    if completed:
+        frameworks = sorted(response["completed_frameworks"], key=lambda x: x['unregistered_time'], reverse=True)
+    else:
+        frameworks = response["frameworks"]
+
+    for framework in frameworks:
+        if framework["name"] == framework_name:
+            return framework
+
+    raise AssertionError("Framework with name '{}' not found".format(framework_name))
