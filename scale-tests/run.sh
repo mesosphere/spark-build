@@ -70,7 +70,7 @@ function is_interactive () {
 }
 
 readonly AWS_ACCOUNT='Team 10'
-readonly CONTAINER_NAME="${TEST_NAME}"
+readonly CONTAINER_NAME="${TEST_NAME}-$(basename "${TEST_CONFIG}" .env)"
 readonly CONTAINER_SSH_AGENT_EXPORTS=/tmp/ssh-agent-exports
 readonly CONTAINER_SSH_KEY=/ssh/key
 readonly CONTAINER_FINISHED_SETTING_UP_FILE=/tmp/finished-setting-up
