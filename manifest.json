@@ -3,7 +3,7 @@
     "default_spark_dist": {
         "scala_version": "2.11",
         "hadoop_version": "2.9",
-        "uri": "https://infinity-artifacts.s3-us-west-2.amazonaws.com/spark/spark-2.4.3-bin-scala-2.11-hadoop-2.9-SNAPSHOT-20190821.tgz",
+        "uri": "https://infinity-artifacts.s3-us-west-2.amazonaws.com/spark/spark-2.4.3-bin-scala-2.11-hadoop-2.9-SNAPSHOT-20190911.tgz",
         "image": ""
     },
     "spark_dist": [
@@ -22,7 +22,7 @@
         {
             "scala_version": "2.11",
             "hadoop_version": "2.9",
-            "uri": "https://infinity-artifacts.s3-us-west-2.amazonaws.com/spark/spark-2.4.3-bin-scala-2.11-hadoop-2.9-SNAPSHOT-20190821.tgz",
+            "uri": "https://infinity-artifacts.s3-us-west-2.amazonaws.com/spark/spark-2.4.3-bin-scala-2.11-hadoop-2.9-SNAPSHOT-20190911.tgz",
             "image": ""
         },
         {
