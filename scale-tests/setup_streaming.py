@@ -42,6 +42,7 @@ from docopt import docopt
 
 import sdk_cmd
 import sdk_install
+import sdk_marathon
 import sdk_security
 import sdk_utils
 
@@ -74,6 +75,11 @@ def install_package(package_name: str,
     service_account_info = scale_tests_utils.setup_security(service_name, "nobody")
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
+
+    if sdk_marathon.app_exists(service_name):
+        log.info("%s index %s as %s is already installed", package_name, index, service_name)
+        log.info("Uninstalling %s index %s as %sd", package_name, index, service_name)
+        sdk_install.uninstall(package_name, service_name)
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
