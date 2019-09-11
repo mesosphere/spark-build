@@ -41,8 +41,8 @@ function configure_dispatcher_role() {
         fi
     fi
 
-    add_if_non_empty spark.mesos.role ${SPARK_FINAL_ROLE}
-    add_if_non_empty spark.mesos.dispatcher.role.enforce ${SPARK_FINAL_ENFORCE_ROLE}
+    add_if_non_empty spark.mesos.role "${SPARK_FINAL_ROLE}"
+    add_if_non_empty spark.mesos.dispatcher.role.enforce "${SPARK_FINAL_ENFORCE_ROLE}"
 
     echo "Spark Dispatcher will run with 'spark.mesos.role=${SPARK_FINAL_ROLE}' and 'spark.mesos.dispatcher.role.enforce=${SPARK_FINAL_ENFORCE_ROLE}'"
 }
