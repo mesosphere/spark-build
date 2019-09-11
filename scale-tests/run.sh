@@ -290,26 +290,49 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
   container_exec \
     dcos package install --yes dcos-enterprise-cli
 
-  if [ -n "${ZOOKEEPER_PACKAGE_REPO}" ]; then
-    container_exec \
-      dcos package repo add --index=0 zk-aws "${ZOOKEEPER_PACKAGE_REPO}" || true
-  fi
-  if [ -n "${KAFKA_PACKAGE_REPO}" ]; then
-    container_exec \
-      dcos package repo add --index=0 kafka-aws "${KAFKA_PACKAGE_REPO}" || true
-  fi
-  if [ -n "${CASSANDRA_PACKAGE_REPO}" ]; then
-    container_exec \
-      dcos package repo add --index=0 cassandra-aws "${CASSANDRA_PACKAGE_REPO}" || true
-  fi
-  if [ -n "${SPARK_PACKAGE_REPO}" ]; then
-    container_exec \
-      dcos package repo add --index=0 spark-aws "${SPARK_PACKAGE_REPO}" || true
-  fi
-
   container_exec \
     touch "${CONTAINER_FINISHED_SETTING_UP_FILE}"
 fi
+
+################################################################################
+# Create package repository stubs if they're not there #########################
+################################################################################
+
+readonly dcos_package_repo_uris="$(dcos package repo list --json | jq -r '.repositories[].uri')"
+
+for package_repo_envvar in ZOOKEEPER_PACKAGE_REPO \
+                             KAFKA_PACKAGE_REPO \
+                             CASSANDRA_PACKAGE_REPO \
+                             SPARK_PACKAGE_REPO; do
+  # Skip envvar if its value is empty.
+  if [ -z "${!package_repo_envvar}" ]; then
+    break;
+  fi
+
+  # Add package repository stub if it's not already there.
+  if ! grep -qx "${!package_repo_envvar}" <<< "${dcos_package_repo_uris}"; then
+    # ZOOKEEPER_PACKAGE_REPO => zookeeper.
+    package_repo_name="$(awk '{s = tolower($0); sub(/_package_repo$/, "", s); print(s)}' <<< "${package_repo_envvar}")"
+    container_exec \
+      dcos package repo add --index=0 "${package_repo_name}" "${!package_repo_envvar}" || true
+  fi
+done
+
+################################################################################
+# Create Marathon group if it doesn't exist ####################################
+################################################################################
+
+if ! grep -qx "${GROUP_NAME}" <<< "$(dcos marathon group list --json | jq -r '.[].id')"; then
+  cat <<-EOF > "group.json"
+		{
+			"id": "${GROUP_NAME}",
+			"enforceRole": true
+		}
+	EOF
+  dcos marathon group add group.json
+  rm -f group.json
+fi
+
 ################################################################################
 # Install infrastructure #######################################################
 ################################################################################
