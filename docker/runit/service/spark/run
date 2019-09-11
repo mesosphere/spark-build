@@ -44,6 +44,8 @@ function configure_dispatcher_role() {
     add_if_non_empty spark.mesos.role "${SPARK_FINAL_ROLE}"
     add_if_non_empty spark.mesos.dispatcher.role.enforce "${SPARK_FINAL_ENFORCE_ROLE}"
 
+    export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=${SPARK_FINAL_ROLE} -Dspark.mesos.dispatcher.role.enforce=${SPARK_FINAL_ENFORCE_ROLE}"
+
     echo "Spark Dispatcher will run with 'spark.mesos.role=${SPARK_FINAL_ROLE}' and 'spark.mesos.dispatcher.role.enforce=${SPARK_FINAL_ENFORCE_ROLE}'"
 }
 
@@ -61,7 +63,7 @@ function set_statsd_address() {
 }
 
 function add_if_non_empty() {
-	if [ -n "$2" ]; then
+	if [[ -n "$2" ]]; then
 		echo "$1=$2" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 	fi
 }

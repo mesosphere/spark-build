@@ -76,7 +76,7 @@ def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group
              .format(group, enforce_group, SERVICE_NAME, role, enforce_role))
 
     dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
-    assert dispatcher_framework["role"] == group
+    assert group == dispatcher_framework["role"]
 
     # verifying submissions without role
     _submit_job_and_verify_role(expected_role=group)
@@ -93,6 +93,9 @@ def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group
     ("custom_role", False)
 ])
 def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
+    dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
+    assert role == dispatcher_framework["role"]
+
     _submit_job_and_verify_role(role)
 
 
@@ -101,6 +104,9 @@ def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
     ("spark_role", True)
 ])
 def test_dispatcher_role_enforced(setup_spark, role, enforce_role):
+    dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
+    assert role == dispatcher_framework["role"]
+
     _submit_job_and_verify_role(role)
     _verify_submission_rejected(driver_role="custom_role")
 
@@ -118,7 +124,7 @@ def _submit_job_and_verify_role(expected_role, driver_role=None):
     try:
         sdk_tasks.check_running(app_name, 1, timeout_seconds=300)
         driver_framework = dcos_utils.get_framework_json(app_name, completed=False)
-        assert driver_framework["role"] == expected_role, \
+        assert expected_role == driver_framework["role"], \
             "Expected role '{}' but got '{}'".format(expected_role, driver_framework["role"])
 
     finally:
