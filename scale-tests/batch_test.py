@@ -237,21 +237,11 @@ if __name__ == "__main__":
             "--conf",
             "spark.mesos.executor.docker.image={}".format(args["--docker-image"]),
             "--conf",
-            "spark.mesos.driverEnv.LIBPROCESS_SSL_CA_DIR={}".format(
-                os.environ.get("LIBPROCESS_SSL_CA_DIR")
-            ),
+            "spark.mesos.driverEnv.LIBPROCESS_SSL_KEY_FILE=/mnt/mesos/sandbox/.ssl/scheduler.key",
             "--conf",
-            "spark.mesos.driverEnv.LIBPROCESS_SSL_CA_FILE={}".format(
-                os.environ.get("LIBPROCESS_SSL_CA_FILE")
-            ),
+            "spark.mesos.driverEnv.LIBPROCESS_SSL_CA_FILE=/mnt/mesos/sandbox/.ssl/ca-bundle.crt"
             "--conf",
-            "spark.mesos.driverEnv.LIBPROCESS_SSL_CERT_FILE={}".format(
-                os.environ.get("LIBPROCESS_SSL_CERT_FILE")
-            ),
-            "--conf",
-            "spark.mesos.driverEnv.LIBPROCESS_SSL_KEY_FILE={}".format(
-                os.environ.get("LIBPROCESS_SSL_KEY_FILE")
-            ),
+            "spark.mesos.driverEnv.LIBPROCESS_SSL_CERT_FILE=/mnt/mesos/sandbox/.ssl/scheduler.crt",
             "--conf",
             "spark.mesos.executor.docker.forcePullImage=false",
         ]
