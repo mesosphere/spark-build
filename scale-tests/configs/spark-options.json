@@ -1,0 +1,7 @@
+{
+  "service": {
+    "role": "data-services",
+    "enforce_role": true,
+    "virtual_network_enabled": false
+  }
+}
