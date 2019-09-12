@@ -11,10 +11,6 @@ function export_daemon_opts() {
         export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.deploy.zookeeper.dir=/spark_mesos_dispatcher${ZK_SUFFIX}"
     fi
 
-    if [ "$SPARK_DISPATCHER_MESOS_ROLE" != "" ]; then
-        export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.role=$SPARK_DISPATCHER_MESOS_ROLE"
-    fi
-
     if [ "$SPARK_DISPATCHER_MESOS_PRINCIPAL" != "" ]; then
         export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.principal=$SPARK_DISPATCHER_MESOS_PRINCIPAL"
     fi
@@ -22,6 +18,33 @@ function export_daemon_opts() {
     if [ "$SPARK_DISPATCHER_MESOS_SECRET" != "" ]; then
         export SPARK_DAEMON_JAVA_OPTS="$SPARK_DAEMON_JAVA_OPTS -Dspark.mesos.secret=$SPARK_DISPATCHER_MESOS_SECRET"
     fi
+}
+
+function configure_dispatcher_role() {
+    SPARK_FINAL_ROLE=
+    SPARK_FINAL_ENFORCE_ROLE="false"
+
+    # group quota and role enforcement
+    if [[ "${MESOS_ALLOCATION_ROLE}" != "" ]] && [[ "${MARATHON_APP_ENFORCE_GROUP_ROLE}" = "TRUE" ]]; then
+        echo "Group role enforcement is enabled, Dispatcher will run with role '${MESOS_ALLOCATION_ROLE}', all submissions with spark.mesos.role set and different from '${MESOS_ALLOCATION_ROLE}' will be rejected"
+        echo "Submissions with spark.mesos.role unset will run with role '${MESOS_ALLOCATION_ROLE}' by default"
+
+        SPARK_FINAL_ROLE="${MESOS_ALLOCATION_ROLE}"
+        SPARK_FINAL_ENFORCE_ROLE="true"
+    elif [[ "${SPARK_DISPATCHER_MESOS_ROLE}" != "" ]]; then
+        SPARK_FINAL_ROLE="${SPARK_DISPATCHER_MESOS_ROLE}"
+
+        if [[ "${SPARK_DISPATCHER_ENFORCE_ROLE}" = true ]]; then
+            echo "Dispatcher role enforcement is enabled, all submissions with spark.mesos.role set and different from '${SPARK_DISPATCHER_MESOS_ROLE}' will be rejected"
+            echo "Submissions with spark.mesos.role unset will run with role '${SPARK_DISPATCHER_MESOS_ROLE}' by default"
+            SPARK_FINAL_ENFORCE_ROLE="true"
+        fi
+    fi
+
+    add_if_non_empty spark.mesos.role "${SPARK_FINAL_ROLE}"
+    add_if_non_empty spark.mesos.dispatcher.role.enforce "${SPARK_FINAL_ENFORCE_ROLE}"
+
+    echo "Spark Dispatcher will run with 'spark.mesos.role=${SPARK_FINAL_ROLE}' and 'spark.mesos.dispatcher.role.enforce=${SPARK_FINAL_ENFORCE_ROLE}'"
 }
 
 function set_log_level() {
@@ -38,7 +61,7 @@ function set_statsd_address() {
 }
 
 function add_if_non_empty() {
-	if [ -n "$2" ]; then
+	if [[ -n "$2" ]]; then
 		echo "$1=$2" >> ${SPARK_HOME}/conf/mesos-cluster-dispatcher.properties
 	fi
 }
@@ -99,6 +122,7 @@ export APPLICATION_WEB_PROXY_BASE="${DISPATCHER_UI_WEB_PROXY_BASE}"
 set_log_level
 set_statsd_address
 export_daemon_opts
+configure_dispatcher_role
 configure_properties
 ZK="master.mesos:2181"
 

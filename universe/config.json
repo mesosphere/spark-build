@@ -24,9 +24,14 @@
                     "type": "number"
                 },
                 "role": {
-                    "description": "The Spark Dispatcher will register with Mesos with this role.",
+                    "description": "The Spark Dispatcher will register with Mesos with this role. In case Marathon group role is enforced, this setting defaults to the group role.",
                     "type": "string",
                     "default": "*"
+                },
+                "enforce_role": {
+                    "description": "When enabled, Spark Dispatcher will reject all submissions which attempt to override the role the Dispatcher is using itself. In case Marathon group role is enforced, this setting defaults to 'true'.",
+                    "type": "boolean",
+                    "default": false
                 },
                 "service_account": {
                     "description": "The Spark Dispatcher will register with Mesos with this principal.",
