@@ -39,7 +39,7 @@ janitor_cmd () {
     local principal="${3}"
     local zknode="${4}"
 
-    echo "sudo docker run mesosphere/janitor /janitor.py -r ${role} -p \"${principal}\" -z ${zknode} --auth_token=${ACS_TOKEN}"
+    echo "sudo docker run mesosphere/janitor /janitor.py -v -r ${role} -p \"${principal}\" -z ${zknode} --auth_token=${ACS_TOKEN}"
 }
 
 run_leader_cmd () {
@@ -68,13 +68,12 @@ run_janitor () {
 for dispatcher in ${DISPATCHERS}
 do
     service_name="$(echo ${dispatcher} | cut -d, -f1)"
-    dispatcher_role="$(echo ${dispatcher} | cut -d, -f2)"
-    driver_role="$(echo ${dispatcher} | cut -d, -f3)"
+    role="$(echo ${dispatcher} | cut -d, -f2)"
 
     uninstall_service "${service_name}"
     dcos package install --yes --cli "${PACKAGE_NAME}"
-    remove_quota "${dispatcher_role}"
-    remove_quota "${driver_role}"
+    # TODO: Don't remove quota if using a group role.
+    # remove_quota "${role}"
     dcos package uninstall --cli "${PACKAGE_NAME}"
-    run_janitor "${service_name}" "${dispatcher_role}" "${SPARK_PRINCIPAL}"
+    run_janitor "${service_name}" "${role}" "${SPARK_PRINCIPAL}"
 done

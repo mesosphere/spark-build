@@ -376,10 +376,9 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-    --quota-drivers-cpus "${NON_GPU_QUOTA_DRIVERS_CPUS}" \
-    --quota-drivers-mem "${NON_GPU_QUOTA_DRIVERS_MEM}" \
-    --quota-executors-cpus "${NON_GPU_QUOTA_EXECUTORS_CPUS}" \
-    --quota-executors-mem "${NON_GPU_QUOTA_EXECUTORS_MEM}" \
+    --group-role "${ROLE_NAME}" \
+    --options-json "${SPARK_CONFIG}" \
+    --create-quotas false \
     "${NON_GPU_NUM_DISPATCHERS}" \
     "${SERVICE_NAMES_PREFIX}" \
     "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
@@ -411,8 +410,9 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-    --quota-drivers-cpus "${GPU_QUOTA_DRIVERS_CPUS}" \
-    --quota-drivers-mem "${GPU_QUOTA_DRIVERS_MEM}" \
+    --group-role "${ROLE_NAME}" \
+    --options-json "${SPARK_CONFIG}" \
+    --create-quotas false \
     "${GPU_NUM_DISPATCHERS}" \
     "${SERVICE_NAMES_PREFIX}gpu-" \
     "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}"
@@ -420,14 +420,14 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   runtime=$(($end_time - $start_time))
   log "Installed GPU dispatchers in ${runtime} seconds"
 
-  if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
-    log 'Removing GPU executors roles quotas'
-    last_gpu_index=$(($GPU_NUM_DISPATCHERS - 1))
-    for i in $(seq 0 "${last_gpu_index}"); do
-      container_exec \
-        dcos spark quota remove "${TEST_NAME}__gpu-spark-0${i}-executors-role"
-    done
-  fi
+  # if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
+  #   log 'Removing GPU executors roles quotas'
+  #   last_gpu_index=$(($GPU_NUM_DISPATCHERS - 1))
+  #   for i in $(seq 0 "${last_gpu_index}"); do
+  #     container_exec \
+    #       dcos spark quota remove "${TEST_NAME}__gpu-spark-0${i}-executors-role"
+  #   done
+  # fi
 
   log 'Uploading GPU dispatcher list to S3'
   container_exec \

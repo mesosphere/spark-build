@@ -31,6 +31,7 @@ Options:
     --quota-executors-gpus <n>   number of GPUs to use for executors quota [default: 0]
     --quota-executors-mem <n>    amount of memory (mb) to use per executors quota [default: 1524.0]
     --role <role>                Mesos role registered by dispatcher [default: *]
+    --group-role <group-role>    TODO: description                   [default: None]
     --ucr-containerizer <bool>   launch using the Universal Container Runtime [default: True]
     --user <user>                user to run dispatcher service as [default: root]
 
@@ -58,9 +59,10 @@ import scale_tests_utils
 
 
 logging.basicConfig(
-    format='[%(asctime)s|%(name)s|%(levelname)s]: %(message)s',
+    format="[%(asctime)s|%(name)s|%(levelname)s]: %(message)s",
     level=logging.INFO,
-    stream=sys.stdout)
+    stream=sys.stdout,
+)
 
 log = logging.getLogger(__name__)
 
@@ -74,25 +76,23 @@ MAX_THREADPOOL_WORKERS = 5
 # file.
 
 
-def create_quota(
-    role_name: str,
-    quota: typing.Dict
-):
+def create_quota(role_name: str, quota: typing.Dict):
     """
     Create quota for the specified role.
     """
-    existing_quotas = sdk_cmd.get_json_output("spark quota list --json", print_output=False)
+    existing_quotas = sdk_cmd.get_json_output(
+        "spark quota list --json", print_output=False
+    )
 
     # remove existing quotas matching name
-    if role_name in [x['role'] for x in existing_quotas.get('infos', [])]:
+    if role_name in [x["role"] for x in existing_quotas.get("infos", [])]:
         rc, _, _ = sdk_cmd.run_raw_cli("spark quota remove {}".format(role_name))
         assert rc == 0, "Error removing quota"
 
-
     cmd_list = ["spark", "quota", "create"]
-    for r in ["cpus", "mem", "gpus", ]:
+    for r in ["cpus", "mem", "gpus"]:
         if r in quota:
-            cmd_list.extend(["-{}".format(r[0]), quota[r],])
+            cmd_list.extend(["-{}".format(r[0]), quota[r]])
 
     cmd_list.append(role_name)
 
@@ -118,50 +118,13 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
     return role_name
 
 
-def setup_group_role(service_name: str, quota: typing.Dict) -> str:
-    """
-    Setup the group role for the specified service
-    """
-
-    group = os.path.dirname(service_name)
-    if group == "" or group == "/":
-        return ""
-
-    if group[0] != "/":
-        group = "/" + group
-
-    print("********************************************************************************")
-    print("quota")
-    print("********************************************************************************")
-    pprint(quota)
-
-    # Summarize the required quota of all children
-    quota_sum = {}
-    for q in quota.values():
-        for k, v in q.items():
-            if k not in quota_sum:
-                quota_sum[k] = 0.0
-            quota_sum[k] += float(v)
-
-    print("********************************************************************************")
-    print("quota sum")
-    print("********************************************************************************")
-    pprint(quota_sum)
-
-
-    role_name = group.replace("/", "__")
-    if quota_sum:
-        create_quota(role_name, quota_sum)
-    else:
-        log.info("No quota to assing to %s", role_name)
-
-    return role_name
-
-
-def setup_spark_security(service_name: str,
-                         drivers_role: str,
-                         executors_role: str,
-                         service_account_info: typing.Dict):
+def setup_spark_security(
+    service_name: str,
+    group_role: str,
+    drivers_role: str,
+    executors_role: str,
+    service_account_info: typing.Dict,
+):
     """
     In strict mode, additional permissions are required for Spark.
 
@@ -175,48 +138,60 @@ def setup_spark_security(service_name: str,
     linux_user = service_account_info.get("linux_user", "nobody")
     service_account = service_account_info["name"]
 
-    for role_name in [drivers_role, executors_role]:
+    if group_role:
         sdk_security.grant_permissions(
             linux_user=linux_user,
-            role_name=role_name,
+            role_name=group_role,
             service_account_name=service_account,
         )
+    else:
+        for role_name in [drivers_role, executors_role]:
+            sdk_security.grant_permissions(
+                linux_user=linux_user,
+                role_name=role_name,
+                service_account_name=service_account,
+            )
 
     # TODO: Is this required?
     app_id = "/{}".format(service_name)
-    app_id = urllib.parse.quote(
-        urllib.parse.quote(app_id, safe=''),
-        safe=''
+    app_id = urllib.parse.quote(urllib.parse.quote(app_id, safe=""), safe="")
+
+    sdk_security._grant(
+        service_account_info["name"],
+        "dcos:mesos:master:task:app_id:{}".format(app_id),
+        description="Spark drivers may execute Mesos tasks",
+        action="create",
     )
-    sdk_security._grant(service_account_info["name"],
-                        "dcos:mesos:master:task:app_id:{}".format(app_id),
-                        description="Spark drivers may execute Mesos tasks",
-                        action="create")
 
     if linux_user == "root":
         log.info("Marathon must be able to launch tasks as root")
-        sdk_security._grant("dcos_marathon",
-                            "dcos:mesos:master:task:user:root",
-                            description="Root Marathon may launch tasks as root",
-                            action="create")
+        sdk_security._grant(
+            "dcos_marathon",
+            "dcos:mesos:master:task:user:root",
+            description="Root Marathon may launch tasks as root",
+            action="create",
+        )
 
     return
 
 
-def install_package(package_name: str,
-                    service_prefix: str,
-                    index: int,
-                    linux_user: str,
-                    service_task_count: int,
-                    config_path: str,
-                    additional_options: typing.Dict = None,
-                    quota_options: typing.Dict = None) -> typing.Dict:
+def install_package(
+    package_name: str,
+    service_prefix: str,
+    index: int,
+    linux_user: str,
+    service_task_count: int,
+    group_role: str,
+    config_path: str,
+    additional_options: typing.Dict = None,
+    quota_options: typing.Dict = None,
+) -> typing.Dict:
     """
     Deploy a single dispatcher with the specified index.
     """
 
     if package_name.startswith("beta-"):
-        basename = package_name[len("beta-"):]
+        basename = package_name[len("beta-") :]
     else:
         basename = package_name
 
@@ -224,22 +199,16 @@ def install_package(package_name: str,
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    # Create a group role, per strict-role requirements
-    # if quota_options:
-    #     setup_group_role(service_name, quota_options)
+    setup_spark_security(
+        service_name, group_role, None, None, service_account_info
+    )
 
-    # JUST FOR MWT-18
-    # drivers_role = setup_role(service_name, "drivers", quota_options)
-    # executors_role = setup_role(service_name, "executors", quota_options)
-    drivers_role = "{}-{}-role".format(service_name, "drivers").replace("/", "__")
-    executors_role = "{}-{}-role".format(service_name, "executors").replace("/", "__")
-
-    setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
-
-    service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
+    service_options = scale_tests_utils.get_service_options(
+        service_name, service_account_info, additional_options, config_path
+    )
 
     # install dispatcher with appropriate role
-    service_options["service"]["role"] = drivers_role
+    service_options["service"]["role"] = group_role
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
@@ -250,47 +219,64 @@ def install_package(package_name: str,
         package_name,
         service_name,
         expected_task_count,
-        timeout_seconds=60*60,
+        timeout_seconds=60 * 60,
         additional_options=service_options,
         wait_for_deployment=False,
         insert_strict_options=False,
-        install_cli=False)
+        install_cli=False,
+    )
 
-    return {"package_name": package_name,
-            "roles": {"drivers": drivers_role, "executors": executors_role},
-            "service_account_info": service_account_info,
-            **service_options}
+    return {
+        "package_name": package_name,
+        "roles": {"drivers": None, "executors": None},
+        "service_account_info": service_account_info,
+        **service_options,
+    }
 
 
 def deploy_dispatchers(
     num_dispatchers: int,
     service_name_base: str,
+    group_role: str,
     output_file: str,
     linux_user: str,
     options: typing.Dict,
-    quota_options: typing.Dict
+    quota_options: typing.Dict,
 ) -> typing.Dict:
     """
     Deploy the required number of dispatchers and store their information to a text file.
     """
+
     def deploy_dispatcher(index: int) -> dict:
-        return install_package('spark',
-                               service_name_base,
-                               index,
-                               linux_user,
-                               lambda x: 0,
-                               None,
-                               options,
-                               quota_options)
+        return install_package(
+            "spark",
+            service_name_base,
+            index,
+            linux_user,
+            lambda x: 0,
+            group_role,
+            None,
+            options,
+            quota_options,
+        )
 
     with ThreadPoolExecutor(max_workers=MAX_THREADPOOL_WORKERS) as executor:
         dispatchers = list(executor.map(deploy_dispatcher, range(num_dispatchers)))
 
-    with open(output_file, 'w') as outfile:
+    with open(output_file, "w") as outfile:
         for dispatcher in dispatchers:
-            outfile.write('{},{},{}\n'.format(dispatcher['service']['name'],
-                                              dispatcher['roles']['drivers'],
-                                              dispatcher['roles']['executors']))
+            if group_role:
+                outfile.write(
+                    "{},{}\n".format(dispatcher["service"]["name"], group_role)
+                )
+            else:
+                outfile.write(
+                    "{},{},{}\n".format(
+                        dispatcher["service"]["name"],
+                        dispatcher["roles"]["drivers"],
+                        dispatcher["roles"]["executors"],
+                    )
+                )
             outfile.flush()
 
     return dispatchers
@@ -306,23 +292,23 @@ def get_default_options(arguments: dict) -> dict:
             "mem": float(arguments["--mem"]),
             "log-level": arguments["--log-level"],
             "spark-history-server-url": arguments["--history-service"] or "",
-            "UCR_containerizer": ast.literal_eval(arguments.get("--ucr-containerizer", True)),
+            "UCR_containerizer": ast.literal_eval(
+                arguments.get("--ucr-containerizer", True)
+            ),
             "virtual_network_enabled": True,
-            "virtual_network_name": "dcos"
+            "virtual_network_name": "dcos",
         },
         "security": {
             "kerberos": {
                 "enabled": ast.literal_eval(arguments.get("--enable-kerberos", False)),
                 "kdc": {
                     "hostname": arguments["--kdc-hostname"] or "",
-                    "port": int(arguments["--kdc-port"])
+                    "port": int(arguments["--kdc-port"]),
                 },
-                "realm": arguments["--kerberos-realm"] or ""
+                "realm": arguments["--kerberos-realm"] or "",
             }
         },
-        "hdfs": {
-            "config-url": arguments["--hdfs-config"] or ""
-        }
+        "hdfs": {"config-url": arguments["--hdfs-config"] or ""},
     }
     return options
 
@@ -335,8 +321,8 @@ def get_quota_options(arguments: typing.Dict) -> typing.Dict:
     if not create_quotas:
         return {}
 
-    resources = ["cpus", "mem", "gpus", ]
-    targets = ["drivers", "executors", ]
+    resources = ["cpus", "mem", "gpus"]
+    targets = ["drivers", "executors"]
 
     quota_options = {}
     for t in targets:
@@ -350,34 +336,36 @@ def get_quota_options(arguments: typing.Dict) -> typing.Dict:
 
 
 def install(args):
-    options_file = args['--options-json']
+    options_file = args["--options-json"]
     if options_file:
         if not os.path.isfile(options_file):
             # TODO: Replace with logging
             log.error("The specified file does not exist: %s", options_file)
             sys.exit(1)
 
-        options = json.load(open(options_file, 'r'))
+        options = json.load(open(options_file, "r"))
     else:
         options = get_default_options(args)
 
-    if args['--package-repo']:
-        sdk_repository.add_stub_universe_urls([args['--package-repo']])
+    if args["--package-repo"]:
+        sdk_repository.add_stub_universe_urls([args["--package-repo"]])
 
     rc, _, _ = sdk_cmd.run_raw_cli("package install spark --cli --yes")
     assert rc == 0, "Error installing spark CLI"
 
-    quota_options = get_quota_options(args)
+    # quota_options = get_quota_options(args)
 
     services = {}
 
     services["spark"] = deploy_dispatchers(
-        num_dispatchers=int(args['<num_dispatchers>']),
-        service_name_base=args['<service_name_base>'],
-        output_file=args['<output_file>'],
+        num_dispatchers=int(args["<num_dispatchers>"]),
+        service_name_base=args["<service_name_base>"],
+        group_role=args["--group-role"],
+        output_file=args["<output_file>"],
         linux_user=args["--user"],
         options=options,
-        quota_options=quota_options)
+        quota_options=None,
+    )
 
     output_filename = "{}-dispatchers.json".format(args["<output_file>"])
     with open(output_filename, "w") as fp:

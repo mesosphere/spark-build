@@ -117,7 +117,6 @@ def _submit_producer(name,
         args=args,
         verbose=False,
         service_name=dispatcher['service']['name'],
-        driver_role=dispatcher['roles']['executors'],
         spark_user=dispatcher['service']['user'] if sdk_utils.is_strict_mode() else None,
         principal=dispatcher['service']['service_account'] if sdk_utils.is_strict_mode() else None)
 
@@ -177,7 +176,6 @@ def _submit_consumer(name,
         args=args,
         verbose=False,
         service_name=dispatcher['service']['name'],
-        driver_role=dispatcher['roles']['executors'],
         spark_user=dispatcher['service']['user'] if sdk_utils.is_strict_mode() else None,
         principal=dispatcher['service']['service_account'] if sdk_utils.is_strict_mode() else None)
 
