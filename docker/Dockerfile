@@ -25,8 +25,8 @@ FROM ubuntu@sha256:6b9eb699512656fc6ef936ddeb45ab25edcd17ab94901790989f89dbf7823
 ENV DEBIAN_FRONTEND "noninteractive"
 ENV DEBCONF_NONINTERACTIVE_SEEN "true"
 
-ARG LIBMESOS_BUNDLE_DOWNLOAD_URL="https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.12.0.tar.gz"
-ARG BOOTSTRAP_DOWNLOAD_URL="https://downloads.mesosphere.com/dcos-commons/artifacts/0.55.2/bootstrap.zip"
+ARG LIBMESOS_BUNDLE_DOWNLOAD_URL="https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.14-alpha.tar.gz"
+ARG BOOTSTRAP_DOWNLOAD_URL="https://downloads.mesosphere.com/dcos-commons/artifacts/0.57.0/bootstrap.zip"
 
 ARG JAVA_VERSION="8u212b03"
 ARG JRE_DOWNLOAD_URL="https://downloads.mesosphere.com/java/openjdk-jre-${JAVA_VERSION}-hotspot-linux-x64.tar.gz"
