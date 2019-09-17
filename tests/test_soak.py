@@ -75,7 +75,7 @@ TERASORT_DELETE_JOB_KERBEROS = {
         "cmd": " && ".join([
             "/bin/bash",
             "cd $MESOS_SANDBOX",
-            "python3 dcos-cli-auth.py --username=$DCOS_UID --password=$DCOS_PASSWORD",
+            "dcos cluster setup https://master.mesos --username=$DCOS_UID --password=$DCOS_PASSWORD --no-check",
             "dcos task exec {hdfsclient_kerberos} kinit -k -t hdfs.keytab {principal}",
             "dcos task exec {hdfsclient_kerberos} bin/hdfs dfs -rm -r -f /terasort_in /terasort_out"
         ]).format(principal=HDFS_PRINCIPAL, hdfsclient_kerberos=HDFSCLIENT_KERBEROS_TASK),
@@ -84,14 +84,6 @@ TERASORT_DELETE_JOB_KERBEROS = {
             "DCOS_PASSWORD": DCOS_PASSWORD,
         },
         "user": "nobody",
-        "artifacts": [
-            {
-                "uri": "https://s3.amazonaws.com/soak-clusters/artifacts/soak110/dcos-cli-auth.py",
-                "extract": True,
-                "executable": False,
-                "cache": False
-            }
-        ],
         "docker": {
             "image": "mesosphere/dcos-commons:latest"
         },
