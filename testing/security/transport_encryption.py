@@ -12,8 +12,9 @@ import sdk_utils
 log = logging.getLogger(__name__)
 
 
-def setup_service_account(service_name: str,
-                          service_account_secret: str=None) -> dict:
+def setup_service_account(
+        service_name: str, service_account_secret: str = None
+) -> dict:
     """
     Setup the service account for TLS. If the account or secret of the specified
     name already exists, these are deleted.
@@ -24,7 +25,7 @@ def setup_service_account(service_name: str,
         raise Exception("The setup of a service account requires DC/OS EE")
 
     name = service_name
-    secret = name if service_account_secret is None else service_account_secret
+    secret = service_name + "-secret" if service_account_secret is None else service_account_secret
 
     service_account_info = sdk_security.setup_security(service_name,
                                                        service_account=name,
