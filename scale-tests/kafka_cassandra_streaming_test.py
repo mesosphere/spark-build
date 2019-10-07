@@ -15,6 +15,7 @@ Arguments:
 Options:
     --spark-executor-docker-image <image> Docker image for Spark executors [default: ]
     --jar <URL>                           hosted JAR URL
+    --group-role <group-role>             TODO: description [default: None]
     --num-producers-per-kafka <n>         number of producers per Kafka cluster to create [default: 1]
     --num-consumers-per-producer <n>      number of consumers for producer to create [default: 1]
     --producer-number-of-words <n>        number of total words published by producers [default: 1]
@@ -81,6 +82,7 @@ def _service_endpoint_dns(package_name, service_name, endpoint_name):
 def _submit_producer(
     name,
     spark_executor_docker_image,
+    group_role,
     jar,
     kafka_broker_dns,
     dispatcher,
@@ -130,13 +132,15 @@ def _submit_producer(
 
     args = app_config + COMMON_CONF
 
+    driver_role = None if group_role else dispatcher["roles"]["executors"]
+
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
         args=args,
         verbose=False,
         service_name=dispatcher["service"]["name"],
-        driver_role=dispatcher["roles"]["executors"],
+        driver_role=driver_role,
         spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
         principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None,
     )
@@ -147,6 +151,7 @@ def _submit_producer(
 def _submit_consumer(
     name,
     spark_executor_docker_image,
+    group_role,
     jar,
     kafka_broker_dns,
     cassandra_native_client_dns,
@@ -210,13 +215,15 @@ def _submit_consumer(
 
     args = app_config + COMMON_CONF
 
+    driver_role = None if group_role else dispatcher["roles"]["executors"]
+
     submission_id = spark_utils.submit_job(
         app_url=jar,
         app_args=" ".join(str(a) for a in app_args),
         args=args,
         verbose=False,
         service_name=dispatcher["service"]["name"],
-        driver_role=dispatcher["roles"]["executors"],
+        driver_role=driver_role,
         spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
         principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None,
     )
@@ -305,6 +312,7 @@ def main(args):
 
     spark_executor_docker_image = args["--spark-executor-docker-image"]
     jar = args["--jar"] if args["--jar"] else DEFAULT_JAR
+    group_role = args["--group-role"]
     submissions_output_file = args["<submissions_output_file>"]
     kafka_package_names = map(lambda kafka: kafka["package_name"], kafkas)
     cassandra_package_name = cassandra["package_name"]
@@ -370,6 +378,7 @@ def main(args):
             producer_submission_id = _submit_producer(
                 "{}-k{:02d}-p{:02d}".format(PRODUCER_CLASS_NAME, kafka_idx, producer_idx),
                 spark_executor_docker_image,
+                group_role,
                 jar,
                 kafka_broker_dns,
                 dispatcher,
@@ -395,6 +404,7 @@ def main(args):
                         CONSUMER_CLASS_NAME, kafka_idx, producer_idx, consumer_idx
                     ),
                     spark_executor_docker_image,
+                    group_role,
                     jar,
                     kafka_broker_dns,
                     cassandra_native_client_dns,

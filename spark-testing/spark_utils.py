@@ -176,6 +176,8 @@ def submit_job(
 
     conf_args = args.copy()
 
+    # Don't overwrite spark.mesos.role in case of running under enforce_role.
+    # We're expecting the caller to pass `driver_role` as `None` is that case.
     if driver_role:
         conf_args += ["--conf", "spark.mesos.role={}".format(driver_role)]
 

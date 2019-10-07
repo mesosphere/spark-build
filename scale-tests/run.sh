@@ -477,6 +477,7 @@ if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
       "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
+      --group-role "${ROLE_NAME}" \
       --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
       --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
