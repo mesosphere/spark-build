@@ -66,6 +66,8 @@ def get_service_options(
     else:
         log.info("No options specified. Using defaults")
 
+    if service_name[0] != "/":
+        service_name = "/" + service_name
     # Always set the service name
     service_name_options = {"service": {"name": service_name}}
 
