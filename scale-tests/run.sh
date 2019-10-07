@@ -82,6 +82,7 @@ readonly TEST_S3_DIRECTORY_URL="s3://${TEST_S3_BUCKET}/${TEST_S3_FOLDER}/"
 readonly LOGS_DIRECTORY="${TEST_DIRECTORY}/script_logs"
 readonly LOG_FILE="${LOGS_DIRECTORY}/$(date +%Y%m%dT%H%M%SZ)_$(whoami).log"
 readonly DCOS_CLI_REFRESH_INTERVAL_SEC=600 # 10 minutes.
+readonly GROUP_FILE_NAME="${TEST_REPOSITORY_DIRECTORY}/marathon_group.json"
 
 source "${TEST_CONFIG}"
 
@@ -322,15 +323,16 @@ done
 # Create Marathon group if it doesn't exist ####################################
 ################################################################################
 
-if ! grep -qx "${GROUP_NAME}" <<< "$(dcos marathon group list --json | jq -r '.[].id')"; then
-  cat <<-EOF > "group.json"
+if ! grep -qx "${GROUP_NAME}" <<< "$(container_exec bash -c "dcos marathon group list --json | jq -r '.[].id'")"; then
+  cat <<-EOF > "${GROUP_FILE_NAME}"
 		{
-			"id": "${GROUP_NAME}",
-			"enforceRole": true
+		  "id": "${GROUP_NAME}",
+		  "enforceRole": true
 		}
 	EOF
-  dcos marathon group add group.json
-  rm -f group.json
+
+  container_exec \
+    dcos marathon group add "${GROUP_FILE_NAME}"
 fi
 
 ################################################################################
