@@ -10,6 +10,7 @@ Arguments:
 
 Options:
     --docker-image <img>                              docker image to run on executors
+    --group-role <group-role>                         TODO: description [default: None]
     --max-num-dispatchers <n>                         maximum number of dispatchers to use from dispatchers file
     --submits-per-min <n>                             number of jobs to submit per minute [default: 1]
     --spark-cores-max <n>                             max executor cores per job [default: 1]
@@ -24,13 +25,15 @@ Options:
 """
 
 
+from docopt import docopt
+from threading import Thread
+
 import json
 import logging
+import os
 import random
 import sys
 import time
-from docopt import docopt
-from threading import Thread
 import typing
 
 import sdk_utils
@@ -114,10 +117,17 @@ def _get_gpu_user_conf(args):
 
 
 def submit_job(
-    app_url: str, app_args: str, dispatcher: typing.Dict, duration: int, config: typing.List[str]
+    app_url: str,
+    app_args: str,
+    dispatcher: typing.Dict,
+    duration: int,
+    config: typing.List[str],
+    group_role: str,
 ):
     dispatcher_name = dispatcher["service"]["name"]
     log.info("Submitting job to dispatcher: %s, with duration: %s min.", dispatcher_name, duration)
+
+    driver_role = None if group_role else dispatcher["roles"]["executors"]
 
     spark_utils.submit_job(
         service_name=dispatcher_name,
@@ -125,7 +135,7 @@ def submit_job(
         app_args=app_args,
         verbose=False,
         args=config,
-        driver_role=dispatcher["roles"]["executors"],
+        driver_role=driver_role,
         spark_user=dispatcher["service"]["user"] if sdk_utils.is_strict_mode() else None,
         principal=dispatcher["service"]["service_account"] if sdk_utils.is_strict_mode() else None,
     )
@@ -136,6 +146,7 @@ def submit_loop(
     submits_per_min: int,
     dispatchers: typing.List[typing.Dict],
     user_conf: typing.List[str],
+    group_role: str,
 ):
     sec_between_submits = 60 / submits_per_min
     log.info("sec_between_submits: %s", sec_between_submits)
@@ -153,7 +164,14 @@ def submit_loop(
 
         t = Thread(
             target=submit_job,
-            args=(app_url, app_args, dispatchers[dispatcher_index], duration, user_conf),
+            args=(
+                app_url,
+                app_args,
+                dispatchers[dispatcher_index],
+                duration,
+                user_conf,
+                group_role,
+            ),
         )
         t.start()
         dispatcher_index = (dispatcher_index + 1) % num_dispatchers
@@ -233,4 +251,6 @@ if __name__ == "__main__":
         end = int(args["--max-num-dispatchers"])
         dispatchers = dispatchers[0:end]
 
-    submit_loop(app_url, int(args["--submits-per-min"]), dispatchers, user_conf)
+    group_role = args["--group-role"]
+
+    submit_loop(app_url, int(args["--submits-per-min"]), dispatchers, user_conf, group_role)

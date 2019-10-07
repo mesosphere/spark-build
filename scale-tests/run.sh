@@ -598,6 +598,7 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
       --script-args "\"\
         ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
+        --group-role ${GROUP_ROLE} \
       \""
   end_time=$(date +%s)
   runtime=$(($end_time - $start_time))
@@ -627,6 +628,7 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
         ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${GPU_SUBMITS_PER_MIN} \
         --docker-image ${GPU_DOCKER_IMAGE} \
+        --group-role ${GROUP_ROLE} \
         --max-num-dispatchers ${GPU_MAX_NUM_DISPATCHERS} \
         --spark-cores-max ${GPU_SPARK_CORES_MAX} \
         --spark-mesos-executor-gpus ${GPU_SPARK_MESOS_EXECUTOR_GPUS} \
