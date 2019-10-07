@@ -31,6 +31,7 @@ Options:
     --quota-executors-gpus <n>   number of GPUs to use for executors quota [default: 0]
     --quota-executors-mem <n>    amount of memory (mb) to use per executors quota [default: 1524.0]
     --role <role>                Mesos role registered by dispatcher [default: *]
+    --group-role <group-role>    TODO: description                   [default: None]
     --ucr-containerizer <bool>   launch using the Universal Container Runtime [default: True]
     --user <user>                user to run dispatcher service as [default: root]
 
@@ -115,7 +116,11 @@ def setup_role(service_name: str, role_base: str, quota: typing.Dict) -> str:
 
 
 def setup_spark_security(
-    service_name: str, drivers_role: str, executors_role: str, service_account_info: typing.Dict
+    service_name: str,
+    group_role: str,
+    drivers_role: str,
+    executors_role: str,
+    service_account_info: typing.Dict,
 ):
     """
     In strict mode, additional permissions are required for Spark.
@@ -130,14 +135,20 @@ def setup_spark_security(
     linux_user = service_account_info.get("linux_user", "nobody")
     service_account = service_account_info["name"]
 
-    for role_name in [drivers_role, executors_role]:
+    if group_role:
         sdk_security.grant_permissions(
-            linux_user=linux_user, role_name=role_name, service_account_name=service_account
+            linux_user=linux_user, role_name=group_role, service_account_name=service_account
         )
+    else:
+        for role_name in [drivers_role, executors_role]:
+            sdk_security.grant_permissions(
+                linux_user=linux_user, role_name=role_name, service_account_name=service_account
+            )
 
     # TODO: Is this required?
     app_id = "/{}".format(service_name)
     app_id = urllib.parse.quote(urllib.parse.quote(app_id, safe=""), safe="")
+
     sdk_security._grant(
         service_account_info["name"],
         "dcos:mesos:master:task:app_id:{}".format(app_id),
@@ -163,6 +174,7 @@ def install_package(
     index: int,
     linux_user: str,
     service_task_count: int,
+    group_role: str,
     config_path: str,
     additional_options: typing.Dict = None,
     quota_options: typing.Dict = None,
@@ -180,17 +192,22 @@ def install_package(
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
-    drivers_role = setup_role(service_name, "drivers", quota_options)
-    executors_role = setup_role(service_name, "executors", quota_options)
+    if group_role:
+        setup_spark_security(service_name, group_role, None, None, service_account_info)
 
-    setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
+        service_options["service"]["role"] = group_role
+        roles = {"drivers": None, "executors": None}
+    else:
+        drivers_role = setup_role(service_name, "drivers", quota_options)
+        executors_role = setup_role(service_name, "executors", quota_options)
+        setup_spark_security(service_name, drivers_role, executors_role, service_account_info)
+
+        service_options["service"]["role"] = drivers_role
+        roles = {"drivers": drivers_role, "executors": executors_role}
 
     service_options = scale_tests_utils.get_service_options(
         service_name, service_account_info, additional_options, config_path
     )
-
-    # install dispatcher with appropriate role
-    service_options["service"]["role"] = drivers_role
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
@@ -210,7 +227,7 @@ def install_package(
 
     return {
         "package_name": package_name,
-        "roles": {"drivers": drivers_role, "executors": executors_role},
+        "roles": roles,
         "service_account_info": service_account_info,
         **service_options,
     }
@@ -219,6 +236,7 @@ def install_package(
 def deploy_dispatchers(
     num_dispatchers: int,
     service_name_base: str,
+    group_role: str,
     output_file: str,
     linux_user: str,
     options: typing.Dict,
@@ -230,7 +248,15 @@ def deploy_dispatchers(
 
     def deploy_dispatcher(index: int) -> dict:
         return install_package(
-            "spark", service_name_base, index, linux_user, lambda x: 0, None, options, quota_options
+            "spark",
+            service_name_base,
+            index,
+            linux_user,
+            lambda x: 0,
+            group_role,
+            None,
+            options,
+            quota_options,
         )
 
     with ThreadPoolExecutor(max_workers=MAX_THREADPOOL_WORKERS) as executor:
@@ -238,13 +264,16 @@ def deploy_dispatchers(
 
     with open(output_file, "w") as outfile:
         for dispatcher in dispatchers:
-            outfile.write(
-                "{},{},{}\n".format(
-                    dispatcher["service"]["name"],
-                    dispatcher["roles"]["drivers"],
-                    dispatcher["roles"]["executors"],
+            if group_role:
+                outfile.write("{},{}\n".format(dispatcher["service"]["name"], group_role))
+            else:
+                outfile.write(
+                    "{},{},{}\n".format(
+                        dispatcher["service"]["name"],
+                        dispatcher["roles"]["drivers"],
+                        dispatcher["roles"]["executors"],
+                    )
                 )
-            )
             outfile.flush()
 
     return dispatchers
@@ -326,6 +355,7 @@ def install(args):
     services["spark"] = deploy_dispatchers(
         num_dispatchers=int(args["<num_dispatchers>"]),
         service_name_base=args["<service_name_base>"],
+        group_role=args["--group-role"],
         output_file=args["<output_file>"],
         linux_user=args["--user"],
         options=options,
