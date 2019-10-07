@@ -226,7 +226,7 @@ fi
 ################################################################################
 
 set +e
-docker inspect -f {{.State.Running}} "${CONTAINER_NAME}" > /dev/null 2>&1
+docker inspect -f '{{.State.Running}}' "${CONTAINER_NAME}" > /dev/null 2>&1
 readonly container_running=$?
 
 docker exec -it "${CONTAINER_NAME}" test -f "${CONTAINER_FINISHED_SETTING_UP_FILE}"
