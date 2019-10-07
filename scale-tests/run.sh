@@ -299,7 +299,7 @@ fi
 # Create package repository stubs if they're not there #########################
 ################################################################################
 
-readonly dcos_package_repo_uris="$(dcos package repo list --json | jq -r '.repositories[].uri')"
+readonly dcos_package_repo_uris="$(container_exec bash -c "dcos package repo list --json | jq -r '.repositories[].uri'")"
 
 for package_repo_envvar in ZOOKEEPER_PACKAGE_REPO \
                              KAFKA_PACKAGE_REPO \
