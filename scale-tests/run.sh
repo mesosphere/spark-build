@@ -84,6 +84,7 @@ readonly LOG_FILE="${LOGS_DIRECTORY}/$(date +%Y%m%dT%H%M%SZ)_$(whoami).log"
 readonly DCOS_CLI_REFRESH_INTERVAL_SEC=600 # 10 minutes.
 readonly GROUP_FILE_NAME="${TEST_REPOSITORY_DIRECTORY}/marathon_group.json"
 
+# shellcheck source=/dev/null
 source "${TEST_CONFIG}"
 
 mkdir -p "${TEST_DIRECTORY}"
