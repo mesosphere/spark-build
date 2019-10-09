@@ -97,7 +97,6 @@ fi
 for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
                         SHOULD_INSTALL_NON_GPU_DISPATCHERS \
                         SHOULD_INSTALL_GPU_DISPATCHERS \
-                        SHOULD_RUN_FAILING_STREAMING_JOBS \
                         SHOULD_RUN_FINITE_STREAMING_JOBS \
                         SHOULD_RUN_INFINITE_STREAMING_JOBS \
                         SHOULD_RUN_BATCH_JOBS \
@@ -208,7 +207,6 @@ if is_interactive; then
   for boolean_option in SHOULD_INSTALL_INFRASTRUCTURE \
                           SHOULD_INSTALL_NON_GPU_DISPATCHERS \
                           SHOULD_INSTALL_GPU_DISPATCHERS \
-                          SHOULD_RUN_FAILING_STREAMING_JOBS \
                           SHOULD_RUN_FINITE_STREAMING_JOBS \
                           SHOULD_RUN_INFINITE_STREAMING_JOBS \
                           SHOULD_RUN_BATCH_JOBS \
@@ -463,46 +461,6 @@ if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping merging of non-GPU and GPU dispatcher list files'
-fi
-
-################################################################################
-# Run failing streaming jobs ###################################################
-################################################################################
-
-if [ "${SHOULD_RUN_FAILING_STREAMING_JOBS}" = true ]; then
-  log 'Starting failing jobs'
-  start_time=$(date +%s)
-  container_exec \
-    ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
-      --group-role "${ROLE_NAME}" \
-      --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
-      --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${FAILING_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${FAILING_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-must-fail \
-      --producer-number-of-words "${FAILING_PRODUCER_NUMBER_OF_WORDS}" \
-      --producer-words-per-second "${FAILING_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${FAILING_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${FAILING_PRODUCER_SPARK_EXECUTOR_CORES}" \
-      --consumer-must-fail \
-      --consumer-write-to-cassandra \
-      --consumer-batch-size-seconds "${FAILING_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${FAILING_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${FAILING_CONSUMER_SPARK_EXECUTOR_CORES}"
-  end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
-  log "Started failing jobs in ${runtime} seconds"
-
-  log 'Uploading failing jobs submissions file'
-  container_exec \
-    aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${FAILING_SUBMISSIONS_OUTPUT_FILE}" \
-      "${TEST_S3_DIRECTORY_URL}"
-else
-  log 'Skipping running of failing streaming jobs'
 fi
 
 ################################################################################
