@@ -128,30 +128,47 @@ eval "$(maws li "${AWS_ACCOUNT}")"
 # Calculate a few things and present a pre-test report #########################
 ################################################################################
 
-readonly FINITE_NUM_PRODUCERS=$((KAFKA_CLUSTER_COUNT * FINITE_NUM_PRODUCERS_PER_KAFKA))
-readonly FINITE_NUM_CONSUMERS=$((FINITE_NUM_PRODUCERS * FINITE_NUM_CONSUMERS_PER_PRODUCER))
-readonly FINITE_NUM_JOBS=$((FINITE_NUM_PRODUCERS + FINITE_NUM_CONSUMERS))
-readonly INFINITE_NUM_PRODUCERS=$((KAFKA_CLUSTER_COUNT * INFINITE_NUM_PRODUCERS_PER_KAFKA))
-readonly INFINITE_NUM_CONSUMERS=$((INFINITE_NUM_PRODUCERS * INFINITE_NUM_CONSUMERS_PER_PRODUCER))
-readonly INFINITE_NUM_JOBS=$((INFINITE_NUM_PRODUCERS + INFINITE_NUM_CONSUMERS))
-readonly STREAMING_NUM_JOBS=$((FINITE_NUM_JOBS + INFINITE_NUM_JOBS))
+readonly SPARK_TOTAL_DISPATCHERS=$((SPARK_NON_GPU_DISPATCHERS + SPARK_GPU_DISPATCHERS))
+readonly STREAMING_FINITE_PRODUCERS=$((KAFKA_CLUSTER_COUNT * STREAMING_FINITE_PRODUCERS_PER_KAFKA))
+readonly STREAMING_FINITE_CONSUMERS=$((STREAMING_FINITE_PRODUCERS * STREAMING_FINITE_CONSUMERS_PER_PRODUCER))
+readonly STREAMING_FINITE_JOBS=$((STREAMING_FINITE_PRODUCERS + STREAMING_FINITE_CONSUMERS))
+readonly STREAMING_INFINITE_PRODUCERS=$((KAFKA_CLUSTER_COUNT * STREAMING_INFINITE_PRODUCERS_PER_KAFKA))
+readonly STREAMING_INFINITE_CONSUMERS=$((STREAMING_INFINITE_PRODUCERS * STREAMING_INFINITE_CONSUMERS_PER_PRODUCER))
+readonly STREAMING_INFINITE_JOBS=$((STREAMING_INFINITE_PRODUCERS + STREAMING_INFINITE_CONSUMERS))
+readonly STREAMING_JOBS=$((STREAMING_FINITE_JOBS + STREAMING_INFINITE_JOBS))
 
-readonly NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS=$((NON_GPU_NUM_DISPATCHERS * NON_GPU_QUOTA_DRIVERS_CPUS))
-readonly NON_GPU_TOTAL_QUOTA_DRIVERS_MEM=$((NON_GPU_NUM_DISPATCHERS * NON_GPU_QUOTA_DRIVERS_MEM))
-readonly NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS=$((NON_GPU_NUM_DISPATCHERS * NON_GPU_QUOTA_EXECUTORS_CPUS))
-readonly NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM=$((NON_GPU_NUM_DISPATCHERS * NON_GPU_QUOTA_EXECUTORS_MEM))
+readonly SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS=$((SPARK_NON_GPU_DISPATCHERS * SPARK_NON_GPU_QUOTA_DRIVERS_CPUS))
+readonly SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_MEM=$((SPARK_NON_GPU_DISPATCHERS * SPARK_NON_GPU_QUOTA_DRIVERS_MEM))
+readonly SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS=$((SPARK_NON_GPU_DISPATCHERS * SPARK_NON_GPU_QUOTA_EXECUTORS_CPUS))
+readonly SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM=$((SPARK_NON_GPU_DISPATCHERS * SPARK_NON_GPU_QUOTA_EXECUTORS_MEM))
 
-readonly GPU_TOTAL_QUOTA_DRIVERS_CPUS=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_DRIVERS_CPUS))
-readonly GPU_TOTAL_QUOTA_DRIVERS_MEM=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_DRIVERS_MEM))
-readonly GPU_TOTAL_QUOTA_DRIVERS_GPUS=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_DRIVERS_GPUS))
-readonly GPU_TOTAL_QUOTA_EXECUTORS_CPUS=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_EXECUTORS_CPUS))
-readonly GPU_TOTAL_QUOTA_EXECUTORS_MEM=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_EXECUTORS_MEM))
-readonly GPU_TOTAL_QUOTA_EXECUTORS_GPUS=$((GPU_NUM_DISPATCHERS * GPU_QUOTA_EXECUTORS_GPUS))
+readonly SPARK_GPU_TOTAL_QUOTA_DRIVERS_CPUS=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_DRIVERS_CPUS))
+readonly SPARK_GPU_TOTAL_QUOTA_DRIVERS_MEM=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_DRIVERS_MEM))
+readonly SPARK_GPU_TOTAL_QUOTA_DRIVERS_GPUS=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_DRIVERS_GPUS))
+readonly SPARK_GPU_TOTAL_QUOTA_EXECUTORS_CPUS=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_EXECUTORS_CPUS))
+readonly SPARK_GPU_TOTAL_QUOTA_EXECUTORS_MEM=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_EXECUTORS_MEM))
+readonly SPARK_GPU_TOTAL_QUOTA_EXECUTORS_GPUS=$((SPARK_GPU_DISPATCHERS * SPARK_GPU_QUOTA_EXECUTORS_GPUS))
 
-readonly NON_GPU_QUOTA_CPUS=$((NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS + NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS))
-readonly NON_GPU_QUOTA_MEM=$((NON_GPU_TOTAL_QUOTA_DRIVERS_MEM + NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM))
-readonly GPU_QUOTA_CPUS=$((GPU_TOTAL_QUOTA_DRIVERS_CPUS + GPU_TOTAL_QUOTA_EXECUTORS_CPUS))
-readonly GPU_QUOTA_MEM=$((GPU_TOTAL_QUOTA_DRIVERS_MEM + GPU_TOTAL_QUOTA_EXECUTORS_MEM))
+readonly SPARK_NON_GPU_QUOTA_CPUS=$((SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS + SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS))
+readonly SPARK_NON_GPU_QUOTA_MEM=$((SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_MEM + SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM))
+readonly SPARK_GPU_QUOTA_CPUS=$((SPARK_GPU_TOTAL_QUOTA_DRIVERS_CPUS + SPARK_GPU_TOTAL_QUOTA_EXECUTORS_CPUS))
+readonly SPARK_GPU_QUOTA_MEM=$((SPARK_GPU_TOTAL_QUOTA_DRIVERS_MEM + SPARK_GPU_TOTAL_QUOTA_EXECUTORS_MEM))
+
+readonly TOTAL_QUOTA_CPUS=$((SPARK_NON_GPU_QUOTA_CPUS +
+                             SPARK_GPU_QUOTA_CPUS +
+                             ZOOKEEPER_CPUS +
+                             KAFKA_CPUS +
+                             CASSANDRA_CPUS +
+                             DSENGINE_CPUS))
+readonly TOTAL_QUOTA_MEM=$((SPARK_NON_GPU_QUOTA_MEM +
+                             SPARK_GPU_QUOTA_MEM +
+                             ZOOKEEPER_MEM +
+                             KAFKA_MEM +
+                             CASSANDRA_MEM +
+                             DSENGINE_MEM))
+readonly TOTAL_QUOTA_GPUS=$((SPARK_GPU_TOTAL_QUOTA_DRIVERS_GPUS +
+                             SPARK_GPU_TOTAL_QUOTA_EXECUTORS_GPUS +
+                             DSENGINE_GPUS))
 
 echo
 echo    "Test '${TEST_NAME}' parameters:"
@@ -160,33 +177,34 @@ echo    "CLUSTER_URL '${CLUSTER_URL}'"
 echo
 echo    "KAFKA_CLUSTER_COUNT: ${KAFKA_CLUSTER_COUNT}"
 echo    "CASSANDRA_CLUSTER_COUNT: ${CASSANDRA_CLUSTER_COUNT}"
+echo    "SPARK_TOTAL_DISPATCHERS: ${SPARK_TOTAL_DISPATCHERS} (non-GPU: ${SPARK_NON_GPU_DISPATCHERS}, GPU: ${SPARK_GPU_DISPATCHERS})"
 echo
-echo    "NON_GPU_NUM_DISPATCHERS: ${NON_GPU_NUM_DISPATCHERS}"
+echo    "SPARK_NON_GPU_DISPATCHERS: ${SPARK_NON_GPU_DISPATCHERS}"
 echo    " Quota cpus/mem:"
 echo -n "   Each:"
-echo -n " driver ${NON_GPU_QUOTA_DRIVERS_CPUS}/${NON_GPU_QUOTA_DRIVERS_MEM},"
-echo    " executor ${NON_GPU_QUOTA_EXECUTORS_CPUS}/${NON_GPU_QUOTA_EXECUTORS_MEM}"
+echo -n " driver ${SPARK_NON_GPU_QUOTA_DRIVERS_CPUS}/${SPARK_NON_GPU_QUOTA_DRIVERS_MEM},"
+echo    " executor ${SPARK_NON_GPU_QUOTA_EXECUTORS_CPUS}/${SPARK_NON_GPU_QUOTA_EXECUTORS_MEM}"
 echo -n "   Total:"
-echo -n " driver ${NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS}/${NON_GPU_TOTAL_QUOTA_DRIVERS_MEM},"
-echo    " executor ${NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS}/${NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM}"
+echo -n " driver ${SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_CPUS}/${SPARK_NON_GPU_TOTAL_QUOTA_DRIVERS_MEM},"
+echo    " executor ${SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_CPUS}/${SPARK_NON_GPU_TOTAL_QUOTA_EXECUTORS_MEM}"
 echo
-echo    "GPU_NUM_DISPATCHERS: ${GPU_NUM_DISPATCHERS}"
+echo    "SPARK_GPU_DISPATCHERS: ${SPARK_GPU_DISPATCHERS}"
 echo    " Quota cpus/mem/gpus:"
 echo -n "   Each:"
-echo -n " driver ${GPU_QUOTA_DRIVERS_CPUS}/${GPU_QUOTA_DRIVERS_MEM}/${GPU_QUOTA_DRIVERS_GPUS:--},"
-echo    " executor ${GPU_QUOTA_EXECUTORS_CPUS:--}/${GPU_QUOTA_EXECUTORS_MEM:--}/${GPU_QUOTA_EXECUTORS_GPUS:--}"
+echo -n " driver ${SPARK_GPU_QUOTA_DRIVERS_CPUS:-0}/${SPARK_GPU_QUOTA_DRIVERS_MEM:-0}/${SPARK_GPU_QUOTA_DRIVERS_GPUS:-0},"
+echo    " executor ${SPARK_GPU_QUOTA_EXECUTORS_CPUS:-0}/${SPARK_GPU_QUOTA_EXECUTORS_MEM:-0}/${SPARK_GPU_QUOTA_EXECUTORS_GPUS:-0}"
 echo -n "   Total:"
-echo -n " driver ${GPU_TOTAL_QUOTA_DRIVERS_CPUS:--}/${GPU_TOTAL_QUOTA_DRIVERS_MEM:--}/${GPU_TOTAL_QUOTA_DRIVERS_GPUS:--},"
-echo    " executor ${GPU_TOTAL_QUOTA_EXECUTORS_CPUS:--}/${GPU_TOTAL_QUOTA_EXECUTORS_MEM:--}/${GPU_TOTAL_QUOTA_EXECUTORS_GPUS:--}"
+echo -n " driver ${SPARK_GPU_TOTAL_QUOTA_DRIVERS_CPUS:-0}/${SPARK_GPU_TOTAL_QUOTA_DRIVERS_MEM:-0}/${SPARK_GPU_TOTAL_QUOTA_DRIVERS_GPUS:-0},"
+echo    " executor ${SPARK_GPU_TOTAL_QUOTA_EXECUTORS_CPUS:-0}/${SPARK_GPU_TOTAL_QUOTA_EXECUTORS_MEM:-0}/${SPARK_GPU_TOTAL_QUOTA_EXECUTORS_GPUS:-0}"
 echo
-echo    "FINITE_NUM_JOBS:       ${FINITE_NUM_JOBS}"
-echo    "INFINITE_NUM_JOBS:     ${INFINITE_NUM_JOBS}"
-echo    "STREAMING_NUM_JOBS:    ${STREAMING_NUM_JOBS}"
-echo    "BATCH_SUBMITS_PER_MIN: ${BATCH_SUBMITS_PER_MIN}"
-echo    "GPU_SUBMITS_PER_MIN:   ${GPU_SUBMITS_PER_MIN}"
+echo    "STREAMING_JOBS:         ${STREAMING_JOBS} (finite: ${STREAMING_FINITE_JOBS}, infinite: ${STREAMING_INFINITE_JOBS})"
+echo    "BATCH_MAX_NON_GPU_JOBS: ${BATCH_MAX_NON_GPU_JOBS}"
+echo    "BATCH_SUBMITS_PER_MIN:  ${BATCH_SUBMITS_PER_MIN}"
+echo    "GPU_SUBMITS_PER_MIN:    ${GPU_SUBMITS_PER_MIN}"
 echo
-echo "Total CPU quota: $((NON_GPU_QUOTA_CPUS + GPU_QUOTA_CPUS))"
-echo "Total MEM quota: $((NON_GPU_QUOTA_MEM + GPU_QUOTA_MEM))"
+echo "Total CPU quota: ${TOTAL_QUOTA_CPUS}"
+echo "Total MEM quota: ${TOTAL_QUOTA_MEM}"
+echo "Total GPU quota: ${TOTAL_QUOTA_GPUS}"
 echo
 
 echo "Existing S3 artifacts for ${TEST_NAME}:"
@@ -305,7 +323,8 @@ readonly dcos_package_repo_uris="$(container_exec bash -c "dcos package repo lis
 for package_repo_envvar in ZOOKEEPER_PACKAGE_REPO \
                              KAFKA_PACKAGE_REPO \
                              CASSANDRA_PACKAGE_REPO \
-                             SPARK_PACKAGE_REPO; do
+                             SPARK_PACKAGE_REPO \
+                             DSENGINE_PACKAGE_REPO; do
   # Skip envvar if its value is empty.
   if [ -z "${!package_repo_envvar}" ]; then
     break;
@@ -346,13 +365,13 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   container_exec \
     ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
-      --kafka-zookeeper-config "${KAFKA_ZOOKEEPER_CONFIG}" \
+      --kafka-zookeeper-config "${ZOOKEEPER_CONFIG}" \
       --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
       --kafka-config "${KAFKA_CONFIG}" \
       --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
       --cassandra-config "${CASSANDRA_CONFIG}"
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Installed infrastructure in ${runtime} seconds"
 
   log 'Uploading infrastructure file to S3'
@@ -373,26 +392,26 @@ if [ "${SHOULD_INSTALL_NON_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-      --group-role "${ROLE_NAME}" \
+      --group-role "${GROUP_NAME}" \
       --options-json "${SPARK_CONFIG}" \
       --create-quotas false \
-      "${NON_GPU_NUM_DISPATCHERS}" \
+      "${SPARK_NON_GPU_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}" \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}"
+      "${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Installed non-GPU dispatchers in ${runtime} seconds"
 
   log 'Uploading non-GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading non-GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping non-GPU dispatchers installation'
@@ -407,20 +426,20 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/deploy-dispatchers.py \
-      --group-role "${ROLE_NAME}" \
+      --group-role "${GROUP_NAME}" \
       --options-json "${SPARK_CONFIG}" \
       --create-quotas false \
-      "${GPU_NUM_DISPATCHERS}" \
+      "${SPARK_GPU_DISPATCHERS}" \
       "${SERVICE_NAMES_PREFIX}gpu-" \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}"
+      "${TEST_DIRECTORY}/${SPARK_GPU_DISPATCHERS_OUTPUT_FILE}"
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Installed GPU dispatchers in ${runtime} seconds"
 
-  if [ "${GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
+  if [ "${SPARK_GPU_REMOVE_EXECUTORS_ROLES_QUOTAS}" = true ]; then
     log 'Removing GPU executors roles quotas'
-    last_gpu_index=$(($GPU_NUM_DISPATCHERS - 1))
-    for i in $(seq 0 "${last_gpu_index}"); do
+    last_gpu_index=$((SPARK_GPU_DISPATCHERS - 1))
+    for i in $(seq 0 ${last_gpu_index}); do
       container_exec \
         dcos spark quota remove "${TEST_NAME}__gpu-spark-0${i}-executors-role"
     done
@@ -429,13 +448,13 @@ if [ "${SHOULD_INSTALL_GPU_DISPATCHERS}" = true ]; then
   log 'Uploading GPU dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_GPU_DISPATCHERS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 
   log 'Uploading GPU JSON dispatcher list to S3'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping GPU dispatchers installation'
@@ -445,13 +464,13 @@ fi
 # Upload merged (non-GPU + GPU) Spark dispatcher list file #####################
 ################################################################################
 
-if [[ -s ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
+if [[ -s ${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} && -s ${TEST_DIRECTORY}/${SPARK_GPU_DISPATCHERS_JSON_OUTPUT_FILE} ]]; then
   log 'Merging non-GPU and GPU dispatcher list files'
   container_exec "\
     jq -s \
       '{spark: (.[0].spark + .[1].spark)}' \
-      ${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
-      ${TEST_DIRECTORY}/${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      ${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+      ${TEST_DIRECTORY}/${SPARK_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
       > ${TEST_DIRECTORY}/${DISPATCHERS_JSON_OUTPUT_FILE} \
   "
 
@@ -473,29 +492,29 @@ if [ "${SHOULD_RUN_FINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${STREAMING_FINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${FINITE_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${FINITE_NUM_CONSUMERS_PER_PRODUCER}" \
-      --producer-number-of-words "${FINITE_PRODUCER_NUMBER_OF_WORDS}" \
-      --producer-words-per-second "${FINITE_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${FINITE_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${FINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
+      --num-producers-per-kafka "${STREAMING_FINITE_PRODUCERS_PER_KAFKA}" \
+      --num-consumers-per-producer "${STREAMING_FINITE_CONSUMERS_PER_PRODUCER}" \
+      --producer-number-of-words "${STREAMING_FINITE_PRODUCER_NUMBER_OF_WORDS}" \
+      --producer-words-per-second "${STREAMING_FINITE_PRODUCER_WORDS_PER_SECOND}" \
+      --producer-spark-cores-max "${STREAMING_FINITE_PRODUCER_SPARK_CORES_MAX}" \
+      --producer-spark-executor-cores "${STREAMING_FINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
       --consumer-write-to-cassandra \
-      --consumer-batch-size-seconds "${FINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${FINITE_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+      --consumer-batch-size-seconds "${STREAMING_FINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
+      --consumer-spark-cores-max "${STREAMING_FINITE_CONSUMER_SPARK_CORES_MAX}" \
+      --consumer-spark-executor-cores "${STREAMING_FINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Started finite jobs in ${runtime} seconds"
 
   log 'Uploading finite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${FINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${STREAMING_FINITE_SUBMISSIONS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of finite streaming jobs'
@@ -510,28 +529,28 @@ if [ "${SHOULD_RUN_INFINITE_STREAMING_JOBS}" = true ]; then
   start_time=$(date +%s)
   container_exec \
     ./scale-tests/kafka_cassandra_streaming_test.py \
-      "${TEST_DIRECTORY}/${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE}" \
       "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
-      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${STREAMING_INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
       --spark-executor-docker-image \""${SPARK_EXECUTOR_DOCKER_IMAGE}"\" \
       --jar "${TEST_ASSEMBLY_JAR_URL}" \
-      --num-producers-per-kafka "${INFINITE_NUM_PRODUCERS_PER_KAFKA}" \
-      --num-consumers-per-producer "${INFINITE_NUM_CONSUMERS_PER_PRODUCER}" \
+      --num-producers-per-kafka "${STREAMING_INFINITE_PRODUCERS_PER_KAFKA}" \
+      --num-consumers-per-producer "${STREAMING_INFINITE_CONSUMERS_PER_PRODUCER}" \
       --producer-number-of-words 0 \
-      --producer-words-per-second "${INFINITE_PRODUCER_WORDS_PER_SECOND}" \
-      --producer-spark-cores-max "${INFINITE_PRODUCER_SPARK_CORES_MAX}" \
-      --producer-spark-executor-cores "${INFINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
-      --consumer-batch-size-seconds "${INFINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
-      --consumer-spark-cores-max "${INFINITE_CONSUMER_SPARK_CORES_MAX}" \
-      --consumer-spark-executor-cores "${INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
+      --producer-words-per-second "${STREAMING_INFINITE_PRODUCER_WORDS_PER_SECOND}" \
+      --producer-spark-cores-max "${STREAMING_INFINITE_PRODUCER_SPARK_CORES_MAX}" \
+      --producer-spark-executor-cores "${STREAMING_INFINITE_PRODUCER_SPARK_EXECUTOR_CORES}" \
+      --consumer-batch-size-seconds "${STREAMING_INFINITE_CONSUMER_BATCH_SIZE_SECONDS}" \
+      --consumer-spark-cores-max "${STREAMING_INFINITE_CONSUMER_SPARK_CORES_MAX}" \
+      --consumer-spark-executor-cores "${STREAMING_INFINITE_CONSUMER_SPARK_EXECUTOR_CORES}"
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Started infinite jobs in ${runtime} seconds"
 
   log 'Uploading infinite jobs submissions file'
   container_exec \
     aws s3 cp --acl public-read \
-      "${TEST_DIRECTORY}/${INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
+      "${TEST_DIRECTORY}/${STREAMING_INFINITE_SUBMISSIONS_OUTPUT_FILE}" \
       "${TEST_S3_DIRECTORY_URL}"
 else
   log 'Skipping running of infinite streaming jobs'
@@ -550,17 +569,17 @@ if [ "${SHOULD_RUN_BATCH_JOBS}" = true ]; then
       --dcos-username "${DCOS_USERNAME}" \
       --dcos-password "${DCOS_PASSWORD}" \
       --security "${SECURITY}" \
-      --input-file-uri "${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
+      --input-file-uri "${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
       --script-cpus "${BATCH_SCRIPT_CPUS}" \
       --script-mem "${BATCH_SCRIPT_MEM}" \
       --spark-build-branch "${BATCH_SPARK_BUILD_BRANCH}" \
       --script-args "\"\
-        ${NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+        ${SPARK_NON_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${BATCH_SUBMITS_PER_MIN} \
         --group-role ${GROUP_ROLE} \
       \""
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Started batch jobs in ${runtime} seconds"
 else
   log 'Skipping running of batch jobs'
@@ -579,22 +598,22 @@ if [ "${SHOULD_RUN_GPU_BATCH_JOBS}" = true ]; then
       --dcos-username "${DCOS_USERNAME}" \
       --dcos-password "${DCOS_PASSWORD}" \
       --security "${SECURITY}" \
-      --input-file-uri "${GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
+      --input-file-uri "${SPARK_GPU_DISPATCHERS_JSON_OUTPUT_FILE_URL}" \
       --script-cpus "${GPU_SCRIPT_CPUS}" \
       --script-mem "${GPU_SCRIPT_MEM}" \
       --spark-build-branch "${GPU_SPARK_BUILD_BRANCH}" \
       --script-args "\"\
-        ${GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
+        ${SPARK_GPU_DISPATCHERS_JSON_OUTPUT_FILE} \
         --submits-per-min ${GPU_SUBMITS_PER_MIN} \
         --docker-image ${GPU_DOCKER_IMAGE} \
         --group-role ${GROUP_ROLE} \
-        --max-num-dispatchers ${GPU_MAX_NUM_DISPATCHERS} \
+        --max-num-dispatchers ${GPU_MAX_DISPATCHERS} \
         --spark-cores-max ${GPU_SPARK_CORES_MAX} \
         --spark-mesos-executor-gpus ${GPU_SPARK_MESOS_EXECUTOR_GPUS} \
         --spark-mesos-max-gpus ${GPU_SPARK_MESOS_MAX_GPUS} \
       \""
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Started GPU batch jobs in ${runtime} seconds"
 else
   log 'Skipping running of GPU batch jobs'
@@ -610,7 +629,7 @@ if [ "${SHOULD_UNINSTALL_INFRASTRUCTURE_AT_THE_END}" = true ]; then
   container_exec \
     ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" --cleanup
   end_time=$(date +%s)
-  runtime=$(($end_time - $start_time))
+  runtime=$((end_time - start_time))
   log "Uninstalled infrastructure in ${runtime} seconds"
 else
   log 'Skipping uninstalling of infrastructure'
