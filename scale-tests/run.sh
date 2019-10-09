@@ -343,7 +343,7 @@ done
 # Create Marathon group if it doesn't exist ####################################
 ################################################################################
 
-if ! grep -qx "${GROUP_NAME}" <<< "$(container_exec bash -c "dcos marathon group list --json | jq -r '.[].id'")"; then
+if ! grep -qx "/${GROUP_NAME}" <<< "$(container_exec bash -c "dcos marathon group list --json | jq -r '.[].id'")"; then
   cat <<-EOF > "${GROUP_FILE_NAME}"
 		{
 		  "id": "${GROUP_NAME}",
