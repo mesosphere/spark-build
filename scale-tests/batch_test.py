@@ -10,7 +10,7 @@ Arguments:
 
 Options:
     --docker-image <img>                              docker image to run on executors
-    --group-role <group-role>                         TODO: description [default: None]
+    --group-role <group-role>                         root-level group to apply quotas against (e.g. '/dev') [default: None]
     --max-num-dispatchers <n>                         maximum number of dispatchers to use from dispatchers file
     --submits-per-min <n>                             number of jobs to submit per minute [default: 1]
     --spark-cores-max <n>                             max executor cores per job [default: 1]
