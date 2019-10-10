@@ -1,0 +1,17 @@
+{
+  "service": {
+    "name": "jupyter/jupyter",
+    "service_account": "jupyter__jupyter",
+    "service_account_secret": "jupyter__jupyter-secret",
+    "gpu": {
+      "enabled": true
+    },
+    "virtual_network_enabled": true,
+    "virtual_network_name": "dcos"
+  },
+  "spark": {
+    "spark_mesos_role": "jupyter__jupyter",
+    "spark_mesos_principal": "jupyter__jupyter",
+    "spark_mesos_secret": "jupyter__jupyter-secret"
+  }
+}
