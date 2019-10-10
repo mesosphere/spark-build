@@ -161,11 +161,11 @@ readonly TOTAL_QUOTA_CPUS=$((SPARK_NON_GPU_QUOTA_CPUS +
                              CASSANDRA_CPUS +
                              DSENGINE_CPUS))
 readonly TOTAL_QUOTA_MEM=$((SPARK_NON_GPU_QUOTA_MEM +
-                             SPARK_GPU_QUOTA_MEM +
-                             ZOOKEEPER_MEM +
-                             KAFKA_MEM +
-                             CASSANDRA_MEM +
-                             DSENGINE_MEM))
+                            SPARK_GPU_QUOTA_MEM +
+                            ZOOKEEPER_MEM +
+                            KAFKA_MEM +
+                            CASSANDRA_MEM +
+                            DSENGINE_MEM))
 readonly TOTAL_QUOTA_GPUS=$((SPARK_GPU_TOTAL_QUOTA_DRIVERS_GPUS +
                              SPARK_GPU_TOTAL_QUOTA_EXECUTORS_GPUS +
                              DSENGINE_GPUS))
