@@ -1,34 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "5.0.1"
-    },
-    {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": "5.0.0"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "5.0.0"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -45,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 72,
   "links": [],
   "panels": [
     {
@@ -53,7 +23,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -85,13 +55,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "mesos_master_allocator_role_quota_offered_or_allocated{resource=\"cpus\", role=\"dispatcher-mixed-0-dispatcher-role\"}",
+          "expr": "mesos_master_allocator_role_quota_offered_or_allocated{resource=\"cpus\", role=~\".*spark-00-drivers-role\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "C"
         },
         {
-          "expr": "mesos_master_allocator_role_quota_guarantee{resource=\"cpus\", role=\"dispatcher-mixed-0-dispatcher-role\"}",
+          "expr": "mesos_master_allocator_role_quota_guarantee{resource=\"cpus\", role=~\".*spark-00-executors-role\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "D"
@@ -137,14 +107,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -176,15 +150,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:2896",
-          "expr": "mesos_master_allocator_role_quota_offered_or_allocated{resource=\"cpus\"}",
+          "expr": "mesos_allocator_quota_roles_resources_offered_or_allocated",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
         },
         {
-          "$$hashKey": "object:2897",
-          "expr": "mesos_master_allocator_role_quota_guarantee{resource=\"cpus\"}",
+          "expr": "mesos_allocator_quota_roles_resources_limit",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -224,14 +196,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -263,7 +239,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_driver_launched)",
+          "expr": "count(spark_mesos_drivers_launched_count)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -303,14 +279,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -342,7 +322,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count(spark_mesos_cluster_executor_count)",
+          "expr": "count(spark_mesos_executor_count)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -382,14 +362,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -421,24 +405,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:2704",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*Kafka.*\"})",
+          "expr": "count(spark_mesos_executor_count{task_name=~\".*Kafka.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Spark-Streaming Kafka",
           "refId": "B"
         },
         {
-          "$$hashKey": "object:2725",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*monte.*\"})",
+          "expr": "count(spark_mesos_executor_count{task_name=~\".*monte.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Monte-Carlo batch",
           "refId": "C"
         },
         {
-          "$$hashKey": "object:2746",
-          "expr": "count(spark_mesos_cluster_executor_count{task_name=~\".*image.*\"})",
+          "expr": "count(spark_mesos_executor_count{task_name=~\".*image.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Image-Recognition GPU",
@@ -464,7 +445,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:3234",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -473,7 +453,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:3235",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -481,14 +460,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -520,16 +503,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:3053",
-          "expr": "count(spark_mesos_cluster_executor_count)",
+          "expr": "count(spark_mesos_executor_count)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Number of drivers reporting",
           "refId": "A"
         },
         {
-          "$$hashKey": "object:3054",
-          "expr": "sum(spark_mesos_cluster_driver_launched)",
+          "expr": "sum(spark_mesos_drivers_launched)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Number of jobs reported by dispatchers",
@@ -570,14 +551,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -609,7 +594,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_waiting)",
+          "expr": "avg(spark_mesos_drivers_waiting_count)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -649,14 +634,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -688,7 +677,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_launched)",
+          "expr": "avg(spark_mesos_drivers_launched)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -728,14 +717,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -767,7 +760,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_executor_count)",
+          "expr": "avg(spark_mesos_executor_count)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -807,14 +800,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -846,8 +843,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_launch_to_finish_state_finished_mean) / 60000",
+          "expr": "avg(spark_mesos_drivers_launch_to_finish_state_finished_mean_mean) / 60000",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
           "refId": "A"
         }
@@ -886,14 +884,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "description": "% of jobs that finish successfully",
       "fill": 1,
       "gridPos": {
@@ -926,7 +928,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) / (sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_finished) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_lost) + sum(spark_mesos_cluster_driver_finished_count_mesos_state_task_failed))",
+          "expr": "sum(spark_mesos_drivers_finished_count_mesos_state_task_finished) / (sum(spark_mesos_drivers_finished_count_mesos_state_task_finished) + sum(spark_mesos_drivers_finished_count_mesos_state_task_lost) + sum(spark_mesos_drivers_finished_count_mesos_state_task_failed))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -967,14 +969,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "description": "The average of how long it takes for a Spark driver to launch all its executors",
       "fill": 1,
       "gridPos": {
@@ -1007,7 +1013,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
+          "expr": "avg(spark_mesos_start_to_all_launched_mean_mean) / 1000",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -1047,14 +1053,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -1086,7 +1096,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(spark_mesos_cluster_driver_retry)",
+          "expr": "avg(spark_mesos_drivers_retry)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -1126,14 +1136,18 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "prometheus",
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -1165,7 +1179,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "stddev(spark_mesos_cluster_executor_start_to_all_launched_mean) / 1000",
+          "expr": "stddev(spark_mesos_start_to_all_launched_mean_mean) / 1000",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -1206,10 +1220,14 @@
           "min": null,
           "show": true
         }
-      ]
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
-  "refresh": "1m",
+  "refresh": "10s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
