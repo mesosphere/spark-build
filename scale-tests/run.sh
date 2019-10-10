@@ -342,7 +342,7 @@ for package_repo_envvar in ZOOKEEPER_PACKAGE_REPO \
                              DSENGINE_PACKAGE_REPO; do
   # Skip envvar if its value is empty.
   if [ -z "${!package_repo_envvar}" ]; then
-    break;
+    continue;
   fi
 
   # Add package repository stub if it's not already there.
