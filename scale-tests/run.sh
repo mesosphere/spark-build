@@ -376,7 +376,7 @@ fi
 
 if ! grep -qx "${GROUP_NAME}" <<< "$(container_exec 'bash -c "dcos quota list --json | jq -r '.[].role'"')"; then
   container_exec \
-    dcos quota create "${GROUP_FILE_NAME}" \
+    dcos quota create "${GROUP_NAME}" \
       --cpu "${TOTAL_QUOTA_CPUS}" \
       --mem "${TOTAL_QUOTA_MEM}" \
       --gpu "${TOTAL_QUOTA_GPUS}"
