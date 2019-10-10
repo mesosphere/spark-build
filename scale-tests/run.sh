@@ -333,7 +333,7 @@ fi
 # Create package repository stubs if they're not there #########################
 ################################################################################
 
-readonly dcos_package_repo_uris="$(container_exec bash -c "dcos package repo list --json | jq -r '.repositories[].uri'")"
+readonly dcos_package_repo_uris="$(container_exec 'bash -c "dcos package repo list --json | jq -r '.repositories[].uri'"')"
 
 for package_repo_envvar in ZOOKEEPER_PACKAGE_REPO \
                              KAFKA_PACKAGE_REPO \
@@ -358,7 +358,7 @@ done
 # Create Marathon group if it doesn't exist ####################################
 ################################################################################
 
-if ! grep -qx "/${GROUP_NAME}" <<< "$(container_exec bash -c "dcos marathon group list --json | jq -r '.[].id'")"; then
+if ! grep -qx "/${GROUP_NAME}" <<< "$(container_exec 'bash -c "dcos marathon group list --json | jq -r '.[].id'"')"; then
   cat <<-EOF > "${GROUP_FILE_NAME}"
 		{
 		  "id": "${GROUP_NAME}",
@@ -374,7 +374,7 @@ fi
 # Create quota if it doesn't already exist #####################################
 ################################################################################
 
-if ! grep -qx "${GROUP_NAME}" <<< "$(container_exec bash -c "dcos quota list --json | jq -r '.[].role'")"; then
+if ! grep -qx "${GROUP_NAME}" <<< "$(container_exec 'bash -c "dcos quota list --json | jq -r '.[].role'"')"; then
   container_exec \
     dcos quota create "${GROUP_FILE_NAME}" \
       --cpu "${TOTAL_QUOTA_CPUS}" \
