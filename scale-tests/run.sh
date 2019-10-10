@@ -292,7 +292,7 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
     ssh-add -k "${CONTAINER_SSH_KEY}"
 
   container_exec \
-    curl https://downloads.dcos.io/binaries/cli/linux/x86-64/dcos-1.13/dcos -o dcos
+    curl "${DCOS_CLI_URL}" -o dcos
 
   container_exec \
     chmod +x ./dcos
