@@ -192,6 +192,10 @@ def install_package(
 
     service_account_info = scale_tests_utils.setup_security(service_name, linux_user)
 
+    service_options = scale_tests_utils.get_service_options(
+        service_name, service_account_info, additional_options, config_path
+    )
+
     if group_role:
         setup_spark_security(service_name, group_role, None, None, service_account_info)
 
@@ -204,10 +208,6 @@ def install_package(
 
         service_options["service"]["role"] = drivers_role
         roles = {"drivers": drivers_role, "executors": executors_role}
-
-    service_options = scale_tests_utils.get_service_options(
-        service_name, service_account_info, additional_options, config_path
-    )
 
     expected_task_count = service_task_count(service_options)
     log.info("Expected task count: %s", expected_task_count)
