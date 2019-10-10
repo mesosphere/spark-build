@@ -1,4 +1,3 @@
-
 # Spark DC/OS Package
 
 
