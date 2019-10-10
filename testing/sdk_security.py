@@ -152,8 +152,8 @@ def get_permissions(service_account_name: str, linux_user: str) -> typing.List[d
 def grant_permissions(
     linux_user: str,
     role_name: str = "",
-    service_account_name: str = "",
     role_list: typing.List[str] = [],
+    service_account_name: str = "",
 ) -> None:
     log.info("Granting permissions to {account}".format(account=service_account_name))
 
@@ -171,7 +171,12 @@ def grant_permissions(
     log.info("Permission setup completed for {account}".format(account=service_account_name))
 
 
-def revoke_permissions(linux_user: str, role_name: str, service_account_name: str) -> None:
+def revoke_permissions(
+    linux_user: str,
+    service_account_name: str,
+    role_name: str = "",
+    role_list: typing.List[str] = [],
+) -> None:
     log.info("Revoking permissions to {account}".format(account=service_account_name))
 
     permissions = get_permissions(service_account_name, linux_user)
