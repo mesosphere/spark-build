@@ -312,7 +312,7 @@ def get_quota_options(arguments: typing.Dict) -> typing.Dict:
     """
     Move the quota options from the command line arguments to a dict.
     """
-    create_quotas = ast.literal_eval(arguments.get("--create-quotas", True))
+    create_quotas = arguments.get("--create-quotas", True)
     if not create_quotas:
         return {}
 
