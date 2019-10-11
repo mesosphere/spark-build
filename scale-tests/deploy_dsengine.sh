@@ -73,7 +73,7 @@ grant_permissions data_services__jupyter
 grant_spark_permissions data_services__jupyter
 
 dcos package install --yes data-science-engine \
-     --options=scale-tests/configs/jupiter-options.json
+     --options=scale-tests/configs/dsengine-options.jso
 
 # Run the following in the Jupyter notebook UI (password: jupyter):
 #
