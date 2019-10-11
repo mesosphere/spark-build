@@ -1,5 +1,5 @@
-
 # Spark DC/OS Package
+
 
 This repo lets you configure, build, and test a new Spark DC/OS package.
 It is the source for the Spark package in universe.  If you wish to modify
