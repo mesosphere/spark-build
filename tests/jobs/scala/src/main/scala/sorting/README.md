@@ -28,8 +28,9 @@ spark-submit \
 --conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com \
 --conf spark.hadoop.fs.s3a.access.key=${AWS_ACCESS_KEY_ID} \
 --conf spark.hadoop.fs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY} \
---conf spark.hadoop.fs.s3a.session.token=${AWS_SESSION_TOKEN} \--class sorting.DatasetGenerator \
-/Users/akirillov/projects/mesosphere/spark-build/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar \
+--conf spark.hadoop.fs.s3a.session.token=${AWS_SESSION_TOKEN} \
+--class sorting.DatasetGenerator \
+/path/to/spark-build/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar \
 --num-files 10 \
 --num-records 1000 \
 --static-prefix-length 120 \
@@ -37,3 +38,19 @@ spark-submit \
 --value-size-bytes 1000000 \
 --output-path s3a://<your bucket>/path
 ```
+
+## Sorting
+
+### Using a dataset from S3 as the input
+
+Example of using `TemporaryAWSCredentialsProvider`:
+```bash
+spark-submit \
+--conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+--conf spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider \
+--conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com \
+--conf spark.hadoop.fs.s3a.access.key=${AWS_ACCESS_KEY_ID} \
+--conf spark.hadoop.fs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY} \
+--conf spark.hadoop.fs.s3a.session.token=${AWS_SESSION_TOKEN} \
+--class sorting.SortingApp \
+/path/to/spark-build/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests_2.11-0.2-SNAPSHOT.jar s3a://<your bucket>/path
