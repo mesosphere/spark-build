@@ -48,7 +48,6 @@ object S3Job {
     private def readS3(args: Args): Unit = {
       val spark = SparkSession
         .builder
-        .master("local")
         .appName("S3 Test")
         .getOrCreate()
 
