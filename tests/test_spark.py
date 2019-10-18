@@ -271,13 +271,13 @@ def test_s3_secrets():
     try:
         # download/read linecount.txt only
         utils.run_tests(app_url=utils.dcos_test_jar_url(),
-                        app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
+                        app_args="--readUrl {}".format(s3.s3_url('linecount.txt')),
                         expected_output="Read 3 lines",
                         args=args)
         # download/read linecount.txt, reupload as linecount-secret.txt:
         utils.run_tests(app_url=utils.dcos_test_jar_url(),
                         app_args="--readUrl {} --writeUrl {}".format(
-                            s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-secret.txt')),
+                            s3.s3_url('linecount.txt'), s3.s3_url('linecount-secret.txt')),
                         expected_output="Read 3 lines",
                         args=args)
         assert len(list(s3.list("linecount-secret.txt"))) > 0
@@ -301,14 +301,14 @@ def test_s3_env():
 
     # download/read linecount.txt only
     utils.run_tests(app_url=utils.dcos_test_jar_url(),
-                    app_args="--readUrl {} --countOnly".format(s3.s3n_url('linecount.txt')),
+                    app_args="--readUrl {}".format(s3.s3_url('linecount.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
     # download/read linecount.txt, reupload as linecount-env.txt
     utils.run_tests(app_url=utils.dcos_test_jar_url(),
                     app_args="--readUrl {} --writeUrl {}".format(
-                        s3.s3n_url('linecount.txt'), s3.s3n_url('linecount-env.txt')),
+                        s3.s3_url('linecount.txt'), s3.s3_url('linecount-env.txt')),
                     expected_output="Read 3 lines",
                     args=args)
 
