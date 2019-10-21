@@ -6,13 +6,9 @@ import botocore.session
 
 log = logging.getLogger(__name__)
 
-# NOTE: Tried newer s3a:// URLs, but uploads in tests had the following problems:
-# - The driver would consistently hang rather than exiting cleanly
-# - The upload would take the form of several part files within a folder instead of the output we want.
-#   e.g. linecount-secret.txt/part-00000 thru linecount-secret.txt/part-00028, instead of just a linecount-secret.txt file.
-# As such, we stick with s3n:// URLs for now.
-def s3n_url(filename):
-    return "s3n://{}/{}/{}".format(
+
+def s3_url(filename):
+    return "s3a://{}/{}/{}".format(
         os.environ['S3_BUCKET'], os.environ['S3_PREFIX'], filename)
 
 
