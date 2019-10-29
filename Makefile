@@ -3,6 +3,7 @@ BUILD_DIR := $(ROOT_DIR)/build
 DIST_DIR := $(BUILD_DIR)/dist
 STATSD_DIR := $(ROOT_DIR)/spark-statsd-reporter
 GIT_COMMIT := $(shell git rev-parse HEAD)
+//mo-trigger
 
 SPARK_DEV_DOCKER_IMAGE ?= mesosphere/spark-dev
 AWS_REGION ?= us-west-2
