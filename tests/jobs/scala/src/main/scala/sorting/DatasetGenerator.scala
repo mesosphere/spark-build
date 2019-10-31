@@ -1,6 +1,7 @@
 package sorting
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.{DataTypes, StringType, StructField, StructType}
 
 import scala.util.Random
 
@@ -9,6 +10,13 @@ import scala.util.Random
 	*/
 
 case class DataItem(key: String, value: Array[Byte])
+
+object DataItem {
+	def schema = StructType(Seq(
+		StructField("key", StringType, nullable = false),
+		StructField("value", DataTypes.BinaryType, nullable = false)
+	))
+}
 
 case class Config(numFiles: Int = -1,
 									numRecords: Int = -1,
