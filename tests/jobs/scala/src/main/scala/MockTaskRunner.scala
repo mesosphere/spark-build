@@ -20,13 +20,20 @@ object MockTaskRunner {
       .getOrCreate()
 
     val numTasks = args(0).toInt
-    val sleepSeconds = args(1).toLong
-    val sleepMillis = sleepSeconds * 1000
+    val durationSeconds = args(1).toLong
+    val durationMillis = durationSeconds * 1000
 
     spark.sparkContext.parallelize(0 until numTasks, numTasks).foreachPartition{_ =>
-      println(s"Sleeping for $sleepSeconds seconds")
-      Thread.sleep(sleepMillis)
-      println(s"Sleep finished")
+      val finishTime = System.currentTimeMillis + durationMillis
+      println(s"Working for $durationSeconds seconds")
+
+      while (System.currentTimeMillis < finishTime) {
+        if (System.currentTimeMillis() % 1000 == 0) {
+          Thread.sleep(1)
+        }
+      }
+
+      println("Work finished")
     }
 
     spark.stop()
