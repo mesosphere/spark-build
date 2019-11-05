@@ -5,12 +5,14 @@ import retrying
 
 import sdk_cmd
 import sdk_hosts
+import sdk_utils
 
 import spark_utils as utils
 
 log = logging.getLogger(__name__)
 
 service_name = utils.FOLDERED_SPARK_SERVICE_NAME
+driver_role = service_name.lstrip('/').split('/')[0]
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -24,9 +26,15 @@ def setup_spark(configure_security_spark, configure_universe):
         utils.require_spark()
         zk = 'spark_mesos_dispatcher__path_to_spark'
         utils.require_spark(service_name=service_name, zk=zk)
+        if sdk_utils.is_strict_mode():
+            utils.grant_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
+            utils.grant_launch_task_permission(driver_role)
         yield
     finally:
         utils.teardown_spark(service_name=service_name, zk=zk)
+        if sdk_utils.is_strict_mode():
+            utils.revoke_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
+            utils.revoke_launch_task_permission(driver_role)
 
 
 @pytest.mark.dcos_min_version('1.10')
@@ -38,6 +46,7 @@ def test_foldered_spark(setup_spark):
         app_args="100",
         expected_output="Pi is roughly 3",
         service_name=service_name,
+        driver_role=driver_role,
         args=["--class org.apache.spark.examples.SparkPi"])
 
 

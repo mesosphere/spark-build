@@ -136,8 +136,8 @@ def get_dispatcher_task(service_name=SPARK_SERVICE_NAME):
     return tasks[0]
 
 
-def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, args=[]):
-    driver_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, args=args)
+def run_tests(app_url, app_args, expected_output, service_name=SPARK_SERVICE_NAME, driver_role=SPARK_DRIVER_ROLE, args=[]):
+    driver_id = submit_job(app_url=app_url, app_args=app_args, service_name=service_name, driver_role=driver_role, args=args)
     try:
         check_job_output(driver_id, expected_output)
     except TimeoutError:
