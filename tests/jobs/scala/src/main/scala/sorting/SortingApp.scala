@@ -2,8 +2,10 @@ package sorting
 
 import org.apache.spark.sql.SparkSession
 
+import scala.collection.SortedSet
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
+import scala.util.matching.UnanchoredRegex
 
 /**
 	* Performs sort (transformation) and count (action) on the Dataset, loaded from [input path].
@@ -15,19 +17,23 @@ import scala.reflect.ClassTag
 
 object SortingApp {
 
-	//TODO: this is a good candidate for gathering more information about partition (min key, max key, any errors).
-	//			Once each partition is validated, the final result can be sorted based by min key, collected, and analized
-	//			on the driver side to be able to reason about global ordering
+	val pattern: UnanchoredRegex = """"key":"([a-zA-Z0-9]+)"""".r.unanchored
 
 	case class PartitionValidationResult(
-																				index: Int,
+																				fileName: String,
 																				isSuccess: Boolean,
 																				totalKeys: Long,
 																				outOfOrderKeys: Long,
-																				sample: List[String]){
+																				sample: List[String],
+																				firstKey: String,
+																				lastKey: String) extends Ordered[PartitionValidationResult] {
+
+
 		override def toString: String = {
-			s"PartitionValidationResult index: $index, success: $isSuccess, totalKeys: $totalKeys, unorderedKeys: $outOfOrderKeys, sample:\n${sample.mkString("\n")}"
+			s"PartitionValidationResult {\n\tfile: $fileName,\n\tsuccess: $isSuccess,\n\ttotalKeys: $totalKeys,\n\tfirst: $firstKey,\n\tlast: $lastKey,\n\tunorderedKeys: $outOfOrderKeys,\n\tsample:\n${sample.mkString("\n")}}"
 		}
+
+		override def compare(that: PartitionValidationResult): Int = fileName.compareTo(that.fileName)
 	}
 
 	def main(args: Array[String]): Unit = {
@@ -64,48 +70,63 @@ object SortingApp {
 				.json(outputPath)
 		}
 
-		//This is a naive implementation which terminates when the first unordered pair of keys appears in a partition.
-		//FIXME: this implementation doesn't validate the global ordering of keys, only the ordering within a partition
-		//			 ValidationResult can be used to accumulate per-partition statistics and perform final validation
-		spark
-			.read
-			.schema(DataItem.schema)
-			.json(outputPath)
-			.as[DataItem]
-			.rdd
-			.mapPartitionsWithIndex(validateOrderingWithinPartition)
-			.filter(result => !result.isSuccess)
-			.collect()
-			.foreach(println)
-
+		validateGlobalOrdering({
+			spark.
+				sparkContext
+				.wholeTextFiles(outputPath)
+				.map(validateOrderingWithinPartition)
+				.collect()
+				.to[SortedSet]
+		})
 		spark.stop()
 	}
 
-	def validateOrderingWithinPartition(partitionIndex: Int, iterator: Iterator[DataItem]): Iterator[PartitionValidationResult] = {
+	def validateOrderingWithinPartition(file: (String, String)): PartitionValidationResult = {
+
 		var totalKeys = 0L
 		var outOfOrderKeys = 0L
-
-		var previous = ""
 		val sampleKeys = new ListBuffer[String]()
-		while (iterator.nonEmpty) {
+
+		val (fileName, contents) = file
+		val lines = contents.split("\n")
+		var previous = ""
+		lines.foreach(line => {
 			totalKeys += 1
-			val key = iterator.next().key
-			if (key.compareTo(previous) < 0) {
+			if (line.compareTo(previous) < 0) {
 				sampleKeys += previous
-				sampleKeys += key
+				sampleKeys += line
 				sampleKeys += ""
 				outOfOrderKeys += 1
 			} else {
-				previous = key
+				previous = line
 			}
-		}
+		})
 
-		Seq(PartitionValidationResult(
-			index = partitionIndex,
-			isSuccess = false,
+		val pattern(firstKey) = lines(0)
+		val pattern(lastKey) = lines(lines.size - 1)
+
+		PartitionValidationResult(
+			fileName = fileName,
+			isSuccess = outOfOrderKeys == 0,
 			totalKeys = totalKeys,
 			outOfOrderKeys = outOfOrderKeys,
-			sample = sampleKeys.toList)
-		).iterator
+			sample = sampleKeys.toList,
+			firstKey = firstKey,
+			lastKey = lastKey
+		)
 	}
+
+	def validateGlobalOrdering(results: SortedSet[PartitionValidationResult]): Unit = {
+		var previous: PartitionValidationResult = null
+		results.foreach(result => {
+			if (previous != null) {
+				println(result)
+				if (result.firstKey.compareTo(previous.lastKey) < 0)
+					throw new IllegalStateException(s"Validation failed!\n$previous\n$result")
+			}
+			previous = result
+		})
+		println("Global ordering has been validated successfully.")
+	}
+
 }
