@@ -10,7 +10,7 @@ import spark_utils as utils
 
 log = logging.getLogger(__name__)
 DISPATCHER_ZK = "spark_mesos_dispatcher__dev__spark"
-ROLES = ["spark_role", "custom_role", "dev"]
+ROLES = ["dev"]
 SERVICE_NAME = "/dev/spark"
 
 
@@ -90,8 +90,7 @@ def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group
 
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
-    ("spark_role", False),
-    ("custom_role", False)
+    ("dev", False)
 ])
 def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
     dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
@@ -103,7 +102,7 @@ def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
 
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
-    ("spark_role", True)
+    ("dev", True)
 ])
 def test_dispatcher_role_enforced(setup_spark, role, enforce_role):
     dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
