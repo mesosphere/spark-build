@@ -1,8 +1,12 @@
 package sorting
 
+import java.io.{BufferedReader, InputStreamReader}
+
+import org.apache.spark.input.PortableDataStream
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.SortedSet
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.util.matching.UnanchoredRegex
@@ -73,24 +77,29 @@ object SortingApp {
 		validateGlobalOrdering({
 			spark.
 				sparkContext
-				.wholeTextFiles(outputPath)
-				.map(validateOrderingWithinPartition)
+				.binaryFiles(outputPath)
+				.map({case (file, stream) => validateBinaryOrderingWithinPartition(file, stream)})
 				.collect()
 				.to[SortedSet]
 		})
 		spark.stop()
 	}
 
-	def validateOrderingWithinPartition(file: (String, String)): PartitionValidationResult = {
-
+	def validateBinaryOrderingWithinPartition(fileName: String, contents: PortableDataStream): PartitionValidationResult = {
+		val regexErrorMessage = "[Error: unable to find a key match in regex]"
 		var totalKeys = 0L
 		var outOfOrderKeys = 0L
 		val sampleKeys = new ListBuffer[String]()
 
-		val (fileName, contents) = file
-		val lines = contents.split("\n")
+		val reader = new BufferedReader(new InputStreamReader(contents.open()))
+		var firstKey = ""
 		var previous = ""
-		lines.foreach(line => {
+
+		reader.lines().iterator().asScala.foreach(line => {
+			if (previous.isEmpty) {
+				firstKey = pattern.findFirstIn(line).getOrElse(regexErrorMessage)
+			}
+
 			totalKeys += 1
 			if (line.compareTo(previous) < 0) {
 				sampleKeys += previous
@@ -102,9 +111,6 @@ object SortingApp {
 			}
 		})
 
-		val pattern(firstKey) = lines(0)
-		val pattern(lastKey) = lines(lines.size - 1)
-
 		PartitionValidationResult(
 			fileName = fileName,
 			isSuccess = outOfOrderKeys == 0,
@@ -112,7 +118,7 @@ object SortingApp {
 			outOfOrderKeys = outOfOrderKeys,
 			sample = sampleKeys.toList,
 			firstKey = firstKey,
-			lastKey = lastKey
+			lastKey = pattern.findFirstIn(previous).getOrElse(regexErrorMessage)
 		)
 	}
 
