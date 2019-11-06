@@ -10,7 +10,7 @@ import spark_utils as utils
 
 log = logging.getLogger(__name__)
 DISPATCHER_ZK = "spark_mesos_dispatcher__dev__spark"
-ROLES = ["dev"]
+ROLES = ["spark_role", "custom_role", "dev"]
 SERVICE_NAME = "/dev/spark"
 
 
@@ -88,9 +88,12 @@ def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group
     _verify_submission_rejected(driver_role="{}/spark".format(group))
 
 
+@pytest.mark.skipif(not sdk_utils.dcos_version_less_than('1.14'),
+                    reason="Dispatcher role propagation is not available in DCOS v2.0 and higher")
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
-    ("dev", False)
+    ("spark_role", False),
+    ("custom_role", False)
 ])
 def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
     dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
@@ -100,9 +103,11 @@ def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
     _submit_job_and_verify_role(role)
 
 
+@pytest.mark.skipif(not sdk_utils.dcos_version_less_than('1.14'),
+                    reason="Dispatcher role enforced is not available in DCOS v2.0 and higher")
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
-    ("dev", True)
+    ("spark_role", True)
 ])
 def test_dispatcher_role_enforced(setup_spark, role, enforce_role):
     dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
