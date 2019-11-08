@@ -11,7 +11,7 @@ import spark_utils as utils
 log = logging.getLogger(__name__)
 DISPATCHER_ZK = "spark_mesos_dispatcher__dev__spark"
 ROLES = ["spark_role", "custom_role", "dev"]
-SERVICE_NAME = "/dev/spark"
+SERVICE_NAME = "spark"
 
 
 @pytest.fixture(scope='module')
@@ -44,11 +44,11 @@ def create_group(group, enforce_group):
 
 
 @pytest.fixture()
-def setup_spark(configure_universe, configure_role_permissions, role, enforce_role):
-    log.info("Installing Spark: service_name='{}', role='{}', enforce_role='{}'".format(SERVICE_NAME, role, enforce_role))
+def setup_spark(configure_universe, configure_role_permissions, service_name=SERVICE_NAME, role, enforce_role):
+    log.info("Installing Spark: service_name='{}', role='{}', enforce_role='{}'".format(service_name, role, enforce_role))
     options = {
         "service": {
-            "name": SERVICE_NAME,
+            "name": service_name,
             "role": role,
             "enforce_role": enforce_role
         }
@@ -56,26 +56,26 @@ def setup_spark(configure_universe, configure_role_permissions, role, enforce_ro
 
     try:
         utils.upload_dcos_test_jar()
-        utils.require_spark(service_name=SERVICE_NAME, additional_options=options, zk=DISPATCHER_ZK)
+        utils.require_spark(service_name=service_name, additional_options=options, zk=DISPATCHER_ZK)
         yield
     finally:
-        utils.teardown_spark(service_name=SERVICE_NAME, zk=DISPATCHER_ZK)
+        utils.teardown_spark(service_name=service_name, zk=DISPATCHER_ZK)
 
 
 @pytest.mark.skipif(sdk_utils.dcos_version_less_than('1.14'),
                     reason="Group role enforcement is available only in DCOS v1.14 and higher")
 @pytest.mark.sanity
-@pytest.mark.parametrize('group,enforce_group,role,enforce_role', [
-    ("dev", True, "spark_role", False),
-    ("dev", True, "spark_role", True),
-    ("dev", True, "dev", False),
-    ("dev", True, "dev", True)
+@pytest.mark.parametrize('group,enforce_group,service_name,role,enforce_role', [
+    ("dev", True, "/dev/spark", "spark_role", False),
+    ("dev", True, "/dev/spark", "spark_role", True),
+    ("dev", True, "/dev/spark", "dev", False),
+    ("dev", True, "/dev/spark", "dev", True)
 ])
-def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group, role, enforce_role):
+def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group, service_name, role, enforce_role):
     log.info("Running test: group='{}', enforce_group='{}', service_name='{}', role='{}', enforce_role='{}'"
-             .format(group, enforce_group, SERVICE_NAME, role, enforce_role))
+             .format(group, enforce_group, service_name, role, enforce_role))
 
-    dispatcher_framework = dcos_utils.get_framework_json(SERVICE_NAME, completed=False)
+    dispatcher_framework = dcos_utils.get_framework_json(service_name, completed=False)
     log.info("Dispatcher framework:\n{}".format(dispatcher_framework))
     assert group == dispatcher_framework["role"]
 
@@ -88,8 +88,6 @@ def test_marathon_group_enforced(create_group, setup_spark, group, enforce_group
     _verify_submission_rejected(driver_role="{}/spark".format(group))
 
 
-@pytest.mark.skipif(not sdk_utils.dcos_version_less_than('1.14'),
-                    reason="Dispatcher role propagation is not available in DCOS v2.0 and higher")
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
     ("spark_role", False),
@@ -103,8 +101,6 @@ def test_dispatcher_role_propagated(setup_spark, role, enforce_role):
     _submit_job_and_verify_role(role)
 
 
-@pytest.mark.skipif(not sdk_utils.dcos_version_less_than('1.14'),
-                    reason="Dispatcher role enforced is not available in DCOS v2.0 and higher")
 @pytest.mark.sanity
 @pytest.mark.parametrize('role,enforce_role', [
     ("spark_role", True)
