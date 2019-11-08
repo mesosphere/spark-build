@@ -28,13 +28,13 @@ def setup_spark(configure_security_spark, configure_universe):
         utils.require_spark(service_name=service_name, zk=zk)
         if sdk_utils.is_strict_mode():
             utils.grant_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
-            utils.grant_launch_task_permission(driver_role)
+            utils.grant_launch_task_permission(service_name)
         yield
     finally:
         utils.teardown_spark(service_name=service_name, zk=zk)
         if sdk_utils.is_strict_mode():
             utils.revoke_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
-            utils.revoke_launch_task_permission(driver_role)
+            utils.revoke_launch_task_permission(service_name)
 
 
 @pytest.mark.dcos_min_version('1.10')
