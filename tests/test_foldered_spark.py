@@ -20,21 +20,28 @@ def upload_test_jars(configure_security_spark, configure_universe):
     utils.upload_dcos_test_jar()
 
 
-@pytest.fixture()
-def setup_spark(configure_security_spark, configure_universe):
+@pytest.fixture(scope='module')
+def configure_role_permissions(configure_security_spark):
     try:
-        utils.require_spark()
-        zk = 'spark_mesos_dispatcher__path_to_spark'
-        utils.require_spark(service_name=service_name, zk=zk)
         if sdk_utils.is_strict_mode():
             utils.grant_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
             utils.grant_launch_task_permission(service_name)
         yield
     finally:
-        utils.teardown_spark(service_name=service_name, zk=zk)
         if sdk_utils.is_strict_mode():
             utils.revoke_user_permissions("nobody", driver_role, utils.SPARK_SERVICE_ACCOUNT)
             utils.revoke_launch_task_permission(service_name)
+
+
+@pytest.fixture()
+def setup_spark(configure_universe, configure_role_permissions):
+    try:
+        utils.require_spark()
+        zk = 'spark_mesos_dispatcher__path_to_spark'
+        utils.require_spark(service_name=service_name, zk=zk)
+        yield
+    finally:
+        utils.teardown_spark(service_name=service_name, zk=zk)
 
 
 @pytest.mark.dcos_min_version('1.10')
