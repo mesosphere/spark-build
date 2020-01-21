@@ -11,10 +11,6 @@ import spark_utils as utils
 
 log = logging.getLogger(__name__)
 
-start_agent_cmd = "sudo systemctl start dcos-mesos-slave"
-stop_agent_cmd = "sudo systemctl stop dcos-mesos-slave"
-check_agent_cmd = "sudo systemctl is-active dcos-mesos-slave"
-
 app_name = "MockTaskRunner"
 driver_cpus = None
 executor_cpus = None
@@ -58,8 +54,8 @@ def test_agent_restart_with_checkpointing_disabled():
     executor_ip = sdk_networks.get_task_host(executor_task)
 
     # Dispatcher starts Driver Tasks with checkpointing enabled so Driver is expected to be in RUNNING state
-    _restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
-    _restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_LOST")
+    utils.restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
+    utils.restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_LOST")
 
 
 @pytest.mark.sanity
@@ -69,38 +65,11 @@ def test_agent_restart_with_checkpointing_enabled():
     driver_ip = sdk_networks.get_task_host(driver_task)
     executor_ip = sdk_networks.get_task_host(executor_task)
 
-    _restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_RUNNING")
-    _restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
+    utils.restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_RUNNING")
+    utils.restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
 
 
-def _restart_task_agent_and_verify_state(host_ip, task, expected_state):
-    dcos_utils.agent_ssh(host_ip, stop_agent_cmd)
-    _check_agent_status(host_ip, "inactive")
-    dcos_utils.agent_ssh(host_ip, start_agent_cmd)
-    _check_agent_status(host_ip, "active")
-    _wait_for_task_status(task["id"], expected_state)
 
-
-@retrying.retry(
-        wait_fixed=5000,
-        stop_max_delay=120 * 1000,
-        retry_on_result=lambda res: not res)
-def _check_agent_status(host_ip, expected_status):
-    status = dcos_utils.agent_ssh(host_ip, check_agent_cmd)
-    log.info(f"Checking status of agent at host {host_ip}, expected: {expected_status}, actual: {status}")
-    return expected_status == status
-
-
-@retrying.retry(
-        wait_fixed=5000,
-        stop_max_delay=120 * 1000,
-        retry_on_result=lambda res: not res)
-def _wait_for_task_status(task_id, expected_state):
-    completed = expected_state != "TASK_RUNNING"
-    task = shakedown.get_task(task_id, completed=completed)
-    assert task is not None
-    log.info(f"Checking task state for '{task_id}', expected: {expected_state}, actual: {task['state']}")
-    return expected_state == task["state"]
 
 
 def _submit_job_and_get_tasks(extra_args=[]):
