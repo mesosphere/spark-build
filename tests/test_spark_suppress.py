@@ -28,7 +28,7 @@ def teardown_module(module):
 def test_offers_suppressed():
     driver_task_id = _launch_test_task("MockTaskRunner")
     shakedown.wait_for_task_completion(driver_task_id, timeout_sec=utils.JOB_WAIT_TIMEOUT_SECONDS)
-    _check_logged_offers(driver_task_id, 1)
+    _check_logged_offers(driver_task_id, 0)
 
 
 @pytest.mark.sanity
