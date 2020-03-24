@@ -1,4 +1,4 @@
-lazy val SparkVersion = sys.env.getOrElse("SPARK_VERSION", "2.4.3")
+lazy val SparkVersion = sys.env.getOrElse("SPARK_VERSION", "2.4.5")
 
 lazy val root = (project in file("."))
   .settings(

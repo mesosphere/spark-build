@@ -4,7 +4,7 @@
     "version": "{{package-version}}",
     "scm": "https://github.com/mesosphere/spark-build.git",
     "maintainer": "support@mesosphere.io",
-    "website": "https://docs.mesosphere.com/services/spark/2.9.0-2.4.3/",
+    "website": "https://docs.mesosphere.com/services/spark/2.10.0-2.4.5/",
     "description": "The Apache Spark History Server allows you to view the state of running and completed Spark jobs. Documentation: https://docs.mesosphere.com/services/spark/2.9.0-2.4.3/",
     "upgradesFrom": [],
     "downgradesTo": [],
