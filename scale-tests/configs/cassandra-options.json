@@ -1,7 +1,7 @@
 {
     "service": {
         "virtual_network_enabled": true,
-        "virtual_network_name": "dcos"
+        "virtual_network_name": "calico"
     },
     "nodes": {
         "count": 5
