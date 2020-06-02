@@ -49,6 +49,17 @@
                        "type": "application/x-secret+string"
                     }
                 },
+                "constraints": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": [{
+                            "type": "string"
+                        }]
+                    },
+                    "description": "Placement constraint for the Spark Dispatcher",
+                    "default": []
+                },
                 "user": {
                     "description": "Executors will run as this user.",
                     "type": "string",
