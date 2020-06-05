@@ -79,3 +79,4 @@ terraform.clean:
 	rm -f $(TERRAFORM_PLAN_FILE)
 	rm -rf $(TERRAFORM_DIR)/.terraform $(TERRAFORM_DIR)/*.tfstate* $(ROOT_DIR)/terraform.* $(TERRAFORM_DIR)/*.tfvars
 	rm -f $(TERRAFORM_DIR)/.terraform*
+

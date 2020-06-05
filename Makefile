@@ -223,21 +223,21 @@ configure-endpoints:
 	$(eval PUBLIC_AGENT_ELB := $(if $(PUBLIC_AGENT_ELB),$(PUBLIC_AGENT_ELB),$(shell cat terraform.cluster.public.elb)))
 
 test: aws.credentials ssh.keys test-jars stub-universe configure-endpoints
-	STUB_UNIVERSE_URL="$(shell cat stub-universe)" \
-    CLUSTER_URL=$(CLUSTER_URL) \
-    DCOS_LOGIN_USERNAME=$(CLUSTER_USER) \
-    DCOS_LOGIN_PASSWORD=$(CLUSTER_PASSWORD) \
-    PYTEST_ARGS="$(PYTEST_ARGS)" \
-    S3_BUCKET=$(S3_BUCKET) \
-    TEST_SH_S3_PREFIX=$(S3_PREFIX) \
-    TEST_SH_AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
-    TEST_SH_AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
-    TEST_SH_DOCKER_DIST_IMAGE=`cat docker-dist` \
-    TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${TEST_JAR_PATH}` \
-    TEST_SH_DISABLE_DIAG=true \
-    	$(ROOT_DIR)/test.sh \
-    		-p $(SSH_PRIVATE_KEY_FILE) -l $(DCOS_SSH_USERNAME) \
-    		-a $(AWS_SHARED_CREDENTIALS_FILE) --aws-profile $(AWS_PROFILE)
+	STUB_UNIVERSE_URL="$(shell cat stub-universe | tail -1)" \
+	CLUSTER_URL=$(CLUSTER_URL) \
+	DCOS_LOGIN_USERNAME=$(CLUSTER_USER) \
+	DCOS_LOGIN_PASSWORD=$(CLUSTER_PASSWORD) \
+	PYTEST_ARGS="$(PYTEST_ARGS)" \
+	S3_BUCKET=$(S3_BUCKET) \
+	TEST_SH_S3_PREFIX=$(S3_PREFIX) \
+	TEST_SH_AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
+	TEST_SH_AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+	TEST_SH_DOCKER_DIST_IMAGE=`cat docker-dist` \
+	TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${TEST_JAR_PATH}` \
+	TEST_SH_DISABLE_DIAG=true \
+		$(ROOT_DIR)/test.sh \
+			-p $(SSH_PRIVATE_KEY_FILE) -l $(DCOS_SSH_USERNAME) \
+			-a $(AWS_SHARED_CREDENTIALS_FILE) --aws-profile $(AWS_PROFILE) $(TEST_SH_ARGS)
 
 clean: clean-dist clean-stub terraform.clean
 	rm -f $(TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(SSH_PUBLIC_KEY_FILE) $(SSH_PRIVATE_KEY_FILE) checksums
@@ -245,3 +245,4 @@ clean: clean-dist clean-stub terraform.clean
 	rm -f $(STATSD_DIR)/dependency-reduced-pom.xml
 
 .PHONY: clean clean-dist clean-stub stub-universe spark-dist-download spark-dist-build docker-login docker-build docker-dist test cluster-create cluster-destroy
+
