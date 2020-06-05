@@ -35,6 +35,7 @@ RUN apt-get update \
        git \
        openjdk-8-jdk \
        groff \
+       openssh-server \
        python3 \
        python3-pip \
        python3-setuptools \

@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-west-2"
+  region = "${var.aws_zone}"
 }
 
 resource "random_id" "cluster_name" {
@@ -18,19 +18,13 @@ locals {
     "${data.http.whatismyip.body}/32",
     "${compact(split(",", var.extra_admin_ips))}"
   ]
-
-  us_west_2_availability_zones = [
-    "us-west-2a",
-    "us-west-2b",
-    "us-west-2c",
-  ]
 }
 
 module "dcos" {
   source                         = "dcos-terraform/dcos/aws"
   version                        = "~> 0.2.0"
   cluster_name                   = "${local.cluster_name}"
-  availability_zones             = ["${local.us_west_2_availability_zones}"]
+  availability_zones             = []
   dcos_superuser_username        = "${var.dcos_superuser_username}"
   dcos_superuser_password_hash   = "${var.dcos_superuser_password_hash}"
   ssh_public_key_file            = "${var.ssh_public_key_file}"

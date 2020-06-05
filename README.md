@@ -41,7 +41,7 @@ arbitrary spark source directory. Additionally, `HADOOP_VERSION` may be
 provided as an override as only the default in the manifest is built.
 
 ```bash
-make prod-dist
+make spark-dist-build
 ```
 This will build Spark from source located in `./spark/` and put the result in `./build/dist/`.
 This is useful when you are testing a custom build of Spark.
@@ -52,7 +52,7 @@ The above distribution needs to be bundled into a Docker image and paired with
 a CLI in order to complete the package.
 
 ```bash
-make stub-universe-url
+make stub-universe
 ```
 This will build and upload a "stub" universe (i.e. singleton repo) containing a Spark package.
 
@@ -60,7 +60,7 @@ This will build and upload a "stub" universe (i.e. singleton repo) containing a 
 In case a custom Spark distribution needs to be tested on DC/OS and Spark sources are located
 in a different directory [publish_local_spark.sh](publish_local_spark.sh) helper script can be used.
 The script conditionally builds Spark distribution (either if it is not built yet or if a flag specified) and
-runs Makefile's `stub-universe-url` target.
+runs Makefile's `stub-universe` target.
 
 Example output:
 ```bash

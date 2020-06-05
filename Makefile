@@ -6,6 +6,8 @@ ROOT_DIR := $(CURDIR)
 BUILD_DIR := $(ROOT_DIR)/build
 DIST_DIR := $(BUILD_DIR)/dist
 STATSD_DIR := $(ROOT_DIR)/spark-statsd-reporter
+S3_BUCKET ?= infinity-artifacts
+S3_PREFIX ?= autodelete7d/spark/test-`date +%Y%m%d-%H%M%S`-`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
 # Docker configuration
@@ -107,29 +109,31 @@ $(DIST_DIR):
 	fi
 
 docker-dist: $(DIST_DIR) statsd-reporter
-	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
-	if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
-		echo "Using spark: $${SPARK_BUILDS}"
-	else
-		echo "Should have a single Spark package in $(DIST_DIR), found: $${SPARK_BUILDS}"
-		echo "Delete the ones you don't want?"
-		exit 1
+	if [ ! -f docker-dist ]; then
+		SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
+		if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
+			echo "Using spark: $${SPARK_BUILDS}"
+		else
+			echo "Should have a single Spark package in $(DIST_DIR), found: $${SPARK_BUILDS}"
+			echo "Delete the ones you don't want?"
+			exit 1
+		fi
+		tar xvf $${SPARK_BUILDS} -C $(DIST_DIR)
+
+		rm -rf $(BUILD_DIR)/docker
+		mkdir -p $(BUILD_DIR)/docker/dist
+		cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
+		cp -r conf/* $(BUILD_DIR)/docker/dist/conf
+		cp -r docker/* $(BUILD_DIR)/docker
+		cp `cat statsd-reporter` $(BUILD_DIR)/docker
+
+		pushd $(BUILD_DIR)/docker
+		docker build -t $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME) .
+		popd
+
+		docker push $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)
+		echo "$(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)" > $@
 	fi
-	tar xvf $${SPARK_BUILDS} -C $(DIST_DIR)
-
-	rm -rf $(BUILD_DIR)/docker
-	mkdir -p $(BUILD_DIR)/docker/dist
-	cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
-	cp -r conf/* $(BUILD_DIR)/docker/dist/conf
-	cp -r docker/* $(BUILD_DIR)/docker
-	cp `cat statsd-reporter` $(BUILD_DIR)/docker
-
-	pushd $(BUILD_DIR)/docker
-	docker build -t $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME) .
-	popd
-
-	docker push $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)
-	echo "$(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)" > $@
 
 clean-dist:
 	rm -f $(ROOT_DIR)/docker-dist
@@ -139,7 +143,7 @@ stub-universe: docker-dist
 	if [ -n "$(STUB_UNIVERSE_URL)" ]; then
 		echo "Using provided stub universe(s): $(STUB_UNIVERSE_URL)"
 		echo "$(STUB_UNIVERSE_URL)" > $@
-	else
+	elif [ ! -f stub-universe ]; then
 		TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
 		TEMPLATE_HTTPS_PROTOCOL='https://' \
 			$(ROOT_DIR)/tools/build_package.sh spark-history $(ROOT_DIR)/history aws 2>&1 | tee build.stub.out
@@ -215,31 +219,29 @@ cluster-create: ssh.keys aws.credentials terraform.cluster.create terraform.clus
 cluster-destroy: aws.credentials terraform.cluster.destroy
 
 configure-endpoints:
-	$(eval CLUSTER_URL := $(if $(CLUSTER_URL),$(CLUSTER_URL),$(shell cat terraform.cluster.url)))
+	$(eval CLUSTER_URL := $(if $(CLUSTER_URL),$(CLUSTER_URL),https://$(shell cat terraform.cluster.url)/))
 	$(eval PUBLIC_AGENT_ELB := $(if $(PUBLIC_AGENT_ELB),$(PUBLIC_AGENT_ELB),$(shell cat terraform.cluster.public.elb)))
 
-test: aws.credentials ssh.keys docker-build test-jars stub-universe configure-endpoints
-	docker run -i --rm \
-		--net=host \
-		-v $(ROOT_DIR):/spark -w /spark/tests \
-		-v $(AWS_SHARED_CREDENTIALS_FILE):/root/.aws/credentials \
-		-v $(SSH_PUBLIC_KEY_FILE):/root/.ssh/id_rsa.pub \
-		-v $(SSH_PRIVATE_KEY_FILE):/root/.ssh/id_rsa \
-		-e AWS_PROFILE=$(AWS_PROFILE) \
-		-e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
-		-e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
-		-e CLUSTER_URL=$(CLUSTER_URL) \
-		-e PUBLIC_AGENT_ELB=$(PUBLIC_AGENT_ELB) \
-		-e STUB_UNIVERSE_URL="$(shell cat stub-universe)" \
-		-e DCOS_SSH_USERNAME=$(DCOS_SSH_USERNAME) \
-		$(shell cat docker-build) \
-		/bin/bash -c \
-		"eval \$$(ssh-agent -s) && ssh-add /root/.ssh/id_rsa \
-	&& dcos cluster setup --no-check --username=$(CLUSTER_USER) --password=$(CLUSTER_PASSWORD) $(CLUSTER_URL) \
-	&& python3 -m pytest -s --ignore soak/ $(PYTEST_ARGS)"
+test: aws.credentials ssh.keys test-jars stub-universe configure-endpoints
+	STUB_UNIVERSE_URL="$(shell cat stub-universe)" \
+    CLUSTER_URL=$(CLUSTER_URL) \
+    DCOS_LOGIN_USERNAME=$(CLUSTER_USER) \
+    DCOS_LOGIN_PASSWORD=$(CLUSTER_PASSWORD) \
+    PYTEST_ARGS="$(PYTEST_ARGS)" \
+    S3_BUCKET=$(S3_BUCKET) \
+    TEST_SH_S3_PREFIX=$(S3_PREFIX) \
+    TEST_SH_AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
+    TEST_SH_AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+    TEST_SH_DOCKER_DIST_IMAGE=`cat docker-dist` \
+    TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${TEST_JAR_PATH}` \
+    TEST_SH_DISABLE_DIAG=true \
+    	$(ROOT_DIR)/test.sh \
+    		-p $(SSH_PRIVATE_KEY_FILE) -l $(DCOS_SSH_USERNAME) \
+    		-a $(AWS_SHARED_CREDENTIALS_FILE) --aws-profile $(AWS_PROFILE)
 
 clean: clean-dist clean-stub terraform.clean
 	rm -f $(TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(SSH_PUBLIC_KEY_FILE) $(SSH_PRIVATE_KEY_FILE) checksums
 	rm -f docker-build statsd-reporter ssh.keys aws.credentials $(AWS_SHARED_CREDENTIALS_FILE)* test-jar-checksum
+	rm -f $(STATSD_DIR)/dependency-reduced-pom.xml
 
 .PHONY: clean clean-dist clean-stub stub-universe spark-dist-download spark-dist-build docker-login docker-build docker-dist test cluster-create cluster-destroy

@@ -10,9 +10,11 @@ SSH_PRIVATE_KEY_FILE ?= $(TERRAFORM_DIR)/id_key
 SSH_PUBLIC_KEY_FILE ?= $(SSH_PRIVATE_KEY_FILE).pub
 
 CLUSTER_OWNER ?= $(USER)
-CLUSTER_EXPIRATION ?= 3h
+CLUSTER_EXPIRATION ?= 6h
 CLUSTER_PASSWORD_HASH ?= $(docker run -rm -i bernadinm/sha512 $(CLUSTER_PASSWORD) | tail -1)
 CLUSTER_ADMIN_IPS ?= 0.0.0.0/0
+
+AWS_REGION ?= us-east-1
 
 terraform.docker:
 	if [[ -z "$(shell docker images -q $(TERRAFORM_DOCKER_IMAGE_NAME))" ]]; then
@@ -24,6 +26,7 @@ terraform.dcos.vars:
 	rm -f $(TERRAFORM_TF_VARS_FILE)
 	echo "cluster_owner=\"$(CLUSTER_OWNER)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "cluster_expiration=\"$(CLUSTER_EXPIRATION)\"" >> $(TERRAFORM_TF_VARS_FILE)
+	echo "aws_region=\"$(AWS_REGION)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "dcos_superuser_username=\"$(CLUSTER_USER)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "dcos_superuser_password_hash=\"$(CLUSTER_PASSWORD_HASH)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "extra_admin_ips=\"$(CLUSTER_ADMIN_IPS)\"" >> $(TERRAFORM_TF_VARS_FILE)

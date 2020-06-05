@@ -8,6 +8,11 @@ variable "dcos_variant" {
   default = "ee"
 }
 
+variable "aws_zone" {
+  type    = "string"
+  default = "us-east-1"
+}
+
 variable "dcos_license_key_file" {
   type    = "string"
   default = "./license.txt"
