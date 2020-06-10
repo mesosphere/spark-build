@@ -223,7 +223,7 @@ configure-endpoints:
 	$(eval PUBLIC_AGENT_ELB := $(if $(PUBLIC_AGENT_ELB),$(PUBLIC_AGENT_ELB),$(shell cat terraform.cluster.public.elb)))
 
 test: aws.credentials ssh.keys test-jars stub-universe configure-endpoints
-	STUB_UNIVERSE_URL="$(shell cat stub-universe | tail -1)" \
+	STUB_UNIVERSE_URL="$(shell awk '{print $1}' < stub-universe | paste -s -d, -)" \
 	CLUSTER_URL=$(CLUSTER_URL) \
 	DCOS_LOGIN_USERNAME=$(CLUSTER_USER) \
 	DCOS_LOGIN_PASSWORD=$(CLUSTER_PASSWORD) \
