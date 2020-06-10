@@ -11,3 +11,4 @@ else
 fi
 
 exec terraform "$@"
+

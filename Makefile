@@ -15,7 +15,7 @@ DOCKER_USERNAME ?=
 DOCKER_PASSWORD ?=
 DOCKER_DIR := $(ROOT_DIR)/docker
 DOCKER_REPO_NAME ?= mesosphere
-DOCKER_BUILDER_IMAGE_NAME ?= spark-docker-builder
+DOCKER_BUILDER_IMAGE_NAME ?= spark-build
 DOCKER_BUILDER_IMAGE_TAG ?= $(shell cat Dockerfile | sha1sum  | cut -d' ' -f1)
 DOCKER_BUILDER_IMAGE_FULL_NAME ?= $(DOCKER_REPO_NAME)/$(DOCKER_BUILDER_IMAGE_NAME):$(DOCKER_BUILDER_IMAGE_TAG)
 DOCKER_SPARK_DIST_IMAGE_NAME ?= spark-dev
@@ -245,4 +245,3 @@ clean: clean-dist clean-stub terraform.clean
 	rm -f $(STATSD_DIR)/dependency-reduced-pom.xml
 
 .PHONY: clean clean-dist clean-stub stub-universe spark-dist-download spark-dist-build docker-login docker-build docker-dist test cluster-create cluster-destroy
-

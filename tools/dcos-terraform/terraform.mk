@@ -14,6 +14,9 @@ CLUSTER_EXPIRATION ?= 6h
 CLUSTER_PASSWORD_HASH ?= $(docker run -rm -i bernadinm/sha512 $(CLUSTER_PASSWORD) | tail -1)
 CLUSTER_ADMIN_IPS ?= 0.0.0.0/0
 
+NUM_PRIVATE_AGENTS ?= 7
+NUM_PUBLIC_AGENTS ?= 1
+
 AWS_REGION ?= us-east-1
 
 terraform.docker:
@@ -30,6 +33,8 @@ terraform.dcos.vars:
 	echo "dcos_superuser_username=\"$(CLUSTER_USER)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "dcos_superuser_password_hash=\"$(CLUSTER_PASSWORD_HASH)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	echo "extra_admin_ips=\"$(CLUSTER_ADMIN_IPS)\"" >> $(TERRAFORM_TF_VARS_FILE)
+	echo "num_private_agents=\"$(NUM_PRIVATE_AGENTS)\"" >> $(TERRAFORM_TF_VARS_FILE)
+	echo "num_public_agents=\"$(NUM_PUBLIC_AGENTS)\"" >> $(TERRAFORM_TF_VARS_FILE)
 	env | grep TF_VAR_ | cut -d '_' -f3- | awk -F"=" '{print $$1 "=\"" $$2 "\""}' >> $(TERRAFORM_TF_VARS_FILE)
 
 terraform.init: terraform.docker
