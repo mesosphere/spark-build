@@ -179,6 +179,9 @@ def submit_job(
             '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)
         ]
 
+    if not list(filter(lambda x: x.startswith("spark.mesos.containerizer="), conf_args)):
+        conf_args += ['--conf spark.mesos.containerizer=mesos']
+
     submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
     verbose_flag = "--verbose" if verbose else ""
     result = None
