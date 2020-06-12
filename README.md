@@ -52,7 +52,7 @@ The above distribution needs to be bundled into a Docker image and paired with
 a CLI in order to complete the package.
 
 ```bash
-make stub-universe
+make stub-universe-url
 ```
 This will build and upload a "stub" universe (i.e. singleton repo) containing a Spark package.
 
@@ -60,7 +60,7 @@ This will build and upload a "stub" universe (i.e. singleton repo) containing a 
 In case a custom Spark distribution needs to be tested on DC/OS and Spark sources are located
 in a different directory [publish_local_spark.sh](publish_local_spark.sh) helper script can be used.
 The script conditionally builds Spark distribution (either if it is not built yet or if a flag specified) and
-runs Makefile's `stub-universe` target.
+runs Makefile's `stub-universe-url` target.
 
 Example output:
 ```bash

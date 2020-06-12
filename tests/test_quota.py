@@ -140,7 +140,7 @@ def _submit_job_and_verify_role(service_name, expected_role, driver_role=None):
         assert expected_role == driver_framework["role"], \
             "Expected role '{}' but got '{}'".format(expected_role, driver_framework["role"])
 
-    finally:
+    except Exception:
         log.info(f"Cleaning up. Attempting to kill driver: {submission_id}")
         utils.kill_driver(submission_id, service_name=service_name)
 

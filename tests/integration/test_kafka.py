@@ -93,6 +93,6 @@ def test_pipeline(kerberos_flag, stop_count, jar_uri, keytab_secret, spark_servi
                     expected_output="Read {} words".format(stop_count),
                     service_name=spark_service_name,
                     args=consumer_config)
-    finally:
+    except Exception:
         utils.kill_driver(producer_id, spark_service_name)
 

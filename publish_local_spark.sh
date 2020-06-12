@@ -119,4 +119,4 @@ if [ -n "${DOCKER_DIST_IMAGE}" ]; then
     export DOCKER_DIST_IMAGE=${DOCKER_DIST_IMAGE}
 fi
 
-make stub-universe
+make stub-universe-url

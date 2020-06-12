@@ -52,7 +52,7 @@ def setup_spark(configure_security_spark, configure_universe):
 
 @pytest.mark.sanity
 def test_agent_restart_with_checkpointing_disabled():
-    (driver_task, executor_task) = next(_submit_job_and_get_tasks())
+    (driver_task_id, driver_task, executor_task) = _submit_job_and_get_tasks()
 
     driver_ip = sdk_networks.get_task_host(driver_task)
     executor_ip = sdk_networks.get_task_host(executor_task)
@@ -61,16 +61,22 @@ def test_agent_restart_with_checkpointing_disabled():
     _restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
     _restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_LOST")
 
+    log.info(f"Cleaning up. Attempting to kill driver: {driver_task_id}")
+    utils.kill_driver(driver_task_id)
+
 
 @pytest.mark.sanity
 def test_agent_restart_with_checkpointing_enabled():
-    (driver_task, executor_task) = next(_submit_job_and_get_tasks(extra_args=["--conf spark.mesos.checkpoint=true"]))
+    (driver_task_id, driver_task, executor_task) = _submit_job_and_get_tasks(extra_args=["--conf spark.mesos.checkpoint=true"])
 
     driver_ip = sdk_networks.get_task_host(driver_task)
     executor_ip = sdk_networks.get_task_host(executor_task)
 
     _restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_RUNNING")
     _restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
+
+    log.info(f"Cleaning up. Attempting to kill driver: {driver_task_id}")
+    utils.kill_driver(driver_task_id)
 
 
 def _restart_task_agent_and_verify_state(host_ip, task, expected_state):
@@ -118,8 +124,8 @@ def _submit_job_and_get_tasks(extra_args=[]):
         driver_task = shakedown.get_task(driver_task_id, completed=False)
         executor_task = shakedown.get_service_tasks(app_name)[0]
 
-        yield (driver_task, executor_task)
+        return (driver_task_id, driver_task, executor_task)
 
-    finally:
+    except Exception:
         log.info(f"Cleaning up. Attempting to kill driver: {driver_task_id}")
         utils.kill_driver(driver_task_id)

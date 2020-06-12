@@ -26,7 +26,7 @@ dcos-spark-scala-tests-assembly-*.jar
 checksums
 test-jar-checksum
 aws.*
-stub-universe
+stub-universe-url
 terraform.*
 
 id_key*

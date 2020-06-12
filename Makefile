@@ -43,9 +43,6 @@ FORCE_ARTIFACT_UPLOAD ?= "false"
 CLUSTER_URL ?=
 PUBLIC_AGENT_ELB ?=
 
-CLUSTER_USER ?= bootstrapuser
-CLUSTER_PASSWORD ?= deleteme
-
 # SSH settings
 SSH_PRIVATE_KEY_FILE ?= $(ROOT_DIR)/id_key
 SSH_PUBLIC_KEY_FILE ?= $(SSH_PRIVATE_KEY_FILE).pub
@@ -109,41 +106,39 @@ $(DIST_DIR):
 	fi
 
 docker-dist: $(DIST_DIR) statsd-reporter
-	if [ ! -f docker-dist ]; then
-		SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
-		if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
-			echo "Using spark: $${SPARK_BUILDS}"
-		else
-			echo "Should have a single Spark package in $(DIST_DIR), found: $${SPARK_BUILDS}"
-			echo "Delete the ones you don't want?"
-			exit 1
-		fi
-		tar xvf $${SPARK_BUILDS} -C $(DIST_DIR)
-
-		rm -rf $(BUILD_DIR)/docker
-		mkdir -p $(BUILD_DIR)/docker/dist
-		cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
-		cp -r conf/* $(BUILD_DIR)/docker/dist/conf
-		cp -r docker/* $(BUILD_DIR)/docker
-		cp `cat statsd-reporter` $(BUILD_DIR)/docker
-
-		pushd $(BUILD_DIR)/docker
-		docker build -t $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME) .
-		popd
-
-		docker push $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)
-		echo "$(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)" > $@
+	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
+	if [ `echo "$${SPARK_BUILDS}" | wc -w` == 1 ]; then
+		echo "Using spark: $${SPARK_BUILDS}"
+	else
+		echo "Should have a single Spark package in $(DIST_DIR), found: $${SPARK_BUILDS}"
+		echo "Delete the ones you don't want?"
+		exit 1
 	fi
+	tar xvf $${SPARK_BUILDS} -C $(DIST_DIR)
+
+	rm -rf $(BUILD_DIR)/docker
+	mkdir -p $(BUILD_DIR)/docker/dist
+	cp -r $(DIST_DIR)/spark-*/. $(BUILD_DIR)/docker/dist
+	cp -r conf/* $(BUILD_DIR)/docker/dist/conf
+	cp -r docker/* $(BUILD_DIR)/docker
+	cp `cat statsd-reporter` $(BUILD_DIR)/docker
+
+	pushd $(BUILD_DIR)/docker
+	docker build -t $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME) .
+	popd
+
+	docker push $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)
+	echo "$(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)" > $@
 
 clean-dist:
 	rm -f $(ROOT_DIR)/docker-dist
 	rm -rf $(DIST_DIR)
 
-stub-universe: docker-dist
+stub-universe-url: docker-dist
 	if [ -n "$(STUB_UNIVERSE_URL)" ]; then
 		echo "Using provided stub universe(s): $(STUB_UNIVERSE_URL)"
 		echo "$(STUB_UNIVERSE_URL)" > $@
-	elif [ ! -f stub-universe ]; then
+	elif [ ! -f stub-universe-url ]; then
 		TEMPLATE_DEFAULT_DOCKER_IMAGE=`cat docker-dist` \
 		TEMPLATE_HTTPS_PROTOCOL='https://' \
 			$(ROOT_DIR)/tools/build_package.sh spark-history $(ROOT_DIR)/history aws 2>&1 | tee build.stub.out
@@ -166,7 +161,7 @@ stub-universe: docker-dist
 	fi
 
 clean-stub:
-	rm -f $(ROOT_DIR)/build.stub.out $(ROOT_DIR)/stub-universe
+	rm -f $(ROOT_DIR)/build.stub.out $(ROOT_DIR)/stub-universe-url
 
 # Special directive to assist in speeding up CI builds
 # Generates a master checksum against the source files in tests/jobs/scala
@@ -176,22 +171,23 @@ test-jar-checksum:
 	md5sum checksums | cut -d ' ' -f1 > test-jar-checksum
 
 MD5SUM ?= $(shell cat test-jar-checksum)
-TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/autodelete7d/spark/jars/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
-TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
-$(TEST_JAR_PATH): test-jar-checksum
-	if wget --spider $(TEST_JAR_URL) 2>/dev/null; then
-		wget $(TEST_JAR_URL)
+DCOS_SPARK_TEST_JAR_FILE ?= dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
+DCOS_SPARK_TEST_JAR_URL ?= https://infinity-artifacts.s3.amazonaws.com/autodelete7d/spark/jars/$(DCOS_SPARK_TEST_JAR_FILE)
+DCOS_SPARK_TEST_JAR_PATH ?= $(ROOT_DIR)/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar
+$(DCOS_SPARK_TEST_JAR_PATH): test-jar-checksum
+	if wget --spider $(DCOS_SPARK_TEST_JAR_URL) 2>/dev/null; then
+		wget $(DCOS_SPARK_TEST_JAR_URL)
 	else
 		cd tests/jobs/scala
 		sbt assembly
-		cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
-		aws s3 cp --acl public-read dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar \
-			s3://infinity-artifacts/autodelete7d/spark/jars/dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar
+		cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_FILE)
+		aws s3 cp --acl public-read $(DCOS_SPARK_TEST_JAR_FILE) \
+			s3://infinity-artifacts/autodelete7d/spark/jars/$(DCOS_SPARK_TEST_JAR_FILE)
 	fi
-	cp -v dcos-spark-scala-tests-assembly-0.2-$(MD5SUM).jar $@
+	cp -v $(DCOS_SPARK_TEST_JAR_FILE) $@
 
 # Special directive to allow building the test jars separately from running the tests.
-test-jars: $(TEST_JAR_PATH)
+test-jars: $(DCOS_SPARK_TEST_JAR_PATH)
 
 mesos-spark-integration-tests:
 	git clone https://github.com/typesafehub/mesos-spark-integration-tests $(ROOT_DIR)/mesos-spark-integration-tests
@@ -222,26 +218,23 @@ configure-endpoints:
 	$(eval CLUSTER_URL := $(if $(CLUSTER_URL),$(CLUSTER_URL),https://$(shell cat terraform.cluster.url)/))
 	$(eval PUBLIC_AGENT_ELB := $(if $(PUBLIC_AGENT_ELB),$(PUBLIC_AGENT_ELB),$(shell cat terraform.cluster.public.elb)))
 
-test: aws.credentials ssh.keys test-jars stub-universe configure-endpoints
-	STUB_UNIVERSE_URL="$(shell awk '{print $1}' < stub-universe | paste -s -d, -)" \
+test: aws.credentials ssh.keys test-jars stub-universe-url configure-endpoints
+	STUB_UNIVERSE_URL="$(shell awk '{print $1}' < stub-universe-url | paste -s -d, -)" \
 	CLUSTER_URL=$(CLUSTER_URL) \
-	DCOS_LOGIN_USERNAME=$(CLUSTER_USER) \
-	DCOS_LOGIN_PASSWORD=$(CLUSTER_PASSWORD) \
 	PYTEST_ARGS="$(PYTEST_ARGS)" \
 	S3_BUCKET=$(S3_BUCKET) \
 	TEST_SH_S3_PREFIX=$(S3_PREFIX) \
+	TEST_SH_AWS_REGION=$(AWS_REGION) \
 	TEST_SH_AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
 	TEST_SH_AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
 	TEST_SH_DOCKER_DIST_IMAGE=`cat docker-dist` \
-	TEST_SH_DCOS_SPARK_TEST_JAR_PATH=/build/`basename ${TEST_JAR_PATH}` \
+	TEST_SH_DCOS_SPARK_TEST_JAR_URL=$(DCOS_SPARK_TEST_JAR_URL) \
 	TEST_SH_DISABLE_DIAG=true \
-		$(ROOT_DIR)/test.sh \
-			-p $(SSH_PRIVATE_KEY_FILE) -l $(DCOS_SSH_USERNAME) \
-			-a $(AWS_SHARED_CREDENTIALS_FILE) --aws-profile $(AWS_PROFILE) $(TEST_SH_ARGS)
+		$(ROOT_DIR)/test.sh $(TEST_SH_ARGS)
 
 clean: clean-dist clean-stub terraform.clean
-	rm -f $(TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(SSH_PUBLIC_KEY_FILE) $(SSH_PRIVATE_KEY_FILE) checksums
+	rm -f $(DCOS_SPARK_TEST_JAR_PATH) $(MESOS_SPARK_TEST_JAR_PATH) $(SSH_PUBLIC_KEY_FILE) $(SSH_PRIVATE_KEY_FILE) checksums
 	rm -f docker-build statsd-reporter ssh.keys aws.credentials $(AWS_SHARED_CREDENTIALS_FILE)* test-jar-checksum
 	rm -f $(STATSD_DIR)/dependency-reduced-pom.xml
 
-.PHONY: clean clean-dist clean-stub stub-universe spark-dist-download spark-dist-build docker-login docker-build docker-dist test cluster-create cluster-destroy
+.PHONY: clean clean-dist clean-stub stub-universe-url spark-dist-build docker-login test aws.credentials configure-endpoints

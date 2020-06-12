@@ -69,8 +69,8 @@ def test_user_propagation(setup_spark, user, use_ucr_containerizer, use_ucr_for_
     _check_task_user(dispatcher_task, user, use_ucr_containerizer)
 
     extra_args = []
-    if use_ucr_for_spark_submit:
-        extra_args = ["--conf spark.mesos.containerizer=mesos"]
+    if not use_ucr_for_spark_submit:
+        extra_args = ["--conf spark.mesos.containerizer=docker"]
 
     _submit_job_and_verify_users(user, use_ucr_for_spark_submit, extra_args=extra_args)
 
@@ -92,9 +92,8 @@ def test_user_overrides(setup_spark,  user, user_override, use_ucr_containerizer
     _check_task_user(dispatcher_task, user, use_ucr_containerizer)
 
     extra_args = [f"--conf spark.mesos.driverEnv.SPARK_USER={user_override}"]
-    if use_ucr_for_spark_submit:
-        extra_args = extra_args + ["--conf spark.mesos.containerizer=mesos"]
-    else:
+    if not use_ucr_for_spark_submit:
+        extra_args = extra_args + ["--conf spark.mesos.containerizer=docker"]
         extra_args = extra_args + [f"--conf spark.mesos.executor.docker.parameters=user={user_override}"]
 
     _submit_job_and_verify_users(user_override, use_ucr_for_spark_submit, extra_args=extra_args)
@@ -119,7 +118,7 @@ def _submit_job_and_verify_users(user, use_ucr_for_spark_submit, extra_args=[]):
             log.info(f"Checking task '{task['id']}'")
             _check_task_user(task, user, use_ucr_for_spark_submit)
 
-    finally:
+    except Exception:
         log.info(f"Cleaning up. Attempting to kill driver: {driver_task_id}")
         utils.kill_driver(driver_task_id, service_name=SERVICE_NAME)
 
