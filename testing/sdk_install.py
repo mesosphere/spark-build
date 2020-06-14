@@ -146,12 +146,14 @@ def run_janitor(service_name, role, service_account, znode):
         znode = sdk_utils.get_zk_path(service_name)
 
     auth_token = sdk_cmd.run_cli('config show core.dcos_acs_token', print_output=False).strip()
+    exhibitor_url = sdk_cmd.run_cli('config show core.dcos_url', print_output=False).strip() + '/exhibitor/'
 
     cmd_list = ["sudo", "docker", "run", "mesosphere/janitor", "/janitor.py",
                 "-r", role,
                 "-p", service_account,
                 "-z", znode,
-                "--auth_token={}".format(auth_token)]
+                "--auth_token={}".format(auth_token),
+                "-e", exhibitor_url]
     cmd = " ".join(cmd_list)
 
     sdk_cmd.master_ssh(cmd)

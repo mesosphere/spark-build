@@ -166,7 +166,7 @@ def submit_job(
     if SPARK_DOCKER_USER is not None:
         conf_args += ['--conf', 'spark.mesos.executor.docker.parameters=user={}'.format(SPARK_DOCKER_USER)]
 
-    if not list(filter(lambda x: x.startswith("spark.driver.memory="), conf_args)):
+    if not list(filter(lambda x: "spark.driver.memory=" in x, conf_args)):
         conf_args += ['--conf', 'spark.driver.memory=2g']
 
     if sdk_utils.is_strict_mode():
@@ -178,6 +178,9 @@ def submit_job(
         conf_args += [
             '--conf spark.mesos.driverEnv.SPARK_USER={}'.format(spark_user)
         ]
+
+    if not list(filter(lambda x: "spark.mesos.containerizer=" in x, conf_args)):
+        conf_args += ['--conf', 'spark.mesos.containerizer=mesos']
 
     submit_args = ' '.join([' '.join(conf_args), app_url, app_args])
     verbose_flag = "--verbose" if verbose else ""

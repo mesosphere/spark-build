@@ -98,7 +98,7 @@ def test_structured_streaming_recovery(kerberized_spark, kerberized_kafka):
     # killing the driver
     service_info = shakedown.get_service(SPARK_APPLICATION_NAME).dict()
     driver_regex = "spark.mesos.driver.frameworkId={}".format(service_info['id'])
-    shakedown.kill_process_on_host(hostname=service_info['hostname'], pattern=driver_regex)
+    sdk_cmd.kill_task_with_pattern(agent_host=service_info['hostname'], pattern=driver_regex)
 
     # sending more data to Kafka
     message_set_b = ["def"] * 100
