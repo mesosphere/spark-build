@@ -17,17 +17,21 @@ logs/
 docker-dist
 docker-build
 statsd-reporter
+spark-statsd-reporter/dependency-reduced-pom.xml
 mesos-spark-integration-tests/
 mesos-spark-integration-tests-assembly-*.jar
 dcos-spark-scala-tests-assembly-*.jar
 
-cluster-url*
-stub-universe-url*
-spark-universe-url*
+*.out
+checksums
+test-jar-checksum
+aws.*
+stub-universe-url
+terraform.*
 
-config.yaml
-cluster_info.json
-dcos-launch-*
+id_key*
+ssh.keys
+
 env/
 venv/
 

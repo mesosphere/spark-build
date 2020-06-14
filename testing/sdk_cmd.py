@@ -126,6 +126,41 @@ def svc_cli(package_name, service_name, service_cmd, json=False, print_output=Tr
         return get_json_output(full_cmd, print_output=print_output)
 
 
+def _run_cmd(
+        cmd: str,
+        print_output: bool,
+        check: bool,
+):
+    result = subprocess.run(
+        [cmd],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        check=check,
+    )
+
+    if result.returncode != 0:
+        log.info("Got exit code {} to command: {}".format(result.returncode, cmd))
+
+    if result.stdout:
+        stdout = result.stdout.decode("utf-8").strip()
+    else:
+        stdout = ""
+
+    if result.stderr:
+        stderr = result.stderr.decode("utf-8").strip()
+    else:
+        stderr = ""
+
+    if print_output:
+        if stdout:
+            log.info("STDOUT:\n{}".format(stdout))
+        if stderr:
+            log.info("STDERR:\n{}".format(stderr))
+
+    return result.returncode, stdout, stderr
+
+
 def run_raw_cli(cmd, print_output=True):
     """Runs the command with `dcos` as the prefix to the shell command
     and returns a tuple containing return code, stdout, and stderr.
@@ -135,23 +170,7 @@ def run_raw_cli(cmd, print_output=True):
     """
     dcos_cmd = "dcos {}".format(cmd)
     log.info("(CLI) {}".format(dcos_cmd))
-    result = subprocess.run([dcos_cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = ""
-    stderr = ""
-
-    if result.stdout:
-        stdout = result.stdout.decode('utf-8').strip()
-
-    if result.stderr:
-        stderr = result.stderr.decode('utf-8').strip()
-
-    if print_output:
-        if stdout:
-            log.info("STDOUT:\n{}".format(stdout))
-        if stderr:
-            log.info("STDERR:\n{}".format(stderr))
-
-    return result.returncode, stdout, stderr
+    return _run_cmd(dcos_cmd, print_output, check=False)
 
 
 def run_cli(cmd, print_output=True, return_stderr_in_stdout=False):

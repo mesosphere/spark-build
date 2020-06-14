@@ -1,15 +1,11 @@
-from tests.integration.fixture_hdfs import HDFS_SERVICE_NAME, HDFS_DATA_DIR, HDFS_HISTORY_DIR
-from tests.integration.fixture_hdfs import HISTORY_PACKAGE_NAME
-from tests.integration.fixture_hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS, KEYTAB_SECRET_PATH, GENERIC_HDFS_USER_PRINCIPAL
+from tests.integration.fixture_hdfs import HDFS_DATA_DIR, HDFS_HISTORY_DIR
+from tests.integration.fixture_hdfs import SPARK_SUBMIT_HDFS_KERBEROS_ARGS
 
 import json
 import logging
 import pytest
 import retrying
-import sdk_auth
 import sdk_cmd
-import sdk_install
-import sdk_marathon
 import sdk_tasks
 import sdk_utils
 import shakedown
@@ -125,42 +121,3 @@ def test_history(kerberized_spark, hdfs_with_kerberos, setup_history_server):
                     service_name="spark",
                     args=(job_args + SPARK_SUBMIT_HDFS_KERBEROS_ARGS))
 
-
-@sdk_utils.dcos_ee_only
-@pytest.mark.skipif(not utils.hdfs_enabled(), reason='HDFS_ENABLED is false')
-@pytest.mark.sanity
-def test_history_kdc_config(hdfs_with_kerberos, kerberos_env):
-    history_service_with_kdc_config = "spark-history-with-kdc-config"
-    try:
-        # This deployment will fail if kerberos is not configured properly.
-        sdk_install.uninstall(HISTORY_PACKAGE_NAME, history_service_with_kdc_config)
-        sdk_install.install(
-            HISTORY_PACKAGE_NAME,
-            history_service_with_kdc_config,
-            0,
-            additional_options={
-                "service": {
-                    "name": history_service_with_kdc_config,
-                    "user": utils.SPARK_HISTORY_USER,
-                    "log-dir": "hdfs://hdfs{}".format(HDFS_HISTORY_DIR),
-                    "hdfs-config-url": "http://api.{}.marathon.l4lb.thisdcos.directory/v1/endpoints"
-                        .format(HDFS_SERVICE_NAME)
-                },
-                "security": {
-                    "kerberos": {
-                        "enabled": True,
-                        "kdc": {
-                            "hostname": kerberos_env.get_host(),
-                            "port": int(kerberos_env.get_port())
-                        },
-                        "realm": sdk_auth.REALM,
-                        "principal": GENERIC_HDFS_USER_PRINCIPAL,
-                        "keytab": KEYTAB_SECRET_PATH
-                    }
-                }
-            },
-            wait_for_deployment=False,  # no deploy plan
-            insert_strict_options=False)  # no standard service_account/etc options
-
-    finally:
-        sdk_marathon.destroy_app(history_service_with_kdc_config)

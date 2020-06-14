@@ -69,8 +69,10 @@ def test_user_propagation(setup_spark, user, use_ucr_containerizer, use_ucr_for_
     _check_task_user(dispatcher_task, user, use_ucr_containerizer)
 
     extra_args = []
-    if use_ucr_for_spark_submit:
-        extra_args = ["--conf spark.mesos.containerizer=mesos"]
+    if not use_ucr_for_spark_submit:
+        extra_args = ["--conf spark.mesos.containerizer=docker"]
+        if user == "nobody":
+            extra_args = extra_args + ["--conf spark.mesos.executor.docker.parameters=user=99"]
 
     _submit_job_and_verify_users(user, use_ucr_for_spark_submit, extra_args=extra_args)
 
@@ -92,10 +94,11 @@ def test_user_overrides(setup_spark,  user, user_override, use_ucr_containerizer
     _check_task_user(dispatcher_task, user, use_ucr_containerizer)
 
     extra_args = [f"--conf spark.mesos.driverEnv.SPARK_USER={user_override}"]
-    if use_ucr_for_spark_submit:
-        extra_args = extra_args + ["--conf spark.mesos.containerizer=mesos"]
-    else:
-        extra_args = extra_args + [f"--conf spark.mesos.executor.docker.parameters=user={user_override}"]
+    if not use_ucr_for_spark_submit:
+        extra_args = extra_args + [
+            "--conf spark.mesos.containerizer=docker",
+            "--conf spark.mesos.executor.docker.parameters=user=99"
+        ]
 
     _submit_job_and_verify_users(user_override, use_ucr_for_spark_submit, extra_args=extra_args)
 
@@ -144,9 +147,9 @@ def _check_mesos_task_user(task, user):
 def _check_docker_task_user(task, user):
     container_user = docker_utils.docker_inspect(task, format_options="--format='{{.Config.User}}'")
     log.info(f"Docker container user: {container_user}")
-    assert user == container_user.rstrip(), \
-        f"[Docker] Expected '{user}' in container configuration but found: {container_user.rstrip()}"
+    assert container_user.rstrip() in ["99", user], \
+        f"[Docker] Expected either '99' or '{user}' in container configuration but found: {container_user.rstrip()}"
 
     users = docker_utils.docker_exec(task, LIST_USERS_CMD)
-    log.info(f"Docker process user: {container_user}")
+    log.info(f"Docker process user: {users}")
     assert user == users.rstrip(), f"[Docker] Expected '{user}' but 'ps aux' returned unexpected user(s): {users}"
