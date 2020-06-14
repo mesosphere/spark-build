@@ -1,0 +1,9 @@
+.terraform/
+terraform.tfstate*
+plan.out
+.id_key*
+terraform.tfvars
+license.txt
+*.lock.info
+id_key*
+

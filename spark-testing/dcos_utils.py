@@ -15,8 +15,10 @@ def agent_ssh(host_ip, cmd):
                   f"--option StrictHostKeyChecking=no " \
                   f"--option LogLevel=QUIET"
 
-    return sdk_cmd.run_cli(f"node ssh --master-proxy --private-ip={host_ip} {ssh_options} \"{cmd}\"",
-                           print_output=False)
+    _, stdout, _ = sdk_cmd._run_cmd(
+        f"LC_ALL=en_US.UTF-8 dcos node ssh --master-proxy --private-ip={host_ip} {ssh_options} \"{cmd}\"",
+        print_output=False, check=False)
+    return stdout
 
 
 def delete_secret(secret: str) -> None:

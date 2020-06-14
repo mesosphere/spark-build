@@ -41,7 +41,7 @@ arbitrary spark source directory. Additionally, `HADOOP_VERSION` may be
 provided as an override as only the default in the manifest is built.
 
 ```bash
-make prod-dist
+make spark-dist-build
 ```
 This will build Spark from source located in `./spark/` and put the result in `./build/dist/`.
 This is useful when you are testing a custom build of Spark.

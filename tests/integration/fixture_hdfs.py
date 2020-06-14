@@ -3,6 +3,7 @@ import logging
 import json
 import os
 import pytest
+import sdk_agents
 import sdk_auth
 import sdk_cmd
 import sdk_install
@@ -57,6 +58,13 @@ HDFS_CLIENT_ID = "hdfsclient"
 SPARK_HISTORY_USER = "nobody"
 
 
+@pytest.fixture(scope="package")
+def install_krb_workstation():
+    for agent in sdk_agents.get_agents():
+        sdk_cmd.agent_ssh(agent["hostname"], "sudo yum install krb5-workstation -y")
+    yield
+
+
 @pytest.fixture(scope='package')
 def configure_security_hdfs():
     yield from sdk_security.security_session(framework_name=HDFS_SERVICE_NAME,
@@ -65,7 +73,7 @@ def configure_security_hdfs():
 
 
 @pytest.fixture(scope='package')
-def hdfs_with_kerberos(configure_security_hdfs, kerberos_options):
+def hdfs_with_kerberos(install_krb_workstation, configure_security_hdfs, kerberos_options):
     try:
         additional_options = {
             "service": {

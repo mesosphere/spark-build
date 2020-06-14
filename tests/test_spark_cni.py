@@ -160,8 +160,11 @@ def test_shuffle_job(
         use_cli_for_spark_submit=True,
         check_network_labels=False):
 
-    if use_ucr_for_spark_submit:
-        submit_args = submit_args + ["--conf spark.mesos.containerizer=mesos"]
+    if not use_ucr_for_spark_submit:
+        submit_args = submit_args + [
+            "--conf spark.mesos.containerizer=docker",
+            "--conf spark.mesos.executor.docker.parameters=user=99",
+        ]
 
     driver_task_id = _submit_shuffle_job(use_cli=use_cli_for_spark_submit,
                                          sleep=300,

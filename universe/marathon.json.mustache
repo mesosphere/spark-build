@@ -3,6 +3,7 @@
     "cpus": {{service.cpus}},
     "mem": {{service.mem}},
     "cmd": "/sbin/init.sh",
+    "constraints": {{service.constraints}},
     {{#service.user}}
     "user": "{{service.user}}",
     {{/service.user}}
