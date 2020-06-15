@@ -18,8 +18,8 @@ DOCKER_REPO_NAME ?= mesosphere
 DOCKER_BUILDER_IMAGE_NAME ?= spark-build
 DOCKER_BUILDER_IMAGE_TAG ?= $(shell cat Dockerfile | sha1sum  | cut -d' ' -f1)
 DOCKER_BUILDER_IMAGE_FULL_NAME ?= $(DOCKER_REPO_NAME)/$(DOCKER_BUILDER_IMAGE_NAME):$(DOCKER_BUILDER_IMAGE_TAG)
-DOCKER_SPARK_DIST_IMAGE_NAME ?= spark-dev
-DOCKER_SPARK_DIST_IMAGE_FULL_NAME ?= $(DOCKER_REPO_NAME)/$(DOCKER_SPARK_DIST_IMAGE_NAME):$(GIT_COMMIT)
+DOCKER_DIST_IMAGE_NAME ?= spark-dev
+DOCKER_DIST_IMAGE ?= $(DOCKER_REPO_NAME)/$(DOCKER_DIST_IMAGE_NAME):$(GIT_COMMIT)
 
 # Spark repo build configuration
 SPARK_REPO_URL ?= https://github.com/mesosphere/spark
@@ -62,12 +62,10 @@ docker-build:
 
 # Pulls the spark distribution listed in the manifest as default
 spark-dist-download:
-	if [[ ! -f "$(DIST_DIR)/$(lastword $(subst /, ,$(SPARK_DIST_URI))) ]]; then
-		mkdir -p $(DIST_DIR)
-		pushd $(DIST_DIR)
-		wget $(SPARK_DIST_URI)
-		popd
-	fi
+	mkdir -p $(DIST_DIR)
+	pushd $(DIST_DIR)
+	wget $(SPARK_DIST_URI)
+	popd
 
 $(SPARK_DIR):
 	git clone $(SPARK_REPO_URL) $(SPARK_DIR)
@@ -98,12 +96,10 @@ docker-login:
 # To instead use a locally built version of spark,
 # you must remove already present `build/dist` directory and run "make spark-dist-build".
 $(DIST_DIR):
-	if [[ ! -f "$(DIST_DIR)/$(lastword $(subst /, ,$(SPARK_DIST_URI))) ]]; then
-		mkdir -p $(DIST_DIR)
-		pushd $(DIST_DIR)
-		wget $(SPARK_DIST_URI)
-		popd
-	fi
+	mkdir -p $(DIST_DIR)
+	pushd $(DIST_DIR)
+	wget $(SPARK_DIST_URI)
+	popd
 
 docker-dist: $(DIST_DIR) statsd-reporter
 	SPARK_BUILDS=`ls $(DIST_DIR)/spark-*.tgz || exit 0`
@@ -124,11 +120,11 @@ docker-dist: $(DIST_DIR) statsd-reporter
 	cp `cat statsd-reporter` $(BUILD_DIR)/docker
 
 	pushd $(BUILD_DIR)/docker
-	docker build -t $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME) .
+	docker build -t $(DOCKER_DIST_IMAGE) .
 	popd
 
-	docker push $(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)
-	echo "$(DOCKER_SPARK_DIST_IMAGE_FULL_NAME)" > $@
+	docker push $(DOCKER_DIST_IMAGE)
+	echo "$(DOCKER_DIST_IMAGE)" > $@
 
 clean-dist:
 	rm -f $(ROOT_DIR)/docker-dist
