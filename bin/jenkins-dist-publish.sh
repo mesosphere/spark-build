@@ -61,12 +61,12 @@ function publish_dists() {
 # $2: hadoop version (e.g. "2.6")
 function publish_dist() {
     SPARK_DIR=${SPARK_DIR} \
-        make prod-dist -e SCALA_VERSION="$1" HADOOP_VERSION="$2"
+        make spark-dist-build -e SCALA_VERSION="$1" HADOOP_VERSION="$2"
     rename_dist
     AWS_ACCESS_KEY_ID=${PROD_AWS_ACCESS_KEY_ID} \
-        AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY} \
-        S3_URL="s3://${PROD_S3_BUCKET}/${PROD_S3_PREFIX}/" \
-    store_distributions
+    AWS_SECRET_ACCESS_KEY=${PROD_AWS_SECRET_ACCESS_KEY} \
+    S3_URL="s3://${PROD_S3_BUCKET}/${PROD_S3_PREFIX}/" \
+        store_distributions
     make clean-dist
 }
 

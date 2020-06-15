@@ -35,7 +35,7 @@ function publish_docker_images() {
 function make_universe() {
     DOCKER_VERSION=$(docker_version $(default_scala_version) $(default_hadoop_version))
 
-    make manifest-dist # use default manifest spark
+    make spark-dist-download # use default manifest spark dist
     make stub-universe-url -e DOCKER_DIST_IMAGE=${DOCKER_DIST_IMAGE}:${DOCKER_VERSION}
 }
 
