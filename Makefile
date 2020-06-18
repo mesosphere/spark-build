@@ -24,8 +24,8 @@ DOCKER_DIST_IMAGE ?= $(DOCKER_REPO_NAME)/$(DOCKER_DIST_IMAGE_NAME):$(GIT_COMMIT)
 # Spark repo build configuration
 SPARK_REPO_URL ?= https://github.com/mesosphere/spark
 SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
-HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
-SCALA_VERSION ?= $(shell jq ".default_spark_dist.scala_version" "$(ROOT_DIR)/manifest.json")
+HADOOP_VERSION ?= $(shell jq -r ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
+SCALA_VERSION ?= $(shell jq -r ".default_spark_dist.scala_version" "$(ROOT_DIR)/manifest.json")
 SPARK_DIR ?= $(ROOT_DIR)/spark
 
 # AWS credentials configuration used by tests and Terraform
