@@ -6,6 +6,7 @@ import sdk_networks
 import sdk_tasks
 import shakedown
 import spark_utils as utils
+import time
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ def test_agent_restart_with_checkpointing_disabled():
     utils.restart_task_agent_and_verify_state(executor_ip, executor_task, "TASK_LOST")
 
     _kill_driver_task(driver_task_id)
+    time.sleep(30) # To avoid task name conflict
 
 
 @pytest.mark.sanity
@@ -69,6 +71,7 @@ def test_agent_restart_with_checkpointing_enabled():
     utils.restart_task_agent_and_verify_state(driver_ip, driver_task, "TASK_RUNNING")
 
     _kill_driver_task(driver_task_id)
+    time.sleep(30) # To avoid task name conflict
 
 
 def _submit_job_and_get_tasks(extra_args=[]):
