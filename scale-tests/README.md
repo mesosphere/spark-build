@@ -19,7 +19,7 @@ sbt assembly
 ```
 
 This will generate the "tests assembly" JAR at
-`${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar`.
+`${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.12/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar`.
 
 2. Upload "tests assembly" JAR
 
@@ -30,7 +30,7 @@ in `${HOME}/.aws/credentials`, then run the following command:
 S3_BUCKET=infinity-artifacts
 S3_FOLDER=scale-tests
 SPARK_BUILD_PATH="${HOME}/mesosphere/spark-build"
-JAR_LOCAL_PATH="${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar"
+JAR_LOCAL_PATH="${SPARK_BUILD_PATH}/tests/jobs/scala/target/scala-2.12/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar"
 JAR_NAME="dcos-spark-scala-tests-assembly-$(date +%Y%m%d)-$(git rev-parse --short HEAD).jar"
 
 aws s3 cp --acl public-read \
