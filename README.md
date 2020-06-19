@@ -5,6 +5,17 @@ It is the source for the Spark package in universe.  If you wish to modify
 that package, you should do so here, and generate a new package as
 described below.
 
+Service documentation can be found here : [DC/OS Apache Spark Documentation](https://docs.mesosphere.com/services/spark/)
+
+
+## Integration Test Builds Matrix
+
+
+|  | DC/OS 1.13 | DC/OS 2.0 | DC/OS 2.1 | DC/OS Master |
+|------------|------------|------------|------------|------------|
+| Permissive | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_113_SparkBuild_113_Permissive&guest=1"> <img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_113_SparkBuild_113_Permissive)/statusIcon" /></a > | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_20_SparkBuild_20_Permissive&guest=1"><img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_20_SparkBuild_20_Permissive)/statusIcon" /></a > | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_21_SparkBuild_21_Permissive&guest=1" ><img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_21_SparkBuild_21_Permissive)/statusIcon" /></a > | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_master_SparkBuild_master_Permissive&guest=1" ><img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_master_SparkBuild_master_Permissive)/statusIcon" /> </a > |
+| Strict     | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_113_SparkBuild_113_Strict&guest=1">     <img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_113_SparkBuild_113_Strict)/statusIcon" /></a >     | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_20_SparkBuild_20_Strict&guest=1">    <img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_20_SparkBuild_20_Strict)/statusIcon"  /></a>     | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_21_SparkBuild_21_Strict&guest=1"  >   <img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_21_SparkBuild_21_Strict)/statusIcon"  /></a>     | <a href="https://teamcity.mesosphere.io/viewType.html?buildTypeId=DataServices_Spark_Nightly_DCOS_master_SparkBuild_master_Strict&guest=1" >    <img src="https://teamcity.mesosphere.io/app/rest/builds/buildType:(id:DataServices_Spark_Nightly_DCOS_master_SparkBuild_master_Strict)/statusIcon" /></a > |
+
 ## Development Dependencies
 
 - GNU Make 3.82+ (the version is important due to usage of multiline bash commands)
