@@ -116,7 +116,6 @@ def setup_module(module):
 
 
 @pytest.mark.soak
-@pytest.mark.skip("This test is extremely flaky and needs a fix. Disabled to unblock release process. Jira: https://jira.mesosphere.com/browse/DCOS-63136")
 def test_terasort():
     if utils.hdfs_enabled():
         _delete_hdfs_terasort_files()
