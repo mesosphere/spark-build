@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def _run_terasort_job(terasort_class, app_args, expected_output):
-    jar_url = 'https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
+    jar_url = 'https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar'
     submit_args = ["--class", terasort_class] + SPARK_SUBMIT_HDFS_KERBEROS_ARGS
     utils.run_tests(app_url=jar_url,
                     app_args=" ".join(app_args),
