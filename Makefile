@@ -24,8 +24,8 @@ DOCKER_DIST_IMAGE ?= $(DOCKER_REPO_NAME)/$(DOCKER_DIST_IMAGE_NAME):$(GIT_COMMIT)
 # Spark repo build configuration
 SPARK_REPO_URL ?= https://github.com/mesosphere/spark
 SPARK_DIST_URI ?= $(shell jq ".default_spark_dist.uri" "$(ROOT_DIR)/manifest.json")
-HADOOP_VERSION ?= $(shell jq ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
-SCALA_VERSION ?= $(shell jq ".default_spark_dist.scala_version" "$(ROOT_DIR)/manifest.json")
+HADOOP_VERSION ?= $(shell jq -r ".default_spark_dist.hadoop_version" "$(ROOT_DIR)/manifest.json")
+SCALA_VERSION ?= $(shell jq -r ".default_spark_dist.scala_version" "$(ROOT_DIR)/manifest.json")
 SPARK_DIR ?= $(ROOT_DIR)/spark
 
 # AWS credentials configuration used by tests and Terraform
@@ -176,7 +176,7 @@ $(DCOS_SPARK_TEST_JAR_PATH): test-jar-checksum
 	else
 		cd tests/jobs/scala
 		sbt assembly
-		cp -v target/scala-2.11/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_FILE)
+		cp -v target/scala-2.12/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar $(DCOS_SPARK_TEST_JAR_FILE)
 		aws s3 cp --acl public-read $(DCOS_SPARK_TEST_JAR_FILE) \
 			s3://infinity-artifacts/autodelete7d/spark/jars/$(DCOS_SPARK_TEST_JAR_FILE)
 	fi
@@ -194,7 +194,7 @@ $(MESOS_SPARK_TEST_JAR_PATH): mesos-spark-integration-tests
 	sbt assembly
 	cd ..
 	sbt clean compile test
-	cp -v test-runner/target/scala-2.11/mesos-spark-integration-tests-assembly-0.1.0.jar $@
+	cp -v test-runner/target/scala-2.12/mesos-spark-integration-tests-assembly-0.1.0.jar $@
 
 ssh.keys:
 	if [[ ! -f "$(SSH_PRIVATE_KEY_FILE)" ]]; then
