@@ -31,7 +31,7 @@ DCOS_PASSWORD = os.getenv('DCOS_PASSWORD')
 
 KAFKA_JAAS_URI = "https://s3-us-west-2.amazonaws.com/infinity-artifacts/soak/spark/spark-kafka-client-jaas.conf"
 JAR_URI = "https://s3-us-west-2.amazonaws.com/infinity-artifacts/soak/spark/dcos-spark-scala-tests-assembly-0.2-SNAPSHOT.jar"
-TERASORT_JAR='https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar'
+TERASORT_JAR='https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar'
 TERASORT_MAX_CORES=6
 
 KERBEROS_ARGS = ["--kerberos-principal", HDFS_PRINCIPAL,

@@ -81,7 +81,7 @@ and update the secret names accordingly in the following example.
 1.  Install Spark including HDFS settings, using the instructions in [installing-secure-spark.md]()
 
 ## Running TeraSort
-The TeraSort suite has 3 steps: generating the data, sorting the data, and validating the results. We provide a pre-built Spark job (https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar) for testing purposes.
+The TeraSort suite has 3 steps: generating the data, sorting the data, and validating the results. We provide a pre-built Spark job (https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar) for testing purposes.
 
 1.  Run the `TeraGen` step:
     ```bash
@@ -95,7 +95,7 @@ The TeraSort suite has 3 steps: generating the data, sorting the data, and valid
     --truststore-password=changeit \
     --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
-    --class com.github.ehiggs.spark.terasort.TeraGen https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar 1g hdfs:///terasort_in_secure"
+    --class com.github.ehiggs.spark.terasort.TeraGen https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar 1g hdfs:///terasort_in_secure"
     ```
 
     **Note:** The examples on this page assume that you are using the default
@@ -114,7 +114,7 @@ The TeraSort suite has 3 steps: generating the data, sorting the data, and valid
     --truststore-password=changeit \
     --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
-    --class com.github.ehiggs.spark.terasort.TeraSort https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar hdfs:///terasort_in_secure hdfs:///terasort_out_secure"
+    --class com.github.ehiggs.spark.terasort.TeraSort https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_in_secure hdfs:///terasort_out_secure"
     ```
 
 1.  Run the `TeraValidate` step:
@@ -129,5 +129,5 @@ The TeraSort suite has 3 steps: generating the data, sorting the data, and valid
     --truststore-password=changeit \
     --executor-auth-secret=spark/spark-auth-secret \
     --conf spark.cores.max=16 \
-    --class com.github.ehiggs.spark.terasort.TeraValidate https://infinity-artifacts.s3-us-west-2.amazonaws.com/soak/spark/spark-terasort-1.2-jar-with-dependencies_2.12.jar hdfs:///terasort_out_secure hdfs:///terasort_validate_secure"
+    --class com.github.ehiggs.spark.terasort.TeraValidate https://downloads.mesosphere.io/spark/examples/spark-terasort-1.1-jar-with-dependencies_2.11.jar hdfs:///terasort_out_secure hdfs:///terasort_validate_secure"
     ```
