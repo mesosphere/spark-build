@@ -17,7 +17,7 @@ def agent_ssh(host_ip, cmd):
 
     _, stdout, _ = sdk_cmd._run_cmd(
         f"LC_ALL=en_US.UTF-8 dcos node ssh --master-proxy --private-ip={host_ip} {ssh_options} \"{cmd}\"",
-        print_output=False, check=False)
+        print_output=True, check=False)
     return stdout
 
 
