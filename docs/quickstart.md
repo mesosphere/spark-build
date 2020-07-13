@@ -133,7 +133,7 @@ This tutorial will get you up and running in minutes with Spark. You will instal
     1.  View the standard output from your job:
     
         ```bash
-        dcos spark log --lines=10 driver-20170824224524-0003
+        dcos spark log --lines_count=10 driver-20170824224524-0003
         ```
         
         Your output should resemble:

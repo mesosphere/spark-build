@@ -5,6 +5,7 @@ import pytest
 import sdk_tasks
 import shakedown
 import sdk_networks
+import sdk_utils
 import spark_utils as utils
 
 log = logging.getLogger(__name__)
@@ -34,6 +35,10 @@ def test_offers_suppressed():
 
 @pytest.mark.sanity
 @pytest.mark.smoke
+@pytest.mark.skipif(
+    '2.1.0' == sdk_utils.dcos_version(),
+    reason="Since DC/OS 2.1.0 is unable to stop dcos-mesos-slave, refer this https://jira.d2iq.com/browse/D2IQ-69935"
+)
 def test_offers_suppressed_with_lost_task():
     app_name = "MockTaskRunner"
     driver_task_id = _launch_test_task(app_name)

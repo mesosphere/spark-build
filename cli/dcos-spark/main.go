@@ -126,11 +126,11 @@ func (cmd *SparkCommand) runStatus(a *kingpin.Application, e *kingpin.ParseEleme
 func (cmd *SparkCommand) runLog(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
 	args := []string{"task", "log"}
 	if cmd.logAll {
-	    args = append(args, "--all")
+		args = append(args, "--all")
 	}
 	if cmd.logCompleted {
-        args = append(args, "--completed")
-    }
+		args = append(args, "--completed")
+	}
 	if cmd.logFollow {
 		args = append(args, "--follow")
 	}
@@ -340,8 +340,8 @@ func handleCommands(app *kingpin.Application) {
 	log.Flag("all", "Print log of completed or running Spark job").BoolVar(&cmd.logAll)
 	log.Flag("completed", "Print log of completed Spark job").BoolVar(&cmd.logCompleted)
 	log.Flag("follow", "Dynamically update the log").BoolVar(&cmd.logFollow)
-	log.Flag("lines", "Print the last N lines").
-		Default("10").UintVar(&cmd.logLines)
+	log.Flag("lines_count", "Print the last N lines").
+		Default("10").UintVar(&cmd.logLines) //TODO "lines"?
 	log.Flag("file", "Specify the sandbox file to print").
 		Default("stdout").StringVar(&cmd.logFile)
 	log.Arg("submission-id", "The ID of the Spark job").Required().StringVar(&cmd.submissionId)
