@@ -775,7 +775,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(spark_dispatcher_drivers_launched{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
+              "expr": "sum(spark_mesos_drivers_launched{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "A"
@@ -856,7 +856,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(spark_dispatcher_drivers_waiting{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
+              "expr": "sum(spark_mesos_drivers_waiting{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "A"
@@ -937,7 +937,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(spark_dispatcher_drivers_finished{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
+              "expr": "sum(spark_mesos_drivers_finished{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "A"
@@ -1018,7 +1018,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(spark_dispatcher_drivers_retry{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
+              "expr": "sum(spark_mesos_drivers_retry{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "A"
@@ -1099,7 +1099,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(spark_dispatcher_drivers_exception_count{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
+              "expr": "sum(spark_mesos_drivers_exception_count{DCOS_SERVICE_NAME=~\"[[origin]]\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "A"
@@ -1156,7 +1156,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
@@ -1240,7 +1240,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_submit_to_first_launch_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_first_launch_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
@@ -1324,7 +1324,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
@@ -1408,7 +1408,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_submit_to_exception_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_exception_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
@@ -1493,32 +1493,32 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_state_finished_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_state_finished_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
               "refId": "A"
             },
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_state_failed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_state_failed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "E"
             },
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_state_killed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_state_killed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "B"
             },
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_state_lost_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_state_lost_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "C"
             },
             {
-              "expr": "spark_dispatcher_drivers_submit_to_finish_state_unknown_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_submit_to_finish_state_unknown_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "D"
@@ -1601,32 +1601,32 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_state_finished_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_state_finished_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "",
               "refId": "A"
             },
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_state_failed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_state_failed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "E"
             },
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_state_killed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_state_killed_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "B"
             },
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_state_lost_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_state_lost_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "C"
             },
             {
-              "expr": "spark_dispatcher_drivers_launch_to_finish_state_unknown_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
+              "expr": "spark_mesos_drivers_launch_to_finish_state_unknown_mean_upper{DCOS_SERVICE_NAME=~\"[[origin]]\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "D"
