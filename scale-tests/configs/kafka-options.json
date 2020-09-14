@@ -5,6 +5,12 @@
     },
     "brokers": {
         "count": 5,
-        "disk_type": "ROOT"
+        "disk_type": "ROOT",
+        "external_volume": {
+            "enabled": true,
+            "volume_name": "KafkaVolume",
+            "volume_driver_options": "size=100",
+            "volume_path": "kafka-broker-data"
+        }
     }
 }
