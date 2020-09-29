@@ -1,0 +1,30 @@
+{
+    "service": {
+        "name": "jupyter",
+        "gpu": {
+            "enabled": true,
+            "gpus": 1
+        },
+        "jupyter_notebook_type": "TensorFlow-2.1.0"
+    },
+    "storage": {
+        "local_persistence": {
+            "enabled": false
+        },
+        "external_volume": {
+            "enabled": true,
+            "driver_name": "pxd",
+            "volume_driver_options": "size=100",
+            "volume_path": "jupyter_data"
+        }
+    },
+    "spark": {
+        "spark_cores_max": 4,
+        "spark_driver_cores": 2,
+        "spark_executor_cores": 1,
+        "spark_mesos_gpus_max": 1,
+        "spark_mesos_executor_gpus": 1,
+        "spark_driver_memory": "2g",
+        "spark_executor_memory": "6g"
+    }
+}

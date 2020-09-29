@@ -286,6 +286,10 @@ if [ ${container_running} -ne 0 ] || [ ${container_finished_setting_up} -ne 0 ];
     container_exec \
       dcos package repo add --index=0 cassandra-aws "${CASSANDRA_PACKAGE_REPO}" || true
   fi
+  if [ -n "${DSENGINE_PACKAGE_REPO}" ]; then
+    container_exec \
+      dcos package repo add --index=0 data-science-engine-aws "${DSENGINE_PACKAGE_REPO}" || true
+  fi
   if [ -n "${SPARK_PACKAGE_REPO}" ]; then
     container_exec \
       dcos package repo add --index=0 spark-aws "${SPARK_PACKAGE_REPO}" || true
