@@ -394,8 +394,10 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
       --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
       --kafka-zookeeper-config "${ZOOKEEPER_CONFIG}" \
       --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
+      --kafka-package-name "${KAFKA_PACKAGE_NAME}" \
       --kafka-config "${KAFKA_CONFIG}" \
       --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
+      --cassandra-package-name "${CASSANDRA_PACKAGE_NAME}" \
       --cassandra-config "${CASSANDRA_CONFIG}"
   end_time=$(date +%s)
   runtime=$((end_time - start_time))

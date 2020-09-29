@@ -1,7 +1,8 @@
 {
     "service": {
         "virtual_network_enabled": true,
-        "virtual_network_name": "calico"
+        "virtual_network_name": "calico",
+        "user": "root"
     },
     "brokers": {
         "count": 5,
