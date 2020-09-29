@@ -1,17 +1,37 @@
 {
-  "service": {
-    "name": "data-services/jupyter",
-    "service_account": "data_services__jupyter",
-    "service_account_secret": "data_services__jupyter-secret",
-    "gpu": {
-      "enabled": true
+    "service": {
+      "name": "data-services/jupyter",
+      "service_account": "data_services__jupyter",
+      "service_account_secret": "data_services__jupyter-secret",
+      "virtual_network_enabled": true,
+      "virtual_network_name": "dcos",
+      "gpu": {
+            "enabled": true,
+            "gpus": 1
+        },
+        "jupyter_notebook_type": "TensorFlow-2.1.0"
     },
-    "virtual_network_enabled": true,
-    "virtual_network_name": "dcos"
-  },
-  "spark": {
-    "spark_mesos_role": "data_services__jupyter",
-    "spark_mesos_principal": "data_services__jupyter",
-    "spark_mesos_secret": "data_services__jupyter-secret"
-  }
+    "storage": {
+        "local_persistence": {
+            "enabled": false
+        },
+        "external_volume": {
+            "enabled": true,
+            "driver_name": "pxd",
+            "volume_driver_options": "size=100",
+            "volume_path": "jupyter_data"
+        }
+    },
+    "spark": {
+        "spark_mesos_role": "data_services__jupyter",
+        "spark_mesos_principal": "data_services__jupyter",
+        "spark_mesos_secret": "data_services__jupyter-secret",
+        "spark_cores_max": 4,
+        "spark_driver_cores": 2,
+        "spark_executor_cores": 1,
+        "spark_mesos_gpus_max": 1,
+        "spark_mesos_executor_gpus": 1,
+        "spark_driver_memory": "2g",
+        "spark_executor_memory": "6g"
+    }
 }
