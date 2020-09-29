@@ -71,7 +71,7 @@ def install_package(package_name: str,
 
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
 
-    service_account_info = scale_tests_utils.setup_security(service_name, "nobody")
+    service_account_info = scale_tests_utils.setup_security(service_name, "root")
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
 
