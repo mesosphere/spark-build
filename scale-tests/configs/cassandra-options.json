@@ -1,9 +1,16 @@
 {
     "service": {
         "virtual_network_enabled": true,
-        "virtual_network_name": "calico"
+        "virtual_network_name": "calico",
+        "user": "root"
     },
     "nodes": {
-        "count": 5
+        "count": 5,
+        "external_volume": {
+            "enabled": true,
+            "portworx_volume_options": "size=100",
+            "volume_name": "",
+            "driver_name": "pxd"
+        }
     }
 }

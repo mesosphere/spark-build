@@ -22,9 +22,9 @@ def setup_security(service_name: str, linux_user: str) -> typing.Dict:
 
     service_account = normalize_string("{}-service-account".format(service_name))
     service_account_secret = "{}-service-account-secret".format(service_name)
-    return sdk_security.setup_security(service_name,
-                                       linux_user,
-                                       service_account, service_account_secret)
+    return sdk_security.setup_security(
+        service_name, linux_user, service_account, service_account_secret
+    )
 
 
 def get_strict_mode_options(service_account_info: typing.Dict) -> typing.Dict:
@@ -32,20 +32,14 @@ def get_strict_mode_options(service_account_info: typing.Dict) -> typing.Dict:
     options = {}
 
     if "linux_user" in service_account_info:
-        user_options = {
-            "service": {
-                "user": service_account_info["linux_user"]
-            }
-
-        }
+        user_options = {"service": {"user": service_account_info["linux_user"]}}
         options = sdk_install.merge_dictionaries(options, user_options)
-
 
     if sdk_utils.is_strict_mode():
         service_account_options = {
-            'service': {
-                'service_account': service_account_info["name"],
-                'service_account_secret': service_account_info["secret"],
+            "service": {
+                "service_account": service_account_info["name"],
+                "service_account_secret": service_account_info["secret"],
             }
         }
         options = sdk_install.merge_dictionaries(options, service_account_options)
@@ -53,8 +47,9 @@ def get_strict_mode_options(service_account_info: typing.Dict) -> typing.Dict:
     return options
 
 
-def get_service_options(service_name: str, service_account_info: typing.Dict,
-                        options: typing.Dict, config_path: str) -> typing.Dict:
+def get_service_options(
+    service_name: str, service_account_info: typing.Dict, options: typing.Dict, config_path: str
+) -> typing.Dict:
     """
     Get the options for a service as a combination of other options.
     """
@@ -62,7 +57,7 @@ def get_service_options(service_name: str, service_account_info: typing.Dict,
     config_options = {}
     if config_path:
         if os.path.isfile(config_path):
-            with open(config_path, 'r') as fp:
+            with open(config_path, "r") as fp:
                 log.info("Reading options from %s", config_path)
                 config_options = json.load(fp)
         else:
@@ -71,13 +66,19 @@ def get_service_options(service_name: str, service_account_info: typing.Dict,
     else:
         log.info("No options specified. Using defaults")
 
+    if service_name[0] != "/":
+        service_name = "/" + service_name
     # Always set the service name
     service_name_options = {"service": {"name": service_name}}
 
-    return merge_service_options([get_strict_mode_options(service_account_info),
-                                  options,
-                                  config_options,
-                                  service_name_options, ])
+    return merge_service_options(
+        [
+            get_strict_mode_options(service_account_info),
+            options,
+            config_options,
+            service_name_options,
+        ]
+    )
 
 
 def merge_service_options(options: typing.List[typing.Dict]) -> typing.Dict:
@@ -118,7 +119,7 @@ def mapcat(func, seqs):
 
 
 def normalize_string(s: str) -> str:
-    return s.replace("/", "__").replace('-', '_')
+    return s.replace("/", "__").replace("-", "_")
 
 
 def make_repeater(n):
