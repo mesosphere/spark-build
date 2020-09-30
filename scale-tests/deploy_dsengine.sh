@@ -33,6 +33,12 @@ grant_permissions() {
        "dcos:mesos:agent:task:user:nobody" \
        create
   dcos security org users grant "${SERVICE_ACCOUNT}" \
+       "dcos:mesos:master:task:user:root" \
+       create
+  dcos security org users grant "${SERVICE_ACCOUNT}" \
+       "dcos:mesos:agent:task:user:root" \
+       create
+  dcos security org users grant "${SERVICE_ACCOUNT}" \
        "dcos:secrets:list:default:__dcos_base64__hdfs_jupyter_keytab" \
        read
 }
