@@ -1,8 +1,5 @@
 {
     "service": {
-      "name": "data-services/jupyter",
-      "service_account": "data_services__jupyter",
-      "service_account_secret": "data_services__jupyter-secret",
       "virtual_network_enabled": true,
       "virtual_network_name": "dcos",
       "gpu": {
@@ -23,9 +20,9 @@
         }
     },
     "spark": {
-        "spark_mesos_role": "data_services__jupyter",
-        "spark_mesos_principal": "data_services__jupyter",
-        "spark_mesos_secret": "data_services__jupyter-secret",
+        "spark_mesos_role": "data-services__data-science-engine-00-role",
+        "spark_mesos_principal": "data_services__data_science_engine_00_service_account",
+        "spark_mesos_secret": "data-services/data-science-engine-00-service-account-secret",
         "spark_cores_max": 4,
         "spark_driver_cores": 2,
         "spark_executor_cores": 1,
