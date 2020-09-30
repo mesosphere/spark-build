@@ -395,10 +395,14 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
       --kafka-zookeeper-config "${ZOOKEEPER_CONFIG}" \
       --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
       --kafka-package-name "${KAFKA_PACKAGE_NAME}" \
+      --kafka-user "${KAFKA_USER}" \
       --kafka-config "${KAFKA_CONFIG}" \
       --cassandra-cluster-count "${CASSANDRA_CLUSTER_COUNT}" \
       --cassandra-package-name "${CASSANDRA_PACKAGE_NAME}" \
-      --cassandra-config "${CASSANDRA_CONFIG}"
+      --cassandra-user "${CASSANDRA_USER}" \
+      --cassandra-config "${CASSANDRA_CONFIG}" \
+      --dsengine-package-name "${DSENGINE_PACKAGE_NAME}" \
+      --dsengine-config "${DSENGINE_CONFIG}"
   end_time=$(date +%s)
   runtime=$((end_time - start_time))
   log "Installed infrastructure in ${runtime} seconds"

@@ -8,6 +8,7 @@ The following steps are performed:
 * Kafka ZooKeeper is installed
 * Kafka is installed
 * Cassandra is installed
+* Data Science Engine is installed
 
 Usage:
     setup_streaming.py <output_file> [options]
@@ -23,14 +24,21 @@ Options:
                                            This is used for both Kafka and ZooKeeper [default: 0]
 
     --kafka-package-name <name>            The package name to use for Kafka [default: confluent-kafka]
+    --kafka-user <name>                    user for the Kafka installation [default: nobody]
     --kafka-config <file>                  path to the config.json for the Kafka installation
 
     --kafka-zookeeper-package-name <name>  The package name to use for Kafka ZooKeeper [default: confluent-zookeeper]
+    --kafka-zookeeper-user <name>          user for the Kafka ZooKeeper installation [default: nobody]
     --kafka-zookeeper-config <file>        path to the config.json for the Kafka ZooKeeper installation
 
     --cassandra-cluster-count <n>          The number of Cassandra clusters to install [default: 0]
     --cassandra-package-name <name>        The package name to use for Cassandra [default: cassandra]
+    --cassandra-user <name>                 user for the Cassandra installation [default: nobody]
     --cassandra-config <file>              path to the config.json for the Cassandra installation
+
+    --dsengine-package-name <name>        The package name to use for Data Science Engine [default: data-science-engine]
+    --dsengine-user <name>                user for the Data Science Engine installation [default: nobody]
+    --dsengine-config <file>              path to the config.json for the Data Science Engine installation
 """
 import json
 import logging
@@ -63,6 +71,7 @@ def install_package(package_name: str,
                     index: int,
                     service_task_count: int,
                     config_path: str,
+                    user: str = None,
                     additional_options: dict = None) -> dict:
     if package_name.startswith("beta-"):
         basename = package_name[len("beta-"):]
@@ -71,7 +80,14 @@ def install_package(package_name: str,
 
     service_name = "{}{}-{:0>2}".format(service_prefix, basename, index)
 
-    service_account_info = scale_tests_utils.setup_security(service_name, "root")
+    if not user:
+        user = "nobody"
+
+    service_account_info = scale_tests_utils.setup_security(service_name, user)
+
+    if "data-science-engine" in package_name:
+        for permission in ["dcos:mesos:agent:task:user:root", "dcos:mesos:master:task:user:root", "dcos:mesos:master:task:role:{}".format()]:
+            grant_permission(service_account_info['name'], permission, "create")
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
 
@@ -126,13 +142,14 @@ def install_zookeeper(args: dict) -> list:
 
     kafka_zookeeper_package_name = args["--kafka-zookeeper-package-name"]
     kafka_zookeeper_service_prefix = args["--service-names-prefix"]
+    kafka_zookeeper_user = args.get("--kafka-zookeeper-user", "")
     kafka_zookeeper_config = args.get("--kafka-zookeeper-config", "")
 
     services = []
     for i in range(kafka_cluster_count):
         services.append(install_package(kafka_zookeeper_package_name,
                                         kafka_zookeeper_service_prefix, i, get_expected_task_count,
-                                        kafka_zookeeper_config))
+                                        user = kafka_zookeeper_user, config_path=kafka_zookeeper_config))
 
     return services
 
@@ -151,6 +168,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
 
     kafka_package_name = args["--kafka-package-name"]
     kafka_service_prefix = args["--service-names-prefix"]
+    kafka_user = args.get("--kafka-user", "")
     kafka_config = args.get("--kafka-config", "")
 
     services = []
@@ -169,7 +187,7 @@ def install_kafka(args: dict, zookeeper_services: list) -> list:
 
         services.append(install_package(kafka_package_name, kafka_service_prefix, i,
                                         get_expected_task_count, kafka_config,
-                                        additional_options=service_options))
+                                        user = kafka_user, additional_options=service_options))
 
     return services
 
@@ -188,12 +206,37 @@ def install_cassandra(args: dict) -> list:
 
     cassandra_package_name = args["--cassandra-package-name"]
     cassandra_service_prefix = args["--service-names-prefix"]
+    cassandra_user = args.get("--cassandra-user", "")
     cassandra_config = args.get("--cassandra-config", "")
 
     services = []
     for i in range(cassandra_cluster_count):
         services.append(install_package(cassandra_package_name, cassandra_service_prefix, i,
-                                        get_expected_task_count, cassandra_config))
+                                        get_expected_task_count, user = cassandra_user, config_path=cassandra_config))
+
+    return services
+
+def install_dsengine(args: dict) -> list:
+    """
+    Install the Data Science Engine service(s) as defined by the arguments
+    """
+    def get_expected_task_count(service_options: dict) -> int:
+        return _get_pod_count(service_options, "notebooks", 1)
+
+    dse_cluster_count = 1
+
+    if not dse_cluster_count:
+        return []
+
+    dsengine_package_name = args["--dsengine-package-name"]
+    dsengine_service_prefix = args["--service-names-prefix"]
+    dsengine_user = args.get("--dsengine-user", "")
+    dsengine_config = args.get("--dsengine-config", "")
+
+    services = []
+    for i in range(dse_cluster_count):
+        services.append(install_package(dsengine_package_name, dsengine_service_prefix, i,
+                                        get_expected_task_count, user=dsengine_user,config_path=dsengine_config))
 
     return services
 
@@ -203,6 +246,7 @@ def install(args):
     services["zookeeper"] = install_zookeeper(args)
     services["kafka"] = install_kafka(args, services["zookeeper"])
     services["cassandra"] = install_cassandra(args)
+    services["dsengine"] = install_dsengine(args)
 
     for k, v in services.items():
         log.info("%s service(s): %s", k, v)
@@ -236,6 +280,13 @@ def cleanup(args):
                 log.info("Removing service accounts and secrets")
                 sdk_security.cleanup_security(service_name, s["service_account_info"])
 
+def grant_permission(service_account: str, acl: str, action: str, description = None) -> None:
+    cmd = "security org users grant {} {} {}".format(service_account, acl, action)
+
+    if description:
+        cmd = "{} --description '{}'".format(cmd, description)
+
+    sdk_cmd.run_cli(cmd=cmd, print_output=True)
 
 def main(args):
     if "--cleanup" in args and args["--cleanup"]:
