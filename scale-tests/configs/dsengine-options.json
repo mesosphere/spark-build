@@ -3,8 +3,8 @@
       "virtual_network_enabled": true,
       "virtual_network_name": "dcos",
       "gpu": {
-            "enabled": true,
-            "gpus": 1
+            "enabled": false,
+            "gpus": 0
         },
         "jupyter_notebook_type": "TensorFlow-2.1.0"
     },
@@ -26,8 +26,8 @@
         "spark_cores_max": 4,
         "spark_driver_cores": 2,
         "spark_executor_cores": 1,
-        "spark_mesos_gpus_max": 1,
-        "spark_mesos_executor_gpus": 1,
+        "spark_mesos_gpus_max": 0,
+        "spark_mesos_executor_gpus": 0,
         "spark_driver_memory": "2g",
         "spark_executor_memory": "6g"
     }
