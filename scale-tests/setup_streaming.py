@@ -86,7 +86,10 @@ def install_package(package_name: str,
     service_account_info = scale_tests_utils.setup_security(service_name, user)
 
     if "data-science-engine" in package_name:
-        for permission in ["dcos:mesos:agent:task:user:root", "dcos:mesos:master:task:user:root", "dcos:mesos:master:task:role:{}".format()]:
+        for permission in [
+            "dcos:mesos:agent:task:user:root",
+            "dcos:mesos:master:task:user:root",
+            "dcos:mesos:master:task:role:{}".format(service_account_info['name'])]:
             grant_permission(service_account_info['name'], permission, "create")
 
     service_options = scale_tests_utils.get_service_options(service_name, service_account_info, additional_options, config_path)
