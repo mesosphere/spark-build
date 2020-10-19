@@ -40,10 +40,16 @@ RUN apt-get update \
                nginx \
                python \
                runit \
-               r-base \
                software-properties-common \
                unzip \
     && rm -rf /var/lib/apt/lists/* /usr/share/doc
+
+# Install R 4.x
+RUN apt update \
+    && apt-get install -y gnupg2 \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+    && add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/' \
+    && apt-get install -y r-base
 
 # lib mesos
 ENV MESOSPHERE_HOME="/opt/mesosphere"
