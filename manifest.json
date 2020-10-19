@@ -1,35 +1,35 @@
 {
-    "spark_version": "2.4.6",
+    "spark_version": "3.0.1",
     "default_spark_dist": {
-        "scala_version": "2.11",
-        "hadoop_version": "2.9",
-        "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-2.4.6/spark-2.4.6-bin-scala-2.11-hadoop-2.9.tgz",
-        "image": "mesosphere/spark:2.11.0-2.4.6-scala-2.11-hadoop-2.9"
+        "scala_version": "2.12",
+        "hadoop_version": "3.2",
+        "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-3.0.1/spark-3.0.1-bin-scala-2.12-hadoop-3.2.tgz",
+        "image": "mesosphere/spark:2.11.0-3.0.1-scala-2.12-hadoop-3.2"
     },
     "spark_dist": [
         {
             "scala_version": "2.12",
-            "hadoop_version": "2.9",
-            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-2.4.6/spark-2.4.6-bin-scala-2.12-hadoop-2.9.tgz",
-            "image": "mesosphere/spark:2.11.0-2.4.6-scala-2.12-hadoop-2.9"
+            "hadoop_version": "3.2",
+            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-3.0.1/spark-3.0.1-bin-scala-2.12-hadoop-3.2.tgz",
+            "image": "mesosphere/spark:2.11.0-3.0.1-scala-2.12-hadoop-3.2"
         },
         {
             "scala_version": "2.12",
             "hadoop_version": "2.7",
-            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-2.4.6/spark-2.4.6-bin-scala-2.12-hadoop-2.7.tgz",
-            "image": "mesosphere/spark:2.11.0-2.4.6-scala-2.12-hadoop-2.7"
+            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-3.0.1/spark-3.0.1-bin-scala-2.12-hadoop-2.7.tgz",
+            "image": "mesosphere/spark:2.11.0-3.0.1-scala-2.12-hadoop-2.7"
         },
         {
-            "scala_version": "2.11",
-            "hadoop_version": "2.9",
-            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-2.4.6/spark-2.4.6-bin-scala-2.11-hadoop-2.9.tgz",
-            "image": "mesosphere/spark:2.11.0-2.4.6-scala-2.11-hadoop-2.9"
+            "scala_version": "2.13",
+            "hadoop_version": "3.2",
+            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-3.0.1/spark-3.0.1-bin-scala-2.13-hadoop-3.2.tgz",
+            "image": "mesosphere/spark:2.11.0-3.0.1-scala-2.13-hadoop-3.2"
         },
         {
-            "scala_version": "2.11",
+            "scala_version": "2.13",
             "hadoop_version": "2.7",
-            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-2.4.6/spark-2.4.6-bin-scala-2.11-hadoop-2.7.tgz",
-            "image": "mesosphere/spark:2.11.0-2.4.6-scala-2.11-hadoop-2.7"
+            "uri": "https://downloads.mesosphere.io/spark/assets/2.11.0-3.0.1/spark-3.0.1-bin-scala-2.13-hadoop-2.7.tgz",
+            "image": "mesosphere/spark:2.11.0-3.0.1-scala-2.13-hadoop-2.7"
         }
     ]
 }
