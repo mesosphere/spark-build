@@ -1,10 +1,10 @@
-lazy val SparkVersion = sys.env.getOrElse("SPARK_VERSION", "2.4.6")
+lazy val SparkVersion = sys.env.getOrElse("SPARK_VERSION", "3.0.1")
 
 lazy val root = (project in file("."))
   .settings(
     name := "dcos-spark-scala-tests",
     version := "0.2-SNAPSHOT",
-    scalaVersion := "2.12.11",
+    scalaVersion := "2.12.12",
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % SparkVersion % "provided",
       "org.apache.spark" %% "spark-streaming" % SparkVersion % "provided",
@@ -14,8 +14,8 @@ lazy val root = (project in file("."))
       "org.apache.spark" %% "spark-sql-kafka-0-10" % SparkVersion,
       "org.apache.hadoop" % "hadoop-aws" % "2.9.2",
       "com.github.scopt" %% "scopt" % "3.7.1",
-      "com.datastax.spark" %% "spark-cassandra-connector" % "2.4.2",
-      "com.airbnb" % "kafka-statsd-metrics2" % "0.5.2+issue28" from "https://infinity-artifacts.s3.amazonaws.com/scale-tests/kafka-statsd-metrics2-0.5.2+issue28-20180612-8c1e3c4f3fa83.jar",
+      "com.datastax.spark" %% "spark-cassandra-connector" % "3.0.0",
+      "com.airbnb" % "kafka-statsd-metrics2" % "0.5.2+issue28" from "https://infinity-artifacts.s3.amazonaws.com/scale-tests/kafka-statsd-metrics2-0.5.2+issue28-20180612-8c1e3c4f3fa83.jar".replace("+", "%2b"),
       "com.datadoghq" % "java-dogstatsd-client" % "2.5",
       "com.google.guava" % "guava" % "23.0" % "provided",
       "org.apache.httpcomponents" % "httpclient" % "4.5"
