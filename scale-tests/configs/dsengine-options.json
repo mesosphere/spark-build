@@ -1,5 +1,8 @@
 {
     "service": {
+      "user_id": 0,
+      "group_id": 0,
+      "cmd": "/usr/local/bin/start.sh ${CONDA_DIR}/bin/jupyter lab --notebook-dir=\"${JUPYTER_NOTEBOOK_DIR}\" --allow-root",
       "virtual_network_enabled": true,
       "virtual_network_name": "dcos",
       "gpu": {
