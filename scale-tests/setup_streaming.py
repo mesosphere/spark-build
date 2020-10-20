@@ -87,6 +87,7 @@ def install_package(package_name: str,
 
     if "data-science-engine" in package_name:
         for permission in [
+            "dcos:mesos:master:task:app_id:{}".format(service_name),
             "dcos:mesos:agent:task:user:root",
             "dcos:mesos:master:task:user:root",
             "dcos:mesos:master:task:role:{}".format(service_account_info['name'])]:
