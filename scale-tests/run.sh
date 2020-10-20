@@ -392,6 +392,7 @@ if [ "${SHOULD_INSTALL_INFRASTRUCTURE}" = true ]; then
   container_exec \
     ./scale-tests/setup_streaming.py "${TEST_DIRECTORY}/${INFRASTRUCTURE_OUTPUT_FILE}" \
       --service-names-prefix "${SERVICE_NAMES_PREFIX}" \
+      --kafka-zookeeper-package-name "${ZOOKEEPER_PACKAGE_NAME}" \
       --kafka-zookeeper-config "${ZOOKEEPER_CONFIG}" \
       --kafka-cluster-count "${KAFKA_CLUSTER_COUNT}" \
       --kafka-package-name "${KAFKA_PACKAGE_NAME}" \
