@@ -51,6 +51,7 @@ type sparkArgs struct {
 	truststoreSecretPath string
 	truststorePassword   string
 	saslSecret           string
+	saslSecretPath       string
 	propertiesFile       string
 	properties           map[string]string
 
@@ -67,6 +68,7 @@ type sparkArgs struct {
 
 func NewSparkArgs() *sparkArgs {
 	return &sparkArgs{
+		"",
 		"",
 		"",
 		"",
@@ -173,8 +175,10 @@ Args:
 		PlaceHolder("__dcos_base64__truststore").Default("").StringVar(&args.truststoreSecretPath)
 	submit.Flag("truststore-password", "A password to the truststore.").
 		Default("").StringVar(&args.truststorePassword)
-	submit.Flag("executor-auth-secret", "Path to secret 'cookie' to use for Executor authentication "+
-		"block transfer encryption. Make one with dcos spark secret").Default("").StringVar(&args.saslSecret)
+	submit.Flag("executor-auth-secret", "Value of the secret to use for RPC authentication "+
+		"between Driver and Executors").Default("").StringVar(&args.saslSecret)
+	submit.Flag("executor-auth-secret-path", "Path to secret 'cookie' to use for RPC authentication "+
+		"between Driver and Executors. Make one with dcos spark secret").Default("").StringVar(&args.saslSecretPath)
 	submit.Flag("isR", "Force using SparkR").Default("false").BoolVar(&args.isR)
 	submit.Flag("isPython", "Force using Python").Default("false").BoolVar(&args.isPython)
 
@@ -223,10 +227,10 @@ Args:
 	args.stringVals = append(args.stringVals, val)
 
 	val = newSparkVal("packages", "spark.jars.packages", "Comma-separated list of maven coordinates of jars to include "+
-                "on the driver and executor classpaths. Will search the local maven repo, then maven central and any additional remote "+
-                "repositories given by --repositories. The format for the coordinates should be groupId:artifactId:version")
-        val.flag(submit).StringVar(&val.s)
-        args.stringVals = append(args.stringVals, val)
+		"on the driver and executor classpaths. Will search the local maven repo, then maven central and any additional remote "+
+		"repositories given by --repositories. The format for the coordinates should be groupId:artifactId:version")
+	val.flag(submit).StringVar(&val.s)
+	args.stringVals = append(args.stringVals, val)
 
 	val = newSparkVal("py-files", "spark.submit.pyFiles", "Add .py, .zip or .egg files to "+
 		"be distributed with your application. If you depend on multiple Python files we recommend packaging them "+
@@ -307,7 +311,7 @@ func transformSubmitArgs(argsStr string, boolVals []*sparkVal) ([]string, []stri
 	sparkArgs, appArgs := make([]string, 0), make([]string, 0)
 
 	args = processJarsFlag(args)
-        args = processPackagesFlag(args)
+	args = processPackagesFlag(args)
 
 LOOP:
 	for i := 0; i < len(args); {
@@ -640,7 +644,7 @@ func buildSubmitJson(cmd *SparkCommand, marathonConfig map[string]interface{}) (
 		"action":               "CreateSubmissionRequest",
 		"appArgs":              args.appArgs,
 		"appResource":          args.app.String(),
-		"clientSparkVersion":   "2.0.0",
+		"clientSparkVersion":   "3.0.0",
 		"environmentVariables": cmd.submitEnv,
 		"mainClass":            args.mainClass,
 		"sparkProperties":      args.properties,

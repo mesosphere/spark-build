@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,7 @@ const principal = "client@local"
 const keytabPrefixed = "__dcos_base64__keytab"
 const keytab = "keytab"
 const sparkAuthSecret = "spark-auth-secret"
+const sparkAuthSecretPath = "path/to/spark-auth-secret"
 const marathonAppId = "spark-app"
 
 var marathonConfig = map[string]interface{}{"app": map[string]interface{}{"id": marathonAppId}}
@@ -127,35 +129,35 @@ func (suite *CliTestSuite) TestProcessMultiJarsFlagWithSpace() {
 
 func (suite *CliTestSuite) TestProcessPackagesFlag() {
 	_, args := sparkSubmitArgSetup()
-        inputArgs := "--conf spark.cores.max=8 --packages=groupid:artifactid:version app/packages/main.jar 100"
-        expected := []string{"--conf=spark.cores.max=8",
-                "--packages=groupid:artifactid:version",
-                "--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
-                "app/packages/main.jar"}
-        actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
-        assert.Equal(suite.T(), expected, actual)
+	inputArgs := "--conf spark.cores.max=8 --packages=groupid:artifactid:version app/packages/main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--packages=groupid:artifactid:version",
+		"--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
+		"app/packages/main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
 }
 
 func (suite *CliTestSuite) TestProcessMultiPackagesFlag() {
-        _, args := sparkSubmitArgSetup()
-        inputArgs := "--conf spark.cores.max=8 --packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2 app/packages/main.jar 100"
-        expected := []string{"--conf=spark.cores.max=8",
-                "--packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2",
-                "--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
-                "app/packages/main.jar"}
-        actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
-        assert.Equal(suite.T(), expected, actual)
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.cores.max=8 --packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2 app/packages/main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2",
+		"--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
+		"app/packages/main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
 }
 
 func (suite *CliTestSuite) TestProcessMultiPackagesFlagWithSpace() {
-        _, args := sparkSubmitArgSetup()
-        inputArgs := "--conf spark.cores.max=8 --packages groupid1:artifactid1:version1,groupid2:artifactid2:version2 app/packages/main.jar 100"
-        expected := []string{"--conf=spark.cores.max=8",
-                "--packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2",
-                "--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
-                "app/packages/main.jar"}
-        actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
-        assert.Equal(suite.T(), expected, actual)
+	_, args := sparkSubmitArgSetup()
+	inputArgs := "--conf spark.cores.max=8 --packages groupid1:artifactid1:version1,groupid2:artifactid2:version2 app/packages/main.jar 100"
+	expected := []string{"--conf=spark.cores.max=8",
+		"--packages=groupid1:artifactid1:version1,groupid2:artifactid2:version2",
+		"--conf=spark.jars.ivy=" + mesosSandboxPath + "/.ivy2",
+		"app/packages/main.jar"}
+	actual, _ := transformSubmitArgs(inputArgs, args.boolVals)
+	assert.Equal(suite.T(), expected, actual)
 }
 
 func (suite *CliTestSuite) TestIsSparkApp() {
@@ -367,7 +369,7 @@ func (suite *CliTestSuite) TestPayloadWithSecret() {
 
 func (suite *CliTestSuite) TestSaslSecret() {
 	inputArgs := fmt.Sprintf(
-		"--executor-auth-secret /%s "+
+		"--executor-auth-secret %s "+
 			"--class %s "+
 			"%s --input1 value1 --input2 value2", sparkAuthSecret, mainClass, appJar)
 
@@ -386,10 +388,46 @@ func (suite *CliTestSuite) TestSaslSecret() {
 		"spark.authenticate":                      "true",
 		"spark.mesos.containerizer":               "mesos",
 		"spark.authenticate.enableSaslEncryption": "true",
-		"spark.authenticate.secret":               "spark_shared_secret",
-		"spark.executorEnv._SPARK_AUTH_SECRET":    "spark_shared_secret",
-		"spark.mesos.driver.secret.filenames":     sparkAuthSecret,
-		"spark.mesos.driver.secret.names":         fmt.Sprintf("/%s", sparkAuthSecret),
+		"spark.authenticate.secret":               sparkAuthSecret,
+		"spark.executorEnv._SPARK_AUTH_SECRET":    sparkAuthSecret,
+	}
+
+	v, ok := m["sparkProperties"].(map[string]interface{})
+	if !ok {
+		suite.T().Errorf("%+v", ok)
+	}
+
+	suite.checkProps(v, stringProps)
+}
+
+func (suite *CliTestSuite) TestSaslFileBasedSecret() {
+	inputArgs := fmt.Sprintf(
+		"--executor-auth-secret-path /%s "+
+			"--class %s "+
+			"%s --input1 value1 --input2 value2", sparkAuthSecretPath, mainClass, appJar)
+
+	_, sparkAuthSecretFile := filepath.Split(fmt.Sprintf("/%s", sparkAuthSecretPath))
+	cmd := createCommand(inputArgs, image)
+	payload, err := buildSubmitJson(&cmd, marathonConfig)
+
+	m := make(map[string]interface{})
+
+	json.Unmarshal([]byte(payload), &m)
+
+	if err != nil {
+		suite.T().Errorf("%s", err.Error())
+	}
+
+	stringProps := map[string]string{
+		"spark.authenticate":                        "true",
+		"spark.mesos.containerizer":                 "mesos",
+		"spark.authenticate.enableSaslEncryption":   "true",
+		"spark.authenticate.secret.file":            sparkAuthSecretFile,
+		"spark.executorEnv._SPARK_AUTH_SECRET_FILE": sparkAuthSecretFile,
+		"spark.mesos.driver.secret.filenames":       sparkAuthSecretFile,
+		"spark.mesos.driver.secret.names":           fmt.Sprintf("/%s", sparkAuthSecretPath),
+		"spark.mesos.executor.secret.filenames":     sparkAuthSecretFile,
+		"spark.mesos.executor.secret.names":         fmt.Sprintf("/%s", sparkAuthSecretPath),
 	}
 
 	v, ok := m["sparkProperties"].(map[string]interface{})
@@ -403,30 +441,29 @@ func (suite *CliTestSuite) TestSaslSecret() {
 func (suite *CliTestSuite) TestPackagesFlag() {
 	sparkPackages := "group.one.id:artifact-one-id:version.one,group.two.id:artifact-two-id:version.two"
 	inputArgs := fmt.Sprintf(
-		"--packages %s "+
-		"--class %s "+
-		"%s --input1 value1 --input2 value2", sparkPackages, mainClass, appJar)
+		"--packages %s --class %s %s --input1 value1 --input2 value2",
+		sparkPackages, mainClass, appJar)
 
 	cmd := createCommand(inputArgs, image)
-        payload, err := buildSubmitJson(&cmd, marathonConfig)
+	payload, err := buildSubmitJson(&cmd, marathonConfig)
 
-        jsonMap := make(map[string]interface{})
+	jsonMap := make(map[string]interface{})
 
-        json.Unmarshal([]byte(payload), &jsonMap)
+	json.Unmarshal([]byte(payload), &jsonMap)
 
-        if err != nil {
-                suite.T().Errorf("%s", err.Error())
-        }
+	if err != nil {
+		suite.T().Errorf("%s", err.Error())
+	}
 
-        stringProps := map[string]string{
-		"spark.jars.ivy": mesosSandboxPath + "/.ivy2",
+	stringProps := map[string]string{
+		"spark.jars.ivy":      mesosSandboxPath + "/.ivy2",
 		"spark.jars.packages": sparkPackages,
-        }
+	}
 
-        sparkProps, ok := jsonMap["sparkProperties"].(map[string]interface{})
-        if !ok {
-                suite.T().Errorf("%+v", ok)
-        }
+	sparkProps, ok := jsonMap["sparkProperties"].(map[string]interface{})
+	if !ok {
+		suite.T().Errorf("%+v", ok)
+	}
 
-        suite.checkProps(sparkProps, stringProps)
+	suite.checkProps(sparkProps, stringProps)
 }
