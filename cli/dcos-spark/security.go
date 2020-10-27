@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/mesosphere/dcos-commons/cli/client"
+	"path/filepath"
 	"strings"
+
+	"github.com/mesosphere/dcos-commons/cli/client"
 )
 
 const KEYLENGTH = 128
@@ -41,8 +43,7 @@ func prepareBase64Secret(secretPath string) string {
 		panic("Secret path cannot be empty")
 	}
 
-	absoluteSecretPath := strings.Split(secretPath, "/")
-	filename := absoluteSecretPath[len(absoluteSecretPath)-1]
+	_, filename := filepath.Split(secretPath)
 	// secrets with __dcos_base64__ will be decoded by Mesos, but remove the prefix here
 	if strings.HasPrefix(filename, "__dcos_base64__") {
 		return strings.TrimPrefix(filename, "__dcos_base64__")
@@ -121,15 +122,29 @@ func SetupSASL(args *sparkArgs) {
 	if args.saslSecret != "" {
 		setupSaslProperties(args)
 	}
+	if args.saslSecretPath != "" {
+		setupFileBasedSaslProperties(args)
+	}
 }
 
 func setupSaslProperties(args *sparkArgs) {
-	secretPath := args.saslSecret
+	secretValue := args.saslSecret
 	args.properties["spark.mesos.containerizer"] = "mesos"
 	args.properties["spark.authenticate"] = "true"
 	args.properties["spark.authenticate.enableSaslEncryption"] = "true"
-	args.properties["spark.authenticate.secret"] = "spark_shared_secret"
-	args.properties["spark.executorEnv._SPARK_AUTH_SECRET"] = "spark_shared_secret"
+	args.properties["spark.authenticate.secret"] = secretValue
+	args.properties["spark.executorEnv._SPARK_AUTH_SECRET"] = secretValue
+}
+
+func setupFileBasedSaslProperties(args *sparkArgs) {
+	secretPath := args.saslSecretPath
+
+	args.properties["spark.mesos.containerizer"] = "mesos"
+	args.properties["spark.authenticate"] = "true"
+	args.properties["spark.authenticate.enableSaslEncryption"] = "true"
+	args.properties["spark.authenticate.secret.file"] = prepareBase64Secret(secretPath)
+	args.properties["spark.executorEnv._SPARK_AUTH_SECRET_FILE"] = prepareBase64Secret(secretPath)
+
 	for _, taskType := range TASK_TYPES {
 		appendToProperty(SECRET_REFERENCE_PROPERTIES[taskType], secretPath, args)
 		appendToProperty(SECRET_FILENAME_PROPERTIES[taskType], prepareBase64Secret(secretPath), args)

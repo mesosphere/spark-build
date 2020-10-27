@@ -44,10 +44,10 @@ JOB_WAIT_TIMEOUT_SECONDS = JOB_WAIT_TIMEOUT_MINUTES * 60
 log = logging.getLogger(__name__)
 
 SPARK_PACKAGE_NAME = os.getenv("SPARK_PACKAGE_NAME", "spark")
-SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.11-2.4.0.jar"
+SPARK_EXAMPLES = "http://downloads.mesosphere.com/spark/assets/spark-examples_2.12-3.0.1.jar"
 
-start_agent_cmd = "sudo systemctl start dcos-mesos-slave"
-stop_agent_cmd = "sudo systemctl stop dcos-mesos-slave"
+start_agent_cmd = "sudo systemctl start dcos-mesos-slave.service dcos-mesos-slave.socket"
+stop_agent_cmd = "sudo systemctl stop dcos-mesos-slave.service dcos-mesos-slave.socket"
 check_agent_cmd = "sudo systemctl is-active dcos-mesos-slave"
 
 
