@@ -161,10 +161,25 @@ def test_jar(service_name=utils.SPARK_SERVICE_NAME):
 @pytest.mark.sanity
 @pytest.mark.smoke
 def test_rpc_auth():
-    secret_name = "sparkauth"
+    auth_secret = "spark_shared_secret"
 
-    sdk_security.delete_secret(secret_name)
-    rc, _, _ = sdk_cmd.run_raw_cli("{} --verbose secret /{}".format(utils.SPARK_PACKAGE_NAME, secret_name))
+    utils.run_tests(
+        app_url=utils.SPARK_EXAMPLES,
+        app_args="100",
+        expected_output="Pi is roughly 3",
+        service_name=utils.SPARK_SERVICE_NAME,
+        args=["--executor-auth-secret {}".format(auth_secret),
+              "--class org.apache.spark.examples.SparkPi"])
+
+
+@sdk_utils.dcos_ee_only
+@pytest.mark.sanity
+@pytest.mark.smoke
+def test_rpc_filebased_auth():
+    auth_secret_file = "sparkauth"
+
+    sdk_security.delete_secret(auth_secret_file)
+    rc, _, _ = sdk_cmd.run_raw_cli("{} --verbose secret /{}".format(utils.SPARK_PACKAGE_NAME, auth_secret_file))
     assert rc == 0, "Failed to generate Spark auth secret"
 
     utils.run_tests(
@@ -172,7 +187,7 @@ def test_rpc_auth():
         app_args="100",
         expected_output="Pi is roughly 3",
         service_name=utils.SPARK_SERVICE_NAME,
-        args=["--executor-auth-secret {}".format(secret_name),
+        args=["--executor-auth-secret-path {}".format(auth_secret_file),
               "--class org.apache.spark.examples.SparkPi"])
 
 

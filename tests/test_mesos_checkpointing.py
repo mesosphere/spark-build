@@ -47,10 +47,6 @@ def setup_spark(configure_security_spark, configure_universe):
 
 
 @pytest.mark.sanity
-@pytest.mark.skipif(
-    '2.1.0' == sdk_utils.dcos_version(),
-    reason="Since DC/OS 2.1.0 is unable to stop dcos-mesos-slave, refer this https://jira.d2iq.com/browse/D2IQ-69935"
-)
 def test_agent_restart_with_checkpointing_disabled():
     (driver_task_id, driver_task, executor_task) = _submit_job_and_get_tasks()
 
@@ -66,10 +62,6 @@ def test_agent_restart_with_checkpointing_disabled():
 
 
 @pytest.mark.sanity
-@pytest.mark.skipif(
-    '2.1.0' == sdk_utils.dcos_version(),
-    reason="Since DC/OS 2.1.0 is unable to stop dcos-mesos-slave, refer this https://jira.d2iq.com/browse/D2IQ-69935"
-)
 def test_agent_restart_with_checkpointing_enabled():
     (driver_task_id, driver_task, executor_task) = _submit_job_and_get_tasks(extra_args=["--conf spark.mesos.checkpoint=true"])
 
