@@ -52,6 +52,8 @@
         "SPARK_DISPATCHER_ENFORCE_ROLE": "{{service.enforce_role}}",
         "SPARK_DISPATCHER_MESOS_PRINCIPAL": "{{service.service_account}}",
         "SPARK_DISPATCHER_MESOS_SECRET": "{{service.service_account_secret}}",
+        "CONTAINER_LOGGER_LOGROTATE_MAX_STDOUT_SIZE": "{{service.logrotate_options.stdout_max_size}}",
+        "CONTAINER_LOGGER_LOGROTATE_MAX_STDERR_SIZE": "{{service.logrotate_options.stderr_max_size}}",
         "SPARK_LOG_LEVEL": "{{service.log-level}}"
     },
 
