@@ -1,0 +1,48 @@
+<configuration>
+  <!-- Authentication -->
+  <property>
+    <name>hive.server2.authentication</name>
+    <value>KERBEROS</value>
+  </property>
+
+  <property>
+    <name>hive.server2.authentication.kerberos.principal</name>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
+  </property>
+
+  <property>
+    <name>hive.server2.authentication.kerberos.keytab</name>
+    <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.sasl.enabled</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.kerberos.keytab.file</name>
+    <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.kerberos.principal</name>
+    <value>hive/{{HOSTNAME}}@LOCAL</value>
+  </property>
+
+  <property>
+    <name>hive.security.authorization.createtable.owner.grants</name>
+    <value>ALL</value>
+    <description>The set of privileges automatically granted to the owner whenever a table gets created.</description>
+  </property>
+
+  <property>
+    <name>hive.users.in.admin.role</name>
+    <value>hdfs,hive</value>
+  </property>
+
+  <property>
+    <name>hive.security.authorization.manager</name>
+    <value>org.apache.hadoop.hive.ql.security.authorization.DefaultHiveAuthorizationProvider</value>
+  </property>
+</configuration>

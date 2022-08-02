@@ -1,0 +1,23 @@
+<configuration>
+    <!-- ResourceManager security configs -->
+    <property>
+        <name>yarn.resourcemanager.keytab</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value>	<!-- path to the YARN keytab -->
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.principal</name>
+        <value>yarn/{{HOSTNAME}}@LOCAL</value>
+    </property>
+
+    <!-- NodeManager security configs -->
+    <property>
+        <name>yarn.nodemanager.keytab</name>
+        <value>/usr/local/hadoop/etc/hadoop/hdfs.keytab</value>	<!-- path to the YARN keytab -->
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.principal</name>
+        <value>yarn/{{HOSTNAME}}@LOCAL</value>
+    </property>
+</configuration>
